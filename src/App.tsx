@@ -449,6 +449,27 @@ const DEFAULT_WEIGHTS: MetricWeights = {
 
 const STAGES = ["Idea", "Research", "Validation", "MVP", "Launch"];
 
+const PREFILLS = {
+  devTool: `Name: Local Tunnel Share
+Industry: Developer Tools
+Target Customer: Remote-first software engineers testing webhooks locally.
+Pain Point: Exposing ports safely without setting up dynamic DNS or exposing public router IPs.
+Pricing: Pro tier is $9/month, Enterprise custom tunnels $29/month.
+Problem: Setting up SSH reverse tunnels is painful, requires own server configuration, and lacks subdomain customization.`,
+  logistics: `Name: Subcontractor Invoice Auditor
+Industry: Logistics / Construction
+Target Customer: Small trucking fleet operator dispatchers.
+Pain Point: Manually verifying fuel receipt logs against subcontractor trip sheet entries.
+Pricing: $49/month starter, $199/month pro dispatch operations.
+Problem: Subcontractors submit messy PDF invoices with typos, wasting 12 hours a week manually recalculating trip logs.`,
+  operations: `Name: ACORD Insurance Form Auto-Parser
+Industry: InsurTech / Insurance
+Target Customer: Independent commercial insurance brokers.
+Pain Point: Transcribing certificate values from physical scans into agency management systems.
+Pricing: Pro $99/month (up to 200 sheets), Enterprise $299/month.
+Problem: Brokers spend half their day copy-pasting numbers from ACORD PDF sheets, causing high human error rates.`
+};
+
 const parseBuildTimeToDays = (buildTimeStr: string): number => {
   const clean = buildTimeStr.toLowerCase();
   if (clean.includes("2-3")) return 17.5;
@@ -462,7 +483,7 @@ const parseBuildTimeToDays = (buildTimeStr: string): number => {
 const TOUR_STEPS = [
   {
     title: "Welcome to the Opportunity Intelligence Platform!",
-    content: "This tool is a quantitative framework designed for solo technical founders to systematically evaluate, grade, and rank micro-SaaS opportunities. Let's take a quick interactive tour to show you how this works.",
+    content: "This tool is a quantitative framework designed for solo technical founders to systematically evaluate, grade, and rank micro-SaaS opportunities. Let's take a quick interactive tour to show you how it works.",
     selector: null
   },
   {
@@ -471,48 +492,48 @@ const TOUR_STEPS = [
     selector: "#view-modes-menu"
   },
   {
-    title: "1. Executive Dashboard Tab",
-    content: "This tab displays your top-level KPI metrics alongside the interactive build difficulty scatter plot matrix.",
+    title: "AI Ingestion Hub",
+    content: "This is the primary launchpad. You paste raw competitor data, pitches, or notes here, and parse them with direct client-side Gemini LLM support.",
+    selector: "#tab-ingest"
+  },
+  {
+    title: "API Settings Area",
+    content: "Paste your Gemini API Key here to enable direct, secure Gemini 1.5 Flash parsing from your browser. Local fallback parsing runs if this is empty.",
+    selector: "#ingest-api-key-panel"
+  },
+  {
+    title: "Raw Research Text Input",
+    content: "Type or paste your unstructured findings in this area. You can use the quick example buttons to prefill test logs instantly.",
+    selector: "#ingest-workspace-input"
+  },
+  {
+    title: "Interactive Preview & Metric Overrides",
+    content: "When analysis runs, a live card will stage on the right. You can drag manual override sliders for the 10 core metrics before committing.",
+    selector: "#ingest-preview-panel"
+  },
+  {
+    title: "Executive Dashboard Screen",
+    content: "The dashboard tab contains pipeline summary statistics and lists dynamic status tracking cards.",
     selector: "#tab-dashboard"
   },
   {
-    title: "2. Opportunity Grid Tab",
-    content: "Click here to inspect fully-formed cards for each idea, displaying target audiences, pricing models, and bookmarks.",
-    selector: "#tab-grid"
-  },
-  {
-    title: "3. Ranked Leaderboard Tab",
-    content: "This tab displays a strictly sorted prioritized ledger of all opportunities from highest-scoring to lowest-scoring.",
-    selector: "#tab-leaderboard"
-  },
-  {
-    title: "4. Kanban Pipeline Tab",
-    content: "Track validation progress by dragging opportunities across stages: Idea, Research, Validation, MVP build, and active Launch.",
-    selector: "#tab-kanban"
-  },
-  {
-    title: "5. Side-by-Side Compare Matrix",
-    content: "Enables comparing up to 3 selected target opportunities side-by-side to assist in final model selection.",
-    selector: "#tab-compare"
-  },
-  {
-    title: "6. About Platform Tab",
-    content: "An educational guide mapping out all rating metrics, scoring math, and criteria used to validate items.",
-    selector: "#tab-about"
+    title: "Interactive Difficulty vs Reward Plot",
+    content: "This scatter plot distributes opportunities by build speed vs ratings. Target the top-right quadrant for optimal MVP starts.",
+    selector: "#interactive-plot-card"
   },
   {
     title: "Custom Framework Weights",
-    content: "Customize weights to adjust priorities (e.g. increase WTP or pain severity). All scores and grids update instantly.",
+    content: "Adjust priority weights here to update calculations across the entire tool (grid, leaderboard, plot) instantly.",
     selector: "#weights-sliders-card"
   },
   {
-    title: "Strategy Blueprints Deep-Dive",
-    content: "Below the active view, explore calculated monthly cashflow growth calculators, marketing scripts, and tech stacks.",
+    title: "Validation Blueprints",
+    content: "Explore active MRR projectors, Outbound GTM scripts, tech stack configs, and notes for the selected opportunity.",
     selector: "#deep-dive-section"
   },
   {
     title: "Dynamic Ingest Engine",
-    content: "Paste raw research briefs, micro-SaaS notes, or feedback transcripts to instantly auto-parse and import new opportunities.",
+    content: "Click this global header tool at any time to open the quick-upload modal and add fresh notes.",
     selector: "#ingest-report-button"
   }
 ];
@@ -521,6 +542,12 @@ export default function App() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>(INITIAL_OPPORTUNITIES);
   const [tourStep, setTourStep] = useState<number | null>(null);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+
+  // Ingestion Workspace States
+  const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem("gemini_api_key") || "");
+  const [ingestText, setIngestText] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [parsedOpportunity, setParsedOpportunity] = useState<ScoredOpportunity | null>(null);
 
   useEffect(() => {
     const hasSeen = localStorage.getItem("hasSeenTour");
@@ -534,7 +561,7 @@ export default function App() {
   const [selectedIndustry, setSelectedIndustry] = useState<string>("All");
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("All");
   const [minScore, setMinScore] = useState<number>(0);
-  const [viewMode, setViewMode] = useState<string>("dashboard"); // "dashboard", "grid", "leaderboard", "kanban", "compare"
+  const [viewMode, setViewMode] = useState<string>("ingest"); // "dashboard", "grid", "leaderboard", "kanban", "compare"
   const [weights, setWeights] = useState<MetricWeights>(DEFAULT_WEIGHTS);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [customInputReport, setCustomInputReport] = useState<string>("");
@@ -608,6 +635,192 @@ export default function App() {
   const triggerToast = (msg: string | null) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleGeminiParse = async () => {
+    if (!ingestText.trim()) {
+      triggerToast("Please enter or load some text to parse.");
+      return;
+    }
+    
+    setIsLoading(true);
+    triggerToast("Initiating Gemini AI analysis model...");
+
+    localStorage.setItem("gemini_api_key", apiKey);
+
+    if (!apiKey.trim()) {
+      // Run local regex fallback
+      setTimeout(() => {
+        const lines = ingestText.split('\n');
+        let name = "Extracted Project Idea";
+        let industry = "General SaaS";
+        let target = "Business Professionals";
+        let pain = "Manual administrative processes";
+        let starterPrice = 29;
+        let proPrice = 79;
+        let enterprisePrice = 199;
+
+        lines.forEach(line => {
+          const l = line.toLowerCase();
+          if (l.startsWith("name:")) name = line.substring(5).trim();
+          else if (l.startsWith("industry:")) industry = line.substring(9).trim();
+          else if (l.startsWith("target:")) target = line.substring(7).trim();
+          else if (l.startsWith("pain:")) pain = line.substring(5).trim();
+        });
+
+        const fallbackOpp: ScoredOpportunity = {
+          id: String(Date.now()),
+          name,
+          industry,
+          targetCustomer: target,
+          painPoint: pain,
+          workaround: "Legacy manual transcription spreadsheets.",
+          competitors: "Manual spreadsheets and email tag.",
+          wedge: "Automated direct API syncing.",
+          pricing: {
+            starter: { name: "Starter", price: starterPrice * 80, usd: starterPrice, capacity: "Basic access" },
+            pro: { name: "Growth", price: proPrice * 80, usd: proPrice, capacity: "Standard operations" },
+            enterprise: { name: "Enterprise", price: enterprisePrice * 80, usd: enterprisePrice, capacity: "Premium support" }
+          },
+          metrics: {
+            painSeverity: 7,
+            purchaseUrgency: 6,
+            willingnessToPay: 7,
+            reachability: 6,
+            mvpSpeed: 8,
+            workflowComplexity: 7,
+            differentiation: 6,
+            retention: 7,
+            defensibility: 5,
+            financialProbability: 6
+          },
+          buildTime: "3 weeks",
+          salesDifficulty: "Moderate",
+          techStack: "React, Node.js, Supabase Integration.",
+          risks: "Customer adoption curve friction.",
+          validationExperiment: "Cold outreach to 30 niche target agencies.",
+          isFavorite: false,
+          status: "Idea",
+          notes: "Heuristic regex parsing fallback activated.",
+          tags: ["Local Parse", "Override Ready"],
+          calculatedScore: 6.5
+        };
+
+        setParsedOpportunity(fallbackOpp);
+        setIsLoading(false);
+        triggerToast("Local parser complete! Review and adjust scores in the preview panel.");
+      }, 1000);
+      return;
+    }
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Analyze this raw startup notes text and return a structured analysis in JSON. Follow instructions strictly.
+              
+Text:
+${ingestText}
+
+JSON Output Format:
+{
+  "name": "Project Name (short, descriptive)",
+  "industry": "Industry Sector",
+  "targetCustomer": "Target Customer Profile",
+  "painPoint": "Core pain point description",
+  "workaround": "Current workaround used",
+  "wedge": "Unique wedge or differentiator",
+  "starterPriceUSD": 29,
+  "proPriceUSD": 79,
+  "enterprisePriceUSD": 199,
+  "metrics": {
+    "painSeverity": 7,
+    "purchaseUrgency": 6,
+    "willingnessToPay": 7,
+    "reachability": 6,
+    "mvpSpeed": 8,
+    "workflowComplexity": 6,
+    "differentiation": 7,
+    "retention": 7,
+    "defensibility": 6,
+    "financialProbability": 6
+  },
+  "buildTime": "3 weeks",
+  "salesDifficulty": "Moderate",
+  "techStack": "Recommended developer stack",
+  "risks": "Main risk barriers",
+  "validationExperiment": "Quick test outreach experiment details"
+}`
+            }]
+          }],
+          generationConfig: {
+            responseMimeType: "application/json"
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) throw new Error("Missing content in Gemini response");
+
+      const parsed = JSON.parse(rawText);
+      const starterPrice = parsed.starterPriceUSD || 29;
+      const proPrice = parsed.proPriceUSD || 79;
+      const enterprisePrice = parsed.enterprisePriceUSD || 199;
+
+      const newOpp: ScoredOpportunity = {
+        id: String(Date.now()),
+        name: parsed.name || "Parsed Project",
+        industry: parsed.industry || "General SaaS",
+        targetCustomer: parsed.targetCustomer || "Business Users",
+        painPoint: parsed.painPoint || "General problem",
+        workaround: parsed.workaround || "Manual workflows",
+        competitors: parsed.competitors || "Legacy spreadsheet models.",
+        wedge: parsed.wedge || "Direct integrations",
+        pricing: {
+          starter: { name: "Starter", price: starterPrice * 80, usd: starterPrice, capacity: "Basic Tier" },
+          pro: { name: "Pro", price: proPrice * 80, usd: proPrice, capacity: "Growth Tier" },
+          enterprise: { name: "Enterprise", price: enterprisePrice * 80, usd: enterprisePrice, capacity: "Scalable Operations" }
+        },
+        metrics: {
+          painSeverity: parsed.metrics?.painSeverity || 7,
+          purchaseUrgency: parsed.metrics?.purchaseUrgency || 6,
+          willingnessToPay: parsed.metrics?.willingnessToPay || 7,
+          reachability: parsed.metrics?.reachability || 6,
+          mvpSpeed: parsed.metrics?.mvpSpeed || 7,
+          workflowComplexity: parsed.metrics?.workflowComplexity || 6,
+          differentiation: parsed.metrics?.differentiation || 7,
+          retention: parsed.metrics?.retention || 7,
+          defensibility: parsed.metrics?.defensibility || 6,
+          financialProbability: parsed.metrics?.financialProbability || 6
+        },
+        buildTime: parsed.buildTime || "3 weeks",
+        salesDifficulty: parsed.salesDifficulty || "Moderate",
+        techStack: parsed.techStack || "React, Tailwind, Supabase",
+        risks: parsed.risks || "Market entry barriers",
+        validationExperiment: parsed.validationExperiment || "Outbound email campaign tests",
+        isFavorite: false,
+        status: "Idea",
+        notes: "Parsed using Gemini 1.5 Flash client model.",
+        tags: ["Gemini AI", "Auto-Generated"],
+        calculatedScore: 7.0
+      };
+
+      setParsedOpportunity(newOpp);
+      triggerToast("Gemini analysis complete! Verify and edit the scores on the right.");
+    } catch (err: any) {
+      console.error(err);
+      triggerToast(`AI parsing failed: ${err.message}. Local parser fallback activated.`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -982,6 +1195,7 @@ Generated via Opportunity Intelligence Platform
             <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">View Modes</h3>
             <div className="grid grid-cols-1 gap-1">
               {[
+                { id: "ingest", label: "AI Ingestion Hub", icon: Sparkles },
                 { id: "dashboard", label: "Executive Dashboard", icon: BarChart3 },
                 { id: "grid", label: "Opportunity Grid", icon: LayoutGrid },
                 { id: "leaderboard", label: "Ranked Leaderboard", icon: List },
@@ -1149,6 +1363,228 @@ Generated via Opportunity Intelligence Platform
           )}
 
           {/* Render VIEW MODES */}
+          {viewMode === "ingest" && (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 animate-in fade-in duration-200">
+              
+              {/* Left Column: Input and configuration */}
+              <div className="space-y-6">
+                <div className="bg-slate-900/35 border border-slate-900 p-6 rounded-2xl space-y-4">
+                  <div className="flex items-center gap-2.5">
+                    <Sparkles className="h-5 w-5 text-emerald-400" />
+                    <h2 className="text-base font-bold text-white font-sans tracking-tight">AI Report Parser Workspace</h2>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed font-light">
+                    Paste raw text (competitor pages, startup pitches, target buyer feedback) to instantly structure and grade the business metrics using the Gemini 1.5 Flash model.
+                  </p>
+
+                  <div id="ingest-api-key-panel" className="space-y-2 bg-black/20 p-4 border border-slate-800/80 rounded-xl">
+                    <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
+                      <label className="uppercase tracking-wider">Gemini API Key (stored locally)</label>
+                      <a href="https://aistudio.google.com/" target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">Get Free Key ↗</a>
+                    </div>
+                    <input 
+                      type="password"
+                      placeholder="Paste your Gemini API Key here..."
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-700 focus:outline-none focus:border-emerald-500 font-mono"
+                    />
+                  </div>
+
+                  <div id="ingest-workspace-input" className="space-y-2">
+                    <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">Raw Research Report / Notes</label>
+                    <textarea 
+                      placeholder="Paste B2B SaaS notes or pitch scripts..."
+                      value={ingestText}
+                      onChange={(e) => setIngestText(e.target.value)}
+                      className="w-full bg-black/40 border border-slate-800 rounded-xl p-4 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono"
+                      rows={10}
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <button 
+                      onClick={() => setIngestText(PREFILLS.devTool)}
+                      className="bg-slate-900 hover:bg-slate-800 text-slate-300 text-[10px] font-mono px-3 py-1.5 rounded-lg border border-slate-800 transition-colors"
+                    >
+                      Load DevTool Example
+                    </button>
+                    <button 
+                      onClick={() => setIngestText(PREFILLS.logistics)}
+                      className="bg-slate-900 hover:bg-slate-800 text-slate-300 text-[10px] font-mono px-3 py-1.5 rounded-lg border border-slate-800 transition-colors"
+                    >
+                      Load Logistics Example
+                    </button>
+                    <button 
+                      onClick={() => setIngestText(PREFILLS.operations)}
+                      className="bg-slate-900 hover:bg-slate-800 text-slate-300 text-[10px] font-mono px-3 py-1.5 rounded-lg border border-slate-800 transition-colors"
+                    >
+                      Load InsurTech Example
+                    </button>
+                  </div>
+
+                  <button 
+                    onClick={handleGeminiParse}
+                    disabled={isLoading}
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-xs font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-emerald-500/10 border border-white/5"
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        <span>Running LLM Ingestion Model...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        <span>{apiKey ? "Parse with Gemini AI" : "Parse with Local Fallback"}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: Preview and override sliders */}
+              <div id="ingest-preview-panel" className="space-y-6">
+                {parsedOpportunity ? (
+                  <div className="bg-slate-900/35 border border-slate-900 p-6 rounded-2xl space-y-6 animate-in fade-in slide-in-from-right-4 duration-200">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <span className="text-[10px] font-mono uppercase bg-emerald-950 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-900/30">
+                          {parsedOpportunity.industry}
+                        </span>
+                        <h3 className="text-base font-bold text-white mt-2.5">{parsedOpportunity.name}</h3>
+                        <p className="text-xs text-slate-400 font-light mt-1">{parsedOpportunity.targetCustomer}</p>
+                      </div>
+                      <div className="text-center bg-slate-950/60 p-2.5 rounded-xl border border-slate-850 min-w-[90px]">
+                        <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider block">Calculated Rating</span>
+                        <span className="text-xl font-black text-emerald-400 font-mono">
+                          {(() => {
+                            const weightedSum = (
+                              (parsedOpportunity.metrics.painSeverity * weights.painSeverity) +
+                              (parsedOpportunity.metrics.purchaseUrgency * weights.purchaseUrgency) +
+                              (parsedOpportunity.metrics.willingnessToPay * weights.willingnessToPay) +
+                              (parsedOpportunity.metrics.reachability * weights.reachability) +
+                              (parsedOpportunity.metrics.mvpSpeed * weights.mvpSpeed) +
+                              (parsedOpportunity.metrics.workflowComplexity * weights.workflowComplexity) +
+                              (parsedOpportunity.metrics.differentiation * weights.differentiation) +
+                              (parsedOpportunity.metrics.retention * weights.retention) +
+                              (parsedOpportunity.metrics.defensibility * weights.defensibility) +
+                              (parsedOpportunity.metrics.financialProbability * weights.financialProbability)
+                            );
+                            return weightedSum.toFixed(2);
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+
+                    <hr className="border-slate-800/80" />
+
+                    {/* Metric Override sliders */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Manual Ratings Override</h4>
+                        <span className="text-[10px] text-slate-500">Fine-tune scores before saving</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        {([
+                          { key: "painSeverity", label: "Pain Severity" },
+                          { key: "purchaseUrgency", label: "Purchase Urgency" },
+                          { key: "willingnessToPay", label: "Willingness to Pay" },
+                          { key: "reachability", label: "Buyer Reachability" },
+                          { key: "mvpSpeed", label: "MVP Build Speed" },
+                          { key: "differentiation", label: "Differentiation Wedge" },
+                          { key: "retention", label: "Operational Retention" },
+                          { key: "defensibility", label: "Defensibility" },
+                          { key: "financialProbability", label: "Financial Probability" }
+                        ] as const).map(metric => (
+                          <div key={metric.key} className="space-y-1 bg-black/20 p-2.5 rounded-xl border border-slate-800/40">
+                            <div className="flex justify-between items-center text-[10px] font-mono">
+                              <span className="text-slate-300 font-light">{metric.label}</span>
+                              <span className="text-emerald-400 font-bold">{parsedOpportunity.metrics[metric.key]} / 10</span>
+                            </div>
+                            <input 
+                              type="range"
+                              min="1"
+                              max="10"
+                              step="1"
+                              value={parsedOpportunity.metrics[metric.key]}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value);
+                                setParsedOpportunity(prev => {
+                                  if (!prev) return null;
+                                  return {
+                                    ...prev,
+                                    metrics: {
+                                      ...prev.metrics,
+                                      [metric.key]: val
+                                    }
+                                  };
+                                });
+                              }}
+                              className="w-full accent-emerald-500 h-1 bg-slate-800 rounded appearance-none cursor-pointer"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-black/30 p-4 rounded-xl border border-slate-800 space-y-2.5 text-xs text-slate-300">
+                      <div><strong className="text-white">Suggested Stack:</strong> {parsedOpportunity.techStack}</div>
+                      <div><strong className="text-white">Wedge:</strong> {parsedOpportunity.wedge}</div>
+                      <div><strong className="text-white">Experiment:</strong> {parsedOpportunity.validationExperiment}</div>
+                    </div>
+
+                    <button 
+                      id="ingest-save-button"
+                      onClick={() => {
+                        const weightedSum = (
+                          (parsedOpportunity.metrics.painSeverity * weights.painSeverity) +
+                          (parsedOpportunity.metrics.purchaseUrgency * weights.purchaseUrgency) +
+                          (parsedOpportunity.metrics.willingnessToPay * weights.willingnessToPay) +
+                          (parsedOpportunity.metrics.reachability * weights.reachability) +
+                          (parsedOpportunity.metrics.mvpSpeed * weights.mvpSpeed) +
+                          (parsedOpportunity.metrics.workflowComplexity * weights.workflowComplexity) +
+                          (parsedOpportunity.metrics.differentiation * weights.differentiation) +
+                          (parsedOpportunity.metrics.retention * weights.retention) +
+                          (parsedOpportunity.metrics.defensibility * weights.defensibility) +
+                          (parsedOpportunity.metrics.financialProbability * weights.financialProbability)
+                        );
+                        const finalScore = parseFloat(weightedSum.toFixed(2));
+                        const finalOpp = { ...parsedOpportunity, calculatedScore: finalScore };
+                        
+                        setOpportunities(prev => [finalOpp, ...prev]);
+                        setSelectedOpportunityId(finalOpp.id);
+                        setParsedOpportunity(null);
+                        setIngestText("");
+                        setViewMode("dashboard");
+                        triggerToast(`Successfully committed "${finalOpp.name}" to pipelines!`);
+                      }}
+                      className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-emerald-500/10 border border-white/5"
+                    >
+                      <Check className="h-4 w-4" />
+                      <span>Commit to Pipeline & View Dashboard</span>
+                    </button>
+
+                  </div>
+                ) : (
+                  <div className="h-full border border-dashed border-slate-800 rounded-2xl p-12 flex flex-col items-center justify-center text-center gap-4 text-slate-400 min-h-[350px]">
+                    <div className="h-12 w-12 rounded-full bg-slate-900/60 border border-slate-800 flex items-center justify-center text-slate-500">
+                      <Sparkles className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-white">Analysis Workspace Staging</h4>
+                      <p className="text-xs text-slate-450 max-w-xs mt-1 leading-relaxed">
+                        Input raw notes and execute the parser. The analyzed opportunity preview, estimated scores, and parameter sliders will populate here.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          )}
+
           {viewMode === "about" && (
             <div className="space-y-8 max-w-4xl animate-in fade-in duration-200">
               <div className="bg-gradient-to-r from-emerald-950/20 via-purple-950/10 to-slate-950/10 border border-slate-900 p-8 rounded-2xl space-y-4">

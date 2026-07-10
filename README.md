@@ -1,17 +1,14 @@
-# Opportunity Intelligence Platform (V2.0)
+# Opportunity Intelligence Platform (V2.0) - Centered on AI Ingestion
 
-The **Opportunity Intelligence Platform** is a quantitative validation environment and decision-matrix tool designed specifically for solo technical founders. It provides a structured, math-driven framework to systematically evaluate, grade, rank, and model B2B micro-SaaS business opportunities, helping developers bypass low-intent ideas and focus on building high-retention cashflows.
+The **Opportunity Intelligence Platform** is a quantitative validation environment and decision-matrix tool designed specifically for solo technical founders. The platform is built around the **AI Ingestion Hub**—a workspace powered by Google Gemini 1.5 Flash that takes unstructured text (competitor pages, raw notes, or pitch briefs) and automatically extracts key indicators, models pricing tiers, suggests tech stacks, and scores the business across 10 prioritization metrics.
 
 ---
 
-## 📖 The Core Philosophy
+## 📖 The Core Philosophy: AI-First Ingestion
 
-As a solo developer, your most scarce resource is **time**. Choosing the wrong idea to build can cost months of wasted engineering effort. Most startup ideas fail not because the software was built poorly, but because:
-1. The target customer doesn't feel a severe enough pain to pay for a solution.
-2. The buyer is too difficult to find or reach (lack of distribution).
-3. The development effort required for an MVP exceeds what a solo founder can execute in 2-3 weeks.
+As a solo developer, your most scarce resource is **time**. Most ideas fail because of lack of validation. This platform bridges that gap by letting you paste *anything*—from raw scribbles to detailed market reports—and instantly get structured, mathematically ranked evaluations. 
 
-This platform enforces quantitative discipline. By grading every business concept across **10 objective metrics** and applying customizable priority weights, it calculates a normalized score out of 10 for each idea. 
+By feeding unstructured notes through the **AI Ingestion Hub**, you immediately grade every business concept across **10 objective metrics** with manual override sliders, calculating a normalized score out of 10 for each idea. 
 
 ---
 
