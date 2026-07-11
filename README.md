@@ -67,6 +67,12 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+Next will choose the next available local port if port 3000 is already in use. To deliberately use port 3001:
+
+```bash
+npm run dev:3001
+```
+
 > On Windows systems where PowerShell blocks `npm.ps1`, use `npm.cmd run dev`.
 
 ### Production build
@@ -80,6 +86,32 @@ npm run build
 ```bash
 npm run start
 ```
+
+`npm run start` automatically chooses the first available port from `3000` to `3019`, so an existing local server will not prevent BuildSignal from launching. It prints the exact local URL when it starts.
+
+To request a specific starting port, use either command:
+
+```bash
+npm run start:3001
+npm run start -- --port=3001
+```
+
+The automatic launcher will move to the next available port if that requested port is busy, including for `start:3000` and `start:3001`.
+
+### Reliable local workflow
+
+For day-to-day work, use one server mode at a time:
+
+```bash
+# Development with hot reload
+npm run dev
+
+# Production check
+npm run build
+npm run start
+```
+
+If a browser is still showing an older version, stop the terminal process with `Ctrl+C`, refresh the page, then start the intended mode again. Avoid running `npm run dev` and `npm run start` on the same port at the same time.
 
 ## Project structure
 
