@@ -1,3 +1,2 @@
 import Link from "next/link";
-import { RadioTower } from "lucide-react";
-export function Brand() { return <Link href="/" className="brand"><span><RadioTower size={17} /></span><b>Signal</b><i>Fit</i></Link>; }
+export function Brand() { return <Link href="/" className="brand" aria-label="SignalFit home"><span>SF</span><b>SignalFit</b><i>Founder intelligence</i></Link>; }
