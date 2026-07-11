@@ -43,6 +43,22 @@ export function calculateWeightedScore(scores: CriterionScores, weights: Partial
 
 export function getVerdictFromScore(score: number): EngineVerdict { if (score >= 85) return "Build Now"; if (score >= 70) return "Validate First"; if (score >= 55) return "Niche Down"; if (score >= 40) return "Weak Signal"; return "Avoid"; }
 
+export type ScoreGuidance = { min: number; max: number; verdict: EngineVerdict; meaning: string; action: string };
+
+/** The score guides the next level of commitment; it is not a market guarantee. */
+export const scoreGuidance: ScoreGuidance[] = [
+  { min: 85, max: 100, verdict: "Build Now", meaning: "Strong enough signal to commit to a focused paid MVP.", action: "Build the smallest paid workflow and keep validating demand." },
+  { min: 70, max: 84, verdict: "Validate First", meaning: "Promising, but important assumptions still need proof.", action: "Run a paid or high-intent customer test before expanding scope." },
+  { min: 55, max: 69, verdict: "Niche Down", meaning: "There is signal, but the buyer, wedge, or scope is still too broad.", action: "Sharpen the segment and test a narrower problem statement." },
+  { min: 40, max: 54, verdict: "Weak Signal", meaning: "The current case does not justify building yet.", action: "Change the premise or collect materially better evidence cheaply." },
+  { min: 0, max: 39, verdict: "Avoid", meaning: "The evidence and assumptions do not support more build time right now.", action: "Park it and redirect effort to a stronger opportunity." },
+];
+
+export function getScoreGuidance(score: number): ScoreGuidance {
+  const safeScore = Math.min(100, Math.max(0, score));
+  return scoreGuidance.find((band) => safeScore >= band.min && safeScore <= band.max) ?? scoreGuidance[scoreGuidance.length - 1];
+}
+
 export function calculateConfidenceScore(card: Pick<OpportunityScorecard, "evidenceRefs" | "scores">): number {
   const references = Object.values(card.evidenceRefs).reduce((sum, refs) => sum + (refs?.length ?? 0), 0);
   const coverage = Object.keys(card.evidenceRefs).length / scoringCriteria.length;
