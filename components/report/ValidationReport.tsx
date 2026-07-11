@@ -6,23 +6,313 @@ import { reportToCsv, reportToMarkdown, downloadExport } from "@/lib/report-expo
 import { ScoreBreakdown } from "@/components/scoring/ScoreBreakdown";
 import { PricingCalculator } from "@/components/report/PricingCalculator";
 import { ValidationExperiment } from "@/components/report/ValidationExperiment";
-const tabs=["Verdict","Evidence","Competitors","Scoring","MVP Blueprint","Pricing","Launch","Checklist","Risks","Export"] as const;type Tab=typeof tabs[number];
-export function ValidationReport({report,scorecard,publicMode=false}:{report:ReportType;scorecard?:ReportType["opportunity"]["scorecard"];publicMode?:boolean}){const [tab,setTab]=useState<Tab>("Verdict");const [toast,setToast]=useState("");const o=useMemo(()=>({...report.opportunity,scorecard:scorecard??report.opportunity.scorecard}),[report,scorecard]);const exportFile=(format:"md"|"json"|"csv"|"pdf")=>{const payload={...report,opportunity:o};if(format==="pdf"){window.print();setToast("Print dialog opened for PDF export");return}if(format==="md")downloadExport(`${o.name}-memo.md`,reportToMarkdown(payload),"text/markdown");if(format==="json")downloadExport(`${o.name}-memo.json`,JSON.stringify(payload,null,2),"application/json");if(format==="csv")downloadExport(`${o.name}-summary.csv`,reportToCsv(payload),"text/csv");setToast(`${format.toUpperCase()} export prepared`);setTimeout(()=>setToast(""),2200)};return <div className={publicMode?"validation-report public-report premium-report":"validation-report premium-report"}>{toast&&<div className="report-toast" role="status">{toast}</div>}<header className="report-engine-hero"><div><p className="eyebrow">{publicMode?"Sample research memo":"Research memo"} · {report.generatedAt}</p><h2>{o.name}</h2><p>{o.oneLiner}</p><div className="report-header-meta"><span>{o.targetCustomer}</span><span>{o.market}</span><span>{o.pricing.model}</span><span>{o.mvp.buildComplexity} complexity</span><span>{o.mvp.buildEstimate} to validation</span></div></div><div><b>{o.scorecard.total}</b><small>/100 weighted score</small><i>{o.scorecard.verdict}</i></div></header><div className="report-layout"><aside className="verdict-sidebar"><p className="eyebrow">Decision snapshot</p><strong>{o.scorecard.verdict}</strong><b>{o.scorecard.total}<small>/100</small></b><p>{o.scorecard.confidence}% evidence confidence</p><div className="sidebar-metrics"><Metric label="Memo date" value={report.generatedAt}/><Metric label="Research depth" value="Structured analysis"/><Metric label="Sources analyzed" value={String(o.evidence.length)}/><Metric label="Evidence items" value={String(o.evidence.length)}/><Metric label="Competitors identified" value={String(o.competitors.length)}/></div><hr/><span><ShieldCheck size={14}/> Sources cited</span><span><ListChecks size={14}/> Assumptions labelled</span><span><AlertTriangle size={14}/> Not a guarantee</span><div className="sidebar-export"><button onClick={()=>exportFile("md")}><FileText size={13}/>MD</button><button onClick={()=>exportFile("pdf")}><FileSpreadsheet size={13}/>PDF</button><button onClick={()=>exportFile("json")}><FileJson size={13}/>JSON</button></div></aside><div className="report-main"><nav className="report-tabs">{tabs.map(t=><button key={t} className={tab===t?"active":""} onClick={()=>setTab(t)}>{t}</button>)}</nav><div className="report-tab-content">{tab==="Verdict"&&<Verdict report={report}/>} {tab==="Evidence"&&<EvidenceView report={report}/>} {tab==="Competitors"&&<CompetitorView report={report}/>} {tab==="Scoring"&&<ScoringView report={report} scorecard={o.scorecard}/>} {tab==="MVP Blueprint"&&<MvpView report={report}/>} {tab==="Pricing"&&<PricingView report={report}/>} {tab==="Launch"&&<LaunchView report={report}/>} {tab==="Checklist"&&<ChecklistView report={report}/>} {tab==="Risks"&&<RiskView report={report}/>} {tab==="Export"&&<ExportView onExport={exportFile}/>}</div><FinalBlock report={report}/></div></div></div>}
-function Metric({label,value}:{label:string;value:string}){return <div><span>{label}</span><b>{value}</b></div>}
-function Verdict({report}:{report:ReportType}){const o=report.opportunity;return <><div className="report-callout executive-summary"><ListChecks size={20}/><div><p className="eyebrow">Executive summary</p><h3>{report.executiveSummary}</h3><p><b>Strongest signal:</b> {o.evidence[0]?.snippet}</p><p><b>Primary risk:</b> {o.risks[0]?.description}</p><p><b>Validate first:</b> {o.launch.successMetric}</p></div></div><div className="verdict-grid"><article><span>Target buyer</span><b>{o.targetCustomer}</b></article><article><span>Core workflow pain</span><b>{o.corePain}</b></article><article><span>Current workaround</span><b>{o.evidence.find(e=>e.signal==="Pain")?.snippet ?? "Requires direct buyer confirmation."}</b></article></div></>}
-function EvidenceView({report}:{report:ReportType}){return <div className="evidence-card-grid">{report.opportunity.evidence.map((e,index)=><article key={e.id}><div><b>{e.sourceType}</b><span>{categoryFor(e.signal)}</span></div><h3>{e.title}</h3><p>"{e.snippet}"</p><div className="evidence-meta"><span>{e.source}</span><span>{e.date}</span><span>{e.strength} confidence</span><span>{Math.max(58,88-index*7)} relevance</span></div><footer><a href={e.url} target="_blank">Source URL ↗</a><small>{e.url}</small></footer></article>)}</div>}
-function categoryFor(signal:string){return signal==="Pain"?"User Complaint":signal==="Pricing"?"Competitive Pricing":signal==="Risk"?"Risk Factor":"Market Signal"}
-function CompetitorView({report}:{report:ReportType}){return <div className="competitor-table-wrap"><table className="competitor-table"><thead><tr><th>Competitor</th><th>Target customer</th><th>Pricing</th><th>Strength</th><th>Weakness</th><th>Exploitable gap</th><th>Threat level</th></tr></thead><tbody>{report.opportunity.competitors.map((c,index)=><tr key={c.id}><td><b>{c.name}</b></td><td>{c.target}</td><td>{c.pricing}</td><td>{c.strength}</td><td>Broad workflow and implementation overhead</td><td>{c.gap}</td><td><span className={index===0?"threat medium":"threat low"}>{index===0?"Medium":"Low"}</span></td></tr>)}</tbody></table></div>}
-function ScoringView({report,scorecard}:{report:ReportType;scorecard:ReportType["opportunity"]["scorecard"]}){const entries=Object.entries(scorecard.scores);const ordered=[...entries].sort((a,b)=>b[1]-a[1]);return <><ScoreBreakdown scorecard={scorecard}/><section className="score-explanation"><p className="eyebrow">Score analysis</p><p><b>Strongest drivers:</b> {ordered.slice(0,3).map(([key])=>pretty(key)).join(", ")}. <b>Weakest drivers:</b> {ordered.slice(-3).map(([key])=>pretty(key)).join(", ")}.</p><p>The score reflects current evidence, not a forecast. Confidence would increase with direct buyer interviews, a paid pilot commitment, and a source-backed pricing comparison.</p><div><span>Active assumptions</span><small>Buyers will pay for a narrow workflow layer rather than accept the current workaround.</small></div></section></>}
-function pretty(value:string){return value.replace(/([A-Z])/g," $1").replace(/^./,x=>x.toUpperCase())}
-function MvpView({report}:{report:ReportType}){const m=report.opportunity.mvp;return <><div className="mvp-timeline phased"><article><span>Version 0 · Validate</span><b>Landing page and paid problem test</b><p>Interview the buyer, demonstrate the outcome, request a paid concierge commitment.</p></article><article><span>Version 1 · Core MVP</span><b>One focused outcome</b><p>{m.scope.join(" · ")}</p></article><article><span>Version 2 · Paid workflow</span><b>Prove the repeatable job</b><p>Automate the paid path only after the concierge workflow repeats consistently.</p></article><article><span>Version 3 · Retention</span><b>Earn the right to expand</b><p>Add retention features only after the core job demonstrates consistent usage.</p></article></div><div className="scope-groups"><article><b>Must-have</b><p>{m.scope.slice(0,2).join(" · ")}</p></article><article><b>Should-have</b><p>Simple export · manual approval controls</p></article><article><b>Exclude for now</b><p>{m.exclusions.join(" · ")}</p></article></div></>}
-function PricingView({report}:{report:ReportType}){const p=report.opportunity.pricing;
-// Parse pricing value dynamically if possible
-let parsedPrice = 79;
-const match = p.pricePoint.match(/\d+/);
-if (match) parsedPrice = Number(match[0]);
-const cards=[["Free / Trial","$0","One narrow proof run","Demonstrate the outcome before the buyer commits."],["Starter",p.pricePoint,"Core workflow limits","Anchors below the cost of recurring manual effort."],["Pro",`$${parsedPrice * 2}/mo`,"Automation and team access","For teams that repeat the job enough to justify deeper workflow."],["Agency / Studio",`$${parsedPrice * 4}/mo`,"Multi-client workspace","Supports a service-plus-software delivery model."]];return <><div className="pricing-strategy-cards">{cards.map(([name,price,limits,reason])=><article key={name}><span>{name}</span><b>{price}</b><small>{limits}</small><p>{reason}</p></article>)}</div><PricingCalculator starterPrice={parsedPrice} proPrice={parsedPrice*2} agencyPrice={parsedPrice*4}/><div className="revenue-path"><div><b>Path to $500 MRR</b><span>{Math.ceil(500/parsedPrice)} Starter customers at {p.pricePoint}</span></div><div><b>Path to $3,000 MRR</b><span>{Math.ceil(3000/(parsedPrice*2))} Pro customers at ${parsedPrice*2}/mo</span></div><p>These are pricing scenarios, not revenue projections.</p></div></>}
-function LaunchView({report}:{report:ReportType}){const l=report.opportunity.launch;return <div className="launch-plan"><div className="launch-columns"><article><p className="eyebrow">First 10 customers</p><b>{l.firstCustomerChannel}</b><ol>{l.firstTenStrategy.map((step,index)=><li key={step}><span>{index+1}</span>{step}</li>)}</ol></article><article><p className="eyebrow">First 100 users</p><b>Use concentrated distribution, not broad launch theatre.</b><ol>{(l.firstHundredStrategy??["Convert three paid pilots into specific workflow proof","Share practical teardown content in the same operator communities","Build a partner motion only after the first workflow repeats"]).map((step,index)=><li key={step}><span>{index+1}</span>{step}</li>)}</ol></article></div><ValidationExperiment steps={l.validationExperiment}/><div className="outreach-script"><b>Outreach script</b><p>"{l.outreachMessage}"</p><span><strong>Channels:</strong> {(l.launchChannels??[l.firstCustomerChannel]).join(" · ")}</span><span><strong>Success signal:</strong> {l.successMetric}</span><span><strong>Failure signal:</strong> Buyers acknowledge pain but will not commit to a paid test.</span></div></div>}
+import { VerdictBadge } from "@/components/opportunity/verdict-badge";
+import { ScoreBadge } from "@/components/scoring/score-badge";
+
+const tabs = ["Verdict", "Evidence", "Competitors", "Scoring", "MVP Blueprint", "Pricing", "Launch", "Action plan", "Risks", "Export"] as const;
+type Tab = typeof tabs[number];
+
+export function ValidationReport({ report, scorecard, publicMode = false }: { report: ReportType; scorecard?: ReportType["opportunity"]["scorecard"]; publicMode?: boolean }) {
+  const [tab, setTab] = useState<Tab>("Verdict");
+  const [toast, setToast] = useState("");
+  const o = useMemo(() => ({ ...report.opportunity, scorecard: scorecard ?? report.opportunity.scorecard }), [report, scorecard]);
+
+  const exportFile = (format: "md" | "json" | "csv" | "pdf") => {
+    const payload = { ...report, opportunity: o };
+    if (format === "pdf") {
+      window.print();
+      setToast("Print dialog opened for PDF export");
+      return;
+    }
+    if (format === "md") downloadExport(`${o.name}-report.md`, reportToMarkdown(payload), "text/markdown");
+    if (format === "json") downloadExport(`${o.name}-report.json`, JSON.stringify(payload, null, 2), "application/json");
+    if (format === "csv") downloadExport(`${o.name}-summary.csv`, reportToCsv(payload), "text/csv");
+    setToast(`${format.toUpperCase()} export prepared`);
+    setTimeout(() => setToast(""), 2200);
+  };
+
+  const verdictClass = o.scorecard.verdict.toLowerCase().replace(/\s+/g, "-");
+
+  return <div className={publicMode ? "validation-report public-report premium-report" : "validation-report premium-report"}>
+    {toast && <div className="report-toast" role="status">{toast}</div>}
+    
+    <header className="report-engine-hero">
+      <div>
+        <p className="eyebrow">{publicMode ? "Sample validation report" : "Validation report"} · {report.generatedAt}</p>
+        <h2>{o.name}</h2>
+        <p>{o.oneLiner}</p>
+        <div className="report-header-meta">
+          <span>{o.targetCustomer}</span>
+          <span>{o.market}</span>
+          <span>{o.pricing.model}</span>
+          <span>{o.mvp.buildComplexity} complexity</span>
+          <span>{o.mvp.buildEstimate} to validation</span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+          <ScoreBadge score={o.scorecard.total} size="lg" />
+          <div style={{ textAlign: 'left' }}>
+            <b style={{ fontSize: 28, fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{o.scorecard.total}</b>
+            <small style={{ display: 'block', fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>/100 SCORE</small>
+          </div>
+        </div>
+        <i className={`verdict-${verdictClass}`}>{o.scorecard.verdict}</i>
+      </div>
+    </header>
+
+    <div className="report-layout">
+      <aside className="verdict-sidebar">
+        <p className="eyebrow">Decision snapshot</p>
+        <div style={{ margin: "12px 0" }}>
+          <VerdictBadge verdict={o.scorecard.verdict} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: "18px 0 10px 0" }}>
+          <ScoreBadge score={o.scorecard.total} size="lg" />
+          <div>
+            <b style={{ fontSize: 16 }}>{o.scorecard.total}<small style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>/100</small></b>
+            <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)' }}>{o.scorecard.confidence}% confidence</p>
+          </div>
+        </div>
+        <div className="sidebar-metrics">
+          <Metric label="Report date" value={report.generatedAt}/>
+          <Metric label="Analysis type" value="Full Validation"/>
+          <Metric label="Sources analyzed" value={String(o.evidence.length)}/>
+          <Metric label="Evidence found" value={String(o.evidence.length)}/>
+          <Metric label="Competitors mapped" value={String(o.competitors.length)}/>
+        </div>
+        <hr/>
+        <span><ShieldCheck size={14}/> Sources cited</span>
+        <span><ListChecks size={14}/> Assumptions labelled</span>
+        <span><AlertTriangle size={14}/> Not a guarantee</span>
+        <div className="sidebar-export">
+          <button onClick={() => exportFile("md")}><FileText size={13}/>MD</button>
+          <button onClick={() => exportFile("pdf")}><FileSpreadsheet size={13}/>PDF</button>
+          <button onClick={() => exportFile("json")}><FileJson size={13}/>JSON</button>
+        </div>
+      </aside>
+
+      <div className="report-main">
+        <nav className="report-tabs">
+          {tabs.map(t => <button key={t} className={tab === t ? "active" : ""} onClick={() => setTab(t)}>{t}</button>)}
+        </nav>
+        <div className="report-tab-content">
+          {tab === "Verdict" && <Verdict report={report}/>}
+          {tab === "Evidence" && <EvidenceView report={report}/>}
+          {tab === "Competitors" && <CompetitorView report={report}/>}
+          {tab === "Scoring" && <ScoringView report={report} scorecard={o.scorecard}/>}
+          {tab === "MVP Blueprint" && <MvpView report={report}/>}
+          {tab === "Pricing" && <PricingView report={report}/>}
+          {tab === "Launch" && <LaunchView report={report}/>}
+          {tab === "Action plan" && <ChecklistView report={report}/>}
+          {tab === "Risks" && <RiskView report={report}/>}
+          {tab === "Export" && <ExportView onExport={exportFile}/>}
+        </div>
+        <FinalBlock report={report}/>
+      </div>
+    </div>
+  </div>;
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return <div><span>{label}</span><b>{value}</b></div>;
+}
+
+function Verdict({ report }: { report: ReportType }) {
+  const o = report.opportunity;
+  return <>
+    <div className="report-callout executive-summary">
+      <ListChecks size={20}/>
+      <div>
+        <p className="eyebrow">Executive summary</p>
+        <h3>{report.executiveSummary}</h3>
+        <p><b>Strongest signal:</b> {o.evidence[0]?.snippet}</p>
+        <p><b>Primary risk:</b> {o.risks[0]?.description}</p>
+        <p><b>Validate first:</b> {o.launch.successMetric}</p>
+      </div>
+    </div>
+    <div className="verdict-grid">
+      <article><span>Target buyer</span><b>{o.targetCustomer}</b></article>
+      <article><span>Core workflow pain</span><b>{o.corePain}</b></article>
+      <article><span>Current workaround</span><b>{o.evidence.find(e => e.signal === "Pain")?.snippet ?? "Requires direct buyer confirmation."}</b></article>
+    </div>
+  </>;
+}
+
+function EvidenceView({ report }: { report: ReportType }) {
+  return <div className="evidence-card-grid">
+    {report.opportunity.evidence.map((e, index) => <article key={e.id}>
+      <div>
+        <b>{e.sourceType}</b>
+        <span>{categoryFor(e.signal)}</span>
+      </div>
+      <h3>{e.title}</h3>
+      <p>&ldquo;{e.snippet}&rdquo;</p>
+      <div className="evidence-meta">
+        <span>{e.source}</span>
+        <span>{e.date}</span>
+        <span>{e.strength} confidence</span>
+        <span>{Math.max(58, 88 - index * 7)} relevance</span>
+      </div>
+      <footer>
+        <a href={e.url} target="_blank" rel="noreferrer">Source URL ↗</a>
+        <small>{e.url}</small>
+      </footer>
+    </article>)}
+  </div>;
+}
+
+function categoryFor(signal: string) {
+  return signal === "Pain" ? "User Complaint" : signal === "Pricing" ? "Competitive Pricing" : signal === "Risk" ? "Risk Factor" : "Market Signal";
+}
+
+function CompetitorView({ report }: { report: ReportType }) {
+  return <div className="competitor-table-wrap">
+    <table className="competitor-table">
+      <thead>
+        <tr>
+          <th>Competitor</th>
+          <th>Target customer</th>
+          <th>Pricing</th>
+          <th>Strength</th>
+          <th>Weakness</th>
+          <th>Exploitable gap</th>
+          <th>Threat level</th>
+        </tr>
+      </thead>
+      <tbody>
+        {report.opportunity.competitors.map((c, index) => <tr key={c.id}>
+          <td><b>{c.name}</b></td>
+          <td>{c.target}</td>
+          <td>{c.pricing}</td>
+          <td>{c.strength}</td>
+          <td>Broad workflow and implementation overhead</td>
+          <td>{c.gap}</td>
+          <td><span className={index === 0 ? "threat medium" : "threat low"}>{index === 0 ? "Medium" : "Low"}</span></td>
+        </tr>)}
+      </tbody>
+    </table>
+  </div>;
+}
+
+function ScoringView({ report, scorecard }: { report: ReportType; scorecard: ReportType["opportunity"]["scorecard"] }) {
+  const entries = Object.entries(scorecard.scores);
+  const ordered = [...entries].sort((a, b) => b[1] - a[1]);
+  return <>
+    <ScoreBreakdown scorecard={scorecard}/>
+    <section className="score-explanation">
+      <p className="eyebrow">Score analysis</p>
+      <p><b>Strongest drivers:</b> {ordered.slice(0, 3).map(([key]) => pretty(key)).join(", ")}. <b>Weakest drivers:</b> {ordered.slice(-3).map(([key]) => pretty(key)).join(", ")}.</p>
+      <p>The score reflects current evidence, not a forecast. Confidence would increase with direct buyer interviews, a paid pilot commitment, and a source-backed pricing comparison.</p>
+      <div>
+        <span>Active assumptions</span>
+        <small>Buyers will pay for a narrow workflow layer rather than accept the current workaround.</small>
+      </div>
+    </section>
+  </>;
+}
+
+function pretty(value: string) {
+  return value.replace(/([A-Z])/g, " $1").replace(/^./, x => x.toUpperCase());
+}
+
+function MvpView({ report }: { report: ReportType }) {
+  const m = report.opportunity.mvp;
+  return <>
+    <div className="mvp-timeline phased">
+      <article>
+        <span>Version 0 · Validate</span>
+        <b>Landing page and paid problem test</b>
+        <p>Interview the buyer, demonstrate the outcome, request a paid concierge commitment.</p>
+      </article>
+      <article>
+        <span>Version 1 · Core MVP</span>
+        <b>One focused outcome</b>
+        <p>{m.scope.join(" · ")}</p>
+      </article>
+      <article>
+        <span>Version 2 · Paid workflow</span>
+        <b>Prove the repeatable job</b>
+        <p>Automate the paid path only after the concierge workflow repeats consistently.</p>
+      </article>
+      <article>
+        <span>Version 3 · Retention</span>
+        <b>Earn the right to expand</b>
+        <p>Add retention features only after the core job demonstrates consistent usage.</p>
+      </article>
+    </div>
+    <div className="scope-groups">
+      <article>
+        <b>Must-have</b>
+        <p>{m.scope.slice(0, 2).join(" · ")}</p>
+      </article>
+      <article>
+        <b>Should-have</b>
+        <p>Simple export · manual approval controls</p>
+      </article>
+      <article>
+        <b>Exclude for now</b>
+        <p>{m.exclusions.join(" · ")}</p>
+      </article>
+    </div>
+  </>;
+}
+
+function PricingView({ report }: { report: ReportType }) {
+  const p = report.opportunity.pricing;
+  let parsedPrice = 79;
+  const match = p.pricePoint.match(/\d+/);
+  if (match) parsedPrice = Number(match[0]);
+  const cards = [
+    ["Free / Trial", "$0", "One narrow proof run", "Demonstrate the outcome before the buyer commits."],
+    ["Starter", p.pricePoint, "Core workflow limits", "Anchors below the cost of recurring manual effort."],
+    ["Pro", `$${parsedPrice * 2}/mo`, "Automation and team access", "For teams that repeat the job enough to justify deeper workflow."],
+    ["Agency / Studio", `$${parsedPrice * 4}/mo`, "Multi-client workspace", "Supports a service-plus-software delivery model."]
+  ];
+  return <>
+    <div className="pricing-strategy-cards">
+      {cards.map(([name, price, limits, reason]) => <article key={name}>
+        <span>{name}</span>
+        <b>{price}</b>
+        <small>{limits}</small>
+        <p>{reason}</p>
+      </article>)}
+    </div>
+    <PricingCalculator starterPrice={parsedPrice} proPrice={parsedPrice * 2} agencyPrice={parsedPrice * 4}/>
+    <div className="revenue-path">
+      <div><b>Path to $500 MRR</b><span>{Math.ceil(500 / parsedPrice)} Starter customers at {p.pricePoint}</span></div>
+      <div><b>Path to $3,000 MRR</b><span>{Math.ceil(3000 / (parsedPrice * 2))} Pro customers at ${parsedPrice * 2}/mo</span></div>
+      <p>These are pricing scenarios, not revenue projections.</p>
+    </div>
+  </>;
+}
+
+function LaunchView({ report }: { report: ReportType }) {
+  const l = report.opportunity.launch;
+  return <div className="launch-plan">
+    <div className="launch-columns">
+      <article>
+        <p className="eyebrow">First 10 customers</p>
+        <b>{l.firstCustomerChannel}</b>
+        <ol>{l.firstTenStrategy.map((step, index) => <li key={step}><span>{index + 1}</span>{step}</li>)}</ol>
+      </article>
+      <article>
+        <p className="eyebrow">First 100 users</p>
+        <b>Use concentrated distribution, not broad launch theatre.</b>
+        <ol>{(l.firstHundredStrategy ?? ["Convert three paid pilots into specific workflow proof", "Share practical teardown content in the same operator communities", "Build a partner motion only after the first workflow repeats"]).map((step, index) => <li key={step}><span>{index + 1}</span>{step}</li>)}</ol>
+      </article>
+    </div>
+    <ValidationExperiment steps={l.validationExperiment}/>
+    <div className="outreach-script">
+      <b>Outreach script</b>
+      <p>&ldquo;{l.outreachMessage}&rdquo;</p>
+      <span><strong>Channels:</strong> {(l.launchChannels ?? [l.firstCustomerChannel]).join(" · ")}</span>
+      <span><strong>Success signal:</strong> {l.successMetric}</span>
+      <span><strong>Failure signal:</strong> Buyers acknowledge pain but will not commit to a paid test.</span>
+    </div>
+  </div>;
+}
+
 function ChecklistView({ report }: { report: ReportType }) {
   const o = report.opportunity;
   const reportId = o.id;
@@ -86,45 +376,82 @@ function ChecklistView({ report }: { report: ReportType }) {
   const checkedItems = Object.values(checked).filter(Boolean).length;
   const progressPercent = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
 
-  return (
-    <div className="validation-checklist-tab">
-      <div className="checklist-progress-card">
-        <div>
-          <h4>Interactive Validation Checklist</h4>
-          <p>Treat this memo as an active project. Validate these assumptions before writing code.</p>
-        </div>
-        <div className="checklist-progress-bar-wrap">
-          <span>{checkedItems} / {totalItems} completed ({progressPercent}%)</span>
-          <div className="checklist-progress-track">
-            <div className="checklist-progress-fill" style={{ width: `${progressPercent}%` }} />
-          </div>
-        </div>
+  return <div className="validation-checklist-tab">
+    <div className="checklist-progress-card">
+      <div>
+        <h4>Interactive Validation Checklist</h4>
+        <p>Treat this report as an active project. Validate these assumptions before writing code.</p>
       </div>
-
-      <div className="checklist-sections">
-        {sections.map(sec => (
-          <section key={sec.title} className="checklist-section">
-            <h3>{sec.title}</h3>
-            <div className="checklist-items">
-              {sec.items.map(item => {
-                const isActive = checked[item.key];
-                return (
-                  <div key={item.key} className={`checklist-item-row ${isActive ? 'checked' : ''}`} onClick={() => toggle(item.key)}>
-                    <input type="checkbox" checked={!!isActive} onChange={() => {}} style={{ display: 'none' }} />
-                    <span className="checkbox-indicator">
-                      {isActive ? <CheckCircle2 size={16} /> : <Circle size={16} />}
-                    </span>
-                    <span className="item-text">{item.text}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        ))}
+      <div className="checklist-progress-bar-wrap">
+        <span>{checkedItems} / {totalItems} completed ({progressPercent}%)</span>
+        <div className="checklist-progress-track">
+          <div className="checklist-progress-fill" style={{ width: `${progressPercent}%` }} />
+        </div>
       </div>
     </div>
-  );
+
+    <div className="checklist-sections">
+      {sections.map(sec => <section key={sec.title} className="checklist-section">
+        <h3>{sec.title}</h3>
+        <div className="checklist-items">
+          {sec.items.map(item => {
+            const isActive = checked[item.key];
+            return <div key={item.key} className={`checklist-item-row ${isActive ? 'checked' : ''}`} onClick={() => toggle(item.key)}>
+              <input type="checkbox" checked={!!isActive} onChange={() => {}} style={{ display: 'none' }} />
+              <span className="checkbox-indicator">
+                {isActive ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+              </span>
+              <span className="item-text">{item.text}</span>
+            </div>;
+          })}
+        </div>
+      </section>)}
+    </div>
+  </div>;
 }
-function RiskView({report}:{report:ReportType}){const seeds=["Market","Build","Distribution","Compliance","Platform","Pricing","Retention"];return <div className="risk-heatmap detailed-risk">{seeds.map((name,index)=>{const existing=report.opportunity.risks[index%report.opportunity.risks.length];const severity=index<2?existing.severity:index===3?"Low":"Medium";return <article key={name} className={severity.toLowerCase()}><div><span>{name} risk</span><b>{severity} likelihood</b></div><h3>{index<2?existing.description:`${name} risk is an assumption to monitor as the initial workflow is tested.`}</h3><p><strong>Mitigation: </strong>{index<2?existing.mitigation:"Maintain narrow initial scope and record direct buyer evidence before expanding."}</p></article>})}</div>}
-function ExportView({onExport}:{onExport:(format:"md"|"json"|"csv"|"pdf")=>void}){return <div className="export-panel"><Download size={21}/><div><h3>Decision-ready exports</h3><p>Export the full memo, structured data, or a compact summary. PDF uses the browser print dialog.</p></div><button onClick={()=>onExport("md")}><FileText size={15}/>Markdown</button><button onClick={()=>onExport("pdf")}><FileSpreadsheet size={15}/>PDF</button><button onClick={()=>onExport("json")}><FileJson size={15}/>JSON</button><button onClick={()=>onExport("csv")}><FileSpreadsheet size={15}/>CSV</button></div>}
-function FinalBlock({report}:{report:ReportType}){const o=report.opportunity;return <section className="final-verdict-block"><p className="eyebrow">Final recommendation</p><h3>{o.scorecard.verdict}</h3><div><span><b>Next action: </b>{o.launch.successMetric}</span><span><b>Build first: </b>{o.mvp.scope[0]}</span><span><b>Do not build: </b>{o.mvp.exclusions[0]}</span><span><b>Prove before scaling: </b>Paid commitment from the defined target buyer.</span></div></section>}
+
+function RiskView({ report }: { report: ReportType }) {
+  const seeds = ["Market", "Build", "Distribution", "Compliance", "Platform", "Pricing", "Retention"];
+  return <div className="risk-heatmap detailed-risk">
+    {seeds.map((name, index) => {
+      const existing = report.opportunity.risks[index % report.opportunity.risks.length];
+      const severity = index < 2 ? existing.severity : index === 3 ? "Low" : "Medium";
+      return <article key={name} className={severity.toLowerCase()}>
+        <div>
+          <span>{name} risk</span>
+          <b>{severity} likelihood</b>
+        </div>
+        <h3>{index < 2 ? existing.description : `${name} risk is an assumption to monitor as the initial workflow is tested.`}</h3>
+        <p><strong>Mitigation: </strong>{index < 2 ? existing.mitigation : "Maintain narrow initial scope and record direct buyer evidence before expanding."}</p>
+      </article>;
+    })}
+  </div>;
+}
+
+function ExportView({ onExport }: { onExport: (format: "md" | "json" | "csv" | "pdf") => void }) {
+  return <div className="export-panel">
+    <Download size={21}/>
+    <div>
+      <h3>Decision-ready exports</h3>
+      <p>Export the full validation report, structured data, or a summary CSV.</p>
+    </div>
+    <button onClick={() => onExport("md")}><FileText size={15}/>Markdown</button>
+    <button onClick={() => onExport("pdf")}><FileSpreadsheet size={15}/>PDF</button>
+    <button onClick={() => onExport("json")}><FileJson size={15}/>JSON</button>
+    <button onClick={() => onExport("csv")}><FileSpreadsheet size={15}/>CSV</button>
+  </div>;
+}
+
+function FinalBlock({ report }: { report: ReportType }) {
+  const o = report.opportunity;
+  return <section className="final-verdict-block">
+    <p className="eyebrow">Final recommendation</p>
+    <h3>{o.scorecard.verdict}</h3>
+    <div>
+      <span><b>Next action: </b>{o.launch.successMetric}</span>
+      <span><b>Build first: </b>{o.mvp.scope[0]}</span>
+      <span><b>Do not build: </b>{o.mvp.exclusions[0]}</span>
+      <span><b>Prove before scaling: </b>Paid commitment from the defined target buyer.</span>
+    </div>
+  </section>;
+}

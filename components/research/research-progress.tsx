@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { Check, Database, LoaderCircle, Search, ShieldCheck, Swords, Target, Users } from "lucide-react";
 import { ResearchStage } from "@/lib/research/types";
 import { productCopy } from "@/lib/copy";
-const stages:Array<{key:ResearchStage;label:string;detail:string;icon:typeof Target}>=[{key:"generating_queries",label:"Frame the research",detail:"Converting your brief into structured market queries.",icon:Target},{key:"searching_web",label:"Scan market signals",detail:"Searching public source categories and competitive intelligence.",icon:Search},{key:"extracting_sources",label:"Extract source context",detail:"Isolating relevant text, dates, and source classifications.",icon:Swords},{key:"filtering_evidence",label:"Filter evidence",detail:"Removing duplicates and low-confidence signals.",icon:ShieldCheck},{key:"analyzing",label:"Map the opportunity",detail:"Connecting pain signals, competitive gaps, pricing, and risks.",icon:Database},{key:"scoring",label:"Apply decision model",detail:"Weighting strengths and inverting risk factors.",icon:ShieldCheck},{key:"generating_report",label:"Assemble the memo",detail:"Producing a structured decision document.",icon:Users}];
-export function ResearchProgress({id,idea="the opportunity"}:{id:string;idea?:string}){
+const stages:Array<{key:ResearchStage;label:string;detail:string;icon:typeof Target}>=[{key:"generating_queries",label:"Understanding your idea",detail:"Parsing your brief into structured market queries.",icon:Target},{key:"searching_web",label:"Scanning Reddit, G2, Product Hunt…",detail:"Searching 10+ source categories for real market signals.",icon:Search},{key:"extracting_sources",label:"Reading buyer conversations",detail:"Extracting relevant pain signals, pricing data, and complaints.",icon:Swords},{key:"filtering_evidence",label:"Filtering noise from signal",detail:"Removing duplicates and low-confidence data points.",icon:ShieldCheck},{key:"analyzing",label:"Mapping competition & pricing",detail:"Connecting pain signals, competitive gaps, and price points.",icon:Database},{key:"scoring",label:"Scoring the opportunity",detail:"Weighting 8 criteria against your constraints.",icon:ShieldCheck},{key:"generating_report",label:"Writing your report",detail:"Assembling the verdict, evidence, and next steps.",icon:Users}];
+export function ResearchProgress({id,idea="your idea"}:{id:string;idea?:string}){
   const router=useRouter();
   const [state,setState]=useState({stage:"queued" as ResearchStage,progress:0,message:"Queued for analysis",evidenceCount:0,sourceCount:0,competitorCount:0,reportReady:false});
   const [logs, setLogs] = useState<Array<{ time: string; text: string }>>([]);
@@ -41,7 +41,7 @@ export function ResearchProgress({id,idea="the opportunity"}:{id:string;idea?:st
 
   return <div className="progress-page premium-progress">
     <div className="progress-orbit"><LoaderCircle size={28}/></div>
-    <p className="eyebrow">RESEARCH IN PROGRESS</p>
+    <p className="eyebrow">VALIDATING YOUR IDEA</p>
     <h1>Analyzing <em>{idea}</em></h1>
     <p>{state.message}. {productCopy.microcopy.loading}</p>
     
@@ -50,10 +50,10 @@ export function ResearchProgress({id,idea="the opportunity"}:{id:string;idea?:st
     </div>
     
     <div className="progress-live-metrics">
-      <span><b>{state.sourceCount}</b> sources</span>
-      <span><b>{state.evidenceCount}</b> evidence items</span>
-      <span><b>{state.competitorCount}</b> competitors</span>
-      <span className="current-stage"><b>Active</b> {state.stage.replaceAll("_"," ")}</span>
+      <span><b>{state.sourceCount}</b> sources scanned</span>
+      <span><b>{state.evidenceCount}</b> evidence found</span>
+      <span><b>{state.competitorCount}</b> competitors mapped</span>
+      <span className="current-stage"><b>Now:</b> {state.stage.replaceAll("_"," ")}</span>
     </div>
     
     <div className="progress-list">
@@ -63,7 +63,7 @@ export function ResearchProgress({id,idea="the opportunity"}:{id:string;idea?:st
           <b>{label}</b>
           <small>{detail}</small>
         </div>
-        <i>{i<active?"Complete":i===active?"In progress":"Queued"}</i>
+        <i>{i<active?"Done":i===active?"Running":"Pending"}</i>
       </div>)}
     </div>
 
@@ -72,7 +72,7 @@ export function ResearchProgress({id,idea="the opportunity"}:{id:string;idea?:st
         <span className="dot red"/>
         <span className="dot yellow"/>
         <span className="dot green"/>
-        <span className="terminal-title">LIVE AGENT ENGINE LOGS</span>
+        <span className="terminal-title">RESEARCH LOG</span>
       </div>
       <div className="terminal-body">
         {logs.map((log, i) => (
@@ -92,4 +92,3 @@ export function ResearchProgress({id,idea="the opportunity"}:{id:string;idea?:st
     {state.stage==="failed"&&<p className="progress-error">{productCopy.microcopy.error} {state.message}</p>}
   </div>;
 }
-

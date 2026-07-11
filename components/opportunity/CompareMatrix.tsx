@@ -5,7 +5,6 @@ import { ValidationReport } from "@/lib/report-schema";
 
 export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }) {
   const [selected, setSelected] = useState<string[]>(() => {
-    // Select first 3 reports by default
     return allReports.slice(0, 3).map(r => r.opportunity.id);
   });
 
@@ -18,8 +17,8 @@ export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }
 
   return <section className="compare-engine">
     <div className="compare-library-note">
-      <b>Opportunity decision deck</b>
-      <span>Compare dynamic investigations alongside standard framework benchmarks.</span>
+      <b>Compare your ideas side by side</b>
+      <span>Select up to 4 ideas to compare against the same scoring criteria.</span>
     </div>
     
     <div className="compare-picker">
@@ -35,7 +34,7 @@ export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }
       <table className="engine-matrix expanded-matrix">
         <thead>
           <tr>
-            <th>Decision factor</th>
+            <th>Criteria</th>
             {reports.map(r => <th key={r.opportunity.id}>
               <b>{r.opportunity.name}</b>
               <small>{r.opportunity.targetCustomer}</small>
@@ -46,12 +45,12 @@ export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }
           </tr>
         </thead>
         <tbody>
-          <Row label="Final score" reports={reports} value={r => `${r.opportunity.scorecard.total} / 100`} />
+          <Row label="Overall score" reports={reports} value={r => `${r.opportunity.scorecard.total} / 100`} />
           <Row label="Verdict" reports={reports} value={r => r.opportunity.scorecard.verdict} />
-          <Row label="Pain severity" reports={reports} value={r => metric("painSeverity")(r)} />
+          <Row label="Buyer pain severity" reports={reports} value={r => metric("painSeverity")(r)} />
           <Row label="Willingness to pay" reports={reports} value={r => metric("willingnessToPay")(r)} />
           <Row label="Build complexity" reports={reports} value={r => r.opportunity.mvp.buildComplexity} />
-          <Row label="Distribution ease" reports={reports} value={r => metric("distributionClarity")(r)} />
+          <Row label="Distribution clarity" reports={reports} value={r => metric("distributionClarity")(r)} />
           <Row label="Retention potential" reports={reports} value={r => metric("retentionPotential")(r)} />
           <Row label="Platform risk" reports={reports} value={r => `${metric("platformDependencyRisk")(r)} risk`} />
           <Row label="Regulatory risk" reports={reports} value={r => `${metric("regulatoryRisk")(r)} risk`} />
@@ -60,7 +59,7 @@ export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }
             let val = 79;
             const match = p.pricePoint.match(/\d+/);
             if (match) val = Number(match[0]);
-            return `${Math.ceil(500/val)} Starter customers`;
+            return `${Math.ceil(500/val)} customers`;
           }} />
           <Row label="Path to $3,000 MRR" reports={reports} value={r => {
             const p = r.opportunity.pricing;
@@ -69,7 +68,7 @@ export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }
             if (match) val = Number(match[0]);
             return `${Math.ceil(3000/(val*2))} Pro customers`;
           }} />
-          <Row label="First validation experiment" reports={reports} value={r => r.opportunity.launch.validationExperiment?.[0] ?? r.opportunity.launch.successMetric} />
+          <Row label="First validation step" reports={reports} value={r => r.opportunity.launch.validationExperiment?.[0] ?? r.opportunity.launch.successMetric} />
         </tbody>
       </table>
     </div>
@@ -82,4 +81,3 @@ function Row({ label, reports, value }: { label: string; reports: ValidationRepo
     {reports.map(r => <td key={r.opportunity.id}>{value(r)}</td>)}
   </tr>;
 }
-
