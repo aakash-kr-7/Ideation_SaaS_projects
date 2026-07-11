@@ -1,6 +1,6 @@
-# BuildSignal
+# SignalFit
 
-BuildSignal is an evidence-backed opportunity validation workspace for startup, micro-SaaS, app, and tool ideas.
+SignalFit is an evidence-backed opportunity validation workspace for startup, micro-SaaS, app, and tool ideas.
 
 It helps builders decide what to build, what to validate, what to narrow, and what to stop before spending weeks writing production code. A research run turns an idea brief into a structured report with public-signal evidence, competitor teardown, weighted scoring, MVP scope, pricing hypotheses, risks, and a first-customer plan.
 
@@ -17,7 +17,7 @@ It helps builders decide what to build, what to validate, what to narrow, and wh
 
 ## Trust model
 
-BuildSignal is deliberately source-aware:
+SignalFit is deliberately source-aware:
 
 - Sources and evidence context are displayed in reports.
 - Inferences and assumptions are separated from verified evidence.
@@ -87,7 +87,7 @@ npm run build
 npm run start
 ```
 
-`npm run start` automatically chooses the first available port from `3000` to `3019`, so an existing local server will not prevent BuildSignal from launching. It prints the exact local URL when it starts.
+`npm run start` automatically chooses the first available port from `3000` to `3019`, so an existing local server will not prevent SignalFit from launching. It prints the exact local URL when it starts.
 
 To request a specific starting port, use either command:
 
