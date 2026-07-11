@@ -1,75 +1,121 @@
-# Signalstack
+# BuildSignal
 
-Signalstack is a revenue-first idea validation tool for solo founders.
+BuildSignal is an evidence-backed opportunity validation workspace for startup, micro-SaaS, app, and tool ideas.
 
-Bring a small SaaS, service, B2B, or B2C idea into one focused workspace. Define the buyer and problem, score the opportunity against the criteria you care about, then use the built-in revenue math and seven-day plan to validate it with real people.
+It helps builders decide what to build, what to validate, what to narrow, and what to stop before spending weeks writing production code. A research run turns an idea brief into a structured report with public-signal evidence, competitor teardown, weighted scoring, MVP scope, pricing hypotheses, risks, and a first-customer plan.
 
-The product is optimized around two practical milestones:
+## What is included
 
-- **₹30,000/month** — first proof that customers will pay.
-- **₹1,00,000/month** — a repeatable small-business revenue target.
+- Premium landing, dashboard, report, comparison, pricing, settings, and sample-library experiences.
+- A 12-factor opportunity score with adjustable weights and inverted platform/regulatory risk factors.
+- Explainable verdicts: `Build Now`, `Validate First`, `Niche Down`, `Weak Signal`, and `Avoid`.
+- Five clearly labelled sample reports for exploring the framework.
+- Interactive pricing calculator, validation experiment checklist, MRR scenarios, and idea comparison matrix.
+- Markdown, JSON, CSV, and browser-print PDF export flows.
+- Mock-first research pipeline and API routes that work without external API keys.
+- Zod report schemas and a Supabase-ready SQL schema.
 
-## What it helps you do
+## Trust model
 
-- Frame an idea around a narrow customer, painful workflow, and simple promise.
-- Score seven core signals: pain intensity, purchase urgency, willingness to pay, reachability, MVP speed, retention, and founder edge.
-- Change both scores and **weights** to match your own decision-making criteria.
-- See a live opportunity score and the strongest signal or assumption to test first.
-- Calculate exactly how many customers are needed to reach ₹30k or ₹1L per month at your chosen price.
-- Generate and copy a concise seven-day validation plan.
-- Save the current workspace locally in the browser.
-- Explore three optional starting patterns from finance, operations, and construction/property—without filling the product with distracting example ideas.
+BuildSignal is deliberately source-aware:
 
-## Tech stack
+- Sources and evidence context are displayed in reports.
+- Inferences and assumptions are separated from verified evidence.
+- Scores are explainable and their weights are adjustable.
+- Mock data is labelled as sample data.
+- Reports reduce uncertainty; they do not guarantee market success.
 
-- React 18 + TypeScript
-- Vite
-- CSS with Tailwind available for utilities
-- Lucide React icons
+## Research pipeline
+
+1. Receive an idea brief with buyer, market, region, and research depth.
+2. Generate competitor, complaint, pricing, workaround, community, and review queries.
+3. Search through a provider abstraction.
+4. Extract source context through an extractor abstraction.
+5. Deduplicate and classify evidence.
+6. Produce a structured analysis and weighted opportunity report.
+7. Surface live progress, source count, evidence count, and report completion in the UI.
+
+The repository currently uses mock search, extraction, and structured-analysis providers. These make the product usable locally without keys and explicitly label mock signals. The provider interfaces are designed to be replaced with real Tavily, Serper, Brave, Firecrawl, Jina, OpenAI, Gemini, or Anthropic integrations.
+
+## API routes
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/research/start` | Create and start a research run. |
+| `GET` | `/api/research/:id` | Retrieve a research run and report. |
+| `GET` | `/api/research/:id/progress` | Retrieve live stage, counts, and completion state. |
+| `POST` | `/api/research/:id/export` | Export a completed report as Markdown, JSON, or CSV. |
+| `POST` | `/api/research/compare` | Compare up to four completed reports. |
 
 ## Run locally
 
 ### Prerequisites
 
-Install [Node.js](https://nodejs.org/) 18 or newer.
+- Node.js 18 or later
 
-### Install dependencies
-
-From the project directory:
+### Install
 
 ```bash
 npm install
 ```
 
-### Start the development server
+### Start development
 
 ```bash
 npm run dev
 ```
 
-Vite will print a local URL—normally [http://localhost:5173](http://localhost:5173). Open it in your browser. Changes to the source update automatically.
+Open [http://localhost:3000](http://localhost:3000).
 
-> On Windows systems where PowerShell blocks `npm.ps1`, use `npm.cmd run dev` instead.
+> On Windows systems where PowerShell blocks `npm.ps1`, use `npm.cmd run dev`.
 
-### Build for production
+### Production build
 
 ```bash
 npm run build
 ```
 
-This type-checks the app and writes the production-ready static site to `dist/`.
-
-### Preview the production build
+### Start the production server
 
 ```bash
-npm run preview
+npm run start
 ```
 
 ## Project structure
 
 ```text
-src/
-  App.tsx      # Product UI, scoring, revenue math, and local workspace state
-  index.css    # Responsive visual system and layout
-  main.tsx     # React entry point
+app/
+  api/research/        # Research pipeline route handlers
+  dashboard/           # Command center and scoring workspace
+  research/            # New run, live progress, and report routes
+  sample-report/       # Public sample report
+  sample-reports/      # Sample report library
+components/
+  dashboard/           # Command-center components
+  landing/             # Conversion-focused landing page
+  opportunity/         # Idea comparison components
+  report/              # Validation report, calculator, experiments, exports
+  research/            # Research form and progress timeline
+  scoring/             # Weight editor and score breakdown
+  ui/                  # Reusable buttons, cards, and badges
+lib/
+  copy.ts              # Shared product and microcopy
+  scoring.ts           # 12-factor scoring model and verdict logic
+  report-schema.ts     # Zod schemas and report contracts
+  report-mocks.ts      # Clearly labelled sample report data
+  research/            # Provider abstractions, pipeline, evidence, store
+supabase/
+  schema.sql           # Supabase-ready persistence schema
 ```
+
+## Sample data
+
+The sample library includes illustrative reports for:
+
+- Recruiter Resume Reformatting Engine
+- Visa Document Compiler
+- Stripe Failed Payment Recovery Tool
+- Designer Approval Portal
+- GEO Audit Suite
+
+They demonstrate report depth and interaction patterns. They are not customer reports, endorsements, or verified market claims.

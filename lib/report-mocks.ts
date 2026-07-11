@@ -14,3 +14,16 @@ export const validationReports: ValidationReport[] = [
  report("approval","Designer Approval Portal","A client approval workspace for designers that makes feedback, versioning, and sign-off less chaotic.","Independent designers and boutique creative studios","losing time to scattered client feedback and ambiguous approvals","Agency Tool",{painSeverity:64,purchaseUrgency:55,willingnessToPay:53,buyerReachability:86,mvpSpeed:88,competitionGap:42,retentionPotential:64,platformDependencyRisk:18,regulatoryRisk:8,founderFit:80,distributionClarity:84,speedToFirstRevenue:89},"$29/mo","$99 early-access annual plan","Low","Low"),
  report("geo","GEO Audit Suite","Measures whether a brand is visible, accurate, and cited in generative search answers.","Growth leaders at content-led B2B SaaS companies","not knowing how their brand appears in AI-generated discovery journeys","B2B",{painSeverity:71,purchaseUrgency:70,willingnessToPay:74,buyerReachability:67,mvpSpeed:68,competitionGap:66,retentionPotential:76,platformDependencyRisk:69,regulatoryRisk:15,founderFit:72,distributionClarity:63,speedToFirstRevenue:71},"$199/mo","$600 one-time visibility baseline","Medium","Medium")
 ];
+
+// Rich sample-only product context. These are illustrative workflows, not customer reports or verified market proof.
+validationReports.forEach(report => {
+  const opportunity = report.opportunity;
+  opportunity.currentWorkaround = "A shared spreadsheet, inbox threads, and manual reminders that make the workflow hard to see and harder to improve.";
+  opportunity.whyUsersPay = "The buyer already absorbs this cost through operator time, missed follow-up, or adjacent workflow tools. A paid pilot should prove a measurable reduction before broader automation.";
+  opportunity.launch.firstHundredStrategy = ["Turn the first paid pilots into specific before-and-after workflow proof", "Publish practical teardown content where the same operator community already learns", "Add referral or partner distribution only after the core job repeats"];
+  opportunity.launch.launchChannels = ["Direct operator outreach", "Niche founder communities", "Workflow teardown content"];
+  opportunity.launch.validationExperiment = ["Publish a one-outcome landing page", "Build a 40-prospect list", "Send a 30-message outreach campaign", "Run five workflow interviews", "Ask qualified buyers for a paid pilot", "Stop if no qualified buyer will pay"];
+  opportunity.technicalStack = ["Next.js", "Supabase / Postgres", "Queue worker", "Transactional email"];
+  opportunity.apiDependencies = ["Search provider", "Page extraction provider", "LLM structured-output provider"];
+  opportunity.notToBuildFirst = ["System-of-record replacement", "Complex workflow automation builder", "Enterprise-only integrations"];
+});
