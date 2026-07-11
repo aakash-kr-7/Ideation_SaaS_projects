@@ -1,0 +1,1 @@
+export default function Loading(){return <main className="report-loading" aria-label="Loading research report"><div className="skeleton hero-skeleton"/><div className="skeleton nav-skeleton"/><div className="skeleton card-skeleton"/><div className="skeleton card-skeleton"/></main>}
