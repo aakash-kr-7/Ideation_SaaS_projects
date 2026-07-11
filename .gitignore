@@ -18,6 +18,8 @@ jspm_packages/
 # Build outputs
 dist/
 dist-ssr/
+.next/
+out/
 *.local
 
 # Editor directories and files
