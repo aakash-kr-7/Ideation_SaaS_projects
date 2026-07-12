@@ -117,3 +117,31 @@ SignalFit includes five pre-built validation reports illustrating different oppo
 5. **GEO Audit Suite** (Validate First - Score: 71)
 
 *These samples are designed to demonstrate the structure, depth, and presentation capability of a SignalFit document. They are not actual customer records.*
+
+---
+
+## Supabase Authentication Setup
+
+To run authentication in development or production, complete the following setup steps in your Supabase Console:
+
+### 1. Enable Google OAuth Provider
+1. Navigate to the **Supabase Console** > **Authentication** > **Providers** > **Google**.
+2. Toggle **Enable Google Provider** to active.
+3. Input your **Google Client ID** and **Google Client Secret** (obtained from the [Google Cloud Console](https://console.cloud.google.com/apis/credentials)).
+4. Copy the **Redirect URL** displayed by Supabase (e.g. `https://<your-project-id>.supabase.co/auth/v1/callback`).
+
+### 2. Configure Google Cloud Console
+1. Navigate to your Google Cloud Project > **APIs & Services** > **Credentials**.
+2. Select or create your **OAuth 2.0 Client ID** credential.
+3. Paste the Redirect URL copied from Supabase into the **Authorized redirect URIs** list.
+4. Save the configuration.
+
+### 3. URL Configurations in Supabase
+1. Navigate to **Authentication** > **URL Configuration** inside your Supabase Console.
+2. Set the **Site URL** to:
+   - Local Development: `http://localhost:3000`
+   - Production: `https://yourdomain.com`
+3. Add the wildcard callback patterns in **Redirect Wildcards**:
+   - Local Development: `http://localhost:3000/**`
+   - Production: `https://yourdomain.com/**`
+

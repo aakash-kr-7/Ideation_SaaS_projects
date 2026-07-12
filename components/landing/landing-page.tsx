@@ -8,7 +8,7 @@ const marqueeSignals = [...signals, ...signals];
 
 export function LandingPage() {
   return <div className="bs-modern">
-    <header className="bs-nav"><Brand/><nav><a href="#how">How it works</a><a href="#report">Sample report</a><a href="#pricing">Pricing</a></nav><div><Link href="/auth">Sign in</Link><Link className="bs-btn bs-btn-bright" href="/research/new">Validate your idea <ArrowRight size={15}/></Link></div></header>
+    <header className="bs-nav"><Brand/><nav><a href="#how">How it works</a><a href="#report">Sample report</a><a href="#pricing">Pricing</a></nav><div><Link href="/sign-in">Sign in</Link><Link className="bs-btn bs-btn-bright" href="/research/new">Validate your idea <ArrowRight size={15}/></Link></div></header>
     <main>
       {/* ── HERO ── */}
       <section className="bs-hero">
