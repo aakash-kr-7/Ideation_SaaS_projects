@@ -8,7 +8,7 @@ const marqueeSignals = [...signals, ...signals];
 
 export function LandingPage() {
   return <div className="bs-modern">
-    <header className="bs-nav"><Brand/><nav><a href="#how">How it works</a><a href="#report">Sample report</a><a href="#pricing">Pricing</a></nav><div><Link href="/sign-in">Sign in</Link><Link className="bs-btn bs-btn-bright" href="/research/new">Validate your idea <ArrowRight size={15}/></Link></div></header>
+    <header className="bs-nav"><Brand/><nav><a href="#how">How it works</a><a href="#report">Sample report</a><a href="#pricing">Pricing</a></nav><div><Link href="/sign-in">Sign in</Link><Link className="bs-btn bs-btn-bright" href="/sign-in">Get started <ArrowRight size={15}/></Link></div></header>
     <main>
       {/* ── HERO ── */}
       <section className="bs-hero">
@@ -17,7 +17,7 @@ export function LandingPage() {
           <h1>Stop building products<br/>nobody <span>wants.</span></h1>
           <p>Describe your idea. Get a market-backed verdict — Build Now, Validate First, Niche Down, or Avoid — with buyer pain, competition, pricing, risks, and a first-customer plan.</p>
           <div className="bs-actions">
-            <Link className="bs-btn bs-btn-bright" href="/research/new">Validate your idea <ArrowRight size={16}/></Link>
+            <Link className="bs-btn bs-btn-bright" href="/sign-in">Validate your idea — free <ArrowRight size={16}/></Link>
             <Link className="bs-link" href="/sample-report">See a sample report <ChevronRight size={15}/></Link>
           </div>
           <small><ShieldCheck size={14}/> Real market signals · Every source cited · No fake data</small>
@@ -109,7 +109,7 @@ export function LandingPage() {
       <section className="bs-final">
         <p className="bs-kicker">Ready to validate?</p>
         <h2>Your next idea deserves<br/>better than a guess.</h2>
-        <Link className="bs-btn bs-btn-bright" href="/research/new">Validate your first idea — free <ArrowRight size={16}/></Link>
+        <Link className="bs-btn bs-btn-bright" href="/sign-in">Validate your first idea — free <ArrowRight size={16}/></Link>
       </section>
     </main>
     <footer><Brand/><span>SignalFit · Know what to build before you build it.</span></footer>

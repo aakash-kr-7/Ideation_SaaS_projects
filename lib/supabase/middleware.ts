@@ -33,15 +33,18 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname
 
-  // Public paths
+  // Public paths — no auth required
   const isPublicPath =
     path === "/" ||
     path === "/sign-in" ||
     path === "/sample-report" ||
+    path === "/pricing" ||
+    path.startsWith("/auth/") ||
     path.startsWith("/api/auth") ||
     path.startsWith("/_next") ||
     path.includes("/favicon.ico")
 
+  // Redirect unauthenticated users to sign-in
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone()
     url.pathname = "/sign-in"
@@ -49,10 +52,33 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Redirect authenticated users away from sign-in
   if (user && path === "/sign-in") {
     const url = request.nextUrl.clone()
     url.pathname = "/dashboard"
     return NextResponse.redirect(url)
+  }
+
+  // Check onboarding status for authenticated users on protected pages
+  // (not on onboarding page itself, auth pages, or API routes)
+  if (user && !isPublicPath && path !== "/onboarding" && !path.startsWith("/api/")) {
+    try {
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("onboarding_completed")
+        .eq("id", user.id)
+        .single()
+
+      // If no profile or onboarding not completed, redirect to onboarding
+      if (!profile || !profile.onboarding_completed) {
+        const url = request.nextUrl.clone()
+        url.pathname = "/onboarding"
+        return NextResponse.redirect(url)
+      }
+    } catch {
+      // If the table doesn't exist yet or any error, allow through
+      // This prevents breaking the app before migrations run
+    }
   }
 
   return supabaseResponse
