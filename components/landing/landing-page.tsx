@@ -1,10 +1,22 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, CheckCircle2, ChevronRight, FileSearch, Gauge, Radar, Shield, ShieldCheck, Target, TrendingUp, Users, Zap, AlertTriangle, DollarSign, Rocket, BarChart3 } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
 
-const signals = ["Reddit", "Product Hunt", "G2", "Capterra", "Chrome Web Store", "Hacker News", "App Reviews", "Competitor Pricing", "Founder Communities", "Search Trends"];
+const signals = [
+  { name: "Reddit", logoPath: "/logos/reddit.svg" },
+  { name: "Product Hunt", logoPath: "/logos/producthunt.svg" },
+  { name: "G2", logoPath: "/logos/g2.svg" },
+  { name: "Capterra", logoPath: "/logos/capterra.svg" },
+  { name: "GitHub", logoPath: "/logos/github.svg" },
+  { name: "Hacker News", logoPath: "/logos/hackernews.svg" },
+  { name: "Google Trends", logoPath: "/logos/googletrends.svg" },
+  { name: "YouTube", logoPath: "/logos/youtube.svg" },
+  { name: "LinkedIn", logoPath: "/logos/linkedin.svg" },
+  { name: "X", logoPath: "/logos/x.svg" },
+];
 // Duplicate for seamless marquee loop
-const marqueeSignals = [...signals, ...signals];
+const marqueeSignals = [...signals, ...signals, ...signals];
 
 export function LandingPage() {
   return <div className="bs-modern">
@@ -26,9 +38,21 @@ export function LandingPage() {
       </section>
 
       {/* ── SIGNAL STRIP ── */}
+      <div className="bs-signal-strip-label">Research incorporates signals from trusted public platforms</div>
       <section className="bs-signal-strip">
-        <span>Market signals analyzed from</span>
-        <div>{marqueeSignals.map((signal, i) => <b key={`${signal}-${i}`}>{signal}</b>)}</div>
+        <div>
+          {marqueeSignals.map((signal, i) => (
+            <b key={`${signal.name}-${i}`}>
+              <Image 
+                src={signal.logoPath} 
+                alt={`${signal.name} logo`} 
+                width={28} 
+                height={28}
+              />
+              {signal.name}
+            </b>
+          ))}
+        </div>
       </section>
 
       {/* ── WHAT YOU GET ── */}

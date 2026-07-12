@@ -285,31 +285,51 @@ button { cursor: pointer; }
 .bs-dashboard-panel.score small { text-align: center; color: rgba(255,255,255,.7); }
 
 /* ─── SIGNAL STRIP (Marquee) ─── */
+.bs-signal-strip-label {
+  display: block; text-align: center;
+  margin-top: 60px; margin-bottom: 16px;
+  color: var(--text-secondary); font-family: var(--display); font-size: 14px;
+  font-weight: 500; letter-spacing: -0.01em;
+}
 .bs-signal-strip {
   position: relative; overflow: hidden;
-  padding: 18px max(28px, calc((100vw - 1200px)/2));
-  border-block: 1px solid var(--border); background: var(--bg-surface);
-}
-.bs-signal-strip > span {
-  display: block; margin-bottom: 12px;
-  color: var(--text-tertiary); font-family: var(--mono); font-size: 10px;
-  font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 16px 0;
+  border-block: 1px solid var(--border);
+  background: var(--bg-surface);
+  mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
 }
 .bs-signal-strip > div {
   display: flex; gap: 0; width: max-content;
-  animation: marquee 35s linear infinite;
+  align-items: center;
+  animation: marquee 40s linear infinite;
+  height: 48px;
 }
-.bs-signal-strip:hover > div { animation-play-state: paused; }
 .bs-signal-strip b {
-  flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
-  padding: 8px 20px; margin-right: 12px;
-  border: 1px solid var(--border-strong); border-radius: var(--radius);
-  background: var(--bg-elevated);
-  color: var(--text-secondary); font-family: var(--sans); font-size: 12px; font-weight: 500;
-  white-space: nowrap; transition: border-color .2s;
+  flex: 0 0 auto; display: flex; align-items: center; gap: 16px;
+  padding: 0; margin-right: 64px;
+  border: none; border-radius: 0;
+  background: transparent;
+  color: var(--text-secondary); font-family: var(--sans); font-size: 18px; font-weight: 500;
+  white-space: nowrap;
+  opacity: 0.65;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.bs-signal-strip b:hover { border-color: var(--accent); color: var(--text-primary); }
-.bs-signal-strip b svg { color: var(--text-tertiary); flex: 0 0 auto; }
+.bs-signal-strip b:hover {
+  opacity: 1;
+  transform: scale(1.04);
+  color: var(--text-primary);
+}
+.bs-signal-strip b img {
+  width: 28px;
+  height: 28px;
+  filter: grayscale(100%) opacity(0.9);
+  transition: filter 0.3s ease;
+  flex: 0 0 auto;
+}
+.bs-signal-strip b:hover img {
+  filter: grayscale(0%) opacity(1);
+}
 
 /* Proof / Method section */
 .bs-proof, .bs-value { padding: 100px max(28px, calc((100vw - 1200px)/2)); }
