@@ -1206,10 +1206,38 @@ td small { margin-top: 3px; color: var(--text-tertiary); font-size: 10px; line-h
 }
 .auth-card h1, .tour-shell h1 { font-family: var(--display); font-size: 30px; font-weight: 700; letter-spacing: -0.03em; margin: 12px 0; }
 .auth-card p:not(.eyebrow), .tour-copy { color: var(--text-secondary); line-height: 1.6; font-size: 14px; }
-.oauth, .email { width: 100%; padding: 12px; font-weight: 600; border-radius: var(--radius); }
-.oauth { border: 1px solid var(--accent); background: var(--accent); color: #fff; }
-.oauth:hover { background: var(--accent-hover); }
-.email {
+.oauth, .email {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: var(--radius);
+  transition: all .2s ease;
+  outline: none;
+}
+.oauth {
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+.oauth:hover {
+  border-color: var(--text-tertiary);
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.oauth:active {
+  transform: translateY(0);
+}
+.oauth:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}.email {
   margin-top: 8px; border: 1px solid var(--border-strong);
   background: transparent; color: var(--text-primary);
 }

@@ -46,7 +46,12 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
   const [menuOpen, setMenuOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close menu on outside click
   useEffect(() => {
@@ -54,7 +59,7 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
       }
-    };
+    }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
@@ -123,23 +128,29 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
                 onClick={() => setMenuOpen(!menuOpen)}
                 aria-expanded={menuOpen}
               >
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt=""
-                    referrerPolicy="no-referrer"
-                    className="user-avatar"
-                  />
+                {mounted ? (
+                  <>
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt=""
+                        referrerPolicy="no-referrer"
+                        className="user-avatar"
+                      />
+                    ) : (
+                      <span className="user-avatar-fallback">
+                        {displayName[0].toUpperCase()}
+                      </span>
+                    )}
+                    <span className="user-menu-name">{displayName}</span>
+                  </>
                 ) : (
-                  <span className="user-avatar-fallback">
-                    {displayName[0].toUpperCase()}
-                  </span>
+                  <div className="w-6 h-6 rounded-full bg-border animate-pulse mr-2" />
                 )}
-                <span className="user-menu-name">{displayName}</span>
                 <ChevronDown size={14} className={`user-menu-chevron ${menuOpen ? "open" : ""}`} />
               </button>
 
-              {menuOpen && (
+              {menuOpen && mounted && (
                 <div className="user-dropdown">
                   <div className="user-dropdown-header">
                     <b>{displayName}</b>

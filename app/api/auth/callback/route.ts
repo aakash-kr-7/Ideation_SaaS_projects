@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -17,7 +18,18 @@ export async function GET(request: Request) {
       const forwardedHost = request.headers.get('x-forwarded-host')
       const isLocalEnv = process.env.NODE_ENV === 'development'
       const base = isLocalEnv ? origin : forwardedHost ? `https://${forwardedHost}` : origin
-      return NextResponse.redirect(`${base}${next}`)
+      const redirectUrl = `${base}${next}`
+      
+      const redirectResponse = NextResponse.redirect(redirectUrl)
+      
+      // Explicitly copy cookies from the cookie store to the redirect response
+      // This guarantees they are sent to the browser during the redirect
+      const cookieStore = await cookies()
+      cookieStore.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+      })
+      
+      return redirectResponse
     }
     return NextResponse.redirect(`${origin}/sign-in?error=AuthCallbackError&message=${encodeURIComponent(error.message)}`)
   }
@@ -26,11 +38,15 @@ export async function GET(request: Request) {
   if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({ token_hash, type })
     if (!error) {
-      if (type === 'recovery') {
-        return NextResponse.redirect(`${origin}/auth/reset-password`)
-      }
-      // Email verified — redirect to app
-      return NextResponse.redirect(`${origin}${next}`)
+      const targetPath = type === 'recovery' ? '/auth/reset-password' : next
+      const redirectResponse = NextResponse.redirect(`${origin}${targetPath}`)
+      
+      const cookieStore = await cookies()
+      cookieStore.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+      })
+      
+      return redirectResponse
     }
     return NextResponse.redirect(`${origin}/sign-in?error=VerificationError&message=${encodeURIComponent(error.message)}`)
   }
