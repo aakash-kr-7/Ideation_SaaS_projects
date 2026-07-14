@@ -58,7 +58,7 @@ export default function DashboardPage() {
       marketType: run.request.marketType as any,
       targetRegion: run.request.targetRegion,
       mode: run.mode,
-      status: run.stage === "complete" ? "Completed" : run.stage === "failed" ? "Failed" : run.stage === "queued" ? "Queued" : "Searching",
+      status: run.stage,
       createdAt: run.createdAt.slice(0, 10),
       progress: run.progress,
       opportunity

@@ -1,7 +1,7 @@
 import { ValidationReport } from "@/lib/report-schema";
 import { ResearchMode } from "@/lib/types";
 
-export type ResearchStage = "queued" | "generating_queries" | "searching_web" | "extracting_sources" | "filtering_evidence" | "analyzing" | "scoring" | "generating_report" | "complete" | "failed";
+export type ResearchStage = "Queued" | "Searching" | "Extracting" | "Normalizing" | "Scoring" | "Generating" | "Completed" | "Failed" | "Cancelled";
 export type EvidenceKind = "user complaint" | "competitor pricing" | "competitor feature" | "market trend" | "distribution channel" | "risk" | "workaround";
 export interface ResearchRequest { ideaName: string; ideaDescription: string; targetCustomer: string; marketType: string; targetRegion: string; depth: "fast" | "deep"; }
 export interface SearchQuery { id: string; category: string; query: string; }

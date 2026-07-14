@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default function ComparePage() {
   const reports = researchStore.list()
-    .filter(run => run.stage === "complete" && run.report)
+    .filter(run => run.stage === "Completed" && run.report)
     .map(run => run.report!);
 
   if (reports.length < 2) {

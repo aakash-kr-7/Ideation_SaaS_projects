@@ -45,7 +45,7 @@ function reportToPipelineRun(report: ValidationReport, idOverride?: string): Pip
     id: idOverride ?? o.id,
     request,
     mode: "Deep Validation",
-    stage: "complete",
+    stage: "Completed",
     progress: 100,
     message: "Report ready",
     queries: [],

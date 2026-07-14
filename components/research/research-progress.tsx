@@ -4,10 +4,16 @@ import { useRouter } from "next/navigation";
 import { Check, Database, LoaderCircle, Search, ShieldCheck, Swords, Target, Users } from "lucide-react";
 import { ResearchStage } from "@/lib/research/types";
 import { productCopy } from "@/lib/copy";
-const stages:Array<{key:ResearchStage;label:string;detail:string;icon:typeof Target}>=[{key:"generating_queries",label:"Understanding your idea",detail:"Parsing your brief into structured market queries.",icon:Target},{key:"searching_web",label:"Scanning Reddit, G2, Product Hunt…",detail:"Searching 10+ source categories for real market signals.",icon:Search},{key:"extracting_sources",label:"Reading buyer conversations",detail:"Extracting relevant pain signals, pricing data, and complaints.",icon:Swords},{key:"filtering_evidence",label:"Filtering noise from signal",detail:"Removing duplicates and low-confidence data points.",icon:ShieldCheck},{key:"analyzing",label:"Mapping competition & pricing",detail:"Connecting pain signals, competitive gaps, and price points.",icon:Database},{key:"scoring",label:"Scoring the opportunity",detail:"Weighting 8 criteria against your constraints.",icon:ShieldCheck},{key:"generating_report",label:"Writing your report",detail:"Assembling the verdict, evidence, and next steps.",icon:Users}];
+const stages:Array<{key:ResearchStage;label:string;detail:string;icon:typeof Target}>=[
+  {key:"Searching",label:"Understanding your idea",detail:"Parsing brief and searching 10+ source categories.",icon:Search},
+  {key:"Extracting",label:"Reading buyer conversations",detail:"Extracting relevant pain signals, pricing data, and complaints.",icon:Swords},
+  {key:"Normalizing",label:"Filtering noise from signal",detail:"Normalizing evidence, removing duplicates, and mapping competition.",icon:ShieldCheck},
+  {key:"Scoring",label:"Scoring the opportunity",detail:"Weighting 12 criteria against your constraints.",icon:Database},
+  {key:"Generating",label:"Writing your report",detail:"Assembling the verdict, evidence, and next steps.",icon:Users}
+];
 export function ResearchProgress({id,idea="your idea"}:{id:string;idea?:string}){
   const router=useRouter();
-  const [state,setState]=useState({stage:"queued" as ResearchStage,progress:0,message:"Queued for analysis",evidenceCount:0,sourceCount:0,competitorCount:0,reportReady:false});
+  const [state,setState]=useState({stage:"Queued" as ResearchStage,progress:0,message:"Queued for analysis",evidenceCount:0,sourceCount:0,competitorCount:0,reportReady:false});
   const [logs, setLogs] = useState<Array<{ time: string; text: string }>>([]);
 
   useEffect(()=>{
@@ -21,7 +27,7 @@ export function ResearchProgress({id,idea="your idea"}:{id:string;idea?:string})
         setTimeout(()=>router.push(`/research/${id}/results`),500);
         return;
       }
-      if(next.stage!=="failed"&&next.stage!=="complete")setTimeout(poll,500);
+      if(next.stage!=="Failed"&&next.stage!=="Completed")setTimeout(poll,500);
     };
     poll();
     return()=>{cancelled=true};
@@ -37,7 +43,9 @@ export function ResearchProgress({id,idea="your idea"}:{id:string;idea?:string})
     }
   }, [state.message]);
 
-  const active=stages.findIndex(stage=>stage.key===state.stage);
+  const active = state.stage === "Completed"
+    ? stages.length
+    : stages.findIndex(stage => stage.key === state.stage);
 
   return <div className="progress-page premium-progress">
     <div className="progress-orbit"><LoaderCircle size={28}/></div>
@@ -81,7 +89,7 @@ export function ResearchProgress({id,idea="your idea"}:{id:string;idea?:string})
             <span className="terminal-text">{log.text}</span>
           </div>
         ))}
-        {state.stage !== "complete" && state.stage !== "failed" && (
+        {state.stage !== "Completed" && state.stage !== "Failed" && (
           <div className="terminal-line pulsing">
             <span className="terminal-cursor">█</span>
           </div>
@@ -89,6 +97,6 @@ export function ResearchProgress({id,idea="your idea"}:{id:string;idea?:string})
       </div>
     </div>
 
-    {state.stage==="failed"&&<p className="progress-error">{productCopy.microcopy.error} {state.message}</p>}
+    {state.stage==="Failed"&&<p className="progress-error">{productCopy.microcopy.error} {state.message}</p>}
   </div>;
 }

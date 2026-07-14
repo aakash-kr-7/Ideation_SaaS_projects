@@ -13,11 +13,11 @@ function update(id: string, stage: ResearchStage, progress: number, message: str
 
 export async function runResearchPipeline(id: string, input: ResearchRequest) {
   try {
-    update(id, "generating_queries", 10, `Formulating structured research vectors for "${input.ideaName}"`);
+    update(id, "Searching", 10, `Formulating structured research vectors for "${input.ideaName}"`);
     const queries = generateSearchQueries(input);
     await wait(800);
 
-    update(id, "searching_web", 25, `Querying sources for: "${queries[0]?.query || input.ideaName}"`, { queries });
+    update(id, "Searching", 25, `Querying sources for: "${queries[0]?.query || input.ideaName}"`, { queries });
     await wait(1000);
 
     // Compile dynamic report based on inputs
@@ -49,24 +49,24 @@ export async function runResearchPipeline(id: string, input: ResearchRequest) {
       date: e.date
     }));
 
-    update(id, "extracting_sources", 45, `Mining pain points and competitors from G2 and Reddit threads`);
+    update(id, "Extracting", 45, `Mining pain points and competitors from G2 and Reddit threads`);
     await wait(900);
 
-    update(id, "filtering_evidence", 65, `Found user pain: "${o.evidence[0]?.snippet.slice(0, 50)}..."`);
+    update(id, "Normalizing", 65, `Found user pain: "${o.evidence[0]?.snippet.slice(0, 50)}..."`);
     await wait(800);
 
-    update(id, "analyzing", 80, `Analyzing positioning gaps for ${o.competitors.length} competitors: ${o.competitors.map(c => c.name).join(", ")}`, { sources, evidence });
+    update(id, "Normalizing", 80, `Analyzing positioning gaps for ${o.competitors.length} competitors: ${o.competitors.map(c => c.name).join(", ")}`, { sources, evidence });
     await wait(1000);
 
-    update(id, "scoring", 90, `Calculating 12-factor confidence model (Score: ${o.scorecard.total}/100, Verdict: ${o.scorecard.verdict})`);
+    update(id, "Scoring", 90, `Calculating 12-factor confidence model (Score: ${o.scorecard.total}/100, Verdict: ${o.scorecard.verdict})`);
     await wait(700);
 
-    update(id, "generating_report", 95, `Assembling blueprint and structuring outreach strategy`);
+    update(id, "Generating", 95, `Assembling blueprint and structuring outreach strategy`);
     await wait(600);
 
-    update(id, "complete", 100, "Research memo compiled successfully", { report, evidence, sources });
+    update(id, "Completed", 100, "Research memo compiled successfully", { report, evidence, sources });
   } catch (error) {
-    update(id, "failed", 100, "Research failed", { error: error instanceof Error ? error.message : "Unknown pipeline error" });
+    update(id, "Failed", 100, "Research failed", { error: error instanceof Error ? error.message : "Unknown pipeline error" });
   }
 }
 
