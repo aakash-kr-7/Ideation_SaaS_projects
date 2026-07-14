@@ -3,6 +3,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { startResearchRunSchema, createProjectSchema } from "@/lib/report-schema";
 import { z } from "zod";
+import { ProjectsRepository } from "@/lib/repositories/projects";
+import { ResearchRepository } from "@/lib/repositories/research";
+import { TeamsRepository } from "@/lib/repositories/teams";
 
 export async function createProject(formData: z.infer<typeof createProjectSchema>) {
   const supabase = await createClient();
@@ -12,39 +15,38 @@ export async function createProject(formData: z.infer<typeof createProjectSchema
 
   const validated = createProjectSchema.parse(formData);
 
-  // Get user's default team (assuming they have one for now)
-  const { data: teamMember, error: teamError } = await supabase
-    .from("team_members")
-    .select("team_id")
-    .eq("user_id", user.id)
-    .single();
+  const teams = await TeamsRepository.getUserTeams();
+  const teamMember = teams[0]?.team_members.find((tm: any) => tm.user_id === user.id);
 
-  if (teamError || !teamMember) throw new Error("No team found for user");
+  if (!teamMember) throw new Error("No team found for user");
 
-  const { data, error } = await supabase
-    .from("projects")
-    .insert({
+  try {
+    const data = await ProjectsRepository.createProject({
       team_id: teamMember.team_id,
       name: validated.name,
-      description: validated.description,
+      description: validated.description ?? null,
       created_by: user.id,
-    })
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
+    });
+    return data;
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
 }
 
 export async function getProjects() {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("projects")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
 
-  if (error) throw new Error(error.message);
-  return data;
+  const teams = await TeamsRepository.getUserTeams();
+  const teamId = teams[0]?.id;
+  if (!teamId) return [];
+
+  try {
+    return await ProjectsRepository.getTeamProjects(teamId);
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
 }
 
 export async function startResearchRun(formData: z.infer<typeof startResearchRunSchema>) {
@@ -52,41 +54,43 @@ export async function startResearchRun(formData: z.infer<typeof startResearchRun
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const validated = startResearchRunSchema.parse(formData);
+  try {
+    const validated = startResearchRunSchema.parse(formData);
 
-  const { data, error } = await supabase
-    .from("research_runs")
-    .insert({
+    const data = await ResearchRepository.createResearchRun({
       project_id: validated.project_id,
       idea_name: validated.idea_name,
       idea_description: validated.idea_description,
       target_customer: validated.target_customer,
-      market_type: validated.market_type,
+      market_type: validated.market_type as any, // Map to enum safely if needed
       target_region: validated.target_region,
-      mode: validated.mode,
-      status: "Queued",
-      progress: 0,
+      mode: validated.mode as any,
       created_by: user.id,
-    })
-    .select()
-    .single();
+    });
 
-  if (error) throw new Error(error.message);
-  
-  // Here we would typically trigger an Edge Function or Background Job queue
-  // e.g., await fetch('...', { method: 'POST', body: JSON.stringify({ run_id: data.id }) })
-  
-  return data;
+    return data;
+  } catch (err: any) {
+    // Log error to error_logs table
+    await supabase.from("error_logs").insert({
+      user_id: user.id,
+      context: "startResearchRun",
+      error_message: err.message || String(err),
+      stack_trace: err.stack || null,
+    });
+
+    // Surface as a structured typed error
+    throw new Error(JSON.stringify({
+      status: "error",
+      code: "START_RESEARCH_RUN_FAILED",
+      message: err.message || String(err)
+    }));
+  }
 }
 
 export async function getResearchRuns(projectId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("research_runs")
-    .select("*")
-    .eq("project_id", projectId)
-    .order("created_at", { ascending: false });
-
-  if (error) throw new Error(error.message);
-  return data;
+  try {
+    return await ResearchRepository.getProjectRuns(projectId);
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
 }

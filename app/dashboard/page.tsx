@@ -58,19 +58,19 @@ export default function DashboardPage() {
       marketType: run.request.marketType as any,
       targetRegion: run.request.targetRegion,
       mode: run.mode,
-      status: run.stage === "complete" ? "Complete" : run.stage === "failed" ? "Failed" : run.stage === "queued" ? "Queued" : "Researching",
+      status: run.stage === "complete" ? "Completed" : run.stage === "failed" ? "Failed" : run.stage === "queued" ? "Queued" : "Searching",
       createdAt: run.createdAt.slice(0, 10),
       progress: run.progress,
       opportunity
     };
   });
 
-  const completedRuns = mappedRuns.filter(r => r.status === "Complete");
+  const completedRuns = mappedRuns.filter(r => r.status === "Completed");
   const averageScore = completedRuns.length > 0
     ? Math.round(completedRuns.reduce((sum, r) => sum + (r.opportunity?.score.total ?? 0), 0) / completedRuns.length)
     : 0;
 
-  const openInvestigations = mappedRuns.filter(r => r.status !== "Complete" && r.status !== "Failed").length;
+  const openInvestigations = mappedRuns.filter(r => r.status !== "Completed" && r.status !== "Failed").length;
   const readyCount = completedRuns.filter(r => r.opportunity?.verdict === "Build now" || r.opportunity?.verdict === "Validate first").length;
 
   const hasData = mappedRuns.length > 0;
@@ -195,7 +195,7 @@ export default function DashboardPage() {
                 {completedRuns.length >= 2 && <Link href="/compare">Compare ideas</Link>}
               </header>
               {mappedRuns.length > 0 ? (
-                mappedRuns.map((run) => <Link className="saved-row" href={run.status === "Complete" ? `/research/${run.id}/results` : `/research/${run.id}/progress`} key={run.id}>
+                mappedRuns.map((run) => <Link className="saved-row" href={run.status === "Completed" ? `/research/${run.id}/results` : `/research/${run.id}/progress`} key={run.id}>
                   <span>{run.ideaName.slice(0, 2).toUpperCase()}</span>
                   <div><b>{run.ideaName}</b><small>{run.mode} · {run.createdAt}</small></div>
                   <ArrowRight size={14}/>

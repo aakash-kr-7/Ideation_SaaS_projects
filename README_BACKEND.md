@@ -1,8 +1,8 @@
 # SignalFit Backend Architecture & Persistence Layer
 
-Welcome to the central repository of truth for the SignalFit backend. This document explains the entire database, API structure, authentication flows, and storage architecture. 
+Welcome to the central repository of truth for the SignalFit backend. This document explains the entire database, API structure, authentication flows, storage architecture, and the complete Phase 1 hardening and security audit implementation.
 
-This backend is built for a production SaaS application. It strictly avoids generic JSON blob storage (except where absolutely necessary for unstructured caching or snapshots), enforces data integrity through PostgreSQL constraints, and uses Row Level Security (RLS) to ensure tenant isolation.
+This backend is built for a production SaaS application. It strictly avoids generic JSON blob storage (except where absolutely necessary for unstructured caching or snapshots), enforces data integrity through PostgreSQL constraints, uses Row Level Security (RLS) to ensure tenant isolation, and employs secure edge function workflows.
 
 ---
 
@@ -12,13 +12,15 @@ This backend is built for a production SaaS application. It strictly avoids gene
 *   **Database:** PostgreSQL (via Supabase)
 *   **Auth:** Supabase Auth (Email/Password, OAuth)
 *   **Backend Runtime:** Next.js Server Actions (App Router)
+*   **Background Jobs:** Supabase Edge Functions (Deno runtime)
 *   **Type Safety:** End-to-end via TypeScript, Zod, and typed Supabase JS client.
+*   **Architecture Pattern:** Repository Pattern (separates raw data access from Next.js server actions).
 
 **Database Philosophy:**
-*   **Highly Normalized:** Everything that has relationships or is queried independently is an entity (e.g., `opportunities`, `evidence_items`, `competitors`).
-*   **Migration-Safe:** Schema changes happen via incremental SQL files in `supabase/migrations/`, not by mutating the database directly in a UI.
-*   **Team-Centric (Multi-tenant):** Every user belongs to a `team`. Projects and billing belong to a `team`. This future-proofs the application for B2B features.
-*   **Implicit Security:** RLS policies ensure that even if an API bug occurs, a user cannot fetch data belonging to a different team.
+*   **Highly Normalized:** Everything that has relationships or is queried independently is a distinct entity (e.g., `opportunities`, `evidence_items`, `competitors`).
+*   **Migration-Driven Schema:** All schema changes are tracked incrementally in `supabase/migrations/` to guarantee repeatable migrations.
+*   **Multi-Tenant (Team-Centric):** Every user belongs to a `team`. Projects, research runs, and billing belong to a `team`. This guarantees easy B2B scaling.
+*   **Implicit Tenant Security:** Strict Row Level Security (RLS) policies are active on **all 33 tables** to ensure that data never leaks between teams.
 
 ---
 
@@ -54,141 +56,580 @@ erDiagram
     
     RESEARCH_RUNS ||--|| REPORTS : "produces"
     REPORTS ||--o{ REPORT_VERSIONS : "has"
+    
+    TEAMS ||--o{ BILLING_CUSTOMERS : "bills"
+    BILLING_CUSTOMERS ||--o{ BILLING_SUBSCRIPTIONS : "has subscription"
+    USERS ||--o{ AUDIT_LOGS : "triggers"
 ```
 
 ---
 
-## 3. Database Schema
+## 3. Canonical Table Reference (All 33 Tables)
 
-The schema is built across 6 numbered migrations.
+Below is the exhaustive, production-grade column and schema specification for all 33 tables in the database:
 
-### `00001_core_iam` (Identity & Access Management)
-*   **`users`**: Mirrors `auth.users`. Contains `display_name`, `avatar_url`, `onboarding_completed`.
-*   **`teams`**: Represents a billing/collaboration boundary.
-*   **`team_members`**: Link table. `role` enum (`owner`, `admin`, `member`).
-*   **`user_preferences`**: Market preferences, experience levels, UI themes.
-*   **`feature_limits`**: Tracks limits (max projects, runs) per team.
+### Group 1: Core IAM (Identity & Access Management)
 
-### `00002_projects_research`
-*   **`projects`**: High-level folders. Linked to a team.
-*   **`research_runs`**: Core tracking for a validation attempt. Contains progress, status, mode, idea description.
-*   **`research_stages`**: Steps of a run (e.g., "Scraping", "Analyzing").
-*   **`saved_comparisons`**: Saved views comparing multiple runs.
+#### 1. `users`
+*   **Purpose:** Local cache of the core Supabase authentication profile.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, references `auth.users(id)` on delete cascade)
+    *   `display_name` `text` (Nullable)
+    *   `avatar_url` `text` (Nullable)
+    *   `onboarding_completed` `boolean` (Default: `false`, Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
-### `00003_normalized_data`
-*   **`opportunities`**: The structured idea validated by the system.
-*   **`sources`**: Raw web pages or inputs.
-*   **`evidence_items`**: Factoids extracted from sources.
-*   **`competitors`, `risks`, `pricing_models`, `mvp_plans`, `launch_plans`**: All linked directly to the parent `opportunity`.
+#### 2. `teams`
+*   **Purpose:** Tenancy boundary for billing, users, projects, and runs.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `name` `text` (Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
-### `00004_scoring_reports`
-*   **`opportunity_scores`**: The aggregate validation score.
-*   **`score_breakdowns`**: Granular scores per criterion.
-*   **`score_evidence_refs`**: Links a breakdown to exact `evidence_items`.
-*   **`reports`**: The finalized, viewable asset.
-*   **`report_versions`**: JSON snapshots of a report at a specific time (useful for immutable history).
+#### 3. `team_members`
+*   **Purpose:** Intersection table linking users to teams with role assignments.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `team_id` `uuid` (References `teams(id)` on delete cascade, Not Null)
+    *   `user_id` `uuid` (References `users(id)` on delete cascade, Not Null)
+    *   `role` `text` (Not Null, Check: `role IN ('owner', 'admin', 'member')`)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+*   **Unique Index:** `unique(team_id, user_id)`
 
-### `00005_system_billing`
-*   **`analytics_events`**: Tracks user actions.
-*   **`error_logs`**: System errors.
-*   **`background_jobs`**: State of edge functions.
-*   **`notifications`**: User alerts.
-*   **`cached_research` & `search_cache`**: Caching layer for LLM and SERP API calls.
-*   **`billing_customers` & `billing_subscriptions`**: Stripe mapping.
+#### 4. `user_preferences`
+*   **Purpose:** User-specific configuration values and experience levels.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `user_id` `uuid` (References `users(id)` on delete cascade, Unique, Not Null)
+    *   `preferred_markets` `text[]` (Default: `'{U.S.}'`, Not Null)
+    *   `experience_level` `text` (Not Null, Check: `experience_level IN ('Beginner', 'Intermediate', 'Expert')`)
+    *   `ui_settings` `jsonb` (Default: `'{}'`, Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
-### `00006_triggers_functions`
-*   **`update_modified_column()`**: Keeps `updated_at` accurate on every row.
-*   **`handle_new_user()`**: Automatically triggers when a user signs up. Syncs `users` table, creates a default `team`, assigns `team_members` owner role, and setups `feature_limits`.
+#### 5. `feature_limits`
+*   **Purpose:** Limits resource allotments per team for subscription enforcement.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `team_id` `uuid` (References `teams(id)` on delete cascade, Unique, Not Null)
+    *   `max_projects` `integer` (Default: `3`, Not Null)
+    *   `max_runs` `integer` (Default: `10`, Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
----
-
-## 4. API & Backend Logic (Server Actions)
-
-We use Next.js Server Actions to mutate data securely. They are located in `lib/actions/`.
-
-*   **`teams.ts`**: `getTeamInfo()`, `getUserProfile()`, `updateUserProfile()`.
-*   **`research.ts`**: `createProject()`, `startResearchRun()`, `getResearchRuns()`.
-*   **`evidence.ts`**: `addEvidence()`, `toggleEvidenceVerification()`.
-*   **`reports.ts`**: `getReportForRun()`, `publishReport()`, `createReportVersion()`.
-
-**Security Note:** Every server action initializes the Supabase client using `lib/supabase/server.ts` which respects the user's cookie session. RLS handles authorization automatically.
-
----
-
-## 5. Lifecycles
-
-### Authentication & Onboarding
-1. User signs up via Supabase UI / Google OAuth.
-2. `auth.users` row is inserted.
-3. Trigger `handle_new_user()` runs in Postgres.
-4. User logs in. Frontend checks `onboarding_completed`.
-5. If `false`, redirects to `/onboarding`.
-6. User completes form -> calls `updateUserProfile` -> saves to `user_preferences`.
-
-### Research Run Lifecycle
-1. User clicks "Start Research" -> calls `startResearchRun` action.
-2. `research_runs` row created. Status = `Queued`.
-3. Background job picks up run, updates status to `Processing`.
-4. Job fetches `sources`, creates `evidence_items`.
-5. Job generates `opportunities`, `competitors`, `risks`, etc.
-6. Job calculates `opportunity_scores`.
-7. Run status = `Complete`. Frontend updates.
+#### 6. `audit_logs`
+*   **Purpose:** Logs critical administrator actions.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `user_id` `uuid` (References `users(id)` on delete set null)
+    *   `action` `text` (Not Null)
+    *   `table_name` `text` (Not Null)
+    *   `record_id` `uuid` (Not Null)
+    *   `old_data` `jsonb` (Nullable)
+    *   `new_data` `jsonb` (Nullable)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
 ---
 
-## 6. Storage Buckets
+### Group 2: Projects & Research Runs
 
-Defined in migration 00005.
+#### 7. `projects`
+*   **Purpose:** High-level directories owned by teams.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `team_id` `uuid` (References `teams(id)` on delete cascade, Not Null)
+    *   `name` `text` (Not Null)
+    *   `description` `text` (Nullable)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
-*   `user-assets`: Public. For avatars, logos.
-*   `exports`: Private. For generated PDF and CSV files.
-*   `cached-sources`: Private. Raw HTML of scraped pages to prevent re-scraping and preserve evidence.
+#### 8. `research_runs`
+*   **Purpose:** Tracks a single execution of the market analysis worker.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `project_id` `uuid` (References `projects(id)` on delete cascade, Not Null)
+    *   `idea_name` `text` (Not Null)
+    *   `idea_description` `text` (Not Null)
+    *   `target_customer` `text` (Not Null)
+    *   `market_type` `text` (Not Null, Check: `market_type IN ('B2B', 'B2C', 'B2B2C', 'Marketplace')`)
+    *   `target_region` `text` (Not Null)
+    *   `mode` `text` (Not Null, Check: `mode IN ('Fast Scan', 'Deep Dive', 'Continuous Monitoring')`)
+    *   `status` `text` (Not Null, Check: `status IN ('Queued', 'Processing', 'Complete', 'Failed')`, Default: `'Queued'`)
+    *   `progress` `integer` (Default: `0`, Not Null, Check: `progress >= 0 AND progress <= 100`)
+    *   `error_message` `text` (Nullable)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+#### 9. `research_stages`
+*   **Purpose:** Chronological steps of a validation run.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `run_id` `uuid` (References `research_runs(id)` on delete cascade, Not Null)
+    *   `stage_name` `text` (Not Null)
+    *   `status` `text` (Not Null, Check: `status IN ('Pending', 'Running', 'Completed', 'Failed')`, Default: `'Pending'`)
+    *   `started_at` `timestamptz` (Nullable)
+    *   `completed_at` `timestamptz` (Nullable)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+#### 10. `saved_comparisons`
+*   **Purpose:** Compares multiple research runs side-by-side.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `project_id` `uuid` (References `projects(id)` on delete cascade, Not Null)
+    *   `name` `text` (Not Null)
+    *   `run_ids` `uuid[]` (Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
 ---
 
-## 7. MANUAL SETUP REQUIRED
+### Group 3: Market Intelligence (Normalized Scan Output)
 
-This backend relies on Supabase. Because you are deploying a production app, **you must manually perform the following steps** in your Supabase Dashboard:
+#### 11. `opportunities`
+*   **Purpose:** Refined market opportunities generated by a run.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `run_id` `uuid` (References `research_runs(id)` on delete cascade, Unique, Not Null)
+    *   `name` `text` (Not Null)
+    *   `one_liner` `text` (Not Null)
+    *   `core_pain` `text` (Not Null)
+    *   `target_customer` `text` (Not Null)
+    *   `market` `text` (Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
-### Step 1: Run the Migrations
-The SQL files in `supabase/migrations/` need to be applied to your remote database.
-*   If using the CLI locally: `supabase db push`
-*   If using the Dashboard: Go to SQL Editor and copy/paste migrations 00001 through 00006 in order, running them one by one.
-*   **Why:** Creates the tables, triggers, and policies.
-*   **Verify:** Check the Table Editor in Supabase. You should see 28 tables.
+#### 12. `sources`
+*   **Purpose:** Web pages or raw inputs scraped/reviewed during the run.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `run_id` `uuid` (References `research_runs(id)` on delete cascade, Not Null)
+    *   `title` `text` (Not Null)
+    *   `url` `text` (Not Null)
+    *   `source_type` `text` (Not Null, Check: `source_type IN ('web', 'file', 'interview')`)
+    *   `text_content` `text` (Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
-### Step 2: Enable Edge Functions / Webhooks (Future)
-When you build the Python/Node worker that actually does the AI research, you must set up a database webhook on the `research_runs` table that triggers on `INSERT`.
-*   **Why:** Server Actions don't run long background processes.
-*   **What Breaks:** If skipped, research runs stay in `Queued` forever.
+#### 13. `evidence_items`
+*   **Purpose:** Individual quotes or facts extracted from sources supporting a validation.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `run_id` `uuid` (References `research_runs(id)` on delete cascade, Not Null)
+    *   `opportunity_id` `uuid` (References `opportunities(id)` on delete cascade, Nullable)
+    *   `source_id` `uuid` (References `sources(id)` on delete set null, Nullable)
+    *   `signal_type` `text` (Not Null, Check: `signal_type IN ('Pain', 'Demand', 'Pricing', 'Risk')`)
+    *   `strength` `text` (Not Null, Check: `strength IN ('High', 'Medium', 'Low')`)
+    *   `title` `text` (Not Null)
+    *   `snippet` `text` (Not Null)
+    *   `verified` `boolean` (Default: `false`, Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
-### Step 3: Configure Authentication Providers
-Go to Supabase -> Authentication -> Providers. Enable Google/GitHub if desired.
-*   **Verify:** Ensure redirect URLs are correctly set to your production domain (e.g. `https://signalfit.com/auth/callback`).
+#### 14. `competitors`
+*   **Purpose:** Competitors discovered in the market segment.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `opportunity_id` `uuid` (References `opportunities(id)` on delete cascade, Not Null)
+    *   `name` `text` (Not Null)
+    *   `positioning` `text` (Not Null)
+    *   `pricing` `text` (Not Null)
+    *   `strength` `text` (Not Null)
+    *   `target` `text` (Not Null)
+    *   `gap` `text` (Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
-### Step 4: Configure Storage (If migration fails)
-Sometimes `insert into storage.buckets` requires `service_role` privileges and fails in standard SQL editor. If so:
-*   Go to Supabase -> Storage.
-*   Create buckets manually: `user-assets` (Public), `exports` (Private), `cached-sources` (Private).
+#### 15. `risks`
+*   **Purpose:** Market, execution, or technical risks associated with the opportunity.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `opportunity_id` `uuid` (References `opportunities(id)` on delete cascade, Not Null)
+    *   `category` `text` (Not Null)
+    *   `description` `text` (Not Null)
+    *   `severity` `text` (Not Null, Check: `severity IN ('Low', 'Medium', 'High', 'Critical')`)
+    *   `mitigation` `text` (Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
-### Step 5: Environment Variables
-Ensure the following are set in your Vercel (or hosting) environment and `.env.local`:
+#### 16. `pricing_models`
+*   **Purpose:** Suggested pricing structures.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `opportunity_id` `uuid` (References `opportunities(id)` on delete cascade, Not Null, Unique)
+    *   `model` `text` (Not Null)
+    *   `price_point` `text` (Not Null)
+    *   `rationale` `text` (Not Null)
+    *   `first_offer` `text` (Not Null)
+    *   `target_customers` `integer` (Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+#### 17. `mvp_plans`
+*   **Purpose:** Scoping boundaries for the initial product implementation.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `opportunity_id` `uuid` (References `opportunities(id)` on delete cascade, Not Null, Unique)
+    *   `outcome` `text` (Not Null)
+    *   `build_estimate` `text` (Not Null)
+    *   `build_complexity` `text` (Not Null, Check: `build_complexity IN ('Low', 'Medium', 'High')`)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+#### 18. `mvp_scope_items`
+*   **Purpose:** Individual list items defining the MVP scope.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `mvp_plan_id` `uuid` (References `mvp_plans(id)` on delete cascade, Not Null)
+    *   `item_type` `text` (Not Null, Check: `item_type IN ('Scope', 'Exclusion')`)
+    *   `description` `text` (Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+#### 19. `launch_plans`
+*   **Purpose:** Suggested launch strategies.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `opportunity_id` `uuid` (References `opportunities(id)` on delete cascade, Not Null, Unique)
+    *   `first_customer_channel` `text` (Not Null)
+    *   `outreach_message` `text` (Not Null)
+    *   `success_metric` `text` (Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+#### 20. `launch_strategies`
+*   **Purpose:** Tactical timeline actions.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `launch_plan_id` `uuid` (References `launch_plans(id)` on delete cascade, Not Null)
+    *   `strategy_type` `text` (Not Null, Check: `strategy_type IN ('WeekOne', 'FirstTen')`)
+    *   `description` `text` (Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+---
+
+### Group 4: Scoring & Report Finalization
+
+#### 21. `opportunity_scores`
+*   **Purpose:** Aggregate qualitative score and confidence levels.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `opportunity_id` `uuid` (References `opportunities(id)` on delete cascade, Not Null, Unique)
+    *   `total` `numeric` (Not Null)
+    *   `confidence` `numeric` (Not Null)
+    *   `verdict` `text` (Not Null, Check: `verdict IN ('Build Now', 'Validate First', 'Niche Down', 'Weak Signal', 'Avoid')`)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+#### 22. `score_breakdowns`
+*   **Purpose:** Granular criteria scores supporting the total metric.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `score_id` `uuid` (References `opportunity_scores(id)` on delete cascade, Not Null)
+    *   `criterion` `text` (Not Null)
+    *   `score` `numeric` (Not Null)
+    *   `notes` `text` (Not Null)
+    *   `weight` `numeric` (Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+*   **Unique Index:** `unique(score_id, criterion)`
+
+#### 23. `score_evidence_refs`
+*   **Purpose:** Links score breakdown records directly back to `evidence_items`.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `score_breakdown_id` `uuid` (References `score_breakdowns(id)` on delete cascade, Not Null)
+    *   `evidence_id` `uuid` (References `evidence_items(id)` on delete cascade, Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+*   **Unique Index:** `unique(score_breakdown_id, evidence_id)`
+
+#### 24. `reports`
+*   **Purpose:** Final output report containing metadata and text summaries.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `run_id` `uuid` (References `research_runs(id)` on delete cascade, Unique, Not Null)
+    *   `opportunity_id` `uuid` (References `opportunities(id)` on delete cascade, Not Null)
+    *   `status` `text` (Not Null, Check: `status IN ('Draft', 'Published')`)
+    *   `executive_summary` `text` (Not Null)
+    *   `methodology` `text` (Not Null)
+    *   `generated_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+#### 25. `report_versions`
+*   **Purpose:** Immutably stored snapshots of historical reports.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `report_id` `uuid` (References `reports(id)` on delete cascade, Not Null)
+    *   `version_number` `integer` (Not Null)
+    *   `payload` `jsonb` (Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+*   **Unique Index:** `unique(report_id, version_number)`
+
+---
+
+### Group 5: Telemetry, Billing, and System Caches
+
+#### 26. `analytics_events`
+*   **Purpose:** Tracks SaaS metrics and user action telemetry.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `team_id` `uuid` (References `teams(id)` on delete set null, Nullable)
+    *   `user_id` `uuid` (References `users(id)` on delete set null, Nullable)
+    *   `event_name` `text` (Not Null)
+    *   `event_payload` `jsonb` (Default: `'{}'`, Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+#### 27. `error_logs`
+*   **Purpose:** Centralized repository logging backend, edge, or client crashes.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `team_id` `uuid` (References `teams(id)` on delete set null, Nullable)
+    *   `user_id` `uuid` (References `users(id)` on delete set null, Nullable)
+    *   `error_message` `text` (Not Null)
+    *   `stack_trace` `text` (Nullable)
+    *   `context` `jsonb` (Default: `'{}'`, Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+#### 28. `background_jobs`
+*   **Purpose:** Tracks asynchronously queued routines.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `team_id` `uuid` (References `teams(id)` on delete cascade, Not Null)
+    *   `job_type` `text` (Not Null)
+    *   `status` `text` (Not Null)
+    *   `payload` `jsonb` (Default: `'{}'`, Not Null)
+    *   `result` `jsonb` (Nullable)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+#### 29. `notifications`
+*   **Purpose:** Direct inbox alerts displayed to users.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `team_id` `uuid` (References `teams(id)` on delete cascade, Not Null)
+    *   `user_id` `uuid` (References `users(id)` on delete cascade, Nullable)
+    *   `title` `text` (Not Null)
+    *   `message` `text` (Not Null)
+    *   `read` `boolean` (Default: `false`, Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+#### 30. `cached_research`
+*   **Purpose:** Caches heavy LLM structuring calls to limit API usage costs.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `query_hash` `text` (Unique, Not Null)
+    *   `query_text` `text` (Not Null)
+    *   `result_payload` `jsonb` (Not Null)
+    *   `expires_at` `timestamptz` (Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+#### 31. `search_cache`
+*   **Purpose:** Caches SerpAPI / web search indexing.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `query_hash` `text` (Unique, Not Null)
+    *   `query_text` `text` (Not Null)
+    *   `raw_results` `jsonb` (Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+#### 32. `billing_customers`
+*   **Purpose:** Maps active teams to Stripe Customer records.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `team_id` `uuid` (References `teams(id)` on delete cascade, Unique, Not Null)
+    *   `stripe_customer_id` `text` (Unique, Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+#### 33. `billing_subscriptions`
+*   **Purpose:** Tracks tier memberships.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `team_id` `uuid` (References `teams(id)` on delete cascade, Unique, Not Null)
+    *   `stripe_subscription_id` `text` (Unique, Not Null)
+    *   `status` `text` (Not Null)
+    *   `plan_id` `text` (Not Null)
+    *   `current_period_end` `timestamptz` (Not Null)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+    *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+
+---
+
+## 4. Database Schema Migration Registry
+
+The database schema is fully managed via 15 incremental SQL migrations in `supabase/migrations/`:
+
+### Core Schema Migrations
+
+1.  **`20260712000001_core_iam.sql` (Identity & Access Management)**
+    *   Deploys `users`, `teams`, `team_members`, `user_preferences`, and `feature_limits`.
+2.  **`20260712000002_projects_research.sql` (Projects & Scans)**
+    *   Deploys `projects`, `research_runs`, `research_stages`, and `saved_comparisons`.
+3.  **`20260712000003_normalized_data.sql` (Market Intelligence Entities)**
+    *   Deploys `opportunities`, `sources`, `evidence_items`, `competitors`, `risks`, `pricing_models`, `mvp_plans`, `mvp_scope_items`, `launch_plans`, and `launch_strategies`.
+4.  **`20260712000004_scoring_reports.sql` (Scoring & Reports)**
+    *   Deploys `opportunity_scores`, `score_breakdowns`, `score_evidence_refs`, `reports`, and `report_versions`.
+5.  **`20260712000005_system_billing.sql` (System Support & Billing)**
+    *   Deploys `analytics_events`, `error_logs`, `background_jobs`, `notifications`, `cached_research`, `search_cache`, `billing_customers`, and `billing_subscriptions`.
+6.  **`20260712000006_triggers_functions.sql` (Automation Triggers)**
+    *   Registers `update_modified_column()` and user creation triggers.
+
+### Hardening & Bug Fix Migrations (Phase 1 Audit)
+
+7.  **`20260712000007_audit_logs.sql`**: Creates `audit_logs` to maintain user activity audits.
+8.  **`20260712000008_grants_and_fixes.sql`**: Hardens schema permissions and checks, granting proper access rights to authenticated roles.
+9.  **`20260712000009_fix_rls_recursion.sql`**: Fixes infinite query recursion when checking `team_members` within policies.
+10. **`20260712000010_enable_realtime.sql`**: Enables Realtime subscriptions on `research_runs` table.
+11. **`20260712000011_fix_research_runs_status.sql`**: Modifies the research runs status constraint to support custom processing check constraints.
+12. **`20260714092014_audit_rpc.sql`**: Adds a temporary query runner for RLS auditing scripts (*Deleted in later cleanup migration*).
+13. **`20260714100000_audit_fixes.sql`**: Core data audit fix that adds missing `updated_at` columns and triggers to 22 schema tables, and `created_at` to `reports`, ensuring 100% database audit coverage.
+14. **`20260714101000_audit_realtime.sql`**: Registers `evidence_items` and `opportunity_scores` in the `supabase_realtime` publication.
+15. **`20260714102000_audit_rpc_cleanup.sql`**: **Critical security cleanup** dropping the database query function `audit_exec_sql` to secure the system from SQL injection attacks.
+
+---
+
+## 5. Security & Row Level Security (RLS) Verification
+
+Row Level Security is enabled and strictly enforced on **all 33 tables** in the schema.
+
+### Core Security Verification Strategy:
+We executed an adversarial testing workflow designed to bypass RLS boundaries by simulating a compromised or malicious client session.
+1.  **Isolated Tenancy Creation:** The test dynamically initializes User A (Team A) and User B (Team B) using isolated credentials.
+2.  **Cross-Tenant Infiltration Scripts:**
+    *   **Direct Tenancy (`scripts/audit-rls.ts`):** Evaluated top-level schemas mapping direct foreign keys (e.g. `team_id` or `user_id`).
+    *   **Indirect Tenancy (`scripts/audit-rls-child.ts`):** Verified child tables. Instead of using generic dummy payloads that would trigger schema constraints, this script constructs a valid database tree for User A. User B then attempts to read, write, update, or delete objects using User A's actual IDs (traversing parent keys like `run_id`, `opportunity_id`, `score_id`, `mvp_plan_id`).
+3.  **Result Outcome:** 100% of adversarial actions were blocked. No data bleed or command injection occurred.
+
+---
+
+## 6. Complete Adversarial RLS Test Matrix
+
+Below is the verified test output mapping SELECT, INSERT, UPDATE, and DELETE operations across all 33 tables:
+
+| Table | SELECT | INSERT | UPDATE | DELETE | Security Join Logic / Notes |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `users` | PASS (Self Visible) | PASS (Blocked) | PASS (0 rows) | PASS (0 rows) | Matches `auth.uid() = id` |
+| `teams` | PASS (Self Visible) | PASS (Blocked) | PASS (0 rows) | PASS (0 rows) | Matches team membership |
+| `team_members` | PASS (Self Visible) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Decoupled membership checks |
+| `user_preferences` | PASS (0 rows) | PASS (Blocked) | PASS (0 rows) | PASS (0 rows) | Matches `user_id = auth.uid()` |
+| `feature_limits` | PASS (Self Visible) | PASS (Blocked) | PASS (0 rows) | PASS (0 rows) | Maps back to `team_members` |
+| `projects` | PASS (0 rows) | PASS (Blocked) | PASS (0 rows) | PASS (0 rows) | Maps to `team_id` |
+| `research_runs` | PASS (0 rows) | PASS (Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `projects` -> `teams` |
+| `research_stages` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `research_runs` -> `projects` -> `teams` |
+| `saved_comparisons` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `projects` -> `teams` |
+| `opportunities` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `research_runs` -> `projects` -> `teams` |
+| `sources` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `research_runs` -> `projects` -> `teams` |
+| `evidence_items` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `research_runs` -> `projects` -> `teams` |
+| `competitors` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `opportunities` -> `research_runs` -> `projects` -> `teams` |
+| `risks` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `opportunities` -> `research_runs` -> `projects` -> `teams` |
+| `pricing_models` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `opportunities` -> `research_runs` -> `projects` -> `teams` |
+| `mvp_plans` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `opportunities` -> `research_runs` -> `projects` -> `teams` |
+| `mvp_scope_items` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `mvp_plans` -> `opportunities` -> `research_runs` -> `projects` -> `teams` |
+| `launch_plans` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `opportunities` -> `research_runs` -> `projects` -> `teams` |
+| `launch_strategies` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `launch_plans` -> `opportunities` -> `research_runs` -> `projects` -> `teams` |
+| `opportunity_scores` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `opportunities` -> `research_runs` -> `projects` -> `teams` |
+| `score_breakdowns` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `opportunity_scores` -> `opportunities` -> `research_runs` -> `projects` -> `teams` |
+| `score_evidence_refs` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `score_breakdowns` -> `opportunity_scores` -> `opportunities` -> `research_runs` -> `projects` -> `teams` |
+| `reports` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `research_runs` -> `projects` -> `teams` |
+| `report_versions` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Joins up to `reports` -> `research_runs` -> `projects` -> `teams` |
+| `analytics_events` | PASS (0 rows) | PASS (Blocked) | PASS (0 rows) | PASS (0 rows) | Tenancy checks active |
+| `error_logs` | PASS (0 rows) | PASS (Blocked) | PASS (0 rows) | PASS (0 rows) | Tenancy checks active |
+| `background_jobs` | PASS (0 rows) | PASS (Blocked) | PASS (0 rows) | PASS (0 rows) | Tenancy checks active |
+| `notifications` | PASS (0 rows) | PASS (Blocked) | PASS (0 rows) | PASS (0 rows) | Tenancy checks active |
+| `cached_research` | PASS (0 rows) | PASS (Blocked) | PASS (0 rows) | PASS (0 rows) | Tenancy checks active |
+| `search_cache` | PASS (0 rows) | PASS (Blocked) | PASS (0 rows) | PASS (0 rows) | Tenancy checks active |
+| `billing_customers` | PASS (0 rows) | PASS (Blocked) | PASS (0 rows) | PASS (0 rows) | Tenancy checks active |
+| `billing_subscriptions` | PASS (0 rows) | PASS (Blocked) | PASS (0 rows) | PASS (0 rows) | Tenancy checks active |
+| `audit_logs` | PASS (0 rows) | PASS (RLS Blocked) | PASS (0 rows) | PASS (0 rows) | Tenancy checks active |
+
+*   **PASS (Self Visible / Rows visible):** Indicates that when User B issues queries, they can exclusively see their own profile or team boundaries (created dynamically during initialization) and are completely restricted from viewing User A's data.
+*   **PASS (Blocked / RLS Blocked):** The action failed due to row-level security permissions.
+*   **PASS (0 rows):** The update/delete command modified exactly 0 records because other teams' data was invisible.
+
+---
+
+## 7. Next.js Server Actions & Repository Pattern
+
+We use Next.js Server Actions to execute mutations and state updates. To maintain clean separation of concerns and database independence, the server actions delegate queries to a **Repository Layer**:
+
+*   **Structure:**
+    *   `lib/repositories/`: Raw database operations using the Supabase client. Exposes type-safe APIs for CRUD operations.
+        *   `users.ts` -> Handles profile & preferences query.
+        *   `teams.ts` -> Handles team info & member validation.
+        *   `projects.ts` -> Handles project configurations.
+        *   `research.ts` -> Handles research run & stage creation/polling.
+    *   `lib/services/`: Optional middleware orchestrating multiple repositories.
+    *   `lib/actions/`: Entry point Server Actions that check authentication and then invoke the repository/service layer.
+
+---
+
+## 8. Background Worker Hardening (`research-worker`)
+
+The market research scans are processed by a background worker located in `supabase/functions/research-worker/`. We hardened this function against race conditions, retries, and unauthorized access:
+
+### 1. Webhook Secret Authentication
+Every webhook triggering the edge function must provide a secure token in the `Authorization` header:
+*   Header format: `Authorization: Bearer <WEBHOOK_SECRET>`
+*   If the secret does not match the server configuration, the request is rejected with `401 Unauthorized` before any execution occurs.
+
+### 2. Idempotency Guard
+To avoid double-processing runs when retries occur or multiple webhooks trigger:
+*   The worker executes a atomic state-change update to transition status to `Processing`.
+*   It filters strictly on status: `.eq('status', 'Queued')`.
+*   If the run has already been picked up (its status is `Processing`, `Complete`, or `Failed`), the filter fails to update any rows, and the function exits early without re-running the heavy LLM/Scraping processes.
+
+### 3. Dependency Integrity
+Deno imports inside the Edge Worker are standardized. The Deno environment maps all external modules through `deno.json` bare specifiers, resolving module loading issues during deployments.
+
+---
+
+## 9. Storage Buckets
+
+Storage buckets are configured to separate asset storage securely:
+
+*   **`user-assets`**: Public. For avatars, logos, brand images.
+*   **`exports`**: Private. Holds sensitive PDF/CSV report exports (secured by RLS policies).
+*   **`cached-sources`**: Private. Stores raw HTML caches of scraped research web pages to prevent re-scraping and preserve evidence records.
+
+---
+
+## 10. Development & Audit Playbook
+
+### Running Database Migrations Locally
+Apply migrations sequentially to your Supabase instance:
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=your_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-# The service role key should ONLY be used in secure background workers, NEVER in the Next.js app or browser.
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+supabase db push
 ```
 
-### Step 6: Verify Database Triggers
-Go to Database -> Triggers in Supabase.
-*   Ensure `on_auth_user_created` is attached to `auth.users` in the `auth` schema.
-*   **Why:** If this fails, new users won't get a `public.users` row or a `team`, and the app will crash when they log in.
+### Running RLS Audit Scripts
+Run the adversarial suite to verify that no tenancy leaks exist:
+```bash
+# Audits top-level entities
+npx tsx scripts/audit-rls.ts
 
----
+# Audits nested child entities using foreign-key hierarchies
+npx tsx scripts/audit-rls-child.ts
+```
 
-## 8. Troubleshooting & Common Pitfalls
-
-*   **"Unauthorized / No Rows Returned":** 99% of the time, this is RLS. Ensure the user is actually logged in, and that the `team_members` table correctly links them to the team that owns the data.
-*   **"Type Errors on Frontend":** If you add columns to Supabase, you MUST update `lib/types.ts` to match. 
-*   **Null reference on Team:** If `getTeamInfo()` returns empty, the `handle_new_user` trigger likely failed during signup. Manually invoke the function or create the team.
+### Deploying Edge Functions
+Deploy the background workers securely:
+```bash
+supabase functions deploy research-worker
+```
+Make sure to set the production environment variable:
+```bash
+supabase secrets set WEBHOOK_SECRET=your_production_secret
+```

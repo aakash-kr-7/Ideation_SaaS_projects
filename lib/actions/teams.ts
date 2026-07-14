@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { Database } from "@/lib/types";
 
 export async function getTeamInfo() {
   const supabase = await createClient();
@@ -40,7 +41,7 @@ export async function getUserProfile() {
   return data;
 }
 
-export async function updateUserProfile(updates: Record<string, any>) {
+export async function updateUserProfile(updates: Database["public"]["Tables"]["users"]["Update"]) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
