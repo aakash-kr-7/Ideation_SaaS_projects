@@ -29,7 +29,7 @@ export default function PricingPage() {
         <p>{plan.name.toUpperCase()}</p>
         <h3>{plan.price}<small>/ month</small></h3>
         <span>{plan.intro}</span>
-        <Link href="/auth" className={plan.featured ? "button" : "button ghost"}>{plan.name === "Signal" ? "Start free — no card needed" : `Choose ${plan.name}`}</Link>
+        <Link href="/sign-in" className={plan.featured ? "button" : "button ghost"}>{plan.name === "Signal" ? "Start free — no card needed" : `Choose ${plan.name}`}</Link>
         <ul>{plan.items.map((item) => <li key={item}><Check size={15}/>{item}</li>)}</ul>
       </article>)}
     </div>

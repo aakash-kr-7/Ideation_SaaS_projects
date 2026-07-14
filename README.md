@@ -9,6 +9,44 @@ The entire platform communicates one thing instantly:
 
 ---
 
+## High-Level Architecture
+
+SignalFit operates on a hybrid architecture designed for both fast local prototyping and production SaaS scaling:
+
+```
+                  ┌──────────────────────────────────────┐
+                  │          Next.js Frontend            │
+                  │  (Dashboard, Form, Interactive Rep)  │
+                  └──────────────────┬───────────────────┘
+                                     │
+                     ┌───────────────┴───────────────┐
+                     ▼                               ▼
+       ┌───────────────────────────┐   ┌───────────────────────────┐
+       │   In-Memory Demo Engine   │   │     SaaS Service Layer    │
+       │    (Local Dev Pipeline)    │   │  (Supabase Server Actions)│
+       └───────────────────────────┘   └─────────────┬─────────────┘
+                                                     │
+                                                     ▼
+                                       ┌───────────────────────────┐
+                                       │     Supabase Platform     │
+                                       │  (Postgres DB, RLS, Auth, │
+                                       │    Webhooks, Realtime)    │
+                                       └─────────────┬─────────────┘
+                                                     │
+                                                     ▼
+                                       ┌───────────────────────────┐
+                                       │   Supabase Edge Function  │
+                                       │ (Background Worker Queue) │
+                                       └───────────────────────────┘
+```
+
+*   **Next.js Frontend (App Router)**: Captures user briefs, manages dashboard summaries, handles interactive checklists (via LocalStorage), and provides responsive decision-ready exports (Markdown, CSV, JSON, printer-friendly PDF).
+*   **In-Memory Validation Engine (Local Dev)**: Enables offline testing. Runs query generation, web scrapes, source extraction, scoring, and report compilation fully client-side using mock adapters (`lib/research/`).
+*   **Supabase SaaS Service Layer (Production)**: Coordinates PostgreSQL database access, Google OAuth/Email login, Row Level Security (RLS) tenant isolation policies, and database triggers.
+*   **Supabase Edge Functions & Webhooks (Background Queue)**: Receives database insert webhooks, executes LLM analysis, updates progression states, and broadcasts live progress logs over Supabase Realtime to the UI.
+
+---
+
 ## Key Features & Capabilities
 
 - **Premium SaaS Rebrand**: Overhauled visual identity with a refined color system—featuring an **Indigo core** (`#6366F1`) combined with green, amber, and red accents to communicate risk, opportunity, and verdicts clearly.
@@ -81,67 +119,40 @@ npm run start
 
 ```text
 app/
-  api/research/        # Route handlers for query generation, search, and extraction
-  dashboard/           # Validation pipeline index and scoring simulator
-  research/            # New brief form, real-time progress logs, and report views
+  api/research/        # API endpoints for pipeline progress, starts, and exports
+  dashboard/           # User dashboard showing previous validations and next steps
+  research/            # Idea brief form, real-time progress page, and results view
   sample-report/       # Public validation report sandbox
-  sample-reports/      # Illustrative report library
 components/
-  dashboard/           # Pipeline overview and stat cards
-  landing/             # Conversion-focused landing page and signals marquee
-  opportunity/         # Verdict badges and comparison matrices
-  report/              # Interactive validation report sections (Pricing, Launch, MVP, etc.)
+  dashboard/           # Dashboard stats and project list items
+  landing/             # Landing page marquee, CTA, and visual signals
+  opportunity/         # Comparison matrix and verdict badge components
+  report/              # Report tab views (Verdict, Pricing, MVP, Launch, Heatmap)
   research/            # Idea brief form and step progress logger
-  scoring/             # SVG score badges, score guide, and weight sliders
-  ui/                  # Standard buttons, premium cards, and UI tokens
+  scoring/             # SVG score badges, score guide, and breakdown sliders
+  ui/                  # Standard buttons, premium cards, and visual tokens
 lib/
-  copy.ts              # Central copywriting library (direct, commercial tone)
-  scoring.ts           # 12-factor calculation logic and verdict thresholds
-  report-schema.ts     # Zod contract schemas for API integrity
-  report-mocks.ts      # Sample opportunity validation data
-  research/            # Database mock adapters and in-memory store
+  actions/             # Server Actions calling database repositories
+  repositories/        # Data access layer interfacing directly with Supabase clients
+  services/            # Business logic orchestration layer
+  supabase/            # Supabase server client and middleware helpers
+  research/            # In-memory validation engine and mock stores
+  report-schema.ts     # Zod contract schemas for frontend/backend validation
+  report-mocks.ts      # Structured sample validation data
+  scoring.ts           # 12-factor calculation metrics and verdict thresholds
 supabase/
-  schema.sql           # Canonical SQLite and PostgreSQL-compatible database schemas
+  migrations/          # 15 chronological SQL migrations managing schema and RLS policies
+  functions/           # Supabase Edge Functions (Deno background worker)
+scripts/               # Development helper scripts for auditing realtime and RLS
 ```
 
 ---
 
-## Validation Framework Samples
+## Deep-Dive Documentation
 
-SignalFit includes five pre-built validation reports illustrating different opportunity profiles:
-
-1. **Recruiter Resume Reformatting Engine** (Validate First - Score: 82)
-2. **Visa Document Compiler** (Validate First - Score: 71)
-3. **Stripe Failed Payment Recovery Tool** (Validate First - Score: 79)
-4. **Designer Approval Portal** (Niche Down - Score: 68)
-5. **GEO Audit Suite** (Validate First - Score: 71)
-
-*These samples are designed to demonstrate the structure, depth, and presentation capability of a SignalFit document. They are not actual customer records.*
-
----
-
-## Supabase Authentication Setup
-
-To run authentication in development or production, complete the following setup steps in your Supabase Console:
-
-### 1. Enable Google OAuth Provider
-1. Navigate to the **Supabase Console** > **Authentication** > **Providers** > **Google**.
-2. Toggle **Enable Google Provider** to active.
-3. Input your **Google Client ID** and **Google Client Secret** (obtained from the [Google Cloud Console](https://console.cloud.google.com/apis/credentials)).
-4. Copy the **Redirect URL** displayed by Supabase (e.g. `https://<your-project-id>.supabase.co/auth/v1/callback`).
-
-### 2. Configure Google Cloud Console
-1. Navigate to your Google Cloud Project > **APIs & Services** > **Credentials**.
-2. Select or create your **OAuth 2.0 Client ID** credential.
-3. Paste the Redirect URL copied from Supabase into the **Authorized redirect URIs** list.
-4. Save the configuration.
-
-### 3. URL Configurations in Supabase
-1. Navigate to **Authentication** > **URL Configuration** inside your Supabase Console.
-2. Set the **Site URL** to:
-   - Local Development: `http://localhost:3000`
-   - Production: `https://yourdomain.com`
-3. Add the wildcard callback patterns in **Redirect Wildcards**:
-   - Local Development: `http://localhost:3000/**`
-   - Production: `https://yourdomain.com/**`
-
+For advanced details, check the respective files:
+*   **Database Schema & SQL Migrations**: Refer to [README-BACKEND.md](file:///c:/Users/aakash09/Desktop/Ideation/README_BACKEND.md)
+*   **Frontend Dashboard, Tabs & Visual System**: Refer to [README-FRONTEND.md](file:///c:/Users/aakash09/Desktop/Ideation/README-FRONTEND.md)
+*   **Entity Relationships**: Refer to [Database.md](file:///c:/Users/aakash09/Desktop/Ideation/docs/Database.md)
+*   **Code Layers & Architecture Layers**: Refer to [Architecture.md](file:///c:/Users/aakash09/Desktop/Ideation/docs/Architecture.md)
+*   **Validation Pipeline Stages**: Refer to [Pipeline.md](file:///c:/Users/aakash09/Desktop/Ideation/docs/Pipeline.md)

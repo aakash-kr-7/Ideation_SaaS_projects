@@ -1,7 +1,11 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, CheckCircle2, ChevronRight, FileSearch, Gauge, Radar, Shield, ShieldCheck, Target, TrendingUp, Users, Zap, AlertTriangle, DollarSign, Rocket, BarChart3 } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronRight, FileSearch, Gauge, Radar, Shield, ShieldCheck, Target, TrendingUp, Users, Zap, AlertTriangle, DollarSign, Rocket, BarChart3, LoaderCircle } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
+import { createClient } from "@/lib/supabase/client";
 
 const signals = [
   { name: "Reddit", logoPath: "/logos/reddit.svg" },
@@ -19,8 +23,62 @@ const signals = [
 const marqueeSignals = [...signals, ...signals, ...signals];
 
 export function LandingPage() {
+  const [activeCta, setActiveCta] = useState<string | null>(null);
+
+  const handleGoogleSignIn = async (ctaKey: string, redirectTo: string) => {
+    console.log(`[Google Sign In] ctaKey: ${ctaKey}, redirectTo: ${redirectTo}`);
+    setActiveCta(ctaKey);
+    try {
+      const supabase = createClient();
+      console.log("[Google Sign In] Supabase client created");
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+        },
+      });
+      if (error) {
+        console.error("[Google Sign In] Error:", error.message);
+        alert(`OAuth error: ${error.message}`);
+        setActiveCta(null);
+      } else {
+        console.log("[Google Sign In] Redirecting to:", data?.url);
+      }
+    } catch (e: any) {
+      console.error("[Google Sign In] Unexpected Exception:", e);
+      alert(`OAuth exception: ${e.message || String(e)}`);
+      setActiveCta(null);
+    }
+  };
+
   return <div className="bs-modern">
-    <header className="bs-nav"><Brand/><nav><a href="#how">How it works</a><a href="#report">Sample report</a><a href="#pricing">Pricing</a></nav><div><Link href="/sign-in">Sign in</Link><Link className="bs-btn bs-btn-bright" href="/sign-in">Get started <ArrowRight size={15}/></Link></div></header>
+    <header className="bs-nav">
+      <Brand/>
+      <nav>
+        <a href="#how">How it works</a>
+        <a href="#report">Sample report</a>
+        <a href="#pricing">Pricing</a>
+      </nav>
+      <div>
+        <a 
+          href="#" 
+          style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+          onClick={(e) => { e.preventDefault(); handleGoogleSignIn("signin", "/dashboard"); }}
+        >
+          {activeCta === "signin" && <LoaderCircle size={14} className="animate-spin" />}
+          Sign in
+        </a>
+        <a 
+          className="bs-btn bs-btn-bright" 
+          href="#" 
+          style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+          onClick={(e) => { e.preventDefault(); handleGoogleSignIn("get-started", "/dashboard"); }}
+        >
+          {activeCta === "get-started" && <LoaderCircle size={14} className="animate-spin" />}
+          Get started <ArrowRight size={15}/>
+        </a>
+      </div>
+    </header>
     <main>
       {/* ── HERO ── */}
       <section className="bs-hero">
@@ -29,7 +87,15 @@ export function LandingPage() {
           <h1>Stop building products<br/>nobody <span>wants.</span></h1>
           <p>Describe your idea. Get a market-backed verdict — Build Now, Validate First, Niche Down, or Avoid — with buyer pain, competition, pricing, risks, and a first-customer plan.</p>
           <div className="bs-actions">
-            <Link className="bs-btn bs-btn-bright" href="/sign-in">Validate your idea — free <ArrowRight size={16}/></Link>
+            <a 
+              className="bs-btn bs-btn-bright" 
+              href="#" 
+              style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+              onClick={(e) => { e.preventDefault(); handleGoogleSignIn("validate-hero", "/research/new"); }}
+            >
+              {activeCta === "validate-hero" && <LoaderCircle size={14} className="animate-spin" />}
+              Validate your idea — free <ArrowRight size={16}/>
+            </a>
             <Link className="bs-link" href="/sample-report">See a sample report <ChevronRight size={15}/></Link>
           </div>
           <small><ShieldCheck size={14}/> Real market signals · Every source cited · No fake data</small>
@@ -133,7 +199,15 @@ export function LandingPage() {
       <section className="bs-final">
         <p className="bs-kicker">Ready to validate?</p>
         <h2>Your next idea deserves<br/>better than a guess.</h2>
-        <Link className="bs-btn bs-btn-bright" href="/sign-in">Validate your first idea — free <ArrowRight size={16}/></Link>
+        <a 
+          className="bs-btn bs-btn-bright" 
+          href="#" 
+          style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+          onClick={(e) => { e.preventDefault(); handleGoogleSignIn("validate-final", "/research/new"); }}
+        >
+          {activeCta === "validate-final" && <LoaderCircle size={14} className="animate-spin" />}
+          Validate your first idea — free <ArrowRight size={16}/>
+        </a>
       </section>
     </main>
     <footer><Brand/><span>SignalFit · Know what to build before you build it.</span></footer>

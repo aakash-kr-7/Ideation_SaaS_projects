@@ -121,15 +121,15 @@ Below is the exhaustive, production-grade column and schema specification for al
     *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
 #### 6. `audit_logs`
-*   **Purpose:** Logs critical administrator actions.
+*   **Purpose:** Logs critical user and administrator audit actions.
 *   **Columns:**
     *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
-    *   `user_id` `uuid` (References `users(id)` on delete set null)
+    *   `user_id` `uuid` (References `users(id)` on delete set null, Nullable)
+    *   `team_id` `uuid` (References `teams(id)` on delete cascade, Nullable)
     *   `action` `text` (Not Null)
-    *   `table_name` `text` (Not Null)
-    *   `record_id` `uuid` (Not Null)
-    *   `old_data` `jsonb` (Nullable)
-    *   `new_data` `jsonb` (Nullable)
+    *   `entity_type` `text` (Not Null)
+    *   `entity_id` `uuid` (Nullable)
+    *   `metadata` `jsonb` (Default: `'{}'`, Not Null)
     *   `created_at` `timestamptz` (Default: `now()`, Not Null)
     *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
@@ -152,17 +152,19 @@ Below is the exhaustive, production-grade column and schema specification for al
 *   **Columns:**
     *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
     *   `project_id` `uuid` (References `projects(id)` on delete cascade, Not Null)
+    *   `created_by` `uuid` (References `users(id)` on delete set null, Nullable)
     *   `idea_name` `text` (Not Null)
     *   `idea_description` `text` (Not Null)
     *   `target_customer` `text` (Not Null)
-    *   `market_type` `text` (Not Null, Check: `market_type IN ('B2B', 'B2C', 'B2B2C', 'Marketplace')`)
+    *   `market_type` `text` (Not Null)
     *   `target_region` `text` (Not Null)
-    *   `mode` `text` (Not Null, Check: `mode IN ('Fast Scan', 'Deep Dive', 'Continuous Monitoring')`)
-    *   `status` `text` (Not Null, Check: `status IN ('Queued', 'Processing', 'Complete', 'Failed')`, Default: `'Queued'`)
+    *   `mode` `text` (Not Null, Check: `mode IN ('Fast Scan', 'Deep Validation', 'Compare Ideas', 'Find Opportunities in Market')`)
+    *   `status` `text` (Not Null, Check: `status IN ('Queued', 'Searching', 'Extracting', 'Normalizing', 'Scoring', 'Generating', 'Completed', 'Failed', 'Cancelled')`, Default: `'Queued'`)
     *   `progress` `integer` (Default: `0`, Not Null, Check: `progress >= 0 AND progress <= 100`)
     *   `error_message` `text` (Nullable)
     *   `created_at` `timestamptz` (Default: `now()`, Not Null)
     *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+*   **Important Drift Flag**: The database check constraints for `status` are in PascalCase, while the frontend `ResearchStage` TypeScript types and state logs are in lowercase (e.g. `complete` vs `Completed`).
 
 #### 9. `research_stages`
 *   **Purpose:** Chronological steps of a validation run.
@@ -170,11 +172,12 @@ Below is the exhaustive, production-grade column and schema specification for al
     *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
     *   `run_id` `uuid` (References `research_runs(id)` on delete cascade, Not Null)
     *   `stage_name` `text` (Not Null)
-    *   `status` `text` (Not Null, Check: `status IN ('Pending', 'Running', 'Completed', 'Failed')`, Default: `'Pending'`)
+    *   `status` `text` (Not Null, Check: `status IN ('Pending', 'Active', 'Complete', 'Failed')`, Default: `'Pending'`)
     *   `started_at` `timestamptz` (Nullable)
     *   `completed_at` `timestamptz` (Nullable)
     *   `created_at` `timestamptz` (Default: `now()`, Not Null)
     *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
+*   **Important Drift Flag**: The database check constraints for stage `status` are `'Pending', 'Active', 'Complete', 'Failed'`. The word `'Complete'` is used in the database, whereas `'Completed'` is used elsewhere.
 
 #### 10. `saved_comparisons`
 *   **Purpose:** Compares multiple research runs side-by-side.
@@ -381,10 +384,9 @@ Below is the exhaustive, production-grade column and schema specification for al
 *   **Purpose:** Tracks SaaS metrics and user action telemetry.
 *   **Columns:**
     *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
-    *   `team_id` `uuid` (References `teams(id)` on delete set null, Nullable)
     *   `user_id` `uuid` (References `users(id)` on delete set null, Nullable)
     *   `event_name` `text` (Not Null)
-    *   `event_payload` `jsonb` (Default: `'{}'`, Not Null)
+    *   `event_data` `jsonb` (Default: `'{}'`, Not Null)
     *   `created_at` `timestamptz` (Default: `now()`, Not Null)
     *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
@@ -392,11 +394,10 @@ Below is the exhaustive, production-grade column and schema specification for al
 *   **Purpose:** Centralized repository logging backend, edge, or client crashes.
 *   **Columns:**
     *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
-    *   `team_id` `uuid` (References `teams(id)` on delete set null, Nullable)
     *   `user_id` `uuid` (References `users(id)` on delete set null, Nullable)
+    *   `context` `text` (Not Null)
     *   `error_message` `text` (Not Null)
     *   `stack_trace` `text` (Nullable)
-    *   `context` `jsonb` (Default: `'{}'`, Not Null)
     *   `created_at` `timestamptz` (Default: `now()`, Not Null)
     *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
@@ -404,11 +405,10 @@ Below is the exhaustive, production-grade column and schema specification for al
 *   **Purpose:** Tracks asynchronously queued routines.
 *   **Columns:**
     *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
-    *   `team_id` `uuid` (References `teams(id)` on delete cascade, Not Null)
+    *   `run_id` `uuid` (References `research_runs(id)` on delete cascade, Nullable)
     *   `job_type` `text` (Not Null)
-    *   `status` `text` (Not Null)
-    *   `payload` `jsonb` (Default: `'{}'`, Not Null)
-    *   `result` `jsonb` (Nullable)
+    *   `status` `text` (Not Null, Check: `status IN ('Queued', 'Processing', 'Complete', 'Failed')`)
+    *   `error_details` `text` (Nullable)
     *   `created_at` `timestamptz` (Default: `now()`, Not Null)
     *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
@@ -416,11 +416,11 @@ Below is the exhaustive, production-grade column and schema specification for al
 *   **Purpose:** Direct inbox alerts displayed to users.
 *   **Columns:**
     *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
-    *   `team_id` `uuid` (References `teams(id)` on delete cascade, Not Null)
-    *   `user_id` `uuid` (References `users(id)` on delete cascade, Nullable)
+    *   `user_id` `uuid` (References `users(id)` on delete cascade, Not Null)
     *   `title` `text` (Not Null)
     *   `message` `text` (Not Null)
     *   `read` `boolean` (Default: `false`, Not Null)
+    *   `type` `text` (Not Null, Check: `type IN ('Info', 'Success', 'Warning', 'Error')`)
     *   `created_at` `timestamptz` (Default: `now()`, Not Null)
     *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
@@ -429,8 +429,7 @@ Below is the exhaustive, production-grade column and schema specification for al
 *   **Columns:**
     *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
     *   `query_hash` `text` (Unique, Not Null)
-    *   `query_text` `text` (Not Null)
-    *   `result_payload` `jsonb` (Not Null)
+    *   `result` `jsonb` (Not Null)
     *   `expires_at` `timestamptz` (Not Null)
     *   `created_at` `timestamptz` (Default: `now()`, Not Null)
     *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
@@ -439,9 +438,9 @@ Below is the exhaustive, production-grade column and schema specification for al
 *   **Purpose:** Caches SerpAPI / web search indexing.
 *   **Columns:**
     *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
-    *   `query_hash` `text` (Unique, Not Null)
-    *   `query_text` `text` (Not Null)
-    *   `raw_results` `jsonb` (Not Null)
+    *   `query_string` `text` (Unique, Not Null)
+    *   `results` `jsonb` (Not Null)
+    *   `expires_at` `timestamptz` (Not Null)
     *   `created_at` `timestamptz` (Default: `now()`, Not Null)
     *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
@@ -596,7 +595,24 @@ Deno imports inside the Edge Worker are standardized. The Deno environment maps 
 
 ---
 
-## 9. Storage Buckets
+## 9. Phase 2 & Phase 3 Integration Status
+
+### Current Implementation State
+The SignalFit pipeline currently exists in two distinct forms:
+1. **Frontend / Demo Sandbox (Active UI)**: Fully implemented client-side in-memory mock pipeline (`lib/research/pipeline.ts`). It simulates progress updates, performs local filtering in TypeScript (`lib/research/evidence.ts`), and compiles mocked reports (`lib/research/generator.ts`) using the standard weight scoring metrics (`lib/scoring.ts`).
+2. **Database Backend (Schema Ready)**: The Supabase PostgreSQL database tables (`sources`, `evidence_items`, `opportunity_scores`, `reports`, `cached_research`, `search_cache`) are fully deployed with correct primary keys, constraints, and RLS policies. The Server Actions in `lib/actions/research.ts` are declared but are **not yet wired** to write actual LLM-structured outputs to the database.
+
+### Evidence Pipeline & API Usage Logs (Phase 2):
+* **Providers**: The backend does not yet connect to external web search providers (SerpAPI/Tavily) or extraction/scraping agents. The pipeline utilizes simulated mock providers (`lib/research/providers.ts`).
+* **Cost Controls**: The proposed `api_usage_logs` table does not exist in the database. Rate limits, cost tracking, and API keys are managed locally or simulated.
+
+### Reasoning Engine (Phase 3):
+* **Specialist Agents & Report Generation**: Deterministic weighting and SVG score calculations are implemented in Next.js (`lib/scoring.ts`), but full LLM-driven specialist agents (analyzing pricing, competitor positioning, and launch strategy separately) are not yet integrated into the Edge Worker runtime.
+* **Storage Cache**: Private buckets (`cached-sources` and `exports`) are created in storage, but saving raw scrapes and compiled PDF/CSV summaries directly to storage is not yet implemented.
+
+---
+
+## 10. Storage Buckets
 
 Storage buckets are configured to separate asset storage securely:
 
