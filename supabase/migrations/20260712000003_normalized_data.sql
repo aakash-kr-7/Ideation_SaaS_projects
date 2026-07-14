@@ -3,7 +3,7 @@
 
 -- 1. opportunities: The core output of a research run
 create table public.opportunities (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   run_id uuid not null references public.research_runs(id) on delete cascade,
   name text not null,
   one_liner text not null,
@@ -16,7 +16,7 @@ create table public.opportunities (
 
 -- 2. sources: Raw input materials
 create table public.sources (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   run_id uuid not null references public.research_runs(id) on delete cascade,
   title text not null,
   url text not null,
@@ -28,7 +28,7 @@ create table public.sources (
 
 -- 3. evidence_items: Extracted facts linked to sources
 create table public.evidence_items (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   run_id uuid not null references public.research_runs(id) on delete cascade,
   opportunity_id uuid references public.opportunities(id) on delete cascade,
   source_id uuid references public.sources(id) on delete set null,
@@ -42,7 +42,7 @@ create table public.evidence_items (
 
 -- 4. competitors
 create table public.competitors (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   opportunity_id uuid not null references public.opportunities(id) on delete cascade,
   name text not null,
   positioning text not null,
@@ -55,7 +55,7 @@ create table public.competitors (
 
 -- 5. risks
 create table public.risks (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   opportunity_id uuid not null references public.opportunities(id) on delete cascade,
   category text not null check (category in ('Market', 'Execution', 'Platform', 'Regulatory')),
   severity text not null check (severity in ('High', 'Medium', 'Low')),
@@ -66,7 +66,7 @@ create table public.risks (
 
 -- 6. pricing_models
 create table public.pricing_models (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   opportunity_id uuid not null unique references public.opportunities(id) on delete cascade,
   model text not null,
   price_point text not null,
@@ -78,7 +78,7 @@ create table public.pricing_models (
 
 -- 7. mvp_plans
 create table public.mvp_plans (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   opportunity_id uuid not null unique references public.opportunities(id) on delete cascade,
   outcome text not null,
   build_estimate text not null,
@@ -88,7 +88,7 @@ create table public.mvp_plans (
 
 -- 8. mvp_scope_items (array items for MVP plan)
 create table public.mvp_scope_items (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   mvp_plan_id uuid not null references public.mvp_plans(id) on delete cascade,
   item_type text not null check (item_type in ('Scope', 'Exclusion')),
   description text not null,
@@ -97,7 +97,7 @@ create table public.mvp_scope_items (
 
 -- 9. launch_plans
 create table public.launch_plans (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   opportunity_id uuid not null unique references public.opportunities(id) on delete cascade,
   first_customer_channel text not null,
   outreach_message text not null,
@@ -107,7 +107,7 @@ create table public.launch_plans (
 
 -- 10. launch_strategies (array items for Launch plan)
 create table public.launch_strategies (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   launch_plan_id uuid not null references public.launch_plans(id) on delete cascade,
   strategy_type text not null check (strategy_type in ('WeekOne', 'FirstTen')),
   description text not null,

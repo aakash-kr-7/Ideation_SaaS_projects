@@ -18,7 +18,7 @@ create table public.users (
 
 -- 2. teams: Supports future team/organization features
 create table public.teams (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   name text not null,
   slug text unique not null,
   created_by uuid references public.users(id) on delete set null,
@@ -28,7 +28,7 @@ create table public.teams (
 
 -- 3. team_members: Maps users to teams
 create table public.team_members (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   team_id uuid not null references public.teams(id) on delete cascade,
   user_id uuid not null references public.users(id) on delete cascade,
   role text not null check (role in ('owner', 'admin', 'member')),

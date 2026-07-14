@@ -3,7 +3,7 @@
 
 -- 1. opportunity_scores: The aggregate score
 create table public.opportunity_scores (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   opportunity_id uuid not null unique references public.opportunities(id) on delete cascade,
   total numeric not null,
   confidence numeric not null,
@@ -13,7 +13,7 @@ create table public.opportunity_scores (
 
 -- 2. score_breakdowns: The individual criteria scores
 create table public.score_breakdowns (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   score_id uuid not null references public.opportunity_scores(id) on delete cascade,
   criterion text not null,
   score numeric not null,
@@ -25,7 +25,7 @@ create table public.score_breakdowns (
 
 -- 3. score_evidence_refs: Links evidence to specific score criteria
 create table public.score_evidence_refs (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   score_breakdown_id uuid not null references public.score_breakdowns(id) on delete cascade,
   evidence_id uuid not null references public.evidence_items(id) on delete cascade,
   created_at timestamptz default now() not null,
@@ -34,7 +34,7 @@ create table public.score_evidence_refs (
 
 -- 4. reports: The final generated output
 create table public.reports (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   run_id uuid not null unique references public.research_runs(id) on delete cascade,
   opportunity_id uuid not null references public.opportunities(id) on delete cascade,
   status text not null check (status in ('Draft', 'Published')),
@@ -46,7 +46,7 @@ create table public.reports (
 
 -- 5. report_versions: History/snapshots of the report
 create table public.report_versions (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   report_id uuid not null references public.reports(id) on delete cascade,
   version_number integer not null,
   payload jsonb not null, -- snapshot of the data at generation time

@@ -3,7 +3,7 @@
 
 -- 1. analytics_events: Tracking user actions
 create table public.analytics_events (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid references public.users(id) on delete set null,
   event_name text not null,
   event_data jsonb not null default '{}',
@@ -12,7 +12,7 @@ create table public.analytics_events (
 
 -- 2. error_logs: Application errors
 create table public.error_logs (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid references public.users(id) on delete set null,
   context text not null,
   error_message text not null,
@@ -22,7 +22,7 @@ create table public.error_logs (
 
 -- 3. background_jobs: Job queue/status tracking
 create table public.background_jobs (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   run_id uuid references public.research_runs(id) on delete cascade,
   job_type text not null,
   status text not null check (status in ('Queued', 'Processing', 'Complete', 'Failed')),
@@ -33,7 +33,7 @@ create table public.background_jobs (
 
 -- 4. notifications: In-app alerts
 create table public.notifications (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
   title text not null,
   message text not null,
@@ -44,7 +44,7 @@ create table public.notifications (
 
 -- 5. cached_research: Results of expensive LLM calls
 create table public.cached_research (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   query_hash text not null unique,
   result jsonb not null,
   expires_at timestamptz not null,
@@ -53,7 +53,7 @@ create table public.cached_research (
 
 -- 6. search_cache: Web search caching
 create table public.search_cache (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   query_string text not null unique,
   results jsonb not null,
   expires_at timestamptz not null,
@@ -62,7 +62,7 @@ create table public.search_cache (
 
 -- 7. billing_customers: Stripe customer mapping
 create table public.billing_customers (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   team_id uuid not null unique references public.teams(id) on delete cascade,
   stripe_customer_id text not null unique,
   created_at timestamptz default now() not null
@@ -70,7 +70,7 @@ create table public.billing_customers (
 
 -- 8. billing_subscriptions: Subscription state
 create table public.billing_subscriptions (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   team_id uuid not null unique references public.teams(id) on delete cascade,
   stripe_subscription_id text not null unique,
   plan_id text not null,

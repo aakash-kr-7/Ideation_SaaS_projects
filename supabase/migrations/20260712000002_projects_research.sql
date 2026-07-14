@@ -3,7 +3,7 @@
 
 -- 1. projects: Folders or overarching initiatives
 create table public.projects (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   team_id uuid not null references public.teams(id) on delete cascade,
   name text not null,
   description text,
@@ -14,7 +14,7 @@ create table public.projects (
 
 -- 2. research_runs: A single validation or research attempt
 create table public.research_runs (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   project_id uuid not null references public.projects(id) on delete cascade,
   created_by uuid references public.users(id) on delete set null,
   idea_name text not null,
@@ -32,7 +32,7 @@ create table public.research_runs (
 
 -- 3. research_stages: Tracks the individual steps of a research run
 create table public.research_stages (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   run_id uuid not null references public.research_runs(id) on delete cascade,
   stage_name text not null,
   status text not null check (status in ('Pending', 'Active', 'Complete', 'Failed')),
@@ -45,7 +45,7 @@ create table public.research_stages (
 
 -- 4. saved_comparisons: Saved views of multiple research runs being compared
 create table public.saved_comparisons (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   project_id uuid not null references public.projects(id) on delete cascade,
   name text not null,
   run_ids uuid[] not null,
