@@ -1,6 +1,7 @@
 import {
   assertCitationsBelongToRun,
   competitionAgentSchema,
+  finalJudgeSchema,
 } from "./reasoning.ts";
 
 function expectThrow(fn: () => unknown) {
@@ -28,5 +29,23 @@ Deno.test("citations from another run are rejected", () => {
         evidence_ids: ["00000000-0000-4000-8000-000000000099"],
       }],
     }, new Set(["00000000-0000-4000-8000-000000000001"]))
+  );
+});
+
+Deno.test("Final Judge requires three individually traceable sentences", () => {
+  const sentence = {
+    text: "Traceable sentence.",
+    evidence_ids: ["00000000-0000-4000-8000-000000000001"],
+    score_criteria: [],
+  };
+  finalJudgeSchema.parse({
+    executive_summary: [sentence, { ...sentence, text: "Second sentence." }],
+    methodology: [{ ...sentence, text: "Method sentence." }],
+  });
+  expectThrow(() =>
+    finalJudgeSchema.parse({
+      executive_summary: [sentence],
+      methodology: [sentence],
+    })
   );
 });

@@ -8,20 +8,33 @@ import { PricingCalculator } from "@/components/report/PricingCalculator";
 import { ValidationExperiment } from "@/components/report/ValidationExperiment";
 import { VerdictBadge } from "@/components/opportunity/verdict-badge";
 import { ScoreBadge } from "@/components/scoring/score-badge";
+import { WeightEditor } from "@/components/scoring/WeightEditor";
+import { recalculateScorecard } from "@/lib/recalculate-scorecard";
 
 const tabs = ["Verdict", "Evidence", "Competitors", "Scoring", "MVP Blueprint", "Pricing", "Launch", "Action plan", "Risks", "Export"] as const;
 type Tab = typeof tabs[number];
 
-export function ValidationReport({ report, scorecard, publicMode = false }: { report: ReportType; scorecard?: ReportType["opportunity"]["scorecard"]; publicMode?: boolean }) {
+export function ValidationReport({ report, scorecard, publicMode = false, runId, sourceCount }: { report: ReportType; scorecard?: ReportType["opportunity"]["scorecard"]; publicMode?: boolean; runId?: string; sourceCount?: number }) {
   const [tab, setTab] = useState<Tab>("Verdict");
   const [toast, setToast] = useState("");
   const o = useMemo(() => ({ ...report.opportunity, scorecard: scorecard ?? report.opportunity.scorecard }), [report, scorecard]);
 
-  const exportFile = (format: "md" | "json" | "csv" | "pdf") => {
+  const exportFile = async (format: "md" | "json" | "csv" | "pdf") => {
     const payload = { ...report, opportunity: o };
+    if (!publicMode && runId) {
+      const response = await fetch(`/api/research/${runId}/export`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ format }) });
+      if (!response.ok) { const failure = await response.json().catch(() => null); setToast(failure?.error ?? "Stored export is unavailable"); return; }
+      const blob = await response.blob();
+      const disposition = response.headers.get("Content-Disposition") ?? "";
+      const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? `${o.name}-report.${format}`;
+      downloadExport(filename, blob, blob.type);
+      setToast(`${format.toUpperCase()} export downloaded`);
+      setTimeout(() => setToast(""), 2200);
+      return;
+    }
     if (format === "pdf") {
       window.print();
-      setToast("Print dialog opened for PDF export");
+      setToast("Print dialog opened for sample PDF");
       return;
     }
     if (format === "md") downloadExport(`${o.name}-report.md`, reportToMarkdown(payload), "text/markdown");
@@ -77,7 +90,7 @@ export function ValidationReport({ report, scorecard, publicMode = false }: { re
         <div className="sidebar-metrics">
           <Metric label="Report date" value={report.generatedAt}/>
           <Metric label="Analysis type" value="Full Validation"/>
-          <Metric label="Sources analyzed" value={String(o.evidence.length)}/>
+          <Metric label="Sources analyzed" value={String(sourceCount ?? new Set(o.evidence.map(item => item.url)).size)}/>
           <Metric label="Evidence found" value={String(o.evidence.length)}/>
           <Metric label="Competitors mapped" value={String(o.competitors.length)}/>
         </div>
@@ -186,7 +199,7 @@ function CompetitorView({ report }: { report: ReportType }) {
           <td>{c.target}</td>
           <td>{c.pricing}</td>
           <td>{c.strength}</td>
-          <td>Broad workflow and implementation overhead</td>
+          <td>{c.positioning}</td>
           <td>{c.gap}</td>
           <td><span className={index === 0 ? "threat medium" : "threat low"}>{index === 0 ? "Medium" : "Low"}</span></td>
         </tr>)}
@@ -196,10 +209,12 @@ function CompetitorView({ report }: { report: ReportType }) {
 }
 
 function ScoringView({ report, scorecard }: { report: ReportType; scorecard: ReportType["opportunity"]["scorecard"] }) {
-  const entries = Object.entries(scorecard.scores);
+  const [weights, setWeights] = useState(scorecard.weights);
+  const recalculated = useMemo(() => recalculateScorecard(scorecard, weights), [scorecard, weights]);
+  const entries = Object.entries(recalculated.scores);
   const ordered = [...entries].sort((a, b) => b[1] - a[1]);
   return <>
-    <ScoreBreakdown scorecard={scorecard}/>
+    <div className="workbench-grid"><WeightEditor weights={weights} defaultValue={scorecard.weights} onChange={setWeights}/><ScoreBreakdown scorecard={recalculated}/></div>
     <section className="score-explanation">
       <p className="eyebrow">Score analysis</p>
       <p><b>Strongest drivers:</b> {ordered.slice(0, 3).map(([key]) => pretty(key)).join(", ")}. <b>Weakest drivers:</b> {ordered.slice(-3).map(([key]) => pretty(key)).join(", ")}.</p>
@@ -217,28 +232,29 @@ function pretty(value: string) {
 }
 
 function MvpView({ report }: { report: ReportType }) {
-  const m = report.opportunity.mvp;
+  const o = report.opportunity;
+  const m = o.mvp;
   return <>
     <div className="mvp-timeline phased">
       <article>
         <span>Version 0 · Validate</span>
-        <b>Landing page and paid problem test</b>
-        <p>Interview the buyer, demonstrate the outcome, request a paid concierge commitment.</p>
+        <b>{o.launch.successMetric}</b>
+        <p>{o.launch.outreachMessage}</p>
       </article>
       <article>
         <span>Version 1 · Core MVP</span>
-        <b>One focused outcome</b>
+        <b>{m.outcome}</b>
         <p>{m.scope.join(" · ")}</p>
       </article>
       <article>
         <span>Version 2 · Paid workflow</span>
-        <b>Prove the repeatable job</b>
-        <p>Automate the paid path only after the concierge workflow repeats consistently.</p>
+        <b>{o.pricing.firstOffer}</b>
+        <p>{o.pricing.rationale}</p>
       </article>
       <article>
         <span>Version 3 · Retention</span>
-        <b>Earn the right to expand</b>
-        <p>Add retention features only after the core job demonstrates consistent usage.</p>
+        <b>{m.buildEstimate}</b>
+        <p>{m.exclusions.join(" · ")}</p>
       </article>
     </div>
     <div className="scope-groups">
@@ -248,7 +264,7 @@ function MvpView({ report }: { report: ReportType }) {
       </article>
       <article>
         <b>Should-have</b>
-        <p>Simple export · manual approval controls</p>
+        <p>{m.scope.slice(2).join(" · ")}</p>
       </article>
       <article>
         <b>Exclude for now</b>
@@ -260,14 +276,14 @@ function MvpView({ report }: { report: ReportType }) {
 
 function PricingView({ report }: { report: ReportType }) {
   const p = report.opportunity.pricing;
-  let parsedPrice = 79;
+  let parsedPrice = 0;
   const match = p.pricePoint.match(/\d+/);
   if (match) parsedPrice = Number(match[0]);
   const cards = [
-    ["Free / Trial", "$0", "One narrow proof run", "Demonstrate the outcome before the buyer commits."],
-    ["Starter", p.pricePoint, "Core workflow limits", "Anchors below the cost of recurring manual effort."],
-    ["Pro", `$${parsedPrice * 2}/mo`, "Automation and team access", "For teams that repeat the job enough to justify deeper workflow."],
-    ["Agency / Studio", `$${parsedPrice * 4}/mo`, "Multi-client workspace", "Supports a service-plus-software delivery model."]
+    ["Pricing model", p.model, "Persisted model", p.rationale],
+    ["Core price", p.pricePoint, "Persisted price point", p.rationale],
+    ["First offer", p.firstOffer, "Initial paid validation", p.rationale],
+    ["Initial target", `${p.targetCustomers} customers`, "Persisted customer target", p.rationale]
   ];
   return <>
     <div className="pricing-strategy-cards">
@@ -297,18 +313,18 @@ function LaunchView({ report }: { report: ReportType }) {
         <ol>{l.firstTenStrategy.map((step, index) => <li key={step}><span>{index + 1}</span>{step}</li>)}</ol>
       </article>
       <article>
-        <p className="eyebrow">First 100 users</p>
-        <b>Use concentrated distribution, not broad launch theatre.</b>
-        <ol>{(l.firstHundredStrategy ?? ["Convert three paid pilots into specific workflow proof", "Share practical teardown content in the same operator communities", "Build a partner motion only after the first workflow repeats"]).map((step, index) => <li key={step}><span>{index + 1}</span>{step}</li>)}</ol>
+        <p className="eyebrow">Week one</p>
+        <b>{l.successMetric}</b>
+        <ol>{l.weekOne.map((step, index) => <li key={step}><span>{index + 1}</span>{step}</li>)}</ol>
       </article>
     </div>
-    <ValidationExperiment steps={l.validationExperiment}/>
+    <ValidationExperiment steps={l.weekOne}/>
     <div className="outreach-script">
       <b>Outreach script</b>
       <p>&ldquo;{l.outreachMessage}&rdquo;</p>
-      <span><strong>Channels:</strong> {(l.launchChannels ?? [l.firstCustomerChannel]).join(" · ")}</span>
+      <span><strong>Channels:</strong> {l.firstCustomerChannel}</span>
       <span><strong>Success signal:</strong> {l.successMetric}</span>
-      <span><strong>Failure signal:</strong> Buyers acknowledge pain but will not commit to a paid test.</span>
+      <span><strong>Validation target:</strong> {l.successMetric}</span>
     </div>
   </div>;
 }
@@ -411,24 +427,21 @@ function ChecklistView({ report }: { report: ReportType }) {
 }
 
 function RiskView({ report }: { report: ReportType }) {
-  const seeds = ["Market", "Build", "Distribution", "Compliance", "Platform", "Pricing", "Retention"];
   return <div className="risk-heatmap detailed-risk">
-    {seeds.map((name, index) => {
-      const existing = report.opportunity.risks[index % report.opportunity.risks.length];
-      const severity = index < 2 ? existing.severity : index === 3 ? "Low" : "Medium";
-      return <article key={name} className={severity.toLowerCase()}>
+    {report.opportunity.risks.map(existing => {
+      return <article key={existing.id} className={existing.severity.toLowerCase()}>
         <div>
-          <span>{name} risk</span>
-          <b>{severity} likelihood</b>
+          <span>{existing.category} risk</span>
+          <b>{existing.severity} likelihood</b>
         </div>
-        <h3>{index < 2 ? existing.description : `${name} risk is an assumption to monitor as the initial workflow is tested.`}</h3>
-        <p><strong>Mitigation: </strong>{index < 2 ? existing.mitigation : "Maintain narrow initial scope and record direct buyer evidence before expanding."}</p>
+        <h3>{existing.description}</h3>
+        <p><strong>Mitigation: </strong>{existing.mitigation}</p>
       </article>;
     })}
   </div>;
 }
 
-function ExportView({ onExport }: { onExport: (format: "md" | "json" | "csv" | "pdf") => void }) {
+function ExportView({ onExport }: { onExport: (format: "md" | "json" | "csv" | "pdf") => void | Promise<void> }) {
   return <div className="export-panel">
     <Download size={21}/>
     <div>
@@ -451,7 +464,7 @@ function FinalBlock({ report }: { report: ReportType }) {
       <span><b>Next action: </b>{o.launch.successMetric}</span>
       <span><b>Build first: </b>{o.mvp.scope[0]}</span>
       <span><b>Do not build: </b>{o.mvp.exclusions[0]}</span>
-      <span><b>Prove before scaling: </b>Paid commitment from the defined target buyer.</span>
+      <span><b>Prove before scaling: </b>{o.launch.successMetric}</span>
     </div>
   </section>;
 }

@@ -1,50 +1,22 @@
 "use client";
 import { useMemo, useState } from "react";
-import { ArrowRight, ChevronDown } from "lucide-react";
-import { validationReports } from "@/lib/sample-reports";
-import { calculateConfidenceScore, calculateWeightedScore, getVerdictFromScore, defaultWeights } from "@/lib/scoring";
-import { ScoringWeights } from "@/lib/types";
+import { ChevronDown } from "lucide-react";
+import type { CompletedScorecard } from "@/lib/report-data";
+import type { ScoringWeights } from "@/lib/types";
+import { recalculateScorecard } from "@/lib/recalculate-scorecard";
 import { WeightEditor } from "./WeightEditor";
 import { ScoreBreakdown } from "./ScoreBreakdown";
-import { ValidationReport } from "@/components/report/ValidationReport";
 
-export function ScoringWorkbench(){
-  const [reportId,setReportId]=useState(validationReports[2].id);
-  const [weights,setWeights]=useState<ScoringWeights>(defaultWeights);
-  const [showReport,setShowReport]=useState(false);
-  const report=validationReports.find(r=>r.id===reportId)??validationReports[0];
-
-  const scorecard=useMemo(()=>{
-    const total=calculateWeightedScore(report.opportunity.scorecard.scores,weights);
-    const partial={...report.opportunity.scorecard,weights,total,verdict:getVerdictFromScore(total)};
-    return {...partial,confidence:calculateConfidenceScore(partial)};
-  },[report,weights]);
-
+export function ScoringWorkbench({reports}:{reports:CompletedScorecard[]}){
+  const [reportId,setReportId]=useState(reports[0]?.id??"");
+  const report=reports.find(item=>item.id===reportId)??reports[0];
+  const [weightsByReport,setWeightsByReport]=useState<Record<string,ScoringWeights>>({});
+  const weights=report?(weightsByReport[report.id]??report.scorecard.weights):undefined;
+  const scorecard=useMemo(()=>report&&weights?recalculateScorecard(report.scorecard,weights):null,[report,weights]);
+  if(!report||!weights||!scorecard)return <div className="scoring-workbench"><div className="workbench-intro"><div><p className="eyebrow">Interactive decision model</p><h2>No completed validations yet.</h2><p>Complete a real validation to adjust its persisted score breakdown.</p></div></div></div>;
+  const setWeights=(next:ScoringWeights)=>setWeightsByReport(previous=>({...previous,[report.id]:next}));
   return <div className="scoring-workbench">
-    <div className="workbench-intro">
-      <div>
-        <p className="eyebrow">Interactive decision model</p>
-        <h2>Test your decision criteria.</h2>
-        <p>Adjust validation weights to see how they impact the overall score and verdict, anchored by real market evidence.</p>
-      </div>
-      <label className="report-select">
-        Select idea
-        <select value={reportId} onChange={e=>setReportId(e.target.value)}>
-          {validationReports.map(r=><option value={r.id} key={r.id}>{r.opportunity.name}</option>)}
-        </select>
-        <ChevronDown size={15}/>
-      </label>
-    </div>
-    
-    <div className="workbench-grid">
-      <WeightEditor weights={weights} onChange={setWeights}/>
-      <ScoreBreakdown scorecard={scorecard} previousScore={report.opportunity.scorecard.total}/>
-    </div>
-    
-    <button className="report-reveal" onClick={()=>setShowReport(s=>!s)}>
-      {showReport ? "Hide full validation report" : "Open complete validation report"}
-      <ArrowRight size={16}/>
-    </button>
-    {showReport && <ValidationReport report={report} scorecard={scorecard}/>}
+    <div className="workbench-intro"><div><p className="eyebrow">Interactive decision model</p><h2>Test your decision criteria.</h2><p>Adjust validation weights to see how they impact the overall score and verdict, anchored by real market evidence.</p></div><label className="report-select">Select idea<select value={report.id} onChange={e=>setReportId(e.target.value)}>{reports.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select><ChevronDown size={15}/></label></div>
+    <div className="workbench-grid"><WeightEditor weights={weights} defaultValue={report.scorecard.weights} onChange={setWeights}/><ScoreBreakdown scorecard={scorecard} previousScore={report.scorecard.total}/></div>
   </div>;
 }

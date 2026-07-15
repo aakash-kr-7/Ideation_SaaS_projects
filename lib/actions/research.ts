@@ -54,6 +54,7 @@ export async function startResearchRun(formData: z.infer<typeof startResearchRun
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
+  let runId: string | null = null;
   try {
     const validated = startResearchRunSchema.parse(formData);
 
@@ -67,9 +68,26 @@ export async function startResearchRun(formData: z.infer<typeof startResearchRun
       mode: validated.mode as any,
       created_by: user.id,
     });
+    runId = data.id;
+
+    const workerSecret = process.env.WEBHOOK_SECRET;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!workerSecret || !supabaseUrl) throw new Error("Research worker dispatch is not configured.");
+    const workerResponse = await fetch(`${supabaseUrl}/functions/v1/research-worker`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${workerSecret}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ record: data }),
+    });
+    if (!workerResponse.ok) {
+      const detail = await workerResponse.text();
+      throw new Error(`Research worker rejected the run (${workerResponse.status}): ${detail.slice(0, 300)}`);
+    }
 
     return data;
   } catch (err: any) {
+    if (runId) {
+      await supabase.from("research_runs").update({ status: "Failed", progress: 100, error_message: err.message || String(err) }).eq("id", runId);
+    }
     // Log error to error_logs table
     await supabase.from("error_logs").insert({
       user_id: user.id,

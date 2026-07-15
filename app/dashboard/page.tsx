@@ -15,16 +15,26 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: databaseRuns, error } = await supabase
     .from("research_runs")
-    .select("id, idea_name, idea_description, target_customer, market_type, target_region, mode, status, progress, created_at, reports(report_versions(payload))")
+    .select(`id, idea_name, idea_description, target_customer, market_type, target_region, mode, status, progress, created_at,
+      opportunities(
+        id, name, one_liner, target_customer, market, core_pain,
+        evidence_items(id, signal_type, strength, title, snippet, created_at, sources(title, source_type, url)),
+        competitors(id, name, positioning, pricing, target, strength, gap),
+        pricing_models(model, price_point, rationale, first_offer, target_customers),
+        mvp_plans(outcome, build_estimate, build_complexity, mvp_scope_items(item_type, description)),
+        launch_plans(first_customer_channel, outreach_message, success_metric, launch_strategies(strategy_type, description)),
+        risks(id, category, severity, description, mitigation),
+        opportunity_scores(total, confidence, verdict, score_breakdowns(criterion, score))
+      )`)
     .order("created_at", { ascending: false });
   if (error) throw error;
 
   const mappedRuns: ResearchRun[] = (databaseRuns || []).map((run: any) => {
     let opportunity: Opportunity | undefined = undefined;
-    const report = run.reports?.[0]?.report_versions?.[0]?.payload;
-    if (report?.opportunity) {
-      const o = report.opportunity;
-      const scores = o.scorecard.scores;
+    const o = run.opportunities?.[0];
+    const scorecard = Array.isArray(o?.opportunity_scores) ? o?.opportunity_scores[0] : o?.opportunity_scores;
+    if (o && scorecard) {
+      const scores = Object.fromEntries((scorecard.score_breakdowns || []).map((item: any) => [item.criterion, Number(item.score)]));
       const legacyScore: ScoreBreakdown = {
         pain: scores.painSeverity,
         urgency: scores.purchaseUrgency,
@@ -34,23 +44,28 @@ export default async function DashboardPage() {
         complexity: scores.mvpSpeed,
         platformRisk: scores.platformDependencyRisk,
         founderFit: scores.founderFit,
-        total: o.scorecard.total
+        total: Number(scorecard.total)
       };
+      const pricing = Array.isArray(o.pricing_models) ? o.pricing_models[0] : o.pricing_models;
+      const mvp = Array.isArray(o.mvp_plans) ? o.mvp_plans[0] : o.mvp_plans;
+      const launch = Array.isArray(o.launch_plans) ? o.launch_plans[0] : o.launch_plans;
+      const strategies = launch?.launch_strategies || [];
+      const scopeItems = mvp?.mvp_scope_items || [];
 
       opportunity = {
         id: o.id,
         name: o.name,
-        one_liner: o.oneLiner,
-        target_customer: o.targetCustomer,
+        one_liner: o.one_liner,
+        target_customer: o.target_customer,
         market: o.market as MarketType,
         score: legacyScore,
-        verdict: o.scorecard.verdict === "Build Now" ? "Build now" : o.scorecard.verdict === "Avoid" ? "Avoid for now" : "Validate first",
-        confidence: o.scorecard.confidence,
-        evidence: o.evidence.map((e: any) => ({ ...e, date: e.date.slice(0, 10) })),
+        verdict: scorecard.verdict === "Build Now" ? "Build now" : scorecard.verdict === "Avoid" ? "Avoid for now" : "Validate first",
+        confidence: Number(scorecard.confidence),
+        evidence: (o.evidence_items || []).map((e: any) => ({ id:e.id,source:e.sources?.title || "Source",sourceType:e.sources?.source_type || "Unknown",title:e.title,snippet:e.snippet,url:e.sources?.url || "",signal:e.signal_type,strength:e.strength,date:e.created_at.slice(0,10) })),
         competitors: o.competitors,
-        pricing: o.pricing,
-        mvp: o.mvp,
-        launch: o.launch,
+        pricing: {model:pricing?.model || "",pricePoint:pricing?.price_point || "",rationale:pricing?.rationale || "",firstOffer:pricing?.first_offer || "",targetCustomers:pricing?.target_customers || 0},
+        mvp: {outcome:mvp?.outcome || "",scope:scopeItems.filter((item:any)=>item.item_type==="Scope").map((item:any)=>item.description),exclusions:scopeItems.filter((item:any)=>item.item_type==="Exclusion").map((item:any)=>item.description),buildEstimate:mvp?.build_estimate || ""},
+        launch: {firstCustomerChannel:launch?.first_customer_channel || "",weekOne:strategies.filter((item:any)=>item.strategy_type==="WeekOne").map((item:any)=>item.description),outreachMessage:launch?.outreach_message || "",successMetric:launch?.success_metric || ""},
         risks: o.risks
       };
     }
@@ -84,13 +99,13 @@ export default async function DashboardPage() {
   const activeFiles = mappedRuns.slice(0, 4);
   const rankedFiles = [...completedRuns].sort((a, b) => (b.opportunity?.score.total ?? 0) - (a.opportunity?.score.total ?? 0)).slice(0, 4);
 
-  const primaryInvestigation = completedRuns[0];
+  const primaryInvestigation = rankedFiles[0];
 
   // Dynamic priority actions from actual data
-  const priorityActions = rankedFiles.slice(0, 3).map((run, index) => ({
+  const priorityActions = rankedFiles.filter(run=>run.opportunity?.launch.weekOne[0]).slice(0, 3).map((run, index) => ({
     num: `0${index + 1}`,
     name: run.ideaName,
-    desc: run.opportunity?.launch.weekOne[0] || "Review the validation report and plan next steps.",
+    desc: run.opportunity!.launch.weekOne[0],
     action: run.opportunity?.verdict === "Build now" ? "Start building" : "Test next"
   }));
 

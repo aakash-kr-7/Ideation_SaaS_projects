@@ -3,9 +3,23 @@ import type { SearchResult } from "./types.ts";
 
 declare const Deno: any;
 export function getEnv(key: string): string | undefined {
-  if (typeof Deno !== "undefined" && Deno.env) return Deno.env.get(key);
+  if (typeof Deno !== "undefined" && Deno.env) {
+    try {
+      return Deno.env.get(key);
+    } catch {
+      return undefined;
+    }
+  }
   if (typeof process !== "undefined" && process.env) return process.env[key];
   return undefined;
+}
+
+function providerRequestSignal() {
+  const timeoutMs = Number(getEnv("PROVIDER_REQUEST_TIMEOUT_MS") || "30000");
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    throw new Error("PROVIDER_REQUEST_TIMEOUT_MS must be positive.");
+  }
+  return AbortSignal.timeout(timeoutMs);
 }
 
 export const evidenceItemLLMSchema = z.object({
@@ -59,6 +73,7 @@ export class TavilySearchProvider implements SearchProvider {
   async search(query: string): Promise<SearchResult[]> {
     const response = await fetch("https://api.tavily.com/search", {
       method: "POST",
+      signal: providerRequestSignal(),
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         api_key: this.apiKey,
@@ -91,6 +106,7 @@ export class FirecrawlExtractor implements PageExtractor {
   async extract(url: string): Promise<string> {
     const response = await fetch("https://api.firecrawl.dev/v1/scrape", {
       method: "POST",
+      signal: providerRequestSignal(),
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
         "Content-Type": "application/json",
@@ -120,6 +136,7 @@ export class CohereEmbeddingProvider implements EmbeddingProvider {
     if (!texts.length) return [];
     const response = await fetch("https://api.cohere.com/v1/embed", {
       method: "POST",
+      signal: providerRequestSignal(),
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
         "Content-Type": "application/json",
@@ -149,7 +166,16 @@ abstract class OpenAICompatibleReasoningProvider implements ReasoningProvider {
   abstract endpoint: string;
   abstract model: string;
   lastUsage?: ProviderUsage;
-  constructor(protected apiKey: string) {}
+  constructor(
+    protected apiKey: string,
+    protected maxCompletionTokens = 2048,
+  ) {
+    if (!Number.isInteger(maxCompletionTokens) || maxCompletionTokens <= 0) {
+      throw new Error(
+        "REASONING_MAX_COMPLETION_TOKENS must be a positive integer.",
+      );
+    }
+  }
   protected extraHeaders(): Record<string, string> {
     return {};
   }
@@ -160,6 +186,7 @@ abstract class OpenAICompatibleReasoningProvider implements ReasoningProvider {
   ): Promise<T> {
     const response = await fetch(this.endpoint, {
       method: "POST",
+      signal: providerRequestSignal(),
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
         "Content-Type": "application/json",
@@ -172,6 +199,7 @@ abstract class OpenAICompatibleReasoningProvider implements ReasoningProvider {
           content: userPrompt,
         }],
         temperature: 0.1,
+        max_completion_tokens: this.maxCompletionTokens,
         response_format: { type: "json_object" },
       }),
     });
@@ -205,14 +233,23 @@ export class GroqReasoningProvider extends OpenAICompatibleReasoningProvider {
   endpoint = "https://api.groq.com/openai/v1/chat/completions";
   model = "llama-3.3-70b-versatile";
 }
-export class OpenRouterReasoningProvider
+export class CerebrasReasoningProvider
   extends OpenAICompatibleReasoningProvider {
-  name = "openrouter";
-  endpoint = "https://openrouter.ai/api/v1/chat/completions";
-  model = "meta-llama/llama-3.3-70b-instruct:free";
-  protected override extraHeaders() {
-    return { "HTTP-Referer": "http://localhost:3000", "X-Title": "SignalFit" };
+  name = "cerebras";
+  endpoint = "https://api.cerebras.ai/v1/chat/completions";
+  model: string;
+  constructor(
+    apiKey: string,
+    model = "gpt-oss-120b",
+    maxCompletionTokens = 2048,
+  ) {
+    super(apiKey, maxCompletionTokens);
+    this.model = model;
   }
+}
+
+function reasoningMaxCompletionTokens() {
+  return Number(getEnv("REASONING_MAX_COMPLETION_TOKENS") || "2048");
 }
 
 export function createSearchProvider(): SearchProvider {
@@ -244,17 +281,21 @@ export function createEmbeddingProvider(): EmbeddingProvider {
 }
 export function createAnalysisProvider(useFallback = false): ReasoningProvider {
   const groq = getEnv("GROQ_API_KEY"),
-    openrouter = getEnv("OPENROUTER_API_KEY") || getEnv("OPEN_ROUTER_API_KEY");
+    cerebras = getEnv("CEREBRAS_API_KEY");
   if (useFallback) {
-    if (!openrouter) {
-      throw new Error("OPENROUTER_API_KEY is required for reasoning fallback.");
+    if (!cerebras) {
+      throw new Error("CEREBRAS_API_KEY is required for reasoning fallback.");
     }
-    return new OpenRouterReasoningProvider(openrouter);
+    return new CerebrasReasoningProvider(
+      cerebras,
+      getEnv("CEREBRAS_MODEL") || "gpt-oss-120b",
+      reasoningMaxCompletionTokens(),
+    );
   }
   if (!groq) {
     throw new Error(
       "GROQ_API_KEY is required; simulated reasoning is disabled.",
     );
   }
-  return new GroqReasoningProvider(groq);
+  return new GroqReasoningProvider(groq, reasoningMaxCompletionTokens());
 }

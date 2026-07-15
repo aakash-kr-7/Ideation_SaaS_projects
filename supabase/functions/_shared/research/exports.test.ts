@@ -35,6 +35,7 @@ Deno.test("all export formats carry consistent run facts", () => {
   ];
   for (const output of outputs) {
     assert(output.includes("Actual run content"), "idea missing");
+    assert(output.includes(input.runId), "run ID missing");
     assert(output.includes("84"), "score missing");
     assert(output.includes("Validate First"), "verdict missing");
   }
@@ -47,4 +48,23 @@ Deno.test("all export formats carry consistent run facts", () => {
     "csv citation missing",
   );
   assert(outputs[3].startsWith("%PDF-1.4"), "invalid PDF signature");
+});
+
+Deno.test("PDF wraps citations across pages without truncating them", () => {
+  const evidenceIds = Array.from(
+    { length: 12 },
+    (_, index) => `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+  );
+  const pdf = new TextDecoder().decode(renderPdf({
+    ...input,
+    breakdowns: Array.from({ length: 12 }, (_, index) => ({
+      criterion: `criterion${index}`,
+      score: 50,
+      weight: 8,
+      note: "A traceable deterministic factor with a concise explanation.",
+      evidenceIds,
+    })),
+  }));
+  assert(/\/Count [2-9]/.test(pdf), "long report was not paginated");
+  assert(pdf.includes(evidenceIds.at(-1)!), "final evidence ID was truncated");
 });

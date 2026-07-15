@@ -61,7 +61,7 @@ export const finalJudgeSchema = z.object({
       (v) => v.evidence_ids.length > 0 || v.score_criteria.length > 0,
       "Narrative sentence must be traceable",
     ),
-  ),
+  ).length(2),
   methodology: z.array(
     z.object({
       text: z.string().min(1),
@@ -71,7 +71,7 @@ export const finalJudgeSchema = z.object({
       (v) => v.evidence_ids.length > 0 || v.score_criteria.length > 0,
       "Methodology sentence must be traceable",
     ),
-  ),
+  ).length(1),
 });
 
 export const specialistSchemas = {

@@ -10,7 +10,7 @@ Next.js App Router
   -> authenticated dispatch to Supabase Edge Function
   -> Tavily search
   -> Firecrawl extraction
-  -> Groq reasoning (OpenRouter fallback)
+  -> Groq reasoning (Cerebras fallback)
   -> Cohere embeddings
   -> normalized Postgres records + report_versions
   -> Supabase Realtime progress
@@ -18,7 +18,7 @@ Next.js App Router
 
 Postgres, Auth, Realtime, Storage, and Edge Functions run on Supabase. Every tenant-owned table is protected by Row Level Security through the run -> project -> team relationship. The Next.js dashboard, progress API, report view, compare API, and export API read only from Supabase; no in-memory research store or mock provider is available to a real research request.
 
-Static data used by the explicitly labelled `/sample-report` page and scoring workbench lives in `lib/sample-reports.ts`. It is not imported by the research API or worker.
+Static data used by the explicitly labelled `/sample-report` page lives in `lib/sample-reports.ts`. It is not imported by authenticated dashboards, progress views, scoring workbenches, report pages, research APIs, or the worker.
 
 ## Edge source layout
 
@@ -55,9 +55,9 @@ The TypeScript source is `supabase/functions/_shared/research/status.ts`. A stag
 
 ## Provider safety and observability
 
-The production worker requires `TAVILY_API_KEY`, `FIRECRAWL_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, and `COHERE_API_KEY`. Missing credentials fail the run; no provider factory returns simulated data.
+The production worker requires `TAVILY_API_KEY`, `FIRECRAWL_API_KEY`, `GROQ_API_KEY`, `CEREBRAS_API_KEY`, and `COHERE_API_KEY`. `CEREBRAS_MODEL` is optional and defaults to `gpt-oss-120b`; provider calls time out after 30 seconds, `REASONING_MAX_COMPLETION_TOKENS` defaults to `2048`, `REASONING_AGENT_PACING_MS` defaults to `8000`, and the reasoning phase reserves 35 seconds of its 115-second budget for Final Judge and terminal persistence. Missing credentials fail the run; no provider factory returns simulated data.
 
-Each real provider attempt, including retries and failures, writes `provider`, `operation`, token counts where the provider supplies them, estimated cost, status, and any error to `api_usage_logs`. A per-run dollar cap is enforced by `RESEARCH_RUN_COST_CAP_USD` (default `1.00`). Pipeline failures also write `error_logs`, set the run to `Failed`, and propagate a typed error to the worker.
+Each real provider attempt, including retries and failures, writes `provider`, `operation`, token counts where the provider supplies them, estimated cost, status, and any error to `api_usage_logs`. A per-run dollar cap is enforced by `RESEARCH_RUN_COST_CAP_USD` (default `1.00`); resumed workers seed the budget from the run's persisted usage total so retries cannot reset the cap. Pipeline failures also write `error_logs`, set the run to `Failed`, and propagate a typed error to the worker.
 
 ## Local development
 
@@ -95,6 +95,7 @@ The function performs its own dedicated bearer-secret check before parsing or pr
 app/api/research/     authenticated start/progress/report/compare/export APIs
 app/research/         idea form, live progress, and stored report pages
 components/           UI and report rendering
+lib/report-data.ts    normalized, RLS-scoped production report assembly
 lib/repositories/     Next.js Supabase data access
 lib/services/         server orchestration
 lib/sample-reports.ts explicit sample-only fixtures

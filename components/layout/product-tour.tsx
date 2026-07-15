@@ -84,7 +84,7 @@ const tourSteps: TourStep[] = [
     icon: Download,
     section: "Export & Share",
     title: "Get reports to the right people",
-    body: "Export as Markdown (for docs), JSON (for integrations), CSV (for spreadsheets), or PDF (print dialog). Share reports with co-founders to align on which idea to pursue, or with investors to demonstrate market diligence.",
+    body: "Download the generated Markdown, JSON, CSV, or PDF stored with the completed report. Share reports with co-founders to align on which idea to pursue, or with investors to demonstrate market diligence.",
     proTip: "The Markdown export is surprisingly useful for investor updates and co-founder alignment docs. It's structured for decision-making, not just reading.",
     commonMistake: "Keeping reports to yourself. Sharing validation data with your co-founder or advisor catches blind spots you'll miss solo.",
   },

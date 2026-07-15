@@ -1,4 +1,2 @@
-"use client";
-import { useParams } from "next/navigation";
 import { ResearchProgress } from "@/components/research/research-progress";
-export default function DynamicProgressPage(){const params=useParams<{id:string}>();return <ResearchProgress id={params.id} idea="your idea"/>}
+export default async function DynamicProgressPage({params}:{params:Promise<{id:string}>}){const {id}=await params;return <ResearchProgress id={id}/>}

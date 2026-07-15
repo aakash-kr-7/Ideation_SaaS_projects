@@ -32,6 +32,12 @@ import {
 } from "./exports.ts";
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+function retryDelay(error: unknown, attempt: number) {
+  const message = error instanceof Error ? error.message : String(error);
+  return /429|too many requests/i.test(message)
+    ? 5_000 * attempt
+    : 500 * 2 ** (attempt - 1);
+}
 export class PipelineError extends Error {
   constructor(
     message: string,
@@ -44,8 +50,11 @@ export class PipelineError extends Error {
 }
 
 class CostBudget {
-  private reserved = 0;
+  private reserved: number;
   readonly cap = Number(getEnv("RESEARCH_RUN_COST_CAP_USD") || "1.00");
+  constructor(persistedSpend = 0) {
+    this.reserved = persistedSpend;
+  }
   reserve(amount: number) {
     if (!Number.isFinite(this.cap) || this.cap <= 0) {
       throw new Error("RESEARCH_RUN_COST_CAP_USD must be positive.");
@@ -60,12 +69,28 @@ class CostBudget {
     this.reserved += amount;
   }
 }
+async function costBudgetForRun(runId: string, db: any) {
+  const { data, error } = await db.from("api_usage_logs").select("cost").eq(
+    "run_id",
+    runId,
+  );
+  if (error) {
+    throw new Error(
+      `Failed to load persisted provider spend: ${error.message}`,
+    );
+  }
+  const persistedSpend = (data || []).reduce(
+    (sum: number, row: any) => sum + Number(row.cost || 0),
+    0,
+  );
+  return new CostBudget(persistedSpend);
+}
 const COST: Record<string, number> = {
   tavily: .008,
   firecrawl: .001,
   cohere: .0002,
   groq: .02,
-  openrouter: 0,
+  cerebras: .02,
 };
 async function logUsage(
   runId: string,
@@ -130,7 +155,7 @@ async function callProvider<T>(
         message,
         db,
       );
-      if (attempt < retries) await wait(500 * 2 ** (attempt - 1));
+      if (attempt < retries) await wait(retryDelay(error, attempt));
     }
   }
   throw last;
@@ -411,10 +436,59 @@ async function acquireAndNormalize(
   }
 }
 
+function specialistContract(name: SpecialistName) {
+  const claims =
+    '"claims":[{"claim":"One concise sentence.","evidence_ids":["UUID"]}],"limitations":[]';
+  switch (name) {
+    case "market":
+      return `{${claims},"demand_pattern":"Unknown"}`;
+    case "pricing":
+      return `{${claims},"pricing_structure":"Unknown"}`;
+    case "risk":
+      return `{${claims},"risks":[{"category":"Market","severity":"Low","claim":"One concise sentence.","evidence_ids":["UUID"]}]}`;
+    case "demand":
+      return `{${claims},"confidence_label":"Low","contradiction_observation":"One concise categorical observation."}`;
+    case "gtm":
+      return `{${claims},"channels":[{"channel":"Channel name","rationale":"One concise sentence.","evidence_ids":["UUID"]}]}`;
+    default:
+      return `{${claims}}`;
+  }
+}
+
 function specialistPrompt(name: SpecialistName, structured: any) {
-  return `You are the ${name} specialist. Analyze only the supplied structured database rows. Return JSON matching the requested shape. Every claim, risk, and channel must cite one or more exact evidence_items UUIDs from the input. Never output a numeric score, rating number, probability, percentage, market-size estimate, competitor count, average price, or other score-like number. Categorical labels are allowed. If the evidence does not support a claim, omit it and describe the limitation.\n\nSTRUCTURED INPUT:\n${
+  return `You are the ${name} specialist. Analyze only the supplied structured database rows. Return exactly this JSON shape: ${
+    specialistContract(name)
+  }. Replace example values with supported values from the input. Allowed enums: demand_pattern=Growing|Stable|Seasonal|Declining|Unknown; pricing_structure=Subscription|Usage|One-time|Service|Mixed|Unknown; risk category=Market|Execution|Platform|Regulatory; severity and confidence_label=High|Medium|Low. Every array item must be an object using exactly the shown field names. Return at most three claims, three risks, and three channels. Keep every claim, rationale, limitation, and observation to one concise sentence. Every claim, risk, and channel must cite one or more exact evidence_items UUIDs from the input. Never output a numeric score, rating number, probability, percentage, market-size estimate, competitor count, average price, or other score-like number. Categorical labels are allowed. If the evidence does not support a claim, omit it and describe the limitation.\n\nSTRUCTURED INPUT:\n${
     JSON.stringify(structured)
   }`;
+}
+
+function specialistInput(name: SpecialistName, structured: any) {
+  const signals: Record<SpecialistName, string[]> = {
+    competition: ["Demand", "Risk"],
+    market: ["Demand", "Pain"],
+    pricing: ["Pricing", "Demand"],
+    risk: ["Risk", "Pain"],
+    demand: ["Pain", "Demand"],
+    gtm: ["Demand", "Pain"],
+  };
+  const candidates = structured.evidence.filter((item: any) =>
+    signals[name].includes(item.signal_type)
+  );
+  const evidence = (candidates.length ? candidates : structured.evidence)
+    .toSorted((a: any, b: any) =>
+      Number(b.confidence || 0) - Number(a.confidence || 0) ||
+      Number(b.supporting_count || 0) - Number(a.supporting_count || 0) ||
+      String(a.id).localeCompare(String(b.id))
+    ).slice(0, 8);
+  const base: any = { opportunity: structured.opportunity, evidence };
+  if (name === "competition" || name === "gtm") {
+    base.competitors = structured.competitors;
+  }
+  if (name === "pricing") base.pricing_model = structured.pricing_model;
+  if (name === "risk") base.risks = structured.risks;
+  if (name === "gtm") base.launch_plan = structured.launch_plan;
+  return base;
 }
 
 function deterministicCompetitionMetrics(competitors: any[]) {
@@ -508,7 +582,7 @@ async function runSpecialist(
       return { status: "Complete", output };
     } catch (error) {
       last = error;
-      if (attempt < 3) await wait(500 * 2 ** (attempt - 1));
+      if (attempt < 3) await wait(retryDelay(error, attempt));
     }
   }
   await logError(runId, `reasoning-agent:${name}`, last, db);
@@ -536,6 +610,22 @@ async function executeReasoningPhase(
   db: any,
   budget = new CostBudget(),
 ) {
+  const reasoningStartedAt = Date.now();
+  const reasoningPhaseBudgetMs = Number(
+    getEnv("REASONING_PHASE_BUDGET_MS") || "115000",
+  );
+  const finalJudgeReserveMs = Number(
+    getEnv("FINAL_JUDGE_RESERVE_MS") || "35000",
+  );
+  if (
+    !Number.isFinite(reasoningPhaseBudgetMs) ||
+    !Number.isFinite(finalJudgeReserveMs) || finalJudgeReserveMs <= 0 ||
+    reasoningPhaseBudgetMs <= finalJudgeReserveMs
+  ) {
+    throw new Error(
+      "REASONING_PHASE_BUDGET_MS must exceed the positive FINAL_JUDGE_RESERVE_MS.",
+    );
+  }
   await updateState(
     id,
     "Normalizing",
@@ -593,6 +683,18 @@ async function executeReasoningPhase(
   };
   const names = Object.keys(specialistSchemas) as SpecialistName[];
   const outputs: any = {};
+  const specialistBudgetMs = Number(
+    getEnv("REASONING_SPECIALIST_BUDGET_MS") || "90000",
+  );
+  if (!Number.isFinite(specialistBudgetMs) || specialistBudgetMs <= 0) {
+    throw new Error("REASONING_SPECIALIST_BUDGET_MS must be positive.");
+  }
+  const agentPacingMs = Number(
+    getEnv("REASONING_AGENT_PACING_MS") || "8000",
+  );
+  if (!Number.isFinite(agentPacingMs) || agentPacingMs < 0) {
+    throw new Error("REASONING_AGENT_PACING_MS must be zero or greater.");
+  }
   for (let i = 0; i < names.length; i++) {
     const name = names[i];
     await updateState(
@@ -602,14 +704,34 @@ async function executeReasoningPhase(
       `Running ${name[0].toUpperCase() + name.slice(1)} Agent`,
       db,
     );
-    outputs[name] = await runSpecialist(
-      name,
-      structured,
-      allowed,
-      id,
-      budget,
-      db,
+    const specialistDeadlineMs = Math.min(
+      specialistBudgetMs,
+      reasoningPhaseBudgetMs - finalJudgeReserveMs,
     );
+    if (Date.now() - reasoningStartedAt >= specialistDeadlineMs) {
+      const error = new Error(
+        `Skipped ${name} specialist after the bounded specialist-phase time budget was exhausted.`,
+      );
+      await logError(id, `reasoning-agent:${name}`, error, db);
+      const output = { claims: [], limitations: [error.message] };
+      await db.from("reasoning_agent_outputs").upsert({
+        run_id: id,
+        agent_name: name,
+        status: "Incomplete",
+        attempt_count: 1,
+        payload: output,
+      }, { onConflict: "run_id,agent_name" });
+      outputs[name] = { status: "Incomplete", output };
+    } else {
+      outputs[name] = await runSpecialist(
+        name,
+        specialistInput(name, structured),
+        allowed,
+        id,
+        budget,
+        db,
+      );
+    }
     if (name === "competition") {
       outputs[name].output.metrics = deterministicCompetitionMetrics(
         compQ.data || [],
@@ -617,6 +739,12 @@ async function executeReasoningPhase(
       await db.from("reasoning_agent_outputs").update({
         payload: outputs[name].output,
       }).eq("run_id", id).eq("agent_name", name);
+    }
+    if (
+      outputs[name].status === "Complete" && i < names.length - 1 &&
+      agentPacingMs > 0
+    ) {
+      await wait(agentPacingMs);
     }
   }
   await updateState(
@@ -626,6 +754,14 @@ async function executeReasoningPhase(
     "Computing 12-factor score without provider access",
     db,
   );
+  if (
+    Date.now() - reasoningStartedAt >=
+      reasoningPhaseBudgetMs - finalJudgeReserveMs
+  ) {
+    throw new Error(
+      "Reasoning phase exhausted its bounded specialist/scoring window before Final Judge; reserved finalization time was preserved.",
+    );
+  }
   const factors = computeFactors({
     evidence,
     risks: riskQ.data || [],
@@ -670,6 +806,14 @@ async function executeReasoningPhase(
     }
     breakdowns.push({ ...f, id: row.id, weight });
   }
+  if (
+    Date.now() - reasoningStartedAt >=
+      reasoningPhaseBudgetMs - finalJudgeReserveMs
+  ) {
+    throw new Error(
+      "Reasoning phase reached the reserved Final Judge boundary while persisting deterministic scores.",
+    );
+  }
   await updateState(
     id,
     "Generating",
@@ -695,9 +839,15 @@ async function executeReasoningPhase(
   let judgeLast: unknown;
   let judgeAttempt = 0;
   for (let attempt = 1; attempt <= 3; attempt++) {
+    if (Date.now() - reasoningStartedAt >= reasoningPhaseBudgetMs - 5_000) {
+      judgeLast = new Error(
+        "Final Judge exhausted the bounded reasoning-phase time budget.",
+      );
+      break;
+    }
     judgeAttempt = attempt;
     try {
-      const provider = createAnalysisProvider(attempt === 3);
+      const provider = createAnalysisProvider(attempt >= 2);
       judge = await callProvider(
         id,
         provider,
@@ -706,7 +856,7 @@ async function executeReasoningPhase(
         db,
         () =>
           provider.generateStructured(
-            "Write concise report prose using only the supplied specialist outputs and deterministic score. Return JSON with executive_summary and methodology arrays. Each array item is exactly one sentence with text plus evidence_ids and/or score_criteria. Cite only IDs and criteria present in the input. Do not add or calculate any number; you may repeat the supplied deterministic total or factor values only when needed.",
+            'Write concise report prose using only the supplied specialist outputs and deterministic score. Return exactly this JSON shape with exactly two executive_summary objects and exactly one methodology object: {"executive_summary":[{"text":"One sentence.","evidence_ids":["UUID"],"score_criteria":[]},{"text":"One different sentence.","evidence_ids":[],"score_criteria":["criterionName"]}],"methodology":[{"text":"One sentence.","evidence_ids":[],"score_criteria":["criterionName"]}]}. Every array item must be an object, never a string. Each item must contain text, evidence_ids, and score_criteria, with at least one non-empty citation array. Cite only IDs and criteria present in the input. Never output, calculate, restate, or explain a numeric score; describe deterministic results categorically.',
             JSON.stringify(judgeInput),
             finalJudgeSchema,
           ),
@@ -717,7 +867,12 @@ async function executeReasoningPhase(
     } catch (error) {
       judgeLast = error;
       if (attempt < 3) {
-        await wait(500 * 2 ** (attempt - 1));
+        const delay = retryDelay(error, attempt);
+        if (
+          Date.now() - reasoningStartedAt + delay >=
+            reasoningPhaseBudgetMs - 5_000
+        ) break;
+        await wait(delay);
       }
     }
   }
@@ -937,10 +1092,15 @@ export async function runReasoningPhase(
   id: string,
   input: ResearchRequest,
   db: any,
-  budget = new CostBudget(),
+  budget?: CostBudget,
 ) {
   try {
-    return await executeReasoningPhase(id, input, db, budget);
+    return await executeReasoningPhase(
+      id,
+      input,
+      db,
+      budget || await costBudgetForRun(id, db),
+    );
   } catch (error) {
     await logError(id, `reasoning-worker:${id}`, error, db);
     try {
@@ -967,13 +1127,13 @@ export async function runResearchPipeline(
   input: ResearchRequest,
   db?: any,
 ) {
-  const budget = new CostBudget();
   try {
     if (!db) {
       throw new Error(
         "A database client is required; offline execution is disabled.",
       );
     }
+    const budget = await costBudgetForRun(id, db);
     await acquireAndNormalize(id, input, db, budget);
     return await executeReasoningPhase(id, input, db, budget);
   } catch (error) {

@@ -30,7 +30,7 @@ export function renderMarkdown(input: ExportBundleInput) {
       b.evidenceIds.join(", ")
     } |`
   ).join("\n");
-  return `# ${input.ideaName}\n\n**Score:** ${input.total}/100  \n**Verdict:** ${input.verdict}  \n**Confidence:** ${input.confidence}/100\n\n## Executive summary\n\n${input.executiveSummary}\n\n## Score breakdown\n\n| Criterion | Score | Weight | Evidence IDs |\n|---|---:|---:|---|\n${rows}\n\n## Methodology\n\n${input.methodology}\n`;
+  return `# ${input.ideaName}\n\n**Run ID:** ${input.runId}  \n**Score:** ${input.total}/100  \n**Verdict:** ${input.verdict}  \n**Confidence:** ${input.confidence}/100\n\n## Executive summary\n\n${input.executiveSummary}\n\n## Score breakdown\n\n| Criterion | Score | Weight | Evidence IDs |\n|---|---:|---:|---|\n${rows}\n\n## Methodology\n\n${input.methodology}\n`;
 }
 export function renderCsv(input: ExportBundleInput) {
   const header = [
@@ -85,34 +85,54 @@ function wrap(value: string, width = 92) {
 export function renderPdf(input: ExportBundleInput): Uint8Array {
   const lines = [
     `SignalFit: ${input.ideaName}`,
+    `Run ID: ${input.runId}`,
     `Score: ${input.total}/100 | Verdict: ${input.verdict} | Confidence: ${input.confidence}/100`,
     "",
     ...wrap(input.executiveSummary),
     "",
     "12-factor breakdown:",
-    ...input.breakdowns.map((b) =>
-      `${b.criterion}: ${b.score} (weight ${b.weight}) [${
-        b.evidenceIds.join(", ")
-      }]`
-    ),
+    ...input.breakdowns.flatMap((b) => [
+      ...wrap(`${b.criterion}: ${b.score} (weight ${b.weight})`),
+      ...wrap(`Evidence IDs: ${b.evidenceIds.join(", ") || "None"}`),
+      ...wrap(`Notes: ${b.note}`),
+    ]),
     "",
     "Methodology:",
     ...wrap(input.methodology),
-  ].slice(0, 48);
-  const stream = `BT\n/F1 9 Tf\n42 760 Td\n12 TL\n${
-    lines.map((line, i) => `${i ? "T* " : ""}(${pdfEscape(line)}) Tj`).join(
-      "\n",
-    )
-  }\nET`;
+  ];
+  const pageBodies: string[][] = [];
+  for (let i = 0; i < lines.length; i += 48) {
+    pageBodies.push(lines.slice(i, i + 48));
+  }
+  const pageCount = pageBodies.length || 1;
+  const fontId = 3 + pageCount * 2;
+  const pageIds = pageBodies.map((_, index) => 3 + index * 2);
   const objects = [
     "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
-    `<< /Length ${
-      encoder.encode(stream).length
-    } >>\nstream\n${stream}\nendstream`,
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    `<< /Type /Pages /Kids [${
+      pageIds.map((id) => `${id} 0 R`).join(" ")
+    }] /Count ${pageCount} >>`,
   ];
+  pageBodies.forEach((body, index) => {
+    const pageId = pageIds[index], contentId = pageId + 1;
+    const pageLines = [
+      `Page ${index + 1} of ${pageCount}`,
+      ...(index ? ["SignalFit report (continued)", ""] : []),
+      ...body,
+    ];
+    const stream = `BT\n/F1 9 Tf\n42 760 Td\n12 TL\n${
+      pageLines.map((line, lineIndex) =>
+        `${lineIndex ? "T* " : ""}(${pdfEscape(line)}) Tj`
+      ).join("\n")
+    }\nET`;
+    objects.push(
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentId} 0 R >>`,
+      `<< /Length ${
+        encoder.encode(stream).length
+      } >>\nstream\n${stream}\nendstream`,
+    );
+  });
+  objects.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
   let pdf = "%PDF-1.4\n", offset = encoder.encode(pdf).length;
   const offsets = [0];
   objects.forEach((obj, i) => {

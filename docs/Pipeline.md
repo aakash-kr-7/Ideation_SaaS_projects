@@ -6,7 +6,7 @@ A research request is always authenticated and database-backed. The API inserts 
 
 1. `Searching`: run up to five Tavily queries.
 2. `Extracting`: persist up to three independently addressable URLs and their Firecrawl markdown.
-3. `Normalizing`: use Groq to extract evidence, fall back to OpenRouter on Groq failure, then deduplicate with Cohere embeddings (Jaccard is the non-generative dedup fallback).
+3. `Normalizing`: use Groq to extract evidence, fall back to Cerebras on Groq failure, then deduplicate with Cohere embeddings (Jaccard is the non-generative dedup fallback).
 4. `Scoring`: run six citation-validating specialists over database rows, then compute the deterministic 12-factor score in provider-free code.
 5. `Generating`: run the Final Judge over specialist JSON plus stored score breakdowns, create an immutable report version, and upload JSON, Markdown, CSV, and PDF artifacts to private Storage.
 6. `Completed` or `Failed`: persist the terminal run state and append the matching stage-history row.
@@ -25,7 +25,7 @@ A source must be inserted successfully before the pipeline can complete. Each `e
 
 The Competition, Market, Pricing, Risk, Demand, and GTM specialists read only structured rows scoped to one `research_run`: `evidence_items` and the normalized opportunity child tables. They never import or instantiate search or extraction providers and do not select `sources.text_content`. Every claim-shaped field requires one or more evidence UUIDs in its Zod schema. Citations are checked again against the run's actual evidence-ID set; invalid or absent citations trigger a retry. After three unsuccessful attempts the section is persisted as `Incomplete`, the error is logged, and the other sections continue.
 
-All structured LLM work uses `ReasoningProvider.generateStructured`. Groq remains primary and OpenRouter remains the fallback, with each physical attempt recorded in `api_usage_logs` and charged against the same per-run `CostBudget` used by evidence acquisition. `FORCE_SPECIALIST_AGENT_FAILURE=<agent name>` is a test-only environment switch for exercising the bounded failure path.
+All structured LLM work uses `ReasoningProvider.generateStructured`. Groq remains primary and Cerebras remains the fallback, with each physical attempt recorded in `api_usage_logs` and charged against the same per-run `CostBudget` used by evidence acquisition. Each specialist receives at most eight deterministically selected, relevant evidence rows. `CEREBRAS_MODEL` is optional and defaults to `gpt-oss-120b`; provider requests time out after 30 seconds, `REASONING_MAX_COMPLETION_TOKENS` defaults to `2048`, and `REASONING_AGENT_PACING_MS` defaults to `8000`. The reasoning phase is bounded to 115 seconds and reserves its final 35 seconds for Final Judge and terminal persistence. Once the specialist window is exhausted, remaining sections are persisted as incomplete; if scoring reaches the reserved boundary, the run fails with a specific logged reason instead of being killed in a transient state. `FORCE_SPECIALIST_AGENT_FAILURE=<agent name>` is a test-only environment switch for exercising the bounded failure path.
 
 The Final Judge receives only specialist JSON and deterministic score data. Its Zod schema represents narrative as sentence records, each carrying at least one `evidence_id` or score criterion. Those sentence-level links are retained in the immutable report payload under `narrativeCitations`.
 
@@ -46,10 +46,10 @@ The `exports` bucket remains private. Its select policy derives the tenant UUID 
 - Tavily: search, maximum five logical queries.
 - Firecrawl: page extraction, maximum three unique URLs.
 - Groq `llama-3.3-70b-versatile`: primary structured evidence and report reasoning.
-- OpenRouter `meta-llama/llama-3.3-70b-instruct:free`: reasoning fallback.
+- Cerebras `gpt-oss-120b` (configurable with `CEREBRAS_MODEL`): reasoning fallback.
 - Cohere `embed-english-v3.0`: semantic deduplication.
 
-Every physical provider attempt is logged to `api_usage_logs`, including retry failures. LLM and embedding token usage is stored when returned by the provider. Estimated cost is reserved before each attempt, and the run stops before exceeding `RESEARCH_RUN_COST_CAP_USD`.
+Every physical provider attempt is logged to `api_usage_logs`, including retry failures. LLM and embedding token usage is stored when returned by the provider. Estimated cost is reserved before each attempt, and the run stops before exceeding `RESEARCH_RUN_COST_CAP_USD`. On resume, the worker loads the run's persisted usage total first, so a retry or regeneration cannot reset the per-run cap.
 
 ## Failure semantics
 

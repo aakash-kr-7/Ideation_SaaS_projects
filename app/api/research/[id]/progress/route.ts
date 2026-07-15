@@ -11,9 +11,9 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     const dbClient = supabase;
     
     // Fetch run status
-    const { data: dbRun, error: dbRunError } = await dbClient
-      .from("research_runs")
-      .select("id, status, progress, error_message")
+    const { data: dbRun, error: dbRunError } = await (dbClient
+      .from("research_runs") as any)
+      .select("id, status, progress, progress_detail, error_message")
       .eq("id", id)
       .single();
 
@@ -45,7 +45,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       id: dbRun.id,
       stage: dbRun.status,
       progress: dbRun.progress,
-      message: dbRun.status === "Failed" ? dbRun.error_message : `${dbRun.status}...`,
+      message: dbRun.status === "Failed" ? dbRun.error_message : (dbRun as any).progress_detail ?? dbRun.status,
       evidenceCount,
       sourceCount,
       competitorCount,
