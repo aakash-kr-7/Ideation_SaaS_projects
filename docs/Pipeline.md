@@ -1,4 +1,4 @@
-# SignalFit evidence pipeline
+# SignalFit evidence and reasoning pipeline
 
 A research request is always authenticated and database-backed. The API inserts a `Queued` run, dispatches the Edge worker with a dedicated bearer secret, and returns a progress URL. The worker atomically claims only a `Queued` row, schedules the pipeline, and returns `202`.
 
@@ -7,8 +7,8 @@ A research request is always authenticated and database-backed. The API inserts 
 1. `Searching`: run up to five Tavily queries.
 2. `Extracting`: persist up to three independently addressable URLs and their Firecrawl markdown.
 3. `Normalizing`: use Groq to extract evidence, fall back to OpenRouter on Groq failure, then deduplicate with Cohere embeddings (Jaccard is the non-generative dedup fallback).
-4. `Scoring`: synthesize evidence and compute the deterministic 12-factor score.
-5. `Generating`: write normalized opportunity, evidence, score, report, and report-version rows.
+4. `Scoring`: run six citation-validating specialists over database rows, then compute the deterministic 12-factor score in provider-free code.
+5. `Generating`: run the Final Judge over specialist JSON plus stored score breakdowns, create an immutable report version, and upload JSON, Markdown, CSV, and PDF artifacts to private Storage.
 6. `Completed` or `Failed`: persist the terminal run state and append the matching stage-history row.
 
 `research_runs.status`, `research_stages.status`, `research_stages.stage_name`, the worker, and the UI share the values exported by `supabase/functions/_shared/research/status.ts`.
@@ -20,6 +20,26 @@ Pipeline code is stored only under `supabase/functions/_shared/`. This location 
 ## Evidence integrity
 
 A source must be inserted successfully before the pipeline can complete. Each `evidence_items.source_id` resolves to a `sources.url`; the report payload carries the same URL for citations. A persistence error aborts the run. The pipeline never substitutes sample URLs, random embeddings, fabricated evidence, or an empty successful result.
+
+## Reasoning stage
+
+The Competition, Market, Pricing, Risk, Demand, and GTM specialists read only structured rows scoped to one `research_run`: `evidence_items` and the normalized opportunity child tables. They never import or instantiate search or extraction providers and do not select `sources.text_content`. Every claim-shaped field requires one or more evidence UUIDs in its Zod schema. Citations are checked again against the run's actual evidence-ID set; invalid or absent citations trigger a retry. After three unsuccessful attempts the section is persisted as `Incomplete`, the error is logged, and the other sections continue.
+
+All structured LLM work uses `ReasoningProvider.generateStructured`. Groq remains primary and OpenRouter remains the fallback, with each physical attempt recorded in `api_usage_logs` and charged against the same per-run `CostBudget` used by evidence acquisition. `FORCE_SPECIALIST_AGENT_FAILURE=<agent name>` is a test-only environment switch for exercising the bounded failure path.
+
+The Final Judge receives only specialist JSON and deterministic score data. Its Zod schema represents narrative as sentence records, each carrying at least one `evidence_id` or score criterion. Those sentence-level links are retained in the immutable report payload under `narrativeCitations`.
+
+## Deterministic scoring
+
+`supabase/functions/_shared/research/scoring-engine.ts` is a runtime-neutral module with no provider imports and no networking APIs. It derives the 12 factor values from persisted categorical/numeric inputs, including evidence strength, confidence, supporting/contradicting counts, normalized competitors, risks, pricing, and launch records. Exact evidence IDs used by each factor are returned with that factor and inserted into `score_evidence_refs`.
+
+Weights are read from `scoring_weights`; the migration seeds the current documented defaults, and weights can be adjusted without a code deployment. Risk factors are inverted only during weighted aggregation. Verdict boundaries are `Build Now` 85–100, `Validate First` 70–84, `Niche Down` 55–69, `Weak Signal` 40–54, and `Avoid` 0–39. Offline unit tests include 69/70 and 84/85.
+
+## Report versions and exports
+
+Each generation inserts the next `report_versions.version_number`; database triggers reject updates and deletes of version rows. The worker renders JSON, Markdown, CSV, and PDF server-side, uploads them to `exports/<team UUID>/<run UUID>/v<version>/`, hashes each object, and records its path, size, and SHA-256 digest in `report_exports`. The download API returns these stored objects instead of compiling a report in the browser or route handler.
+
+The `exports` bucket remains private. Its select policy derives the tenant UUID from the first path component and requires a matching `team_members` row for `auth.uid()`. Cross-team guessed paths therefore fail at the Storage policy even when the object name is known.
 
 ## Providers, retry, fallback, and cost
 
@@ -33,4 +53,4 @@ Every physical provider attempt is logged to `api_usage_logs`, including retry f
 
 ## Failure semantics
 
-Missing credentials, provider exhaustion, missing evidence, cost-cap exhaustion, and database errors are fatal. The pipeline writes `error_logs`, appends a `Failed` transition, updates `research_runs`, and throws `PipelineError`. The worker logs that rejection; it does not return fake or empty success.
+Missing credentials, provider exhaustion during required evidence extraction or Final Judge generation, missing evidence, cost-cap exhaustion, and database errors are fatal. A specialist-only failure is bounded to three attempts and becomes an incomplete section. Fatal errors write `error_logs`, append a `Failed` transition, update `research_runs`, and throw `PipelineError`; the worker never returns fake or empty success.

@@ -1,34 +1,24 @@
 import { NextResponse } from "next/server";
-import { reportToCsv, reportToMarkdown } from "@/lib/report-export";
-import type { ValidationReport } from "@/lib/report-schema";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
+  const body = await request.json().catch(() => ({ format: "json" }));
+  const requested = body.format === "md" ? "markdown" : body.format ?? "json";
   const { data, error } = await supabase
     .from("research_runs")
-    .select("idea_name, reports(report_versions(payload))")
+    .select("idea_name, reports(report_versions(version_number, report_exports(format, storage_path)))")
     .eq("id", id)
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  const report = (data as any)?.reports?.[0]?.report_versions?.[0]?.payload as ValidationReport | undefined;
-  if (!data || !report) return NextResponse.json({ error: "Report is not ready" }, { status: 409 });
-
-  const body = await request.json().catch(() => ({ format: "json" }));
-  const format = body.format ?? "json";
+  const versions = ((data as any)?.reports?.[0]?.report_versions ?? []).sort((a: any,b: any) => b.version_number-a.version_number);
+  const stored = versions[0]?.report_exports?.find((item: any) => item.format === requested);
+  if (!data || !stored) return NextResponse.json({ error: "Stored export is not ready" }, { status: 409 });
+  const { data: file, error: downloadError } = await supabase.storage.from("exports").download(stored.storage_path);
+  if (downloadError || !file) return NextResponse.json({ error: downloadError?.message || "Export unavailable" }, { status: 403 });
   const safeName = String(data.idea_name).replace(/[^a-z0-9-_]+/gi, "-").replace(/^-|-$/g, "") || "signalfit";
-  if (format === "markdown") {
-    return new NextResponse(reportToMarkdown(report), {
-      headers: { "Content-Type": "text/markdown", "Content-Disposition": `attachment; filename="${safeName}-report.md"` },
-    });
-  }
-  if (format === "csv") {
-    return new NextResponse(reportToCsv(report), {
-      headers: { "Content-Type": "text/csv", "Content-Disposition": `attachment; filename="${safeName}-summary.csv"` },
-    });
-  }
-  return new NextResponse(JSON.stringify(report, null, 2), {
-    headers: { "Content-Type": "application/json", "Content-Disposition": `attachment; filename="${safeName}-report.json"` },
-  });
+  const metadata: Record<string,{type:string;ext:string}> = { json:{type:"application/json",ext:"json"}, markdown:{type:"text/markdown",ext:"md"}, csv:{type:"text/csv",ext:"csv"}, pdf:{type:"application/pdf",ext:"pdf"} };
+  const meta = metadata[requested] || metadata.json;
+  return new NextResponse(await file.arrayBuffer(), { headers: { "Content-Type": meta.type, "Content-Disposition": `attachment; filename="${safeName}-report.${meta.ext}"`, "X-SignalFit-Storage-Path": stored.storage_path } });
 }

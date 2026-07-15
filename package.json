@@ -6,6 +6,7 @@
     "dev": "next dev",
     "dev:3001": "next dev -p 3001",
     "build": "next build",
+    "test:scoring": "deno test supabase/functions/_shared/research/scoring-engine.test.ts supabase/functions/_shared/research/reasoning.test.ts supabase/functions/_shared/research/exports.test.ts",
     "start": "node scripts/start-server.cjs",
     "start:3000": "node scripts/start-server.cjs --port=3000",
     "start:3001": "node scripts/start-server.cjs --port=3001",

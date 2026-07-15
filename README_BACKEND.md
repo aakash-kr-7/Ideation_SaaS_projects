@@ -613,11 +613,21 @@ Deno runtime code lives once in `supabase/functions/_shared/`. The worker import
 
 ---
 
-## 9. Evidence Pipeline Integration Status
+## 9. Evidence and Reasoning Pipeline Integration Status
 
 The research API is database-only. It authenticates the user, creates a tenant-scoped run through the service/repository layer, and dispatches the Edge worker with a dedicated webhook secret. Dashboard, progress, report, compare, and export paths read Supabase records only.
 
-The Edge pipeline uses Tavily, Firecrawl, Groq, OpenRouter fallback, and Cohere. It persists source URLs, normalized evidence, scores, report relations, and a report-version payload. Provider attempts, token usage where available, estimated costs, failures, and fallback calls are written to `api_usage_logs`. Per-run provider spending is capped before calls are made. Any missing credential or persistence failure writes `error_logs`, sets the run to `Failed`, and throws; mock or empty success is not available.
+The Edge pipeline uses Tavily, Firecrawl, Groq, OpenRouter fallback, and Cohere. After evidence normalization, six Zod-validated specialists read only persisted structured rows and return citation-bearing JSON. Missing citations are retried up to three times and then persisted as an incomplete section. All specialist and Final Judge calls use the existing `ReasoningProvider` and the same `CostBudget`, retry/fallback, and `api_usage_logs` path as evidence extraction.
+
+The 12-factor engine is implemented in a provider-free module. It derives factor values and exact evidence references in plain code, loads adjustable weights from `scoring_weights`, writes `opportunity_scores`, `score_breakdowns`, and `score_evidence_refs`, and maps totals to the five exact verdict bands. The Final Judge receives only specialist JSON and deterministic score data; sentence-level citations are retained in each immutable `report_versions` payload.
+
+JSON, Markdown, CSV, and PDF are generated inside the worker, uploaded to the private `exports` bucket under a team/run/version path, and recorded with size and SHA-256 in `report_exports`. The Next.js export route downloads those stored artifacts. It no longer compiles exports client-side or on demand.
+
+Provider attempts, token usage where available, estimated costs, failures, and fallback calls are written to `api_usage_logs`. Per-run provider spending is capped before calls are made. Fatal missing credentials, required-provider exhaustion, or persistence failures write `error_logs`, set the run to `Failed`, and throw; mock or empty success is not available.
+
+### Verification status (2026-07-15)
+
+The reasoning migration was applied locally and to the linked Supabase project, and the worker was deployed. Offline scoring boundary tests, Edge type-checking, and the Next.js production build pass. A local Realtime-subscribed end-to-end attempt verified Tavily and Firecrawl successes, persisted three real source URLs, provider-attempt logging, and a terminal `Failed` transition rather than a hung run. Completion/report/export verification remains blocked in this session because the configured Groq credential returned `401` and every OpenRouter fallback returned `429`; no completed reasoning report is claimed from that attempt.
 
 Static fixtures remain only for the explicitly labelled `/sample-report` and scoring workbench. They are stored in `lib/sample-reports.ts` and are not imported by any research route or worker file.
 
@@ -650,9 +660,9 @@ supabase functions serve research-worker --env-file supabase/functions/research-
 ```
 
 ### Deploying Edge Functions
-Deploy the background workers securely:
+Deploy the background worker using the authentication behavior already declared in `supabase/config.toml`:
 ```bash
-supabase functions deploy research-worker --no-verify-jwt
+supabase functions deploy research-worker
 ```
 Make sure to set the production environment variable:
 ```bash
