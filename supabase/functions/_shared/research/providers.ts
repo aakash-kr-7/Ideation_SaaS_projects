@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ExtractedSource, SearchResult } from "./types";
+import type { SearchResult } from "./types.ts";
 
 declare const Deno: any;
 
@@ -105,23 +105,28 @@ export const finalReportLLMSchema = z.object({
 });
 
 // Interfaces
+export interface ProviderUsage { prompt?: number; completion?: number }
 export interface SearchProvider {
   name: string;
+  lastUsage?: ProviderUsage;
   search(query: string): Promise<SearchResult[]>;
 }
 
 export interface PageExtractor {
   name: string;
+  lastUsage?: ProviderUsage;
   extract(url: string): Promise<string>;
 }
 
 export interface EmbeddingProvider {
   name: string;
+  lastUsage?: ProviderUsage;
   embed(texts: string[]): Promise<number[][]>;
 }
 
 export interface ReasoningProvider {
   name: string;
+  lastUsage?: ProviderUsage;
   extractEvidence(idea: string, customer: string, chunk: string): Promise<z.infer<typeof evidenceListLLMSchema>>;
   synthesizeReport(input: {
     ideaName: string;
@@ -208,6 +213,7 @@ export class FirecrawlExtractor implements PageExtractor {
 // 3. Cohere Embeddings Implementation
 export class CohereEmbeddingProvider implements EmbeddingProvider {
   name = "cohere";
+  lastUsage?: ProviderUsage;
   constructor(private apiKey: string) {}
 
   async embed(texts: string[]): Promise<number[][]> {
@@ -231,6 +237,7 @@ export class CohereEmbeddingProvider implements EmbeddingProvider {
     }
 
     const data = await response.json();
+    this.lastUsage = { prompt: data.meta?.billed_units?.input_tokens };
     if (!data.embeddings || !Array.isArray(data.embeddings)) {
       throw new Error("Invalid response format from Cohere embeddings API");
     }
@@ -242,6 +249,7 @@ export class CohereEmbeddingProvider implements EmbeddingProvider {
 // 4. Groq Reasoning Provider
 export class GroqReasoningProvider implements ReasoningProvider {
   name = "groq";
+  lastUsage?: ProviderUsage;
   constructor(private apiKey: string) {}
 
   async extractEvidence(idea: string, customer: string, chunk: string): Promise<z.infer<typeof evidenceListLLMSchema>> {
@@ -293,6 +301,7 @@ Return only the valid JSON structure.`;
     }
 
     const res = await response.json();
+    this.lastUsage = { prompt: res.usage?.prompt_tokens, completion: res.usage?.completion_tokens };
     const content = res.choices?.[0]?.message?.content;
     if (!content) throw new Error("Empty message content returned from Groq");
 
@@ -378,6 +387,7 @@ Return only the valid JSON structure.`;
     }
 
     const res = await response.json();
+    this.lastUsage = { prompt: res.usage?.prompt_tokens, completion: res.usage?.completion_tokens };
     const content = res.choices?.[0]?.message?.content;
     if (!content) throw new Error("Empty message content returned from Groq");
 
@@ -389,6 +399,7 @@ Return only the valid JSON structure.`;
 // 5. OpenRouter Fallback Reasoning Provider
 export class OpenRouterReasoningProvider implements ReasoningProvider {
   name = "openrouter";
+  lastUsage?: ProviderUsage;
   constructor(private apiKey: string) {}
 
   async extractEvidence(idea: string, customer: string, chunk: string): Promise<z.infer<typeof evidenceListLLMSchema>> {
@@ -435,6 +446,7 @@ Return only the valid JSON structure.`;
     }
 
     const res = await response.json();
+    this.lastUsage = { prompt: res.usage?.prompt_tokens, completion: res.usage?.completion_tokens };
     const content = res.choices?.[0]?.message?.content;
     if (!content) throw new Error("Empty message content returned from OpenRouter");
 
@@ -517,6 +529,7 @@ Return only the valid JSON structure.`;
     }
 
     const res = await response.json();
+    this.lastUsage = { prompt: res.usage?.prompt_tokens, completion: res.usage?.completion_tokens };
     const content = res.choices?.[0]?.message?.content;
     if (!content) throw new Error("Empty message content returned from OpenRouter");
 
@@ -525,139 +538,23 @@ Return only the valid JSON structure.`;
   }
 }
 
-// 6. Mock Implementations for Offline Local Fallback
-export class MockSearchProvider implements SearchProvider {
-  name = "mock-search";
-  search(query: string): Promise<SearchResult[]> {
-    console.warn(`[WARNING] API keys are missing. Falling back to MockSearchProvider for query: "${query}"`);
-    return Promise.resolve([
-      {
-        id: `mock-1-${Date.now()}`,
-        title: `Community feedback on ${query}`,
-        url: `https://mock.buildsignal.local/source/reddit`,
-        source: "Reddit (mock)",
-        snippet: `Users express recurring issues when trying to solve this manually. Excel spreadsheets are the common workaround, but they are highly error-prone.`,
-        publishedAt: new Date().toISOString(),
-        sourceType: "Community"
-      },
-      {
-        id: `mock-2-${Date.now()}`,
-        title: `Pricing pages for adjacent products`,
-        url: `https://mock.buildsignal.local/source/pricing`,
-        source: "Competitor Page (mock)",
-        snippet: `Alternative software platforms charge $49/month per operator, indicating an established willingness to pay for automation in this space.`,
-        publishedAt: new Date().toISOString(),
-        sourceType: "Pricing"
-      }
-    ]);
-  }
-}
-
-export class MockPageExtractor implements PageExtractor {
-  name = "mock-extractor";
-  extract(url: string): Promise<string> {
-    console.warn(`[WARNING] API keys are missing. Falling back to MockPageExtractor for URL: "${url}"`);
-    return Promise.resolve(`# Mock Content for ${url}\nThis is a mock text body simulating scraped and extracted markdown content. It discusses the core workflow friction and user workarounds.`);
-  }
-}
-
-export class MockEmbeddingProvider implements EmbeddingProvider {
-  name = "mock-embedding";
-  embed(texts: string[]): Promise<number[][]> {
-    console.warn(`[WARNING] API keys are missing. Falling back to MockEmbeddingProvider.`);
-    return Promise.resolve(texts.map(() => Array.from({ length: 384 }, () => Math.random() - 0.5)));
-  }
-}
-
-export class MockReasoningProvider implements ReasoningProvider {
-  name = "mock-reasoning";
-  extractEvidence(idea: string, customer: string, chunk: string): Promise<z.infer<typeof evidenceListLLMSchema>> {
-    console.warn(`[WARNING] API keys are missing. Falling back to MockReasoningProvider.extractEvidence.`);
-    return Promise.resolve({
-      evidence: [
-        {
-          title: "Spreadsheet workarounds are error-prone",
-          snippet: "Excel spreadsheets are the common workaround, but they are highly error-prone.",
-          signal_type: "Pain",
-          strength: "High",
-          rationale: "Confirms that target users are active in searching for error-free automation."
-        },
-        {
-          title: "Competitors charge $49/mo",
-          snippet: "Alternative software platforms charge $49/month per operator",
-          signal_type: "Pricing",
-          strength: "Medium",
-          rationale: "Shows budget allocation exists for the problem space."
-        }
-      ]
-    });
-  }
-
-  synthesizeReport(input: Parameters<ReasoningProvider["synthesizeReport"]>[0]): Promise<z.infer<typeof finalReportLLMSchema>> {
-    console.warn(`[WARNING] API keys are missing. Falling back to MockReasoningProvider.synthesizeReport.`);
-    return Promise.resolve({
-      opportunity: {
-        name: input.ideaName,
-        one_liner: `Mock pitch for ${input.ideaName}`,
-        target_customer: input.targetCustomer,
-        core_pain: "Manual error-prone tracking spreadsheets.",
-        market: input.marketType,
-        scorecard: {
-          scores: {
-            painSeverity: 80, purchaseUrgency: 70, willingnessToPay: 75, buyerReachability: 70, mvpSpeed: 85, competitionGap: 72, retentionPotential: 80, platformDependencyRisk: 20, regulatoryRisk: 10, founderFit: 90, distributionClarity: 75, speedToFirstRevenue: 80
-          },
-          notes: {
-            painSeverity: "Pain is highly severe based on manual workbook friction.",
-            purchaseUrgency: "High urgency due to month-end deadlines.",
-            willingnessToPay: "Budgets are already aligned for spreadsheets.",
-            buyerReachability: "Outreach channels are readily identifiable.",
-            mvpSpeed: "Can be verified with spreadsheet templates in weeks.",
-            competitionGap: "Incumbents ignore custom micro-workflows.",
-            retentionPotential: "Core daily recurring routine task.",
-            platformDependencyRisk: "Runs independently without heavy platform lock-in.",
-            regulatoryRisk: "Standard operating data; no heavy compliance audits required.",
-            founderFit: "Equipped to interview pilot buyers.",
-            distributionClarity: "Clear outreach paths to online operator groups.",
-            speedToFirstRevenue: "Concierge pilots can charge setup costs upfront."
-          }
-        },
-        competitors: [
-          { name: "Enterprise SaaS Inc", positioning: "All-in-one platform", pricing: "$150/user/mo", target: "Enterprise", strength: "Broad features", gap: "Overwhelming complexity" },
-          { name: "Spreadsheet Workarounds", positioning: "DIY custom spreadsheets", pricing: "Internal labor", target: "Small operators", strength: "Free and customizable", gap: "No automated sync or reporting" }
-        ],
-        pricing: {
-          model: "Subscription", pricePoint: "$49/mo", rationale: "Based on competitor anchor pricing.", firstOffer: "$199 concierge pilot", targetCustomers: 100
-        },
-        mvp: {
-          outcome: "Prove pain reduction through workflow automation.", buildEstimate: "2 weeks", buildComplexity: "Low", scope: ["Core automation link", "CSV intake"], exclusions: ["Integrations", "Auth logs"]
-        },
-        launch: {
-          firstCustomerChannel: "Niche online communities", outreachMessage: "Hey, saw you complain about spreadsheets...", successMetric: "3 signed pilots", weekOne: ["Create landing page", "Cold outreach"], firstTenStrategy: ["Provide concierge service for first 10 customers"]
-        },
-        risks: [
-          { category: "Execution", severity: "Medium", description: "User adoption friction", mitigation: "Provide high-touch setup onboarding service" }
-        ]
-      },
-      executiveSummary: "This mock report viability score is high; recommend validating immediately via pilot interviews.",
-      methodology: "Simulated research analysis using local mock providers."
-    });
-  }
-}
-
-// 7. Factory Functions
+// Provider factories fail closed when credentials are unavailable.
 export function createSearchProvider(): SearchProvider {
   const key = getEnv("TAVILY_API_KEY");
-  return key ? new TavilySearchProvider(key) : new MockSearchProvider();
+  if (!key) throw new Error("TAVILY_API_KEY is required; simulated search is disabled.");
+  return new TavilySearchProvider(key);
 }
 
 export function createPageExtractor(): PageExtractor {
   const key = getEnv("FIRECRAWL_API_KEY");
-  return key ? new FirecrawlExtractor(key) : new MockPageExtractor();
+  if (!key) throw new Error("FIRECRAWL_API_KEY is required; simulated extraction is disabled.");
+  return new FirecrawlExtractor(key);
 }
 
 export function createEmbeddingProvider(): EmbeddingProvider {
   const key = getEnv("COHERE_API_KEY");
-  return key ? new CohereEmbeddingProvider(key) : new MockEmbeddingProvider();
+  if (!key) throw new Error("COHERE_API_KEY is required; simulated embeddings are disabled.");
+  return new CohereEmbeddingProvider(key);
 }
 
 export function createAnalysisProvider(useFallback = false): ReasoningProvider {
@@ -667,10 +564,13 @@ export function createAnalysisProvider(useFallback = false): ReasoningProvider {
   if (useFallback && orKey) {
     return new OpenRouterReasoningProvider(orKey);
   }
+  if (useFallback) {
+    throw new Error("OPENROUTER_API_KEY is required when Groq fallback is requested.");
+  }
   
   if (groqKey) {
     return new GroqReasoningProvider(groqKey);
   }
-  
-  return new MockReasoningProvider();
+
+  throw new Error("GROQ_API_KEY is required; simulated reasoning is disabled.");
 }

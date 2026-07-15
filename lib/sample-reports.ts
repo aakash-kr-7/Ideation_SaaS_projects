@@ -1,3 +1,4 @@
+// Static fixtures used only by the explicitly labelled sample report and scoring workbench.
 import { calculateConfidenceScore, calculateWeightedScore, defaultWeights, getVerdictFromScore } from "./scoring";
 import { CriterionNotes, CriterionScores, CriterionEvidence, OpportunityScorecard } from "./types";
 import { ValidationReport } from "./report-schema";

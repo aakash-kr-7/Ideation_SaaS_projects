@@ -2,14 +2,21 @@ import Link from "next/link";
 import { ArrowRight, Scale, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { CompareMatrix } from "@/components/opportunity/CompareMatrix";
-import { researchStore } from "@/lib/research/store";
+import type { ValidationReport as ValidationReportData } from "@/lib/report-schema";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export default function ComparePage() {
-  const reports = researchStore.list()
-    .filter(run => run.stage === "Completed" && run.report)
-    .map(run => run.report!);
+export default async function ComparePage() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("reports")
+    .select("report_versions(payload), research_runs!inner(status)")
+    .eq("research_runs.status", "Completed");
+  if (error) throw error;
+  const reports = (data || [])
+    .map((row: any) => row.report_versions?.[0]?.payload)
+    .filter((report: unknown): report is ValidationReportData => Boolean(report));
 
   if (reports.length < 2) {
     return (

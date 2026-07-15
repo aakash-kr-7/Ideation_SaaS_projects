@@ -165,20 +165,20 @@ Below is the exhaustive, production-grade column and schema specification for al
     *   `error_message` `text` (Nullable)
     *   `created_at` `timestamptz` (Default: `now()`, Not Null)
     *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
-*   **Important Drift Flag**: The database check constraints for `status` are in PascalCase, while the frontend `ResearchStage` TypeScript types and state logs are in lowercase (e.g. `complete` vs `Completed`).
+*   **Canonical status:** The database, Edge worker, and frontend use the same PascalCase values exported by `supabase/functions/_shared/research/status.ts`.
 
 #### 9. `research_stages`
 *   **Purpose:** Chronological steps of a validation run.
 *   **Columns:**
     *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
     *   `run_id` `uuid` (References `research_runs(id)` on delete cascade, Not Null)
-    *   `stage_name` `text` (Not Null)
-    *   `status` `text` (Not Null, Check: `status IN ('Pending', 'Active', 'Complete', 'Failed')`, Default: `'Pending'`)
+    *   `stage_name` `text` (Not Null; must equal `status`)
+    *   `status` `text` (Not Null, same canonical check as `research_runs.status`)
     *   `started_at` `timestamptz` (Nullable)
     *   `completed_at` `timestamptz` (Nullable)
     *   `created_at` `timestamptz` (Default: `now()`, Not Null)
     *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
-*   **Important Drift Flag**: The database check constraints for stage `status` are `'Pending', 'Active', 'Complete', 'Failed'`. The word `'Complete'` is used in the database, whereas `'Completed'` is used elsewhere.
+*   **History semantics:** Rows are append-only state transitions. Both `stage_name` and `status` contain one of `Queued`, `Searching`, `Extracting`, `Normalizing`, `Scoring`, `Generating`, `Completed`, `Failed`, or `Cancelled`.
 
 #### 10. `saved_comparisons`
 *   **Purpose:** Compares multiple research runs side-by-side.
@@ -514,6 +514,7 @@ The database schema is fully managed via 17 incremental SQL migrations in `supab
 15. **`20260714102000_audit_rpc_cleanup.sql`**: **Critical security cleanup** dropping the database query function `audit_exec_sql` to secure the system from SQL injection attacks.
 16. **`20260714103000_fix_research_stages_status.sql`**: Aligns status values by changing `research_stages.status` check constraint from `'Complete'` to `'Completed'`.
 17. **`20260714104000_api_usage_logs.sql`**: Deploys the `api_usage_logs` table, fully protected by tenant-isolating RLS policies.
+18. **`20260715140000_unify_research_status.sql`**: Converts `research_stages` into append-only transition history using the exact canonical `research_runs` status vocabulary and enforces `stage_name = status`.
 
 ---
 
@@ -603,29 +604,22 @@ Every webhook triggering the edge function must provide a secure token in the `A
 
 ### 2. Idempotency Guard
 To avoid double-processing runs when retries occur or multiple webhooks trigger:
-*   The worker executes a atomic state-change update to transition status to `Processing`.
+*   The worker executes an atomic state-change update to transition status from `Queued` to `Searching`.
 *   It filters strictly on status: `.eq('status', 'Queued')`.
-*   If the run has already been picked up (its status is `Processing`, `Complete`, or `Failed`), the filter fails to update any rows, and the function exits early without re-running the heavy LLM/Scraping processes.
+*   If the run has already been picked up, the filter returns no rows and the function exits without re-running provider work.
 
 ### 3. Dependency Integrity
-Deno imports inside the Edge Worker are standardized. The Deno environment maps all external modules through `deno.json` bare specifiers, resolving module loading issues during deployments.
+Deno runtime code lives once in `supabase/functions/_shared/`. The worker imports `../_shared/research/pipeline.ts` directly, which works in the local Edge container and in `supabase functions deploy`. Runtime-neutral Next.js files are thin re-exports of shared schemas, scoring, and types. The removed `research-worker/lib/` mirror must not be recreated.
 
 ---
 
-## 9. Phase 2 & Phase 3 Integration Status
+## 9. Evidence Pipeline Integration Status
 
-### Current Implementation State
-The SignalFit pipeline currently exists in two distinct forms:
-1. **Frontend / Demo Sandbox (Active UI)**: Fully implemented client-side in-memory mock pipeline (`lib/research/pipeline.ts`). It simulates progress updates, performs local filtering in TypeScript (`lib/research/evidence.ts`), and compiles mocked reports (`lib/research/generator.ts`) using the standard weight scoring metrics (`lib/scoring.ts`).
-2. **Database Backend (Schema Ready)**: The Supabase PostgreSQL database tables (`sources`, `evidence_items`, `opportunity_scores`, `reports`, `cached_research`, `search_cache`) are fully deployed with correct primary keys, constraints, and RLS policies. The Server Actions in `lib/actions/research.ts` are declared but are **not yet wired** to write actual LLM-structured outputs to the database.
+The research API is database-only. It authenticates the user, creates a tenant-scoped run through the service/repository layer, and dispatches the Edge worker with a dedicated webhook secret. Dashboard, progress, report, compare, and export paths read Supabase records only.
 
-### Evidence Pipeline & API Usage Logs (Phase 2):
-* **Providers**: The backend does not yet connect to external web search providers (SerpAPI/Tavily) or extraction/scraping agents. The pipeline utilizes simulated mock providers (`lib/research/providers.ts`).
-* **Cost Controls**: The proposed `api_usage_logs` table does not exist in the database. Rate limits, cost tracking, and API keys are managed locally or simulated.
+The Edge pipeline uses Tavily, Firecrawl, Groq, OpenRouter fallback, and Cohere. It persists source URLs, normalized evidence, scores, report relations, and a report-version payload. Provider attempts, token usage where available, estimated costs, failures, and fallback calls are written to `api_usage_logs`. Per-run provider spending is capped before calls are made. Any missing credential or persistence failure writes `error_logs`, sets the run to `Failed`, and throws; mock or empty success is not available.
 
-### Reasoning Engine (Phase 3):
-* **Specialist Agents & Report Generation**: Deterministic weighting and SVG score calculations are implemented in Next.js (`lib/scoring.ts`), but full LLM-driven specialist agents (analyzing pricing, competitor positioning, and launch strategy separately) are not yet integrated into the Edge Worker runtime.
-* **Storage Cache**: Private buckets (`cached-sources` and `exports`) are created in storage, but saving raw scrapes and compiled PDF/CSV summaries directly to storage is not yet implemented.
+Static fixtures remain only for the explicitly labelled `/sample-report` and scoring workbench. They are stored in `lib/sample-reports.ts` and are not imported by any research route or worker file.
 
 ---
 
@@ -647,25 +641,21 @@ Apply migrations sequentially to your Supabase instance:
 supabase db push
 ```
 
-### Running RLS Audit Scripts
-Run the adversarial suite to verify that no tenancy leaks exist:
+### Regression checks
+Run the Next.js and Edge-safe TypeScript checks, then execute live RLS and pipeline verification with temporary authenticated users. Test rows and users must be deleted in a `finally` block; do not commit one-off scripts containing fixed credentials or simulated usage rows.
+
 ```bash
-# Audits top-level entities
-npx tsx scripts/audit-rls.ts
-
-# Audits nested child entities using foreign-key hierarchies
-npx tsx scripts/audit-rls-child.ts
-
-# Audits api_usage_logs table RLS tenant isolation
-npx tsx scripts/test-api-logs-rls.ts
+npx tsc --noEmit --incremental false
+supabase functions serve research-worker --env-file supabase/functions/research-worker/.env
 ```
 
 ### Deploying Edge Functions
 Deploy the background workers securely:
 ```bash
-supabase functions deploy research-worker
+supabase functions deploy research-worker --no-verify-jwt
 ```
 Make sure to set the production environment variable:
 ```bash
-supabase secrets set WEBHOOK_SECRET=your_production_secret
+supabase secrets set --env-file supabase/functions/research-worker/.env
 ```
+The environment file must include the five provider keys, `WEBHOOK_SECRET`, and optionally `RESEARCH_RUN_COST_CAP_USD`. It is ignored by git. The same `WEBHOOK_SECRET` must be configured on the Next.js server; never reuse the Supabase service-role key for webhook authentication.

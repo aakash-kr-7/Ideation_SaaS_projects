@@ -6,19 +6,24 @@ import { ProjectCard } from "@/components/dashboard/project-card";
 import { ScoreBadge } from "@/components/scoring/score-badge";
 import { ScoreGuide } from "@/components/scoring/ScoreGuide";
 import { VerdictBadge } from "@/components/opportunity/verdict-badge";
-import { researchStore } from "@/lib/research/store";
 import { ResearchRun, Opportunity, ScoreBreakdown, MarketType } from "@/lib/types";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
-  const storeRuns = researchStore.list();
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const { data: databaseRuns, error } = await supabase
+    .from("research_runs")
+    .select("id, idea_name, idea_description, target_customer, market_type, target_region, mode, status, progress, created_at, reports(report_versions(payload))")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
 
-  // Map PipelineRun to legacy ResearchRun
-  const mappedRuns: ResearchRun[] = storeRuns.map(run => {
+  const mappedRuns: ResearchRun[] = (databaseRuns || []).map((run: any) => {
     let opportunity: Opportunity | undefined = undefined;
-    if (run.report) {
-      const o = run.report.opportunity;
+    const report = run.reports?.[0]?.report_versions?.[0]?.payload;
+    if (report?.opportunity) {
+      const o = report.opportunity;
       const scores = o.scorecard.scores;
       const legacyScore: ScoreBreakdown = {
         pain: scores.painSeverity,
@@ -41,7 +46,7 @@ export default function DashboardPage() {
         score: legacyScore,
         verdict: o.scorecard.verdict === "Build Now" ? "Build now" : o.scorecard.verdict === "Avoid" ? "Avoid for now" : "Validate first",
         confidence: o.scorecard.confidence,
-        evidence: o.evidence.map(e => ({ ...e, date: e.date.slice(0, 10) })),
+        evidence: o.evidence.map((e: any) => ({ ...e, date: e.date.slice(0, 10) })),
         competitors: o.competitors,
         pricing: o.pricing,
         mvp: o.mvp,
@@ -52,14 +57,14 @@ export default function DashboardPage() {
 
     return {
       id: run.id,
-      ideaName: run.request.ideaName,
-      ideaDescription: run.request.ideaDescription,
-      targetCustomer: run.request.targetCustomer,
-      marketType: run.request.marketType as any,
-      targetRegion: run.request.targetRegion,
+      ideaName: run.idea_name,
+      ideaDescription: run.idea_description,
+      targetCustomer: run.target_customer,
+      marketType: run.market_type,
+      targetRegion: run.target_region,
       mode: run.mode,
-      status: run.stage,
-      createdAt: run.createdAt.slice(0, 10),
+      status: run.status,
+      createdAt: run.created_at.slice(0, 10),
       progress: run.progress,
       opportunity
     };

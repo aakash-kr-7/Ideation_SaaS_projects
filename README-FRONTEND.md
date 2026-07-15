@@ -41,7 +41,7 @@ The Next.js application has three main pages in the authenticated workspace:
 
 ### A. The Dashboard (`app/dashboard/page.tsx`)
 *   **Purpose**: The central command center showing validation stats, next actions, and historical runs.
-*   **Data Source**: Populated via `researchStore.list()` from the in-memory store.
+*   **Data Source**: Tenant-scoped `research_runs` and stored `report_versions` read from Supabase under the signed-in user’s RLS context.
 *   **Elements**:
     *   **Empty State**: Shown when no validation runs exist. Guides the user to input their first idea.
     *   **Stats Cards**: Displays "Ideas validated", "Average score" of completed runs, "In progress" queue count, and "Ready to build" count.
@@ -57,14 +57,14 @@ The Next.js application has three main pages in the authenticated workspace:
     *   *Target Region* (defaults to "Global") and *Market Type* (B2B, D2C, Creator, Developer Tool, Local Business, etc.).
     *   *Constraints Adjuster*: Adjustment dropdowns for revenue targets, monetization models, complexity tolerance, and platform dependency limits.
     *   *Depth Modes*: "Fast Scan" (~2 minutes) or "Deep Validation" (~5 minutes).
-*   **Action**: Submits POST to `/api/research/start`, creates an in-memory run, and redirects to `/research/${result.id}/progress`.
+*   **Action**: Submits POST to `/api/research/start`, creates a database-backed queued run, dispatches the Edge worker, and redirects to `/research/${result.id}/progress`.
 
 ### C. Live Progress View (`app/research/[id]/progress/page.tsx`)
 *   **Purpose**: Real-time status tracker for running validations.
 *   **UI Components**:
     *   Pulsing progress loaders and progression bars (0% to 100%).
     *   **Live Metrics Panel**: Displays real-time tickers for "sources scanned", "evidence found", and "competitors mapped".
-    *   **Terminal Log**: A terminal-style box displaying simulated pipeline log operations (e.g. `[12:00:00] Formulation queries...`).
+    *   **Terminal Log**: A terminal-style rendering of status updates returned by the database-backed progress API.
 *   **Routing**: Automatically redirects the user to `/research/${id}/results` once `reportReady: true` is polled from the API.
 
 ---

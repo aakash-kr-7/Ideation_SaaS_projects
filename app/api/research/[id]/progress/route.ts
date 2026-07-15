@@ -1,37 +1,14 @@
 import { NextResponse } from "next/server";
-import { researchStore } from "@/lib/research/store";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  // 1. Check local mock store first
-  const run = researchStore.get(id);
-  if (run) {
-    return NextResponse.json({
-      id: run.id,
-      stage: run.stage,
-      progress: run.progress,
-      message: run.message,
-      evidenceCount: run.evidence.length,
-      sourceCount: run.sources.length,
-      competitorCount: run.report?.opportunity.competitors.length ?? 0,
-      reportReady: Boolean(run.report),
-      error: run.error
-    });
-  }
-
-  // 2. Query database for real run progress
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const dbClient = user ? supabase : (() => {
-      const { createClient: createSupabaseClient } = require("@supabase/supabase-js");
-      return createSupabaseClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
-    })();
+    if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    const dbClient = supabase;
     
     // Fetch run status
     const { data: dbRun, error: dbRunError } = await dbClient

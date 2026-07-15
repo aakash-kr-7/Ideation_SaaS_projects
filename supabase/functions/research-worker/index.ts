@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js"
-import { runResearchPipeline } from "./lib/research/pipeline.ts"
+import { runResearchPipeline } from "../_shared/research/pipeline.ts"
+
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void }
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,8 +26,6 @@ Deno.serve(async (req: Request) => {
     }
 
     const payload = await req.json()
-    console.log("Received webhook payload:", payload)
-
     const record = payload.record
     if (!record || !record.id) {
       throw new Error("Invalid payload: no record ID")
@@ -67,21 +67,23 @@ Deno.serve(async (req: Request) => {
       depth: (record.mode === 'Fast Scan' ? 'fast' : 'deep') as 'fast' | 'deep'
     }
 
-    // Launch pipeline execution asynchronously
-    console.log(`Executing real evidence pipeline for run ${record.id}...`)
-    // Run the pipeline and let it handle database updates
-    await runResearchPipeline(record.id, requestPayload, supabaseClient)
+    console.log(`Scheduling real evidence pipeline for run ${record.id}...`)
+    EdgeRuntime.waitUntil(
+      runResearchPipeline(record.id, requestPayload, supabaseClient).catch((error) => {
+        console.error(`Background pipeline ${record.id} failed:`, error)
+      })
+    )
 
     return new Response(
-      JSON.stringify({ message: 'Processed successfully', run_id: record.id }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      JSON.stringify({ message: 'Accepted for processing', run_id: record.id }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 202 }
     )
   } catch (error: any) {
     console.error("Worker error:", error)
     const errorMessage = error instanceof Error ? error.message : String(error)
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }
 })

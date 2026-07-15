@@ -1,62 +1,36 @@
-# SignalFit Validation Evidence Pipeline
+# SignalFit evidence pipeline
 
-The SignalFit validation pipeline transforms a raw product idea and target customer description into a structured, evidence-backed market analysis.
+A research request is always authenticated and database-backed. The API inserts a `Queued` run, dispatches the Edge worker with a dedicated bearer secret, and returns a progress URL. The worker atomically claims only a `Queued` row, schedules the pipeline, and returns `202`.
 
----
+## Stages
 
-## Pipeline Execution Stages
+1. `Searching`: run up to five Tavily queries.
+2. `Extracting`: persist up to three independently addressable URLs and their Firecrawl markdown.
+3. `Normalizing`: use Groq to extract evidence, fall back to OpenRouter on Groq failure, then deduplicate with Cohere embeddings (Jaccard is the non-generative dedup fallback).
+4. `Scoring`: synthesize evidence and compute the deterministic 12-factor score.
+5. `Generating`: write normalized opportunity, evidence, score, report, and report-version rows.
+6. `Completed` or `Failed`: persist the terminal run state and append the matching stage-history row.
 
-The pipeline consists of six sequential stages, coordinated asynchronously:
+`research_runs.status`, `research_stages.status`, `research_stages.stage_name`, the worker, and the UI share the values exported by `supabase/functions/_shared/research/status.ts`.
 
-```mermaid
-graph TD
-    A[Idea Brief Form Input] --> B[1. Query Generation]
-    B --> C[2. Web Search Scrapes]
-    C --> D[3. Source Extraction]
-    D --> E[4. Deduplication & Filtering]
-    E --> F[5. Positioning & Scoring]
-    F --> G[6. Report Assembly & Relational Storage]
-```
+## Source of truth
 
-### 1. Query Generation (`lib/research/queries.ts`)
-*   Takes the product idea and target customer.
-*   Generates a matrix of targeted search queries focused on finding product signals (e.g. `Reddit complaint`, `manual workaround`, `pricing pages`, `competitor reviews`).
+Pipeline code is stored only under `supabase/functions/_shared/`. This location is inside the directory mounted and bundled by Supabase Edge Functions, while remaining importable by Next.js for runtime-neutral schemas, types, and scoring. The worker imports it directly; no manual copy, generated vendor folder, symlink, or ignored duplicate is used.
 
-### 2. Search Provider Scrapes (`lib/research/providers.ts` -> `TavilySearchProvider`)
-*   Queries search engines using the Tavily Search API.
-*   **Resource Cap**: Hard-capped at 5 search queries per run to stay within free-tier limits.
-*   Retrieves relevant web pages, thread contents, and reviews across 10+ source categories (Reddit, G2, Hacker News, Capterra, Product Hunt).
+## Evidence integrity
 
-### 3. Source Extraction (`lib/research/providers.ts` -> `FirecrawlExtractor`)
-*   Extracts raw snippet quotes and facts from scraped page sources.
-*   **Resource Cap**: Hard-capped at 3 unique page extractions per run using the Firecrawl API. No raw HTML reaches the LLM; only clean, parsed markdown.
+A source must be inserted successfully before the pipeline can complete. Each `evidence_items.source_id` resolves to a `sources.url`; the report payload carries the same URL for citations. A persistence error aborts the run. The pipeline never substitutes sample URLs, random embeddings, fabricated evidence, or an empty successful result.
 
-### 4. Deduplication & Filtering (`lib/research/pipeline.ts` -> `deduplicateEvidence`)
-*   Generates embeddings for extracted snippet texts using the Cohere API (`embed-english-v3.0`).
-*   **Resource Cap**: Hard-capped at 2 batch embedding calls per run.
-*   Deduplicates signals using a cosine similarity threshold of `0.85`.
-*   Applies a fallback string-based Jaccard similarity threshold of `0.6` on embedding failures.
+## Providers, retry, fallback, and cost
 
-### 5. Positioning & Scoring (`lib/research/providers.ts` -> `GroqReasoningProvider`)
-*   Primary Reasoning: Groq (`llama-3.3-70b-versatile`).
-*   Fallback Reasoning: OpenRouter (`meta-llama/llama-3.3-70b-instruct:free`) triggered automatically on Groq rate-limits or transient failures.
-*   **Resource Cap**: Hard-capped at 5 LLM calls per run (up to 4 for chunk extraction, 1 for final compilation).
-*   Calculates a 12-factor opportunity score using customized criterion weights (e.g. Pain Severity, Purchase Urgency, Willingness to Pay).
+- Tavily: search, maximum five logical queries.
+- Firecrawl: page extraction, maximum three unique URLs.
+- Groq `llama-3.3-70b-versatile`: primary structured evidence and report reasoning.
+- OpenRouter `meta-llama/llama-3.3-70b-instruct:free`: reasoning fallback.
+- Cohere `embed-english-v3.0`: semantic deduplication.
 
-### 6. Report Assembly & Relational Storage (`lib/research/pipeline.ts` -> `saveReportToDatabase`)
-*   Synthesizes the final JSON report payload structure, including executive summaries, competitor matrices, MVP blueprints (V0–V3), and the launch checklist.
-*   Persists all structured opportunities details relationally to tables: `opportunities`, `opportunity_scores`, `score_breakdowns`, `score_evidence_refs`, `evidence_items`, `sources`, `competitors`, `risks`, `pricing_models`, `mvp_plans`, `mvp_scope_items`, `launch_plans`, `launch_strategies`, `reports`, `report_versions`.
-*   Triggers real-time client-side progress redirection.
+Every physical provider attempt is logged to `api_usage_logs`, including retry failures. LLM and embedding token usage is stored when returned by the provider. Estimated cost is reserved before each attempt, and the run stops before exceeding `RESEARCH_RUN_COST_CAP_USD`.
 
----
+## Failure semantics
 
-## Observability & Logging (`api_usage_logs`)
-
-All provider API requests are logged with success/failure statuses and token counts in the `api_usage_logs` table for budgeting and auditing. Row Level Security (RLS) is enabled on this table, ensuring that users can only view logs matching runs owned by their teams.
-
----
-
-## Local Development vs. Production Execution
-
-*   **Local Development Pipeline**: If `GROQ_API_KEY` and `TAVILY_API_KEY` are not configured in `.env.local`, the pipeline gracefully falls back to mock providers, using simulated responses and updating Next.js in-memory state.
-*   **Production Pipeline**: Deployed in a background job architecture via a Supabase Database Webhook firing when a new `research_runs` row is inserted. A Supabase Edge Function (`supabase/functions/research-worker`) handles the queue, executing the real pipeline in the database environment.
+Missing credentials, provider exhaustion, missing evidence, cost-cap exhaustion, and database errors are fatal. The pipeline writes `error_logs`, appends a `Failed` transition, updates `research_runs`, and throws `PipelineError`. The worker logs that rejection; it does not return fake or empty success.

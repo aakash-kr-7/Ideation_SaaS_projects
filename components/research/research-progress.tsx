@@ -2,9 +2,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Database, LoaderCircle, Search, ShieldCheck, Swords, Target, Users } from "lucide-react";
-import { ResearchStage } from "@/lib/research/types";
+import type { ResearchStatus } from "@/supabase/functions/_shared/research/status";
 import { productCopy } from "@/lib/copy";
-const stages:Array<{key:ResearchStage;label:string;detail:string;icon:typeof Target}>=[
+const stages:Array<{key:ResearchStatus;label:string;detail:string;icon:typeof Target}>=[
   {key:"Searching",label:"Understanding your idea",detail:"Parsing brief and searching 10+ source categories.",icon:Search},
   {key:"Extracting",label:"Reading buyer conversations",detail:"Extracting relevant pain signals, pricing data, and complaints.",icon:Swords},
   {key:"Normalizing",label:"Filtering noise from signal",detail:"Normalizing evidence, removing duplicates, and mapping competition.",icon:ShieldCheck},
@@ -13,7 +13,7 @@ const stages:Array<{key:ResearchStage;label:string;detail:string;icon:typeof Tar
 ];
 export function ResearchProgress({id,idea="your idea"}:{id:string;idea?:string}){
   const router=useRouter();
-  const [state,setState]=useState({stage:"Queued" as ResearchStage,progress:0,message:"Queued for analysis",evidenceCount:0,sourceCount:0,competitorCount:0,reportReady:false});
+  const [state,setState]=useState({stage:"Queued" as ResearchStatus,progress:0,message:"Queued for analysis",evidenceCount:0,sourceCount:0,competitorCount:0,reportReady:false});
   const [logs, setLogs] = useState<Array<{ time: string; text: string }>>([]);
 
   useEffect(()=>{

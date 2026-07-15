@@ -1,6 +1,4 @@
 import { z } from "zod";
-import { ValidationReport } from "../report-schema";
-
 declare const Deno: any;
 import {
   createSearchProvider,
@@ -8,25 +6,45 @@ import {
   createEmbeddingProvider,
   createAnalysisProvider,
   getEnv,
-  finalReportLLMSchema
-} from "./providers";
-import { ResearchRequest, PipelineRun, ResearchStage, ExtractedSource } from "./types";
-import { researchStore } from "./store";
-import { defaultWeights, calculateWeightedScore, calculateConfidenceScore, getVerdictFromScore, scoringCriteria } from "../scoring";
+  finalReportLLMSchema,
+  type ProviderUsage,
+} from "./providers.ts";
+import type { ResearchRequest } from "./types.ts";
+import type { ResearchStatus } from "./status.ts";
+import type { CriterionScores } from "../types.ts";
+import { defaultWeights, calculateWeightedScore, calculateConfidenceScore, getVerdictFromScore, scoringCriteria } from "../scoring.ts";
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Retry-with-backoff on transient failures
-async function fetchWithRetry<T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
-  try {
-    return await fn();
-  } catch (err) {
-    if (retries <= 1) throw err;
-    console.warn(`Transient request failed. Retrying in ${delay}ms... Error:`, err);
-    await new Promise(r => setTimeout(r, delay));
-    return fetchWithRetry(fn, retries - 1, delay * 2);
+export class PipelineError extends Error {
+  constructor(message: string, readonly runId: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "PipelineError";
   }
 }
+
+class CostBudget {
+  private reserved = 0;
+  readonly cap = Number(getEnv("RESEARCH_RUN_COST_CAP_USD") || "1.00");
+
+  reserve(estimatedCost: number) {
+    if (!Number.isFinite(this.cap) || this.cap <= 0) {
+      throw new Error("RESEARCH_RUN_COST_CAP_USD must be a positive number.");
+    }
+    if (this.reserved + estimatedCost > this.cap) {
+      throw new Error(`Per-run provider cost cap of $${this.cap.toFixed(4)} would be exceeded.`);
+    }
+    this.reserved += estimatedCost;
+  }
+}
+
+const ESTIMATED_COST_USD: Record<string, number> = {
+  tavily: 0.008,
+  firecrawl: 0.001,
+  cohere: 0.0002,
+  groq: 0.02,
+  openrouter: 0,
+};
 
 // Log success/failure cost details per API call to api_usage_logs
 async function logApiUsage(
@@ -35,23 +53,48 @@ async function logApiUsage(
   operation: string,
   status: "success" | "failed",
   tokens: { prompt?: number; completion?: number } = {},
+  cost = 0,
   errorMsg?: string,
-  supabaseClient?: any
+  supabaseClient?: any,
 ) {
-  if (!supabaseClient) return;
-  try {
-    await supabaseClient.from("api_usage_logs").insert({
+  const { error } = await supabaseClient.from("api_usage_logs").insert({
       run_id: runId,
       provider,
       operation,
       prompt_tokens: tokens.prompt || null,
       completion_tokens: tokens.completion || null,
+      cost,
       status,
       error_message: errorMsg || null
     });
-  } catch (err) {
-    console.error("Failed to log API usage to database:", err);
+  if (error) throw new Error(`Failed to persist provider usage: ${error.message}`);
+}
+
+async function callProvider<T>(
+  runId: string,
+  provider: { name: string; lastUsage?: ProviderUsage },
+  operation: string,
+  budget: CostBudget,
+  supabaseClient: any,
+  fn: () => Promise<T>,
+  retries = 3,
+): Promise<T> {
+  const estimatedCost = ESTIMATED_COST_USD[provider.name] ?? 0;
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    budget.reserve(estimatedCost);
+    try {
+      const result = await fn();
+      await logApiUsage(runId, provider.name, operation, "success", provider.lastUsage || {}, estimatedCost, undefined, supabaseClient);
+      return result;
+    } catch (error) {
+      lastError = error;
+      const message = error instanceof Error ? error.message : String(error);
+      await logApiUsage(runId, provider.name, operation, "failed", {}, estimatedCost, message, supabaseClient);
+      if (attempt < retries) await wait(500 * 2 ** (attempt - 1));
+    }
   }
+  throw lastError;
 }
 
 // Cosine similarity for embeddings deduplication
@@ -80,17 +123,15 @@ function jaccardSimilarity(a: string, b: string): number {
   return intersection.size / union.size;
 }
 
-// Update the database or mock store stage/progress/error_message states
+// Persist both the current run state and an append-only transition row.
 async function updateState(
   id: string,
-  stage: ResearchStage,
+  stage: ResearchStatus,
   progress: number,
   message: string,
-  extra: Partial<PipelineRun> = {},
-  supabaseClient?: any
+  supabaseClient: any,
 ) {
-  if (supabaseClient) {
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       status: stage,
       progress: progress,
       updated_at: new Date().toISOString()
@@ -98,47 +139,32 @@ async function updateState(
     if (stage === "Failed") {
       updateData.error_message = message;
     }
-    await supabaseClient
+    const { error: runError } = await supabaseClient
       .from("research_runs")
       .update(updateData)
       .eq("id", id);
+    if (runError) throw new Error(`Failed to persist run status ${stage}: ${runError.message}`);
 
-    if (stage !== "Queued" && stage !== "Cancelled") {
-      const isFinal = stage === "Completed" || stage === "Failed";
-      if (isFinal) {
-        await supabaseClient
-          .from("research_stages")
-          .update({
-            status: stage === "Completed" ? "Completed" : "Failed",
-            completed_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq("run_id", id)
-          .eq("status", "Active");
-      } else {
-        await supabaseClient
-          .from("research_stages")
-          .update({
-            status: "Completed",
-            completed_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq("run_id", id)
-          .eq("status", "Active");
+    const { data: latestStage, error: latestStageError } = await supabaseClient
+      .from("research_stages")
+      .select("status")
+      .eq("run_id", id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (latestStageError) throw new Error(`Failed to read stage history: ${latestStageError.message}`);
+    if (latestStage?.status === stage) return;
 
-        await supabaseClient
-          .from("research_stages")
-          .insert({
-            run_id: id,
-            stage_name: stage,
-            status: "Active",
-            started_at: new Date().toISOString()
-          });
-      }
-    }
-  } else {
-    researchStore.update(id, { stage, progress, message, ...extra });
-  }
+    const now = new Date().toISOString();
+    const { error: stageError } = await supabaseClient.from("research_stages").insert({
+      run_id: id,
+      stage_name: stage,
+      status: stage,
+      error_message: stage === "Failed" ? message : null,
+      started_at: now,
+      completed_at: now,
+    });
+    if (stageError) throw new Error(`Failed to persist stage transition ${stage}: ${stageError.message}`);
 }
 
 // Relational DB Persistence Flow
@@ -168,10 +194,11 @@ async function saveReportToDatabase(
   const oppId = dbOpp.id;
 
   // 2. Insert Scorecard
-  const totalScore = calculateWeightedScore(o.scorecard.scores, defaultWeights);
+  const scores = o.scorecard.scores as CriterionScores;
+  const totalScore = calculateWeightedScore(scores, defaultWeights);
   const verdict = getVerdictFromScore(totalScore);
   const scorecardIncomplete = {
-    scores: o.scorecard.scores,
+    scores,
     notes: o.scorecard.notes,
     evidenceRefs: {},
     weights: defaultWeights,
@@ -215,9 +242,8 @@ async function saveReportToDatabase(
       .select("id")
       .single();
     
-    if (!eErr && dbEvidence) {
-      insertedEvidenceIdsMap.set(e.id, dbEvidence.id);
-    }
+    if (eErr || !dbEvidence) throw eErr || new Error("Evidence insert returned no row.");
+    insertedEvidenceIdsMap.set(e.id, dbEvidence.id);
   }
 
   // 4. Insert Score Breakdowns & Evidence Refs
@@ -239,7 +265,8 @@ async function saveReportToDatabase(
       .select("id")
       .single();
 
-    if (!bdErr && breakdown) {
+    if (bdErr || !breakdown) throw bdErr || new Error("Score breakdown insert returned no row.");
+    {
       const matchedEvIds = evidenceRecords
         .filter(ev => {
           const type = ev.signal_type;
@@ -253,19 +280,20 @@ async function saveReportToDatabase(
         .filter(Boolean) as string[];
 
       for (const realEvId of matchedEvIds) {
-        await supabaseClient
+        const { error: refError } = await supabaseClient
           .from("score_evidence_refs")
           .insert({
             score_breakdown_id: breakdown.id,
             evidence_id: realEvId
           });
+        if (refError) throw refError;
       }
     }
   }
 
   // 5. Insert Competitors
   for (const comp of o.competitors) {
-    await supabaseClient
+    const { error } = await supabaseClient
       .from("competitors")
       .insert({
         opportunity_id: oppId,
@@ -276,11 +304,12 @@ async function saveReportToDatabase(
         strength: comp.strength,
         gap: comp.gap
       });
+    if (error) throw error;
   }
 
   // 6. Insert Risks
   for (const risk of o.risks) {
-    await supabaseClient
+    const { error } = await supabaseClient
       .from("risks")
       .insert({
         opportunity_id: oppId,
@@ -289,10 +318,11 @@ async function saveReportToDatabase(
         description: risk.description,
         mitigation: risk.mitigation
       });
+    if (error) throw error;
   }
 
   // 7. Insert Pricing Models
-  await supabaseClient
+  const { error: pricingError } = await supabaseClient
     .from("pricing_models")
     .insert({
       opportunity_id: oppId,
@@ -302,6 +332,7 @@ async function saveReportToDatabase(
       first_offer: o.pricing.firstOffer,
       target_customers: o.pricing.targetCustomers
     });
+  if (pricingError) throw pricingError;
 
   // 8. Insert MVP Plans
   const { data: mvpPlan, error: mvpErr } = await supabaseClient
@@ -315,20 +346,23 @@ async function saveReportToDatabase(
     .select("id")
     .single();
 
-  if (!mvpErr && mvpPlan) {
+  if (mvpErr || !mvpPlan) throw mvpErr || new Error("MVP plan insert returned no row.");
+  {
     for (const item of o.mvp.scope) {
-      await supabaseClient.from("mvp_scope_items").insert({
+      const { error } = await supabaseClient.from("mvp_scope_items").insert({
         mvp_plan_id: mvpPlan.id,
         item_type: "Scope",
         description: item
       });
+      if (error) throw error;
     }
     for (const item of o.mvp.exclusions) {
-      await supabaseClient.from("mvp_scope_items").insert({
+      const { error } = await supabaseClient.from("mvp_scope_items").insert({
         mvp_plan_id: mvpPlan.id,
         item_type: "Exclusion",
         description: item
       });
+      if (error) throw error;
     }
   }
 
@@ -344,20 +378,23 @@ async function saveReportToDatabase(
     .select("id")
     .single();
 
-  if (!launchErr && launchPlan) {
+  if (launchErr || !launchPlan) throw launchErr || new Error("Launch plan insert returned no row.");
+  {
     for (const item of o.launch.weekOne) {
-      await supabaseClient.from("launch_strategies").insert({
+      const { error } = await supabaseClient.from("launch_strategies").insert({
         launch_plan_id: launchPlan.id,
         strategy_type: "WeekOne",
         description: item
       });
+      if (error) throw error;
     }
     for (const item of o.launch.firstTenStrategy) {
-      await supabaseClient.from("launch_strategies").insert({
+      const { error } = await supabaseClient.from("launch_strategies").insert({
         launch_plan_id: launchPlan.id,
         strategy_type: "FirstTen",
         description: item
       });
+      if (error) throw error;
     }
   }
 
@@ -443,13 +480,14 @@ async function saveReportToDatabase(
     .single();
   if (repErr || !dbReport) throw repErr || new Error("Failed to insert report");
 
-  await supabaseClient
+  const { error: versionError } = await supabaseClient
     .from("report_versions")
     .insert({
       report_id: dbReport.id,
       version_number: 1,
       payload: finalReportPayload
     });
+  if (versionError) throw versionError;
 
   return finalReportPayload;
 }
@@ -483,18 +521,19 @@ function chunkContent(text: string, chunkSize = 4000): string[] {
 // Main runner for pipeline runs
 export async function runResearchPipeline(id: string, input: ResearchRequest, supabaseClient?: any) {
   try {
+    if (!supabaseClient) throw new Error("A database client is required; offline and mock execution are disabled.");
     // 1. Fail fast on startup check in production
     checkProductionApiKeys();
+
+    const budget = new CostBudget();
 
     const searchProvider = createSearchProvider();
     const pageExtractor = createPageExtractor();
     const embeddingProvider = createEmbeddingProvider();
     let reasoningProvider = createAnalysisProvider(false);
 
-    const isMockRun = searchProvider.name.startsWith("mock");
-
     // 2. Searching Step
-    await updateState(id, "Searching", 10, `Formulating queries for "${input.ideaName}"`, {}, supabaseClient);
+    await updateState(id, "Searching", 10, `Formulating queries for "${input.ideaName}"`, supabaseClient);
     
     // Search queries generated
     const subject = `${input.ideaName} ${input.targetCustomer}`;
@@ -510,15 +549,14 @@ export async function runResearchPipeline(id: string, input: ResearchRequest, su
     const activeQueries = templates.slice(0, 5);
     const searchResults: any[] = [];
 
-    await updateState(id, "Searching", 20, `Scouting 10+ source categories using Tavily Search`, {}, supabaseClient);
+    await updateState(id, "Searching", 20, `Scouting public sources using Tavily Search`, supabaseClient);
 
     for (const q of activeQueries) {
       try {
-        const results = await fetchWithRetry(() => searchProvider.search(q));
+        const results = await callProvider(id, searchProvider, "search", budget, supabaseClient, () => searchProvider.search(q));
         searchResults.push(...results);
-        await logApiUsage(id, searchProvider.name, "search", "success", {}, undefined, supabaseClient);
       } catch (err: any) {
-        await logApiUsage(id, searchProvider.name, "search", "failed", {}, err.message || String(err), supabaseClient);
+        console.warn(`Search query failed after retries: ${q}`, err);
       }
       await wait(500);
     }
@@ -528,7 +566,7 @@ export async function runResearchPipeline(id: string, input: ResearchRequest, su
     }
 
     // 3. Extracting Step
-    await updateState(id, "Extracting", 45, `Reading buyer conversations using Firecrawl page extractor`, {}, supabaseClient);
+    await updateState(id, "Extracting", 45, `Reading buyer conversations using Firecrawl page extractor`, supabaseClient);
 
     // Hard Limit: Max 3 unique URLs extracted per run
     const uniqueUrls = [...new Set(searchResults.map(r => r.url))].slice(0, 3);
@@ -537,7 +575,7 @@ export async function runResearchPipeline(id: string, input: ResearchRequest, su
     for (const url of uniqueUrls) {
       try {
         const originalResult = searchResults.find(r => r.url === url);
-        const markdown = await fetchWithRetry(() => pageExtractor.extract(url));
+        const markdown = await callProvider(id, pageExtractor, "extract", budget, supabaseClient, () => pageExtractor.extract(url));
         extractedMarkdownContents.push({
           url,
           title: originalResult?.title || "Web Source",
@@ -547,7 +585,7 @@ export async function runResearchPipeline(id: string, input: ResearchRequest, su
 
         // Persist raw source to Postgres database
         if (supabaseClient) {
-          const { data: dbSource } = await supabaseClient
+          const { data: dbSource, error: sourceError } = await supabaseClient
             .from("sources")
             .insert({
               run_id: id,
@@ -558,15 +596,13 @@ export async function runResearchPipeline(id: string, input: ResearchRequest, su
             })
             .select("id")
             .single();
-          
+          if (sourceError || !dbSource) throw sourceError || new Error("Source insert returned no row.");
           if (dbSource) {
             originalResult.dbId = dbSource.id;
           }
         }
-
-        await logApiUsage(id, pageExtractor.name, "extract", "success", {}, undefined, supabaseClient);
       } catch (err: any) {
-        await logApiUsage(id, pageExtractor.name, "extract", "failed", {}, err.message || String(err), supabaseClient);
+        console.warn(`Extraction failed after retries: ${url}`, err);
       }
       await wait(500);
     }
@@ -574,9 +610,15 @@ export async function runResearchPipeline(id: string, input: ResearchRequest, su
     if (extractedMarkdownContents.length === 0) {
       throw new Error("Failed to extract content from any retrieved search URLs.");
     }
+    const unpersistedSource = extractedMarkdownContents.find((content) =>
+      !searchResults.find((result) => result.url === content.url)?.dbId
+    );
+    if (unpersistedSource) {
+      throw new Error(`Extracted source was not persisted: ${unpersistedSource.url}`);
+    }
 
     // 4. Normalizing Step (Chunk reasoning & deduplication)
-    await updateState(id, "Normalizing", 65, `Extracting pain indicators, pricing anchors, and platform risks`, {}, supabaseClient);
+    await updateState(id, "Normalizing", 65, `Extracting pain indicators, pricing anchors, and platform risks`, supabaseClient);
 
     const rawEvidenceRecords: any[] = [];
     let llmCallCount = 0;
@@ -593,14 +635,12 @@ export async function runResearchPipeline(id: string, input: ResearchRequest, su
           llmCallCount++;
           let extractionRes;
           try {
-            extractionRes = await fetchWithRetry(() => reasoningProvider.extractEvidence(input.ideaName, input.targetCustomer, chunk));
-            await logApiUsage(id, reasoningProvider.name, "evidence_extraction", "success", {}, undefined, supabaseClient);
+            extractionRes = await callProvider(id, reasoningProvider, "evidence_extraction", budget, supabaseClient, () => reasoningProvider.extractEvidence(input.ideaName, input.targetCustomer, chunk));
           } catch (err) {
             // Fallback Reasoning Provider on Groq Failure
             console.warn("Groq reasoning failed, falling back to OpenRouter:", err);
             reasoningProvider = createAnalysisProvider(true);
-            extractionRes = await fetchWithRetry(() => reasoningProvider.extractEvidence(input.ideaName, input.targetCustomer, chunk));
-            await logApiUsage(id, reasoningProvider.name, "evidence_extraction", "success", {}, undefined, supabaseClient);
+            extractionRes = await callProvider(id, reasoningProvider, "evidence_extraction", budget, supabaseClient, () => reasoningProvider.extractEvidence(input.ideaName, input.targetCustomer, chunk));
           }
 
           if (extractionRes?.evidence) {
@@ -614,7 +654,7 @@ export async function runResearchPipeline(id: string, input: ResearchRequest, su
             });
           }
         } catch (err: any) {
-          await logApiUsage(id, reasoningProvider.name, "evidence_extraction", "failed", {}, err.message || String(err), supabaseClient);
+          console.warn("Evidence extraction failed on both primary and fallback providers.", err);
         }
       }
     }
@@ -624,7 +664,7 @@ export async function runResearchPipeline(id: string, input: ResearchRequest, su
     }
 
     // Embeddings Deduplication
-    await updateState(id, "Normalizing", 80, `Deduplicating pain signals and concept overlaps using embeddings`, {}, supabaseClient);
+    await updateState(id, "Normalizing", 80, `Deduplicating pain signals and concept overlaps using embeddings`, supabaseClient);
     
     let deduplicatedEvidence: any[] = [];
     try {
@@ -632,10 +672,8 @@ export async function runResearchPipeline(id: string, input: ResearchRequest, su
       let embeddings: number[][] = [];
       
       try {
-        embeddings = await fetchWithRetry(() => embeddingProvider.embed(snippets));
-        await logApiUsage(id, embeddingProvider.name, "embeddings", "success", {}, undefined, supabaseClient);
+        embeddings = await callProvider(id, embeddingProvider, "embeddings", budget, supabaseClient, () => embeddingProvider.embed(snippets));
       } catch (err: any) {
-        await logApiUsage(id, embeddingProvider.name, "embeddings", "failed", {}, err.message || String(err), supabaseClient);
         throw err;
       }
 
@@ -677,11 +715,11 @@ export async function runResearchPipeline(id: string, input: ResearchRequest, su
     }
 
     // 5. Scoring & Synthesis Step
-    await updateState(id, "Scoring", 90, `Assembling verdict and scoring 12 validation dimensions`, {}, supabaseClient);
+    await updateState(id, "Scoring", 90, `Assembling verdict and scoring 12 validation dimensions`, supabaseClient);
 
     let synthesisReport: z.infer<typeof finalReportLLMSchema>;
     try {
-      synthesisReport = await fetchWithRetry(() =>
+      synthesisReport = await callProvider(id, reasoningProvider, "report_synthesis", budget, supabaseClient, () =>
         reasoningProvider.synthesizeReport({
           ideaName: input.ideaName,
           ideaDescription: input.ideaDescription,
@@ -696,13 +734,12 @@ export async function runResearchPipeline(id: string, input: ResearchRequest, su
             url: e.url,
             source: e.source
           }))
-        })
+        }),
       );
-      await logApiUsage(id, reasoningProvider.name, "report_synthesis", "success", {}, undefined, supabaseClient);
     } catch (err) {
       console.warn("Groq report synthesis failed, falling back to OpenRouter:", err);
       reasoningProvider = createAnalysisProvider(true);
-      synthesisReport = await fetchWithRetry(() =>
+      synthesisReport = await callProvider(id, reasoningProvider, "report_synthesis", budget, supabaseClient, () =>
         reasoningProvider.synthesizeReport({
           ideaName: input.ideaName,
           ideaDescription: input.ideaDescription,
@@ -717,17 +754,16 @@ export async function runResearchPipeline(id: string, input: ResearchRequest, su
             url: e.url,
             source: e.source
           }))
-        })
+        }),
       );
-      await logApiUsage(id, reasoningProvider.name, "report_synthesis", "success", {}, undefined, supabaseClient);
     }
 
     // 6. Report Assembly Step
-    await updateState(id, "Generating", 95, `Structuring final reports and blueprint layout`, {}, supabaseClient);
+    await updateState(id, "Generating", 95, `Structuring final reports and blueprint layout`, supabaseClient);
     await wait(600);
 
     // Persist full report payload relationally
-    if (supabaseClient) {
+    {
       const sourceUrlsMap = new Map<string, string>();
       for (const content of extractedMarkdownContents) {
         const originalResult = searchResults.find(r => r.url === content.url);
@@ -737,105 +773,26 @@ export async function runResearchPipeline(id: string, input: ResearchRequest, su
       }
 
       await saveReportToDatabase(id, synthesisReport, deduplicatedEvidence, sourceUrlsMap, supabaseClient);
-    } else {
-      // Offline fallback state update in-memory
-      const assembledMockReport: ValidationReport = {
-        id: id,
-        version: "1.0" as const,
-        generatedAt: new Date().toISOString(),
-        executiveSummary: synthesisReport.executiveSummary,
-        opportunity: {
-          id: `opp-${id}`,
-          name: synthesisReport.opportunity.name,
-          oneLiner: synthesisReport.opportunity.one_liner,
-          targetCustomer: synthesisReport.opportunity.target_customer,
-          corePain: synthesisReport.opportunity.core_pain,
-          market: synthesisReport.opportunity.market,
-          scorecard: {
-            scores: synthesisReport.opportunity.scorecard.scores,
-            notes: synthesisReport.opportunity.scorecard.notes,
-            evidenceRefs: {
-              painSeverity: deduplicatedEvidence.filter(ev => ev.signal_type === "Pain").map(ev => ev.id),
-              purchaseUrgency: deduplicatedEvidence.filter(ev => ev.signal_type === "Pain").map(ev => ev.id),
-              willingnessToPay: deduplicatedEvidence.filter(ev => ev.signal_type === "Pricing").map(ev => ev.id),
-              buyerReachability: deduplicatedEvidence.filter(ev => ev.signal_type === "Demand").map(ev => ev.id),
-              competitionGap: deduplicatedEvidence.filter(ev => ev.signal_type === "Pain").map(ev => ev.id),
-              distributionClarity: deduplicatedEvidence.filter(ev => ev.signal_type === "Demand").map(ev => ev.id),
-              speedToFirstRevenue: deduplicatedEvidence.filter(ev => ev.signal_type === "Pricing").map(ev => ev.id)
-            },
-            weights: defaultWeights,
-            total: calculateWeightedScore(synthesisReport.opportunity.scorecard.scores, defaultWeights),
-            confidence: calculateConfidenceScore({
-              scores: synthesisReport.opportunity.scorecard.scores,
-              evidenceRefs: {}
-            }),
-            verdict: getVerdictFromScore(calculateWeightedScore(synthesisReport.opportunity.scorecard.scores, defaultWeights))
-          },
-          evidence: deduplicatedEvidence.map(e => ({
-            id: e.id,
-            source: e.source,
-            sourceType: e.source,
-            title: e.title,
-            snippet: e.snippet,
-            url: e.url,
-            signal: e.signal_type,
-            strength: e.strength,
-            date: new Date().toISOString().slice(0, 10)
-          })),
-          competitors: synthesisReport.opportunity.competitors.map((c: any, index: number) => ({ id: `c-${index}`, ...c })),
-          pricing: {
-            model: synthesisReport.opportunity.pricing.model,
-            pricePoint: synthesisReport.opportunity.pricing.pricePoint,
-            rationale: synthesisReport.opportunity.pricing.rationale,
-            firstOffer: synthesisReport.opportunity.pricing.firstOffer,
-            targetCustomers: synthesisReport.opportunity.pricing.targetCustomers
-          },
-          mvp: {
-            outcome: synthesisReport.opportunity.mvp.outcome,
-            scope: synthesisReport.opportunity.mvp.scope,
-            exclusions: synthesisReport.opportunity.mvp.exclusions,
-            buildEstimate: synthesisReport.opportunity.mvp.buildEstimate,
-            buildComplexity: synthesisReport.opportunity.mvp.buildComplexity
-          },
-          launch: {
-            firstCustomerChannel: synthesisReport.opportunity.launch.firstCustomerChannel,
-            weekOne: synthesisReport.opportunity.launch.weekOne,
-            outreachMessage: synthesisReport.opportunity.launch.outreachMessage,
-            successMetric: synthesisReport.opportunity.launch.successMetric,
-            firstTenStrategy: synthesisReport.opportunity.launch.firstTenStrategy
-          },
-          risks: synthesisReport.opportunity.risks.map((risk: any, index: number) => ({ id: `r-${index}`, ...risk })),
-          createdAt: new Date().toISOString()
-        },
-        methodology: synthesisReport.methodology
-      };
-
-      // Wrap EvidenceItem representation
-      const mockEvidence = assembledMockReport.opportunity.evidence;
-      const mockSources = extractedMarkdownContents.map((content, idx) => ({
-        id: `mock-src-${idx}`,
-        title: content.title,
-        url: content.url,
-        source: content.source,
-        snippet: content.markdown.slice(0, 300),
-        sourceType: "web",
-        text: content.markdown,
-        date: new Date().toISOString().slice(0, 10)
-      }));
-
-      researchStore.update(id, {
-        stage: "Completed",
-        progress: 100,
-        message: "Research memo compiled successfully",
-        report: assembledMockReport,
-        evidence: mockEvidence as any,
-        sources: mockSources
-      });
     }
 
-    await updateState(id, "Completed", 100, "Research memo compiled successfully", {}, supabaseClient);
+    await updateState(id, "Completed", 100, "Research memo compiled successfully", supabaseClient);
   } catch (error: any) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error("Pipeline failure:", error);
-    await updateState(id, "Failed", 100, error.message || "Unknown pipeline error", {}, supabaseClient);
+    if (supabaseClient) {
+      const { data: run } = await supabaseClient.from("research_runs").select("created_by").eq("id", id).maybeSingle();
+      await supabaseClient.from("error_logs").insert({
+        user_id: run?.created_by || null,
+        context: `research-worker:${id}`,
+        error_message: message,
+        stack_trace: error instanceof Error ? error.stack || null : null,
+      });
+      try {
+        await updateState(id, "Failed", 100, message, supabaseClient);
+      } catch (stateError) {
+        console.error("Failed to persist terminal run failure:", stateError);
+      }
+    }
+    throw new PipelineError(message, id, { cause: error });
   }
 }

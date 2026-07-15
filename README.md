@@ -1,158 +1,105 @@
 # SignalFit
 
-**SignalFit** is an evidence-backed market validation and product research platform for founders, solo builders, indie hackers, creators, agencies, and students. 
+SignalFit is an evidence-backed market-validation SaaS. An authenticated user submits a product idea; SignalFit searches the public web, extracts source material, structures and deduplicates evidence, scores the opportunity across 12 deterministic factors, and stores a cited decision report with one of five verdicts: Build Now, Validate First, Niche Down, Weak Signal, or Avoid.
 
-It helps you decide what to build, what to validate, what to niche down, and what to avoid before wasting weeks writing code. A single validation run turns a raw idea into a structured, decision-grade report with buyer pain analysis, competitor mapping, pricing logic, risk assessment, MVP scope, and a step-by-step launch playbook.
+## Architecture
 
-The entire platform communicates one thing instantly:  
-*“This tool tells me if my idea is worth building, why, what could kill it, who would pay, how to price it, and how to get my first customers.”*
-
----
-
-## High-Level Architecture
-
-SignalFit operates on a hybrid architecture designed for both fast local prototyping and production SaaS scaling:
-
-```
-                  ┌──────────────────────────────────────┐
-                  │          Next.js Frontend            │
-                  │  (Dashboard, Form, Interactive Rep)  │
-                  └──────────────────┬───────────────────┘
-                                     │
-                     ┌───────────────┴───────────────┐
-                     ▼                               ▼
-       ┌───────────────────────────┐   ┌───────────────────────────┐
-       │   In-Memory Demo Engine   │   │     SaaS Service Layer    │
-       │    (Local Dev Pipeline)    │   │  (Supabase Server Actions)│
-       └───────────────────────────┘   └─────────────┬─────────────┘
-                                                     │
-                                                     ▼
-                                       ┌───────────────────────────┐
-                                       │     Supabase Platform     │
-                                       │  (Postgres DB, RLS, Auth, │
-                                       │    Webhooks, Realtime)    │
-                                       └─────────────┬─────────────┘
-                                                     │
-                                                     ▼
-                                       ┌───────────────────────────┐
-                                       │   Supabase Edge Function  │
-                                       │ (Background Worker Queue) │
-                                       └───────────────────────────┘
+```text
+Next.js App Router
+  -> authenticated research_runs insert
+  -> authenticated dispatch to Supabase Edge Function
+  -> Tavily search
+  -> Firecrawl extraction
+  -> Groq reasoning (OpenRouter fallback)
+  -> Cohere embeddings
+  -> normalized Postgres records + report_versions
+  -> Supabase Realtime progress
 ```
 
-*   **Next.js Frontend (App Router)**: Captures user briefs, manages dashboard summaries, handles interactive checklists (via LocalStorage), and provides responsive decision-ready exports (Markdown, CSV, JSON, printer-friendly PDF).
-*   **In-Memory Validation Engine (Local Dev)**: Enables offline testing. Runs query generation, web scrapes, source extraction, scoring, and report compilation fully client-side using mock adapters (`lib/research/`).
-*   **Supabase SaaS Service Layer (Production)**: Coordinates PostgreSQL database access, Google OAuth/Email login, Row Level Security (RLS) tenant isolation policies, and database triggers.
-*   **Supabase Edge Functions & Webhooks (Background Queue)**: Receives database insert webhooks, executes LLM analysis, updates progression states, and broadcasts live progress logs over Supabase Realtime to the UI.
+Postgres, Auth, Realtime, Storage, and Edge Functions run on Supabase. Every tenant-owned table is protected by Row Level Security through the run -> project -> team relationship. The Next.js dashboard, progress API, report view, compare API, and export API read only from Supabase; no in-memory research store or mock provider is available to a real research request.
 
----
+Static data used by the explicitly labelled `/sample-report` page and scoring workbench lives in `lib/sample-reports.ts`. It is not imported by the research API or worker.
 
-## Key Features & Capabilities
+## Edge source layout
 
-- **Premium SaaS Rebrand**: Overhauled visual identity with a refined color system—featuring an **Indigo core** (`#6366F1`) combined with green, amber, and red accents to communicate risk, opportunity, and verdicts clearly.
-- **Differentiated Typography**: Uses **Instrument Sans** for bold display headings, **Inter** for readable body UI, and **IBM Plex Mono** for structured metrics and data tables.
-- **Ethical Signal Strip Marquee**: An animated flowing marquee of real validation sources where buyers already speak (Reddit, Product Hunt, G2, Capterra, Chrome Web Store, Hacker News, App Reviews, Competitor Pricing, Founder Communities, and Search Trends).
-- **12-Factor Scoring Model**: A transparent scoring system weighted across 12 validation criteria with inverted platform and regulatory risk calculations. Weights are fully adjustable to match your specific definition of a worthwhile opportunity.
-- **5-State Verdict System**: Clear, actionable recommendations based on the evidence:
-  - 🟢 **Build Now** (Score 85–100): Strong signals across the board.
-  - 🟡 **Validate First** (Score 70–84): Promising, but key assumptions need testing.
-  - 🔵 **Niche Down** (Score 55–69): Signal exists, but requires a narrower buyer segment.
-  - ⚪ **Weak Signal** (Score 40–54): Insufficient evidence to justify build time yet.
-  - 🔴 **Avoid** (Score 0–39): Red flags outweigh the opportunity.
-- **Premium Validation Reports**: Interactive report tabs covering Verdict, Evidence Ledger (with source types and confidence scores), Competitor Table (with threat levels), Scoring Breakdown, MVP Blueprint (Versions 0 to 3), Pricing Strategy, Launch Playbook, Interactive Action Plan, and Risk Heatmap.
-- **Decision-Ready Exports**: Seamless export pipelines to Markdown, JSON, CSV, and printer-ready PDF.
-- **Side-by-Side Comparison Matrix**: Compare up to four opportunities across criteria, MRR paths, and validation steps.
+Supabase’s local Edge container mounts the `supabase/` directory, so worker code must not import the host application’s `lib/` tree. The permanent source of truth is:
 
----
+```text
+supabase/functions/
+  _shared/
+    research/
+      pipeline.ts
+      providers.ts
+      status.ts
+      types.ts
+    report-schema.ts
+    scoring.ts
+    types.ts
+  research-worker/
+    index.ts
+    deno.json
+```
 
-## Design System & Aesthetics
+The worker imports `../_shared/research/pipeline.ts` directly. Next.js compatibility files such as `lib/scoring.ts`, `lib/report-schema.ts`, and `lib/types.ts` only re-export the shared implementation. Do not copy `lib/` into the function directory, add a vendored mirror to gitignore, or add a deploy-time source copy. Supabase bundles `functions/_shared/` as part of normal function deployment.
 
-SignalFit is styled as a premium founder intelligence desk: serious, sharp, trustworthy, and decision-oriented. It explicitly avoids the typical playful "AI chatbot wrapper" look.
+## Canonical research status
 
-- **Background**: Deep, warm charcoal black (`#09090B` base, `#0F1012` surface, `#16171B` elevated) with subtle gradient borders.
-- **Visual Score Badges**: Circular SVG ring components that dynamically fill and color-code based on the overall opportunity score.
-- **Zero Placeholders**: Clean, client-ready presentation templates filled with realistic B2B, agency, D2C, and tool mock reports.
+Both `research_runs.status` and the append-only `research_stages.status` history use exactly:
 
----
+```text
+Queued | Searching | Extracting | Normalizing | Scoring |
+Generating | Completed | Failed | Cancelled
+```
 
-## Local Development
+The TypeScript source is `supabase/functions/_shared/research/status.ts`. A stage-history row records the same value in `stage_name` and `status`.
 
-### Prerequisites
+## Provider safety and observability
 
-- Node.js 18 or later
+The production worker requires `TAVILY_API_KEY`, `FIRECRAWL_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, and `COHERE_API_KEY`. Missing credentials fail the run; no provider factory returns simulated data.
 
-### Install Dependencies
+Each real provider attempt, including retries and failures, writes `provider`, `operation`, token counts where the provider supplies them, estimated cost, status, and any error to `api_usage_logs`. A per-run dollar cap is enforced by `RESEARCH_RUN_COST_CAP_USD` (default `1.00`). Pipeline failures also write `error_logs`, set the run to `Failed`, and propagate a typed error to the worker.
+
+## Local development
+
+Prerequisites: Node.js 18+, Docker Desktop, and the Supabase CLI.
 
 ```bash
 npm install
-```
-
-### Start Development Server (with hot reloading)
-
-```bash
+supabase start
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). If port 3000 is busy, Next.js will pick the next available local port. To force port 3001:
+Set the Next.js Supabase variables and `WEBHOOK_SECRET` in `.env.local`. Set provider keys plus the same dedicated webhook secret in `supabase/functions/research-worker/.env`. Never use the service-role key as the webhook secret.
+
+Checks:
 
 ```bash
-npm run dev:3001
-```
-
-### Production Build
-
-```bash
+npx tsc --noEmit --incremental false
+supabase functions serve research-worker --env-file supabase/functions/research-worker/.env
 npm run build
 ```
 
-### Start Production Server
+Deployment:
 
 ```bash
-npm run start
+supabase db push
+supabase secrets set --env-file supabase/functions/research-worker/.env
+supabase functions deploy research-worker --no-verify-jwt
 ```
 
-*Note: The automatic server launcher searches for available ports from 3000 to 3019 to prevent port conflicts.*
+The function performs its own dedicated bearer-secret check before parsing or processing a webhook.
 
----
-
-## Project Structure
+## Project structure
 
 ```text
-app/
-  api/research/        # API endpoints for pipeline progress, starts, and exports
-  dashboard/           # User dashboard showing previous validations and next steps
-  research/            # Idea brief form, real-time progress page, and results view
-  sample-report/       # Public validation report sandbox
-components/
-  dashboard/           # Dashboard stats and project list items
-  landing/             # Landing page marquee, CTA, and visual signals
-  opportunity/         # Comparison matrix and verdict badge components
-  report/              # Report tab views (Verdict, Pricing, MVP, Launch, Heatmap)
-  research/            # Idea brief form and step progress logger
-  scoring/             # SVG score badges, score guide, and breakdown sliders
-  ui/                  # Standard buttons, premium cards, and visual tokens
-lib/
-  actions/             # Server Actions calling database repositories
-  repositories/        # Data access layer interfacing directly with Supabase clients
-  services/            # Business logic orchestration layer
-  supabase/            # Supabase server client and middleware helpers
-  research/            # In-memory validation engine and mock stores
-  report-schema.ts     # Zod contract schemas for frontend/backend validation
-  report-mocks.ts      # Structured sample validation data
-  scoring.ts           # 12-factor calculation metrics and verdict thresholds
-supabase/
-  migrations/          # 15 chronological SQL migrations managing schema and RLS policies
-  functions/           # Supabase Edge Functions (Deno background worker)
-scripts/               # Development helper scripts for auditing realtime and RLS
+app/api/research/     authenticated start/progress/report/compare/export APIs
+app/research/         idea form, live progress, and stored report pages
+components/           UI and report rendering
+lib/repositories/     Next.js Supabase data access
+lib/services/         server orchestration
+lib/sample-reports.ts explicit sample-only fixtures
+supabase/migrations/  schema, RLS, Realtime, status, and usage-log migrations
+supabase/functions/   Deno worker and permanent shared runtime code
 ```
 
----
-
-## Deep-Dive Documentation
-
-For advanced details, check the respective files:
-*   **Database Schema & SQL Migrations**: Refer to [README-BACKEND.md](file:///c:/Users/aakash09/Desktop/Ideation/README_BACKEND.md)
-*   **Frontend Dashboard, Tabs & Visual System**: Refer to [README-FRONTEND.md](file:///c:/Users/aakash09/Desktop/Ideation/README-FRONTEND.md)
-*   **Entity Relationships**: Refer to [Database.md](file:///c:/Users/aakash09/Desktop/Ideation/docs/Database.md)
-*   **Code Layers & Architecture Layers**: Refer to [Architecture.md](file:///c:/Users/aakash09/Desktop/Ideation/docs/Architecture.md)
-*   **Validation Pipeline Stages**: Refer to [Pipeline.md](file:///c:/Users/aakash09/Desktop/Ideation/docs/Pipeline.md)
+See [README_BACKEND.md](./README_BACKEND.md), [README-FRONTEND.md](./README-FRONTEND.md), and [docs/Pipeline.md](./docs/Pipeline.md).

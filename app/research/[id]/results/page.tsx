@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { ValidationReport } from "@/components/report/ValidationReport";
-import { researchStore } from "@/lib/research/store";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -9,19 +8,6 @@ export const dynamic = "force-dynamic";
 export default async function DynamicResultsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  // 1. Try local mock store first
-  const run = researchStore.get(id);
-  if (run?.report) {
-    return (
-      <AppShell title="Validation report">
-        <div className="page-content">
-          <ValidationReport report={run.report} />
-        </div>
-      </AppShell>
-    );
-  }
-
-  // 2. Try database
   try {
     const supabase = await createClient();
     

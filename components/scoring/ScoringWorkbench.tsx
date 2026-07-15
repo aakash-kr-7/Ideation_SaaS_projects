@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { ArrowRight, ChevronDown } from "lucide-react";
-import { validationReports } from "@/lib/report-mocks";
+import { validationReports } from "@/lib/sample-reports";
 import { calculateConfidenceScore, calculateWeightedScore, getVerdictFromScore, defaultWeights } from "@/lib/scoring";
 import { ScoringWeights } from "@/lib/types";
 import { WeightEditor } from "./WeightEditor";
