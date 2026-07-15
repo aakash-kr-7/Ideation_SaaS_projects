@@ -12,7 +12,9 @@ import type { ResearchRequest } from "./types.ts";
 import type { ResearchStatus } from "./status.ts";
 import {
   assertCitationsBelongToRun,
+  assertNormalizedOpportunityRows,
   finalJudgeSchema,
+  normalizedOpportunityArtifactsSchema,
   type SpecialistName,
   specialistSchemas,
 } from "./reasoning.ts";
@@ -413,8 +415,9 @@ async function acquireAndNormalize(
   if (oppError || !opp) {
     throw oppError || new Error("Opportunity insert failed");
   }
+  const persistedEvidence: any[] = [];
   for (const [index, e] of unique.entries()) {
-    const { error } = await db.from("evidence_items").insert({
+    const { data, error } = await db.from("evidence_items").insert({
       run_id: id,
       opportunity_id: opp.id,
       source_id: e.source_id,
@@ -431,9 +434,184 @@ async function acquireAndNormalize(
         : e.strength === "Medium"
         ? .65
         : .45,
-    });
-    if (error) throw error;
+    }).select("id,signal_type,strength,title,snippet").single();
+    if (error || !data) throw error || new Error("Evidence insert failed");
+    persistedEvidence.push(data);
   }
+  await generateAndPersistOpportunityArtifacts(
+    id,
+    input,
+    opp.id,
+    persistedEvidence,
+    db,
+    budget,
+  );
+}
+
+async function generateAndPersistOpportunityArtifacts(
+  runId: string,
+  input: ResearchRequest,
+  opportunityId: string,
+  evidence: any[],
+  db: any,
+  budget: CostBudget,
+) {
+  const artifactContract =
+    `{"competitors":[{"name":"Named entity from evidence","positioning":"One phrase","pricing":"Observed pricing or evidence-grounded description","target":"One phrase","strength":"One phrase","gap":"One phrase","evidence_ids":["UUID"]}],"risks":[{"category":"Market|Execution|Platform|Regulatory","severity":"High|Medium|Low","description":"One sentence","mitigation":"One sentence","evidence_ids":["UUID"]}],"pricing_model":{"model":"One phrase","price_point":"One phrase","rationale":"One sentence","first_offer":"One phrase","target_customers":10,"evidence_ids":["UUID"]},"mvp_plan":{"outcome":"One sentence","build_estimate":"One phrase","build_complexity":"Low|Medium|High","scope":["One phrase"],"exclusions":["One phrase"],"evidence_ids":["UUID"]},"launch_plan":{"first_customer_channel":"One phrase","outreach_message":"One sentence","success_metric":"One phrase","week_one":["One sentence"],"first_ten":["One sentence"],"evidence_ids":["UUID"]}}`;
+  const allowedEvidenceIds = new Set<string>(
+    evidence.map((item: any) => item.id),
+  );
+  const artifactPacingMs = Number(
+    getEnv("NORMALIZATION_ARTIFACT_PACING_MS") || "8000",
+  );
+  if (!Number.isFinite(artifactPacingMs) || artifactPacingMs < 0) {
+    throw new Error(
+      "NORMALIZATION_ARTIFACT_PACING_MS must be zero or greater.",
+    );
+  }
+  if (artifactPacingMs > 0) await wait(artifactPacingMs);
+  let artifacts:
+    | z.infer<typeof normalizedOpportunityArtifactsSchema>
+    | undefined;
+  let last: unknown;
+  const artifactMaxCompletionTokens = Number(
+    getEnv("NORMALIZATION_MAX_COMPLETION_TOKENS") || "8192",
+  );
+  if (
+    !Number.isInteger(artifactMaxCompletionTokens) ||
+    artifactMaxCompletionTokens <= 0
+  ) {
+    throw new Error(
+      "NORMALIZATION_MAX_COMPLETION_TOKENS must be a positive integer.",
+    );
+  }
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const provider = createAnalysisProvider(
+      attempt >= 2,
+      artifactMaxCompletionTokens,
+    );
+    try {
+      artifacts = await callProvider(
+        runId,
+        provider,
+        "normalized_opportunity_artifacts",
+        budget,
+        db,
+        () =>
+          provider.generateStructured(
+            `Normalize the supplied startup idea and evidence rows into the database-ready analysis sections. Return exactly this JSON field structure: ${artifactContract}. Replace every example value with supported values from the input and emit enum values as one allowed value, never the pipe-delimited example. Use only facts present in evidence. Return at most three competitors and three risks, and at most five items in each plan list. Competitors must be named entities actually present in evidence; do not invent names, prices, or capabilities. Pricing, MVP, and launch fields are recommendations, but each must be grounded in the cited evidence. Risks must describe a concrete evidenced concern. Every object must cite one or more exact evidence_items UUIDs from the input. Keep every field to one concise sentence or phrase specific to the submitted idea. target_customers is the integer customer count for the recommended initial validation offer, not a market-size estimate. If the evidence cannot support every required section, fail by returning no valid object rather than filling fields with placeholders such as Unknown, Incomplete, Not established, or N/A.`,
+            JSON.stringify({
+              idea: {
+                name: input.ideaName,
+                description: input.ideaDescription,
+                target_customer: input.targetCustomer,
+                market_type: input.marketType,
+                target_region: input.targetRegion,
+              },
+              evidence,
+            }),
+            normalizedOpportunityArtifactsSchema,
+          ),
+        1,
+      );
+      assertCitationsBelongToRun(artifacts, allowedEvidenceIds);
+      break;
+    } catch (error) {
+      last = error;
+      if (attempt < 3) {
+        const delay = attempt >= 2
+          ? Math.max(10_000, retryDelay(error, attempt))
+          : retryDelay(error, attempt);
+        await wait(delay);
+      }
+    }
+  }
+  if (!artifacts) {
+    throw last || new Error("Required normalized opportunity artifacts failed");
+  }
+
+  const cleanupResults = await Promise.all([
+    db.from("competitors").delete().eq("opportunity_id", opportunityId),
+    db.from("risks").delete().eq("opportunity_id", opportunityId),
+    db.from("pricing_models").delete().eq("opportunity_id", opportunityId),
+    db.from("mvp_plans").delete().eq("opportunity_id", opportunityId),
+    db.from("launch_plans").delete().eq("opportunity_id", opportunityId),
+  ]);
+  for (const result of cleanupResults) {
+    if (result.error) throw result.error;
+  }
+
+  const { error: competitorError } = await db.from("competitors").insert(
+    artifacts.competitors.map(({ evidence_ids: _citations, ...row }) => ({
+      ...row,
+      opportunity_id: opportunityId,
+    })),
+  );
+  if (competitorError) throw competitorError;
+
+  const { error: riskError } = await db.from("risks").insert(
+    artifacts.risks.map(({ evidence_ids: _citations, ...row }) => ({
+      ...row,
+      opportunity_id: opportunityId,
+    })),
+  );
+  if (riskError) throw riskError;
+
+  const { evidence_ids: _pricingCitations, ...pricing } =
+    artifacts.pricing_model;
+  const { error: pricingError } = await db.from("pricing_models").insert({
+    ...pricing,
+    opportunity_id: opportunityId,
+  });
+  if (pricingError) throw pricingError;
+
+  const { evidence_ids: _mvpCitations, scope, exclusions, ...mvp } =
+    artifacts.mvp_plan;
+  const { data: mvpPlan, error: mvpError } = await db.from("mvp_plans").insert({
+    ...mvp,
+    opportunity_id: opportunityId,
+  }).select("id").single();
+  if (mvpError || !mvpPlan) {
+    throw mvpError || new Error("MVP plan insert failed");
+  }
+  const { error: scopeError } = await db.from("mvp_scope_items").insert([
+    ...scope.map((description) => ({
+      mvp_plan_id: mvpPlan.id,
+      item_type: "Scope",
+      description,
+    })),
+    ...exclusions.map((description) => ({
+      mvp_plan_id: mvpPlan.id,
+      item_type: "Exclusion",
+      description,
+    })),
+  ]);
+  if (scopeError) throw scopeError;
+
+  const {
+    evidence_ids: _launchCitations,
+    week_one,
+    first_ten,
+    ...launch
+  } = artifacts.launch_plan;
+  const { data: launchPlan, error: launchError } = await db.from("launch_plans")
+    .insert({ ...launch, opportunity_id: opportunityId }).select("id").single();
+  if (launchError || !launchPlan) {
+    throw launchError || new Error("Launch plan insert failed");
+  }
+  const { error: strategyError } = await db.from("launch_strategies").insert([
+    ...week_one.map((description) => ({
+      launch_plan_id: launchPlan.id,
+      strategy_type: "WeekOne",
+      description,
+    })),
+    ...first_ten.map((description) => ({
+      launch_plan_id: launchPlan.id,
+      strategy_type: "FirstTen",
+      description,
+    })),
+  ]);
+  if (strategyError) throw strategyError;
 }
 
 function specialistContract(name: SpecialistName) {
@@ -552,7 +730,7 @@ async function runSpecialist(
   let last: unknown;
   let attempt = 0;
   for (attempt = 1; attempt <= 3; attempt++) {
-    const provider: ReasoningProvider = createAnalysisProvider(attempt === 3);
+    const provider: ReasoningProvider = createAnalysisProvider(attempt >= 2);
     try {
       if (getEnv("FORCE_SPECIALIST_AGENT_FAILURE") === name) {
         throw new Error(`Forced ${name} specialist failure for verification`);
@@ -640,7 +818,7 @@ async function executeReasoningPhase(
     throw oppError ||
       new Error("No normalized opportunity exists for this run.");
   }
-  const [evQ, compQ, riskQ, pricingQ, mvpQ, launchQ, weightQ] = await Promise
+  let [evQ, compQ, riskQ, pricingQ, mvpQ, launchQ, weightQ] = await Promise
     .all([
       db.from("evidence_items").select(
         "id,source_id,signal_type,strength,title,snippet,verified,cluster_key,supporting_count,contradicting_count,confidence,sources(title,url,source_type)",
@@ -671,6 +849,53 @@ async function executeReasoningPhase(
   if (!evidence.length) {
     throw new Error("Reasoning requires persisted evidence_items.");
   }
+  try {
+    assertNormalizedOpportunityRows({
+      competitors: compQ.data,
+      risks: riskQ.data,
+      pricing_model: pricingQ.data,
+      mvp_plan: mvpQ.data,
+      launch_plan: launchQ.data,
+    });
+  } catch {
+    await updateState(
+      id,
+      "Normalizing",
+      74,
+      "Backfilling required opportunity analysis rows from persisted evidence",
+      db,
+    );
+    await generateAndPersistOpportunityArtifacts(
+      id,
+      input,
+      opp.id,
+      evidence,
+      db,
+      budget,
+    );
+    [compQ, riskQ, pricingQ, mvpQ, launchQ] = await Promise.all([
+      db.from("competitors").select(
+        "id,name,positioning,pricing,target,strength,gap",
+      ).eq("opportunity_id", opp.id),
+      db.from("risks").select("id,category,severity,description,mitigation").eq(
+        "opportunity_id",
+        opp.id,
+      ),
+      db.from("pricing_models").select("*").eq("opportunity_id", opp.id)
+        .maybeSingle(),
+      db.from("mvp_plans").select("*,mvp_scope_items(*)").eq(
+        "opportunity_id",
+        opp.id,
+      ).maybeSingle(),
+      db.from("launch_plans").select("*,launch_strategies(*)").eq(
+        "opportunity_id",
+        opp.id,
+      ).maybeSingle(),
+    ]);
+    for (const q of [compQ, riskQ, pricingQ, mvpQ, launchQ]) {
+      if (q.error) throw q.error;
+    }
+  }
   const allowed = new Set<string>(evidence.map((e: any) => e.id));
   const structured = {
     opportunity: opp,
@@ -681,6 +906,7 @@ async function executeReasoningPhase(
     mvp_plan: mvpQ.data,
     launch_plan: launchQ.data,
   };
+  assertNormalizedOpportunityRows(structured);
   const names = Object.keys(specialistSchemas) as SpecialistName[];
   const outputs: any = {};
   const specialistBudgetMs = Number(
@@ -838,7 +1064,20 @@ async function executeReasoningPhase(
   let judge: any;
   let judgeLast: unknown;
   let judgeAttempt = 0;
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  const { data: reusableJudge } = await db.from("reasoning_agent_outputs")
+    .select("payload,attempt_count").eq("run_id", id).eq(
+      "agent_name",
+      "final_judge",
+    ).eq("status", "Complete").maybeSingle();
+  if (reusableJudge?.payload) {
+    const parsedJudge = finalJudgeSchema.safeParse(reusableJudge.payload);
+    if (parsedJudge.success) {
+      assertCitationsBelongToRun(parsedJudge.data, allowed);
+      judge = parsedJudge.data;
+      judgeAttempt = reusableJudge.attempt_count || 1;
+    }
+  }
+  for (let attempt = 1; !judge && attempt <= 3; attempt++) {
     if (Date.now() - reasoningStartedAt >= reasoningPhaseBudgetMs - 5_000) {
       judgeLast = new Error(
         "Final Judge exhausted the bounded reasoning-phase time budget.",
@@ -943,61 +1182,37 @@ async function executeReasoningPhase(
         date: new Date().toISOString().slice(0, 10),
       })),
       competitors: compQ.data || [],
-      pricing: pricingQ.data
-        ? {
-          model: pricingQ.data.model,
-          pricePoint: pricingQ.data.price_point,
-          rationale: pricingQ.data.rationale,
-          firstOffer: pricingQ.data.first_offer,
-          targetCustomers: pricingQ.data.target_customers,
-        }
-        : {
-          model: "Incomplete",
-          pricePoint: "Not established",
-          rationale: "No normalized pricing model was available for this run.",
-          firstOffer: "Not established",
-          targetCustomers: 0,
-        },
-      mvp: mvpQ.data
-        ? {
-          outcome: mvpQ.data.outcome,
-          scope: (mvpQ.data.mvp_scope_items || []).filter((item: any) =>
-            item.item_type === "Scope"
-          ).map((item: any) => item.description),
-          exclusions: (mvpQ.data.mvp_scope_items || []).filter((item: any) =>
-            item.item_type === "Exclusion"
-          ).map((item: any) => item.description),
-          buildEstimate: mvpQ.data.build_estimate,
-          buildComplexity: mvpQ.data.build_complexity,
-        }
-        : {
-          outcome: "Incomplete: no normalized MVP plan was available.",
-          scope: ["Incomplete: no normalized MVP scope was available."],
-          exclusions: [],
-          buildEstimate: "Not established",
-          buildComplexity: "High",
-        },
-      launch: launchQ.data
-        ? {
-          firstCustomerChannel: launchQ.data.first_customer_channel,
-          outreachMessage: launchQ.data.outreach_message,
-          successMetric: launchQ.data.success_metric,
-          weekOne: (launchQ.data.launch_strategies || []).filter((item: any) =>
-            item.strategy_type === "WeekOne"
-          ).map((item: any) => item.description),
-          firstTenStrategy: (launchQ.data.launch_strategies || []).filter((
-            item: any,
-          ) => item.strategy_type === "FirstTen").map((item: any) =>
-            item.description
-          ),
-        }
-        : {
-          firstCustomerChannel: "Incomplete",
-          outreachMessage: "No normalized launch plan was available.",
-          successMetric: "Not established",
-          weekOne: ["Incomplete: no normalized launch strategy was available."],
-          firstTenStrategy: [],
-        },
+      pricing: {
+        model: pricingQ.data.model,
+        pricePoint: pricingQ.data.price_point,
+        rationale: pricingQ.data.rationale,
+        firstOffer: pricingQ.data.first_offer,
+        targetCustomers: pricingQ.data.target_customers,
+      },
+      mvp: {
+        outcome: mvpQ.data.outcome,
+        scope: (mvpQ.data.mvp_scope_items || []).filter((item: any) =>
+          item.item_type === "Scope"
+        ).map((item: any) => item.description),
+        exclusions: (mvpQ.data.mvp_scope_items || []).filter((item: any) =>
+          item.item_type === "Exclusion"
+        ).map((item: any) => item.description),
+        buildEstimate: mvpQ.data.build_estimate,
+        buildComplexity: mvpQ.data.build_complexity,
+      },
+      launch: {
+        firstCustomerChannel: launchQ.data.first_customer_channel,
+        outreachMessage: launchQ.data.outreach_message,
+        successMetric: launchQ.data.success_metric,
+        weekOne: (launchQ.data.launch_strategies || []).filter((item: any) =>
+          item.strategy_type === "WeekOne"
+        ).map((item: any) => item.description),
+        firstTenStrategy: (launchQ.data.launch_strategies || []).filter((
+          item: any,
+        ) => item.strategy_type === "FirstTen").map((item: any) =>
+          item.description
+        ),
+      },
       risks: riskQ.data || [],
       createdAt: new Date().toISOString(),
     },

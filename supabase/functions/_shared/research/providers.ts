@@ -60,11 +60,11 @@ export interface ReasoningProvider {
     customer: string,
     chunk: string,
   ): Promise<z.infer<typeof evidenceListLLMSchema>>;
-  generateStructured<T>(
+  generateStructured<TSchema extends z.ZodTypeAny>(
     systemPrompt: string,
     userPrompt: string,
-    schema: z.ZodType<T>,
-  ): Promise<T>;
+    schema: TSchema,
+  ): Promise<z.output<TSchema>>;
 }
 
 export class TavilySearchProvider implements SearchProvider {
@@ -179,11 +179,11 @@ abstract class OpenAICompatibleReasoningProvider implements ReasoningProvider {
   protected extraHeaders(): Record<string, string> {
     return {};
   }
-  async generateStructured<T>(
+  async generateStructured<TSchema extends z.ZodTypeAny>(
     systemPrompt: string,
     userPrompt: string,
-    schema: z.ZodType<T>,
-  ): Promise<T> {
+    schema: TSchema,
+  ): Promise<z.output<TSchema>> {
     const response = await fetch(this.endpoint, {
       method: "POST",
       signal: providerRequestSignal(),
@@ -252,6 +252,15 @@ function reasoningMaxCompletionTokens() {
   return Number(getEnv("REASONING_MAX_COMPLETION_TOKENS") || "2048");
 }
 
+function normalizedSecret(value: string | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+  const first = trimmed[0], last = trimmed[trimmed.length - 1];
+  return (first === '"' && last === '"') || (first === "'" && last === "'")
+    ? trimmed.slice(1, -1)
+    : trimmed;
+}
+
 export function createSearchProvider(): SearchProvider {
   const key = getEnv("TAVILY_API_KEY");
   if (!key) {
@@ -279,9 +288,12 @@ export function createEmbeddingProvider(): EmbeddingProvider {
   }
   return new CohereEmbeddingProvider(key);
 }
-export function createAnalysisProvider(useFallback = false): ReasoningProvider {
-  const groq = getEnv("GROQ_API_KEY"),
-    cerebras = getEnv("CEREBRAS_API_KEY");
+export function createAnalysisProvider(
+  useFallback = false,
+  maxCompletionTokens = reasoningMaxCompletionTokens(),
+): ReasoningProvider {
+  const groq = normalizedSecret(getEnv("GROQ_API_KEY")),
+    cerebras = normalizedSecret(getEnv("CEREBRAS_API_KEY"));
   if (useFallback) {
     if (!cerebras) {
       throw new Error("CEREBRAS_API_KEY is required for reasoning fallback.");
@@ -289,7 +301,7 @@ export function createAnalysisProvider(useFallback = false): ReasoningProvider {
     return new CerebrasReasoningProvider(
       cerebras,
       getEnv("CEREBRAS_MODEL") || "gpt-oss-120b",
-      reasoningMaxCompletionTokens(),
+      maxCompletionTokens,
     );
   }
   if (!groq) {
@@ -297,5 +309,5 @@ export function createAnalysisProvider(useFallback = false): ReasoningProvider {
       "GROQ_API_KEY is required; simulated reasoning is disabled.",
     );
   }
-  return new GroqReasoningProvider(groq, reasoningMaxCompletionTokens());
+  return new GroqReasoningProvider(groq, maxCompletionTokens);
 }
