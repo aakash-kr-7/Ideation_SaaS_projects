@@ -112,6 +112,9 @@ async function main() {
     const reportVersion = await insert("report_versions", { report_id: report.id, version_number: 1, payload: versionSource.payload, market_sizing: noSizing }, false);
     const reportExport = await clone("report_exports", { report_version_id: reportVersion.id, format: "json" });
     const reasoning = await clone("reasoning_agent_outputs", { run_id: run.id, agent_name: "competition" });
+    const specialistCheck = await insert("specialist_checks", { run_id: run.id, specialist_name: "competition", status: "Complete", attempt_count: 1, specialist_direction: "Mixed", checker_direction: "Mixed", disputed: false, dispute_reason: "RLS fixture", checker_payload: { claims: [] } });
+    const adversarialGate = await insert("adversarial_verdict_gates", { run_id: run.id, emerging_verdict: "Validate First", outcome: "NoStrongDisproof", severity: "None", objection: "RLS fixture found no strong disproof.", evidence_ids: [], unresolved: false, status: "Complete", payload: { fixture: true } });
+    const citationValidation = await insert("citation_integrity_validations", { run_id: run.id, valid: true, claims_checked: 1, claims_removed: 0, invalid_claims: [], payload: { fixture: true } });
     const usage = await clone("api_usage_logs", { run_id: run.id, provider: "rls-audit", operation: "authorization-test" });
     const analytics = await insert("analytics_events", { user_id: victimId, event_name: "rls_audit", event_data: { suffix } });
     const errorLog = await insert("error_logs", { user_id: victimId, run_id: run.id, context: "rls_audit", error_message: "Disposable fixture" });
@@ -132,7 +135,9 @@ async function main() {
       mvp_scope_items: mvpItem, launch_plans: launch, launch_strategies: launchStrategy,
       opportunity_scores: score, score_breakdowns: breakdown, score_evidence_refs: evidenceRef,
       reports: report, report_versions: reportVersion, report_exports: reportExport,
-      reasoning_agent_outputs: reasoning, api_usage_logs: usage, analytics_events: analytics,
+      reasoning_agent_outputs: reasoning, specialist_checks: specialistCheck,
+      adversarial_verdict_gates: adversarialGate, citation_integrity_validations: citationValidation,
+      api_usage_logs: usage, analytics_events: analytics,
       error_logs: errorLog, audit_logs: auditLog, background_jobs: job, notifications: notification,
       cached_research: cached, search_cache: search, billing_customers: billingCustomer,
       billing_subscriptions: billingSubscription, scoring_weights: scoringWeight,

@@ -20,6 +20,7 @@ Deno.test("specialist claims without citations are rejected", () => {
     competitionAgentSchema.parse({
       claims: [{ claim: "unsupported", evidence_ids: [] }],
       limitations: [],
+      verdict_direction: "SupportsOpportunity",
     })
   );
 });
@@ -41,11 +42,13 @@ Deno.test("Final Judge requires three individually traceable sentences", () => {
     score_criteria: [],
   };
   finalJudgeSchema.parse({
+    written_verdict: "Validate First",
     executive_summary: [sentence, { ...sentence, text: "Second sentence." }],
     methodology: [{ ...sentence, text: "Method sentence." }],
   });
   expectThrow(() =>
     finalJudgeSchema.parse({
+      written_verdict: "Validate First",
       executive_summary: [sentence],
       methodology: [sentence],
     })

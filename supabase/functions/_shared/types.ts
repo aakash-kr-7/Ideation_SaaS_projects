@@ -1616,7 +1616,7 @@ export type ScoringWeights = Record<ScoringCriterion, number>;
 export type CriterionScores = Record<ScoringCriterion, number>;
 export type CriterionNotes = Record<ScoringCriterion, string>;
 export type CriterionEvidence = Partial<Record<ScoringCriterion, string[]>>;
-export interface OpportunityScorecard { scores: CriterionScores; notes: CriterionNotes; evidenceRefs: CriterionEvidence; weights: ScoringWeights; total: number; confidence: number; verdict: EngineVerdict; }
+export interface OpportunityScorecard { scores: CriterionScores; notes: CriterionNotes; evidenceRefs: CriterionEvidence; weights: ScoringWeights; total: number; confidence: number; verdict: EngineVerdict; deterministicVerdict?: EngineVerdict; decisionStatus?: "Passed" | "Challenged"; }
 export type MarketType = "B2B" | "D2C" | "Creator" | "Developer Tool" | "Local Business" | "Agency Tool" | "Student/Career" | "Other";
 export type ResearchMode = "Fast Scan" | "Deep Validation" | "Compare Ideas" | "Find Opportunities in Market";
 

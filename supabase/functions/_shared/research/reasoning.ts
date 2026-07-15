@@ -91,6 +91,28 @@ export function assertNormalizedOpportunityRows(value: {
 const specialistBaseSchema = z.object({
   claims: z.array(citedClaimSchema),
   limitations: z.array(z.string()).default([]),
+  verdict_direction: z.enum([
+    "SupportsOpportunity",
+    "Mixed",
+    "ChallengesOpportunity",
+    "Insufficient",
+  ]),
+});
+
+export const independentCheckerSchema = specialistBaseSchema;
+
+export const adversarialGateSchema = z.object({
+  outcome: z.enum(["StrongObjection", "NoStrongDisproof", "InsufficientEvidence"]),
+  severity: z.enum(["High", "Medium", "Low", "None"]),
+  objection: z.string().min(1),
+  evidence_ids: z.array(z.string().uuid()).default([]),
+}).superRefine((value, ctx) => {
+  if (value.outcome === "StrongObjection" && value.evidence_ids.length === 0) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "A strong objection requires evidence." });
+  }
+  if (value.outcome === "NoStrongDisproof" && value.severity !== "None") {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "No disproof must use severity None." });
+  }
 });
 
 export const competitionAgentSchema = specialistBaseSchema;
@@ -134,6 +156,7 @@ export const gtmAgentSchema = specialistBaseSchema.extend({
 });
 
 export const finalJudgeSchema = z.object({
+  written_verdict: z.enum(["Build Now", "Validate First", "Niche Down", "Weak Signal", "Avoid"]),
   executive_summary: z.array(
     z.object({
       text: z.string().min(1),

@@ -12,8 +12,10 @@ import type { ResearchRequest } from "./types.ts";
 import type { ResearchStatus } from "./status.ts";
 import {
   assertCitationsBelongToRun,
+  adversarialGateSchema,
   assertNormalizedOpportunityRows,
   finalJudgeSchema,
+  independentCheckerSchema,
   normalizedOpportunityArtifactsSchema,
   type SpecialistName,
   specialistSchemas,
@@ -44,6 +46,12 @@ import {
   type PlannedQuery,
   type ResearchPass,
 } from "./retrieval-strategy.ts";
+import {
+  checkVerdictConsistency,
+  compareSpecialistAndChecker,
+  gateVerdict,
+  validateNarrativeCitations,
+} from "./reasoning-integrity.ts";
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 function retryDelay(error: unknown, attempt: number) {
@@ -275,7 +283,7 @@ async function acquireAndNormalize(
   }
   const startedAt = Date.now();
   const retrievalBudgetMs = Number(getEnv("RESEARCH_RETRIEVAL_BUDGET_MS") || "85000");
-  const downstreamCostReserve = Number(getEnv("RESEARCH_REASONING_COST_RESERVE_USD") || ".22");
+  const downstreamCostReserve = Number(getEnv("RESEARCH_REASONING_COST_RESERVE_USD") || ".36");
   const maxSourcesPerPass = input.depth === "deep" ? 4 : 3;
   const seenUrls = new Set<string>();
   let persistedEvidence: any[] = [];
@@ -605,7 +613,7 @@ async function generateAndPersistOpportunityArtifacts(
 
 function specialistContract(name: SpecialistName) {
   const claims =
-    '"claims":[{"claim":"One concise sentence.","evidence_ids":["UUID"]}],"limitations":[]';
+    '"claims":[{"claim":"One concise sentence.","evidence_ids":["UUID"]}],"limitations":[],"verdict_direction":"Insufficient"';
   switch (name) {
     case "market":
       return `{${claims},"demand_pattern":"Unknown"}`;
@@ -625,7 +633,7 @@ function specialistContract(name: SpecialistName) {
 function specialistPrompt(name: SpecialistName, structured: any) {
   return `You are the ${name} specialist. Analyze only the supplied structured database rows. Return exactly this JSON shape: ${
     specialistContract(name)
-  }. Replace example values with supported values from the input. Allowed enums: demand_pattern=Growing|Stable|Seasonal|Declining|Unknown; pricing_structure=Subscription|Usage|One-time|Service|Mixed|Unknown; risk category=Market|Execution|Platform|Regulatory; severity and confidence_label=High|Medium|Low. Every array item must be an object using exactly the shown field names. Return at most three claims, three risks, and three channels. Keep every claim, rationale, limitation, and observation to one concise sentence. Every claim, risk, and channel must cite one or more exact evidence_items UUIDs from the input. Never output a numeric score, rating number, probability, percentage, market-size estimate, competitor count, average price, or other score-like number. Categorical labels are allowed. If the evidence does not support a claim, omit it and describe the limitation.\n\nSTRUCTURED INPUT:\n${
+  }. Replace example values with supported values from the input. verdict_direction must be SupportsOpportunity, Mixed, ChallengesOpportunity, or Insufficient. Allowed enums: demand_pattern=Growing|Stable|Seasonal|Declining|Unknown; pricing_structure=Subscription|Usage|One-time|Service|Mixed|Unknown; risk category=Market|Execution|Platform|Regulatory; severity and confidence_label=High|Medium|Low. Every array item must be an object using exactly the shown field names. Return at most three claims, three risks, and three channels. Keep every claim, rationale, limitation, and observation to one concise sentence. Every claim, risk, and channel must cite one or more exact evidence_items UUIDs from the input. Never output a numeric score, rating number, probability, percentage, market-size estimate, competitor count, average price, or other score-like number. Categorical labels are allowed. If the evidence does not support a claim, omit it and describe the limitation.\n\nSTRUCTURED INPUT:\n${
     JSON.stringify(structured)
   }`;
 }
@@ -797,6 +805,123 @@ async function runSpecialist(
   return { status: "Incomplete", output };
 }
 
+async function runIndependentChecker(
+  name: SpecialistName,
+  isolatedInput: any,
+  allowed: Set<string>,
+  runId: string,
+  budget: CostBudget,
+  db: any,
+) {
+  try {
+    const provider = createAnalysisProvider(true);
+    const output = await callProvider(
+      runId,
+      provider,
+      `checker_${name}`,
+      budget,
+      db,
+      () => provider.generateStructured(
+        `You are the independent checker for the ${name} domain. Re-derive a judgment from the supplied database evidence in isolation. You have not seen and must not speculate about any specialist output. Return JSON exactly as {"claims":[{"claim":"One concise independently derived finding.","evidence_ids":["UUID"]}],"limitations":[],"verdict_direction":"SupportsOpportunity|Mixed|ChallengesOpportunity|Insufficient"}. Cite every claim. verdict_direction summarizes only this evidence subset. Omit unsupported claims; do not invent numbers or use parametric knowledge.`,
+        JSON.stringify(isolatedInput),
+        independentCheckerSchema,
+      ),
+      1,
+    );
+    assertCitationsBelongToRun(output, allowed);
+    return { status: "Complete", output, attemptCount: 1 };
+  } catch (error) {
+    await logError(runId, `reasoning-checker:${name}`, error, db);
+    return {
+      status: "Incomplete",
+      output: {
+        claims: [],
+        limitations: [`Independent checker failed: ${error instanceof Error ? error.message : String(error)}`],
+        verdict_direction: "Insufficient",
+      },
+      attemptCount: 1,
+    };
+  }
+}
+
+async function runAdversarialVerdictGate(
+  runId: string,
+  deterministic: { total: number; verdict: string; factors: any[] },
+  structured: any,
+  allowed: Set<string>,
+  budget: CostBudget,
+  db: any,
+) {
+  const evidence = structured.evidence.filter((item: any) =>
+    !item.excluded && item.source_tier !== 4
+  ).toSorted((a: any, b: any) =>
+    Number(Boolean(b.disconfirming)) - Number(Boolean(a.disconfirming)) ||
+    Number(a.source_tier || 3) - Number(b.source_tier || 3) ||
+    Number(b.independent_source_count || 1) - Number(a.independent_source_count || 1)
+  ).slice(0, 12);
+  try {
+    const provider = createAnalysisProvider();
+    const output = await callProvider(
+      runId,
+      provider,
+      "adversarial_verdict_gate",
+      budget,
+      db,
+      () => provider.generateStructured(
+        `Act as a one-shot adversarial verdict gate. Your only mandate is to kill or disprove the emerging deterministic verdict using the supplied persisted evidence. You have not seen specialist conclusions. Prioritize Pass 3 disconfirmation, missing Tier 1 willingness-to-pay proof, dominant incumbents, retrieval gaps, and thin independent corroboration. Return exactly {"outcome":"StrongObjection|NoStrongDisproof|InsufficientEvidence","severity":"High|Medium|Low|None","objection":"One specific sentence, or an explicit certification that no strong disproof was found.","evidence_ids":["UUID"]}. StrongObjection requires direct citations. NoStrongDisproof must use severity None. Do not soften or balance the objection and do not propose a new score.`,
+        JSON.stringify({
+          deterministic_verdict: deterministic.verdict,
+          weakest_factors: deterministic.factors.toSorted((a: any, b: any) => a.score - b.score).slice(0, 4),
+          evidence,
+          competitors: structured.competitors,
+          retrieval: structured.retrieval,
+        }),
+        adversarialGateSchema,
+      ),
+      1,
+    );
+    assertCitationsBelongToRun(output, allowed);
+    const unresolved = output.outcome === "StrongObjection" &&
+      (output.severity === "High" || output.severity === "Medium");
+    const persisted = { ...output, unresolved };
+    const { error } = await db.from("adversarial_verdict_gates").upsert({
+      run_id: runId,
+      emerging_verdict: deterministic.verdict,
+      outcome: output.outcome,
+      severity: output.severity,
+      objection: output.objection,
+      evidence_ids: output.evidence_ids,
+      unresolved,
+      status: "Complete",
+      payload: persisted,
+    }, { onConflict: "run_id" });
+    if (error) throw error;
+    return persisted;
+  } catch (error) {
+    await logError(runId, "adversarial-verdict-gate", error, db);
+    const fallback = {
+      outcome: "InsufficientEvidence" as const,
+      severity: "None" as const,
+      objection: `Adversarial gate could not complete: ${error instanceof Error ? error.message : String(error)}`,
+      evidence_ids: [] as string[],
+      unresolved: false,
+    };
+    const { error: persistError } = await db.from("adversarial_verdict_gates").upsert({
+      run_id: runId,
+      emerging_verdict: deterministic.verdict,
+      outcome: fallback.outcome,
+      severity: fallback.severity,
+      objection: fallback.objection,
+      evidence_ids: fallback.evidence_ids,
+      unresolved: false,
+      status: "Incomplete",
+      payload: fallback,
+    }, { onConflict: "run_id" });
+    if (persistError) throw persistError;
+    return fallback;
+  }
+}
+
 async function executeReasoningPhase(
   id: string,
   input: ResearchRequest,
@@ -911,7 +1036,12 @@ async function executeReasoningPhase(
       if (q.error) throw q.error;
     }
   }
-  const allowed = new Set<string>(evidence.map((e: any) => e.id));
+  const allowed = new Set<string>(evidence.filter((e: any) =>
+    e.id && e.source_id && !e.excluded && e.source_tier !== 4 && e.sources?.url
+  ).map((e: any) => e.id));
+  if (!allowed.size) {
+    throw new Error("Reasoning requires evidence citations that resolve to persisted source rows.");
+  }
   const [passQ, coverageQ] = await Promise.all([
     db.from("research_passes").select("pass_number,objective,query_count,evidence_count,sufficient,coverage,coverage_gaps,budget_limited").eq("run_id", id).order("pass_number"),
     db.from("research_runs").select("retrieval_sufficient,retrieval_coverage,retrieval_coverage_gaps,retrieval_budget_limited").eq("id", id).single(),
@@ -928,8 +1058,32 @@ async function executeReasoningPhase(
     retrieval: { passes: passQ.data || [], ...coverageQ.data },
   };
   assertNormalizedOpportunityRows(structured);
+  const factors = computeFactors({
+    evidence,
+    risks: riskQ.data || [],
+    competitors: compQ.data || [],
+    hasPricingModel: !!pricingQ.data,
+    launchStrategyCount: launchQ.data?.launch_strategies?.length || 0,
+  });
+  const weights = (weightQ.data || []).map((w: any) => ({
+    criterion: w.criterion,
+    weight: Number(w.weight),
+  })) as WeightRow[];
+  const total = calculateDeterministicScore(factors, weights);
+  const verdict = verdictFor(total);
+  // Starts early and sees no specialist output; this keeps the one-shot kill attempt
+  // inside the existing 115-second phase without consuming Final Judge reserve.
+  const adversarialGatePromise = runAdversarialVerdictGate(
+    id,
+    { total, verdict, factors },
+    structured,
+    allowed,
+    budget,
+    db,
+  );
   const names = Object.keys(specialistSchemas) as SpecialistName[];
   const outputs: any = {};
+  const checkerComparisons: any[] = [];
   const specialistBudgetMs = Number(
     getEnv("REASONING_SPECIALIST_BUDGET_MS") || "90000",
   );
@@ -948,13 +1102,14 @@ async function executeReasoningPhase(
       id,
       "Scoring",
       78 + i * 2,
-      `Running ${name[0].toUpperCase() + name.slice(1)} Agent`,
+      `Running ${name[0].toUpperCase() + name.slice(1)} Agent with an isolated independent checker`,
       db,
     );
     const specialistDeadlineMs = Math.min(
       specialistBudgetMs,
       reasoningPhaseBudgetMs - finalJudgeReserveMs,
     );
+    let checkerResult: any;
     if (Date.now() - reasoningStartedAt >= specialistDeadlineMs) {
       const error = new Error(
         `Skipped ${name} specialist after the bounded specialist-phase time budget was exhausted.`,
@@ -969,16 +1124,44 @@ async function executeReasoningPhase(
         payload: output,
       }, { onConflict: "run_id,agent_name" });
       outputs[name] = { status: "Incomplete", output };
+      checkerResult = {
+        status: "Incomplete",
+        attemptCount: 1,
+        output: {
+          claims: [],
+          limitations: ["Checker was not started because the bounded specialist window was exhausted."],
+          verdict_direction: "Insufficient",
+        },
+      };
     } else {
-      outputs[name] = await runSpecialist(
-        name,
-        specialistInput(name, structured),
-        allowed,
-        id,
-        budget,
-        db,
-      );
+      const isolatedInput = specialistInput(name, structured);
+      const checkerEvidenceInput = {
+        opportunity: isolatedInput.opportunity,
+        evidence: isolatedInput.evidence,
+      };
+      [outputs[name], checkerResult] = await Promise.all([
+        runSpecialist(name, isolatedInput, allowed, id, budget, db),
+        runIndependentChecker(name, checkerEvidenceInput, allowed, id, budget, db),
+      ]);
     }
+    const comparison = compareSpecialistAndChecker(
+      name,
+      outputs[name],
+      checkerResult,
+    );
+    checkerComparisons.push(comparison);
+    const { error: checkerPersistError } = await db.from("specialist_checks").upsert({
+      run_id: id,
+      specialist_name: name,
+      status: checkerResult.status,
+      attempt_count: checkerResult.attemptCount || 1,
+      specialist_direction: comparison.specialistDirection,
+      checker_direction: comparison.checkerDirection,
+      disputed: comparison.disputed,
+      dispute_reason: comparison.reason,
+      checker_payload: checkerResult.output,
+    }, { onConflict: "run_id,specialist_name" });
+    if (checkerPersistError) throw checkerPersistError;
     if (name === "competition") {
       outputs[name].output.metrics = deterministicCompetitionMetrics(
         compQ.data || [],
@@ -997,6 +1180,15 @@ async function executeReasoningPhase(
   await updateState(
     id,
     "Scoring",
+    89,
+    "Finalizing the one-shot adversarial verdict kill attempt",
+    db,
+  );
+  const adversarialGate = await adversarialGatePromise;
+  const gatedVerdict = gateVerdict(verdict, adversarialGate);
+  await updateState(
+    id,
+    "Scoring",
     90,
     "Computing 12-factor score without provider access",
     db,
@@ -1009,19 +1201,6 @@ async function executeReasoningPhase(
       "Reasoning phase exhausted its bounded specialist/scoring window before Final Judge; reserved finalization time was preserved.",
     );
   }
-  const factors = computeFactors({
-    evidence,
-    risks: riskQ.data || [],
-    competitors: compQ.data || [],
-    hasPricingModel: !!pricingQ.data,
-    launchStrategyCount: launchQ.data?.launch_strategies?.length || 0,
-  });
-  const weights = (weightQ.data || []).map((w: any) => ({
-    criterion: w.criterion,
-    weight: Number(w.weight),
-  })) as WeightRow[];
-  const total = calculateDeterministicScore(factors, weights);
-  const verdict = verdictFor(total);
   const citedFactors = factors.filter((f) => f.evidenceIds.length > 0).length;
   const usableEvidence = evidence.filter((e: any) => !e.excluded && e.source_tier !== 4);
   const qualityShare = usableEvidence.length
@@ -1033,6 +1212,13 @@ async function executeReasoningPhase(
   );
   if (!coverageQ.data?.retrieval_sufficient) confidence = Math.min(confidence, 60);
   if (coverageQ.data?.retrieval_budget_limited) confidence = Math.min(confidence, 50);
+  const disputedCount = checkerComparisons.filter((item) => item.disputed).length;
+  confidence = Math.max(0, confidence - Math.min(30, disputedCount * 5));
+  if (checkerComparisons.some((item) => item.checkerDirection === "Unavailable")) {
+    confidence = Math.min(confidence, 55);
+  }
+  if (adversarialGate.outcome === "StrongObjection") confidence = Math.min(confidence, 45);
+  if (adversarialGate.outcome === "InsufficientEvidence") confidence = Math.min(confidence, 50);
   const { data: score, error: scoreError } = await db.from("opportunity_scores")
     .upsert({ opportunity_id: opp.id, total, confidence, verdict }, {
       onConflict: "opportunity_id",
@@ -1079,7 +1265,10 @@ async function executeReasoningPhase(
   );
   const judgeInput = {
     specialist_outputs: outputs,
+    independent_checks: checkerComparisons,
+    adversarial_gate: adversarialGate,
     retrieval_coverage: structured.retrieval,
+    effective_verdict_from_code: gatedVerdict.effectiveVerdict,
     deterministic_score: {
       total,
       confidence,
@@ -1126,7 +1315,7 @@ async function executeReasoningPhase(
         db,
         () =>
           provider.generateStructured(
-            'Write concise report prose using only the supplied specialist outputs and deterministic score. Return exactly this JSON shape with exactly two executive_summary objects and exactly one methodology object: {"executive_summary":[{"text":"One sentence.","evidence_ids":["UUID"],"score_criteria":[]},{"text":"One different sentence.","evidence_ids":[],"score_criteria":["criterionName"]}],"methodology":[{"text":"One sentence.","evidence_ids":[],"score_criteria":["criterionName"]}]}. Every array item must be an object, never a string. Each item must contain text, evidence_ids, and score_criteria, with at least one non-empty citation array. Cite only IDs and criteria present in the input. Never output, calculate, restate, or explain a numeric score; describe deterministic results categorically.',
+            'Write concise report prose using only the supplied specialist outputs, independent checks, adversarial gate, and deterministic score. The official verdict is supplied by code; do not improve or soften it. Return exactly this JSON shape with exactly two executive_summary objects and exactly one methodology object: {"written_verdict":"Build Now|Validate First|Niche Down|Weak Signal|Avoid","executive_summary":[{"text":"One sentence.","evidence_ids":["UUID"],"score_criteria":[]},{"text":"One different sentence.","evidence_ids":["UUID"],"score_criteria":["criterionName"]}],"methodology":[{"text":"One sentence.","evidence_ids":["UUID"],"score_criteria":["criterionName"]}]}. Every narrative item must cite at least one exact evidence UUID; score criteria are supplemental and never replace source citations. Surface disputed checks and the adversarial objection rather than resolving them rhetorically. Never output, calculate, restate, or explain a numeric score; describe deterministic results categorically.',
             JSON.stringify(judgeInput),
             finalJudgeSchema,
           ),
@@ -1147,6 +1336,27 @@ async function executeReasoningPhase(
     }
   }
   if (!judge) throw judgeLast;
+  const citationValidation = validateNarrativeCitations(judge, evidence);
+  const { error: citationPersistError } = await db.from("citation_integrity_validations").upsert({
+    run_id: id,
+    valid: citationValidation.valid,
+    claims_checked: citationValidation.claimsChecked,
+    claims_removed: citationValidation.claimsRemoved,
+    invalid_claims: citationValidation.invalidClaims,
+    payload: citationValidation,
+  }, { onConflict: "run_id" });
+  if (citationPersistError) throw citationPersistError;
+  if (!citationValidation.executiveSummary.length) {
+    throw new Error(
+      "Citation integrity removed every Final Judge conclusion; no sourced narrative remains to support a verdict.",
+    );
+  }
+  if (citationValidation.claimsRemoved > 0) {
+    confidence = Math.max(0, confidence - citationValidation.claimsRemoved * 10);
+    const { error: confidenceError } = await db.from("opportunity_scores")
+      .update({ confidence }).eq("id", score.id);
+    if (confidenceError) throw confidenceError;
+  }
   await db.from("reasoning_agent_outputs").upsert({
     run_id: id,
     agent_name: "final_judge",
@@ -1154,18 +1364,78 @@ async function executeReasoningPhase(
     attempt_count: judgeAttempt,
     payload: judge,
   }, { onConflict: "run_id,agent_name" });
-  const executiveSummary = judge.executive_summary.map((x: any) => x.text).join(
-      " ",
-    );
+  const verdictConsistency = checkVerdictConsistency(
+    verdict,
+    gatedVerdict.effectiveVerdict,
+    judge.written_verdict,
+  );
+  const judgeScoreMismatch = verdictConsistency.finalJudgeScoreMismatch;
+  const judgeEffectiveMismatch = verdictConsistency.finalJudgeEffectiveMismatch;
+  const reasoningFlags: any[] = [
+    ...checkerComparisons.filter((item) => item.disputed).map((item) => ({
+      type: "DisputedInterpretation",
+      severity: "Warning",
+      message: `${item.specialist}: ${item.reason}`,
+      evidenceIds: [],
+    })),
+  ];
+  if (adversarialGate.outcome === "StrongObjection") {
+    reasoningFlags.push({
+      type: "AdversarialObjection",
+      severity: adversarialGate.unresolved ? "Blocking" : "Warning",
+      message: adversarialGate.objection,
+      evidenceIds: adversarialGate.evidence_ids,
+    });
+  } else if (adversarialGate.outcome === "InsufficientEvidence") {
+    reasoningFlags.push({
+      type: "AdversarialGateIncomplete",
+      severity: "Warning",
+      message: adversarialGate.objection,
+      evidenceIds: [],
+    });
+  }
+  if (judgeScoreMismatch) {
+    reasoningFlags.push({
+      type: "FinalJudgeVerdictMismatch",
+      severity: "Warning",
+      message: `Final Judge wrote ${judge.written_verdict}; provider-free scoring mapped ${total} to ${verdict}. The written verdict was not allowed to override code.`,
+      evidenceIds: [],
+    });
+  }
+  if (citationValidation.claimsRemoved) {
+    reasoningFlags.push({
+      type: "CitationIntegrityFailure",
+      severity: "Warning",
+      message: `${citationValidation.claimsRemoved} unresolvable narrative claim(s) were removed before persistence.`,
+      evidenceIds: [],
+    });
+  }
+  const executiveSummaryBase = citationValidation.executiveSummary.map((x: any) => x.text).join(" ");
+  const executiveSummary = gatedVerdict.adversarialDowngrade
+    ? `${executiveSummaryBase} Decision blocked at Weak Signal until the adversarial objection is resolved.`
+    : executiveSummaryBase;
   const gaps = coverageQ.data?.retrieval_coverage_gaps || [];
   const tierOneCount = usableEvidence.filter((e: any) => e.source_tier === 1).length;
   const coverageStatement = coverageQ.data?.retrieval_sufficient
     ? "Retrieval covered problem space, solution space, adversarial evidence, and independent corroboration."
     : `Retrieval incomplete: ${gaps.length ? gaps.join("; ") : "sufficiency was not established"}.`;
+  const tierOneTwoCount = usableEvidence.filter((e: any) => e.source_tier <= 2).length;
   const qualityStatement = tierOneCount
-    ? `${tierOneCount} Tier 1 willingness-to-pay signal${tierOneCount === 1 ? " was" : "s were"} found.`
-    : "We found discussion but zero willingness-to-pay Tier 1 signals.";
-  const methodology = `${judge.methodology.map((x: any) => x.text).join(" ")} ${coverageStatement} ${qualityStatement}`;
+    ? `${tierOneCount} Tier 1 willingness-to-pay signal${tierOneCount === 1 ? " was" : "s were"} found; ${tierOneTwoCount} Tier 1/2 evidence rows and up to ${corroboration} independent corroborating sources produced ${confidence}% confidence after integrity modifiers.`
+    : `We found discussion but zero willingness-to-pay Tier 1 signals; ${tierOneTwoCount} Tier 1/2 rows and up to ${corroboration} independent corroborating sources limited confidence to ${confidence}%.`;
+  const checkerStatement = disputedCount
+    ? `${disputedCount} of six specialist interpretations were disputed or not independently reproduced.`
+    : "All six specialist directions were independently reproduced by isolated checkers.";
+  const gateStatement = adversarialGate.outcome === "StrongObjection"
+    ? `Adversarial gate objection: ${adversarialGate.objection}`
+    : adversarialGate.objection;
+  const verdictIntegrityStatement = judgeScoreMismatch
+    ? `Final Judge verdict mismatch: it wrote ${judge.written_verdict}, while provider-free scoring produced ${verdict}; code retained the gated verdict ${gatedVerdict.effectiveVerdict}.`
+    : `Final Judge's written verdict was consistent with provider-free scoring${gatedVerdict.adversarialDowngrade ? ", before the explicit adversarial safety downgrade" : ""}.`;
+  const citationStatement = citationValidation.claimsRemoved
+    ? `${citationValidation.claimsRemoved} narrative claim(s) failed source resolution and were removed.`
+    : "All Final Judge narrative claims resolved to persisted evidence and source rows.";
+  const methodology = `${citationValidation.methodology.map((x: any) => x.text).join(" ")} ${coverageStatement} ${qualityStatement} ${checkerStatement} ${gateStatement} ${verdictIntegrityStatement} ${citationStatement}`;
   const { data: report, error: reportError } = await db.from("reports").upsert({
     run_id: id,
     opportunity_id: opp.id,
@@ -1191,6 +1461,19 @@ async function executeReasoningPhase(
     versionNumber: version,
     generatedAt: new Date().toISOString(),
     executiveSummary,
+    reasoningFlags,
+    specialistDisputes: checkerComparisons,
+    adversarialGate,
+    citationValidation,
+    decisionIntegrity: {
+      deterministicVerdict: verdict,
+      effectiveVerdict: gatedVerdict.effectiveVerdict,
+      finalJudgeWrittenVerdict: judge.written_verdict,
+      finalJudgeScoreMismatch: judgeScoreMismatch,
+      finalJudgeEffectiveMismatch: judgeEffectiveMismatch,
+      adversarialDowngrade: gatedVerdict.adversarialDowngrade,
+      reason: gatedVerdict.reason,
+    },
     marketSizing,
     retrieval: structured.retrieval,
     opportunity: {
@@ -1211,7 +1494,9 @@ async function executeReasoningPhase(
         ),
         total,
         confidence,
-        verdict,
+        verdict: gatedVerdict.effectiveVerdict,
+        deterministicVerdict: verdict,
+        decisionStatus: gatedVerdict.adversarialDowngrade ? "Challenged" : "Passed",
       },
       evidence: evidence.map((item: any) => ({
         id: item.id,
@@ -1268,7 +1553,11 @@ async function executeReasoningPhase(
       createdAt: new Date().toISOString(),
     },
     methodology,
-    narrativeCitations: judge,
+    narrativeCitations: {
+      written_verdict: judge.written_verdict,
+      executive_summary: citationValidation.executiveSummary,
+      methodology: citationValidation.methodology,
+    },
     specialistSections: outputs,
   };
   const { data: rv, error: rvError } = await db.from("report_versions").insert({
@@ -1276,6 +1565,11 @@ async function executeReasoningPhase(
     version_number: version,
     payload,
     market_sizing: marketSizing,
+    specialist_disputes: checkerComparisons,
+    adversarial_gate: adversarialGate,
+    citation_validation: citationValidation,
+    reasoning_flags: reasoningFlags,
+    verdict_score_mismatch: judgeScoreMismatch || gatedVerdict.adversarialDowngrade,
   }).select("id").single();
   if (rvError || !rv) {
     throw rvError || new Error("Report version insert failed");
@@ -1291,7 +1585,7 @@ async function executeReasoningPhase(
     runId: id,
     ideaName: opp.name,
     total,
-    verdict,
+    verdict: gatedVerdict.effectiveVerdict,
     confidence,
     executiveSummary,
     methodology,
@@ -1352,7 +1646,13 @@ async function executeReasoningPhase(
     "Reasoning report and four immutable exports completed",
     db,
   );
-  return { total, verdict, confidence, reportVersionId: rv.id };
+  return {
+    total,
+    verdict: gatedVerdict.effectiveVerdict,
+    deterministicVerdict: verdict,
+    confidence,
+    reportVersionId: rv.id,
+  };
 }
 
 export async function runReasoningPhase(
