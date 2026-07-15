@@ -1,6 +1,6 @@
 # SignalFit backend
 
-SignalFit uses Supabase Postgres, Auth, Realtime, Storage, and one Deno Edge Function worker. Tenant ownership flows through `research_runs -> projects -> teams`; RLS protects direct and indirect child-table access.
+SignalFit uses Supabase Postgres, Auth, Realtime, Storage, and one Deno Edge Function worker. Tenant ownership flows through `research_runs -> projects -> teams`; RLS protects direct and indirect child-table access. The public schema currently contains 37 tables. `scoring_weights` is global authenticated reference data; the other user-addressable rows are tenant-, team-, run-, or user-scoped, or service-role-only.
 
 ## Pipeline status
 

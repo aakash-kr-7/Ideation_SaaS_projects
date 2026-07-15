@@ -14,9 +14,12 @@ Repositories act as the single source of truth for database interactions.
 - Returns typed rows mapping directly to the Supabase Database types.
 - Centralizes error handling for data access.
 
-## Background Jobs & Queues
-Long-running processes (e.g. LLM research extraction, generation) are offloaded to Supabase Edge Functions.
-1. The Next.js app inserts a row into `research_runs` (status: `Queued`).
-2. A Database Webhook on Supabase fires on `INSERT` to the `research_runs` table.
-3. The Edge Function (`supabase/functions/research-worker`) receives the webhook, changes the status to `Searching` / `Processing`, performs the async work, and writes the results back to the database.
-4. Supabase Realtime notifies the client-side Next.js app of progress updates.
+## Background worker dispatch
+Long-running extraction and generation work is offloaded to a Supabase Edge Function.
+
+1. The authenticated Next.js route or Server Action inserts a `Queued` row into `research_runs`.
+2. The same server request directly POSTs the run record to `functions/v1/research-worker` with the dedicated `WEBHOOK_SECRET`. No database webhook is required.
+3. The worker atomically claims the `Queued` row as `Searching`, schedules background work, and writes normalized records and stage history back to Postgres.
+4. Supabase Realtime notifies the progress UI of `research_runs` and `research_stages` changes.
+
+The canonical statuses are `Queued`, `Searching`, `Extracting`, `Normalizing`, `Scoring`, `Generating`, `Completed`, `Failed`, and `Cancelled`.

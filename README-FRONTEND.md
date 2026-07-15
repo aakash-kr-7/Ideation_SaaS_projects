@@ -98,8 +98,10 @@ The production report loader reads the run’s normalized records directly under
 9.  **Risks**:
     *   A severity heatmap displaying the persisted `risks` rows for the current opportunity.
 10. **Export (Interactive)**:
-    *   `MD`, `JSON`, `CSV`, and `PDF` download the immutable artifacts recorded in `report_exports` and stored in the private Supabase Storage `exports` bucket.
+    *   `MD`, `JSON`, `CSV`, and `PDF` request the immutable artifacts recorded in `report_exports` and stored in the private Supabase Storage `exports` bucket.
     *   The browser does not compile production exports and the PDF control does not use the print dialog.
+
+The 2026-07-15 closure audit found a live regression in this request path: the latest report version had all four stored artifacts, but the authenticated export route returned `409 Stored export is not ready`. The UI therefore must not be described as successfully downloading production exports until the nested `reports -> report_versions` relation handling in `app/api/research/[id]/export/route.ts` is corrected and all four controls are re-tested.
 
 ### Sample report boundary
 

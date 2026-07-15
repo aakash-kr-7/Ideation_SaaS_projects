@@ -16,7 +16,7 @@ Next.js App Router
   -> Supabase Realtime progress
 ```
 
-Postgres, Auth, Realtime, Storage, and Edge Functions run on Supabase. Every tenant-owned table is protected by Row Level Security through the run -> project -> team relationship. The Next.js dashboard, progress API, report view, compare API, and export API read only from Supabase; no in-memory research store or mock provider is available to a real research request.
+Postgres, Auth, Realtime, Storage, and Edge Functions run on Supabase. The live public API exposes 37 tables. Every tenant-owned table is protected by Row Level Security through the run -> project -> team relationship. `scoring_weights` is the documented exception: it is global reference data readable by every authenticated user and is not tenant-owned. The Next.js dashboard, progress API, report view, compare API, and export API read only from Supabase; no in-memory research store or mock provider is available to a real research request.
 
 Static data used by the explicitly labelled `/sample-report` page lives in `lib/sample-reports.ts`. It is not imported by authenticated dashboards, progress views, scoring workbenches, report pages, research APIs, or the worker.
 
@@ -79,6 +79,8 @@ supabase functions serve research-worker --env-file supabase/functions/research-
 npm run build
 ```
 
+Google OAuth is disabled in the checked-in local `supabase/config.toml`. A Google OAuth end-to-end test requires enabling the provider and supplying its client credentials; email/password auth remains available for local development.
+
 Deployment:
 
 ```bash
@@ -87,7 +89,7 @@ supabase secrets set --env-file supabase/functions/research-worker/.env
 supabase functions deploy research-worker --no-verify-jwt
 ```
 
-The function performs its own dedicated bearer-secret check before parsing or processing a webhook.
+The function performs its own dedicated bearer-secret check before parsing or processing a worker request.
 
 ## Project structure
 
@@ -103,4 +105,4 @@ supabase/migrations/  schema, RLS, Realtime, status, and usage-log migrations
 supabase/functions/   Deno worker and permanent shared runtime code
 ```
 
-See [README_BACKEND.md](./README_BACKEND.md), [README-FRONTEND.md](./README-FRONTEND.md), and [docs/Pipeline.md](./docs/Pipeline.md).
+See [README-BACKEND.md](./README-BACKEND.md), [README-FRONTEND.md](./README-FRONTEND.md), and [docs/Pipeline.md](./docs/Pipeline.md).

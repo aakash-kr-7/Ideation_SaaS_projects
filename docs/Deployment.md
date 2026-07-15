@@ -16,14 +16,12 @@
    *Note: If you run into timeouts due to connection poolers on IPv4, ensure your network supports IPv6 or use the direct connection string via `--db-url`.*
 
 ## Deploying Edge Functions
-1. Deploy the background worker stub to Supabase:
+1. Deploy the background worker to Supabase:
    ```bash
    supabase functions deploy research-worker --no-verify-jwt
    ```
-2. Configure Webhooks in the Supabase Dashboard:
-   - Go to **Database** -> **Webhooks**.
-   - Create a new Webhook on the `research_runs` table for `INSERT` events.
-   - Point the Webhook URL to the Edge Function endpoint (e.g. `https://your-project-ref.supabase.co/functions/v1/research-worker`).
+2. Configure the same dedicated `WEBHOOK_SECRET` in the Next.js server and Edge Function. The authenticated start route and Server Action directly POST to `functions/v1/research-worker`; do not add a database webhook, which would dispatch each run twice.
+3. Set Tavily, Firecrawl, Groq, Cerebras, and Cohere provider keys as described in [Secrets.md](Secrets.md).
 
 ## Updating Types
 If you modify your migrations, run the following command to update TypeScript types in the Next.js app:

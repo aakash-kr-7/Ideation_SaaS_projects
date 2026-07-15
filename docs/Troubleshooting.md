@@ -16,10 +16,20 @@ Or just reset and try again.
 **Fix**:
 Ensure `handle_new_user` has `security definer` set so it bypasses RLS and can insert rows into `public.users`. Verify by checking the Supabase Postgres logs in the Dashboard.
 
-## Edge Function Webhook not triggering
+## Edge Function dispatch fails
 **Error**: A `research_run` stays in `Queued` state forever.
-**Cause**: The webhook is either not configured, or the Edge Function URL is incorrect.
+**Cause**: The direct POST from the Next.js server did not reach the function, or `WEBHOOK_SECRET` differs between the app and function.
 **Fix**:
-1. Check the **Webhooks** section in the Dashboard. Look for failing delivery logs.
-2. Ensure you have deployed the Edge Function and the secrets are set correctly.
-3. Check the Edge Function logs in the Supabase Dashboard for runtime errors.
+1. Inspect the `/api/research/start` or Server Action response.
+2. Ensure the Edge Function is deployed and the same dedicated `WEBHOOK_SECRET` is configured on both sides.
+3. Check the Edge Function logs and the run's `error_logs` rows.
+
+## Stored export is not ready even though export rows exist
+**Error**: An authenticated report export returns HTTP 409 while `report_exports` contains the latest version's artifact.
+**Cause**: The export route assumed array cardinality for a nested PostgREST relation that can be returned as an object.
+**Fix**: Normalize both object and array relation shapes in `app/api/research/[id]/export/route.ts`, then re-test Markdown, JSON, CSV, and PDF through the browser. Do not fall back to client-generated production files.
+
+## Normalized opportunity output fails schema validation
+**Error**: The run fails with missing `competitors`, `risks`, `pricing_model`, `mvp_plan`, or `launch_plan` fields.
+**Cause**: Both the primary reasoning provider and fallback exhausted retries without returning the required structured shape.
+**Fix**: Tighten the provider prompt/response-format contract and add a fixture covering incomplete compatible-provider JSON. A terminal `Failed` state is correct; substituting empty or mock records is not.
