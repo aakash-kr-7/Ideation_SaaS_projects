@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
+import { runResearchPipeline } from "./lib/research/pipeline.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,7 +26,6 @@ Deno.serve(async (req: Request) => {
     const payload = await req.json()
     console.log("Received webhook payload:", payload)
 
-    // The webhook payload structure from Supabase Database Webhooks
     const record = payload.record
     if (!record || !record.id) {
       throw new Error("Invalid payload: no record ID")
@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
     )
 
     // 2. Idempotency: Update status to 'Searching' ONLY if currently 'Queued'
-    console.log(`Setting run ${record.id} to Searching...`)
+    console.log(`Checking status and initializing run ${record.id}...`)
     const { data: update1Data, error: update1Error } = await supabaseClient
       .from('research_runs')
       .update({ status: 'Searching', progress: 10 })
@@ -57,19 +57,20 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Simulate some work...
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Map record data to ResearchRequest
+    const requestPayload = {
+      ideaName: record.idea_name,
+      ideaDescription: record.idea_description,
+      targetCustomer: record.target_customer,
+      marketType: record.market_type || 'B2B',
+      targetRegion: record.target_region || 'Global',
+      depth: (record.mode === 'Fast Scan' ? 'fast' : 'deep') as 'fast' | 'deep'
+    }
 
-    // 2. Update status to 'Completed' (Stub implementation)
-    // We simulate a 2-second delay to show progress in UI
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    console.log(`Setting run ${record.id} to Completed...`)
-    const { error: update2Error } = await supabaseClient
-      .from('research_runs')
-      .update({ status: 'Completed', progress: 100 })
-      .eq('id', record.id)
-
-    if (update2Error) throw update2Error
+    // Launch pipeline execution asynchronously
+    console.log(`Executing real evidence pipeline for run ${record.id}...`)
+    // Run the pipeline and let it handle database updates
+    await runResearchPipeline(record.id, requestPayload, supabaseClient)
 
     return new Response(
       JSON.stringify({ message: 'Processed successfully', run_id: record.id }),

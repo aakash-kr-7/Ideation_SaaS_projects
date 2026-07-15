@@ -40,7 +40,7 @@ export async function updateSession(request: NextRequest) {
     path === "/sample-report" ||
     path === "/pricing" ||
     path.startsWith("/auth/") ||
-    path.startsWith("/api/auth") ||
+    path.startsWith("/api/") ||
     path.startsWith("/_next") ||
     path.includes("/favicon.ico")
 

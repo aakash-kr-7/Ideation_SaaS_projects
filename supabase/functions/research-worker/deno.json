@@ -1,7 +1,20 @@
 {
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": [
+      "deno.window",
+      "deno.ns"
+    ],
+    "strict": true
+  },
   "imports": {
-    "@supabase/functions-js": "jsr:@supabase/functions-js@^2",
-    "@supabase/server": "npm:@supabase/server@^1",
-    "@supabase/supabase-js": "jsr:@supabase/supabase-js@^2.110.2"
+    "@supabase/supabase-js": "jsr:@supabase/supabase-js@^2.110.2",
+    "zod": "npm:zod@^3.24.1",
+    "@/": "../../",
+    "../report-schema": "./lib/report-schema.ts",
+    "../scoring": "./lib/scoring.ts",
+    "./providers": "./lib/research/providers.ts",
+    "./types": "./lib/research/types.ts",
+    "./store": "./lib/research/store.ts"
   }
 }

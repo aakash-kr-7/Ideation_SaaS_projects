@@ -43,3 +43,6 @@ out/
 .env.production.local
 
 .agents
+
+# Supabase Local Build/Vendoring Artifacts
+supabase/functions/research-worker/lib/

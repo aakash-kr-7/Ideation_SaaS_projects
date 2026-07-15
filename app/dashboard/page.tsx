@@ -35,8 +35,8 @@ export default function DashboardPage() {
       opportunity = {
         id: o.id,
         name: o.name,
-        oneLiner: o.oneLiner,
-        targetCustomer: o.targetCustomer,
+        one_liner: o.oneLiner,
+        target_customer: o.targetCustomer,
         market: o.market as MarketType,
         score: legacyScore,
         verdict: o.scorecard.verdict === "Build Now" ? "Build now" : o.scorecard.verdict === "Avoid" ? "Avoid for now" : "Validate first",
@@ -148,7 +148,7 @@ export default function DashboardPage() {
                 <Target size={17}/>
                 <span>
                   <b>Top-scored idea: {primaryInvestigation.ideaName}</b>
-                  <small>{primaryInvestigation.opportunity?.oneLiner}</small>
+                  <small>{primaryInvestigation.opportunity?.one_liner}</small>
                 </span>
                 <Link href={`/research/${primaryInvestigation.id}/results`}>View report <ArrowRight size={13}/></Link>
               </div>
@@ -233,7 +233,7 @@ export default function DashboardPage() {
                   </header>
                   {rankedFiles.map((run, index) => <Link href={`/research/${run.id}/results`} key={run.id}>
                     <span>{String(index + 1).padStart(2, "0")}</span>
-                    <div><b>{run.ideaName}</b><small>{run.opportunity?.targetCustomer}</small></div>
+                    <div><b>{run.ideaName}</b><small>{run.opportunity?.target_customer}</small></div>
                     <ScoreBadge score={run.opportunity?.score.total ?? 0} size="sm"/>
                     <VerdictBadge verdict={run.opportunity?.verdict ?? "Validate first"}/>
                   </Link>)}

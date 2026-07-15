@@ -69,6 +69,53 @@ export type Database = {
           },
         ]
       }
+      api_usage_logs: {
+        Row: {
+          completion_tokens: number | null
+          cost: number | null
+          created_at: string
+          error_message: string | null
+          id: string
+          operation: string
+          prompt_tokens: number | null
+          provider: string
+          run_id: string
+          status: string
+        }
+        Insert: {
+          completion_tokens?: number | null
+          cost?: number | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          operation: string
+          prompt_tokens?: number | null
+          provider: string
+          run_id: string
+          status: string
+        }
+        Update: {
+          completion_tokens?: number | null
+          cost?: number | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          operation?: string
+          prompt_tokens?: number | null
+          provider?: string
+          run_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_usage_logs_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "research_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -1578,5 +1625,5 @@ export interface PricingModel { model: string; pricePoint: string; rationale: st
 export interface MVPPlan { outcome: string; scope: string[]; exclusions: string[]; buildEstimate: string; }
 export interface LaunchPlan { firstCustomerChannel: string; weekOne: string[]; outreachMessage: string; successMetric: string; }
 export interface RiskItem { id: string; category: "Market" | "Execution" | "Platform" | "Regulatory"; severity: "High" | "Medium" | "Low"; description: string; mitigation: string; }
-export interface Opportunity { id: string; name: string; oneLiner: string; targetCustomer: string; market: MarketType; score: ScoreBreakdown; verdict: ValidationVerdict; confidence: number; evidence: EvidenceItem[]; competitors: Competitor[]; pricing: PricingModel; mvp: MVPPlan; launch: LaunchPlan; risks: RiskItem[]; }
+export interface Opportunity { id: string; name: string; one_liner: string; target_customer: string; market: MarketType; score: ScoreBreakdown; verdict: ValidationVerdict; confidence: number; evidence: EvidenceItem[]; competitors: Competitor[]; pricing: PricingModel; mvp: MVPPlan; launch: LaunchPlan; risks: RiskItem[]; }
 export interface ResearchRun { id: string; ideaName: string; ideaDescription: string; targetCustomer: string; marketType: MarketType; targetRegion: string; mode: ResearchMode; status: "Queued" | "Searching" | "Extracting" | "Normalizing" | "Scoring" | "Generating" | "Completed" | "Failed" | "Cancelled"; createdAt: string; progress: number; opportunity?: Opportunity; }

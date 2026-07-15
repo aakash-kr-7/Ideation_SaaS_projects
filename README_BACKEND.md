@@ -38,6 +38,7 @@ erDiagram
     RESEARCH_RUNS ||--o{ RESEARCH_STAGES : "has"
     RESEARCH_RUNS ||--o{ SOURCES : "uses"
     RESEARCH_RUNS ||--o{ OPPORTUNITIES : "generates"
+    RESEARCH_RUNS ||--o{ API_USAGE_LOGS : "logs"
     
     OPPORTUNITIES ||--o{ EVIDENCE_ITEMS : "has evidence"
     SOURCES ||--o{ EVIDENCE_ITEMS : "provides"
@@ -465,11 +466,25 @@ Below is the exhaustive, production-grade column and schema specification for al
     *   `created_at` `timestamptz` (Default: `now()`, Not Null)
     *   `updated_at` `timestamptz` (Default: `now()`, Not Null)
 
+#### 34. `api_usage_logs`
+*   **Purpose:** Logs all background and client-side external API provider transactions (Tavily, Firecrawl, Groq, OpenRouter, Cohere) for cost tracking, budgeting, and debugging.
+*   **Columns:**
+    *   `id` `uuid` (Primary Key, Default: `gen_random_uuid()`)
+    *   `run_id` `uuid` (References `research_runs(id)` on delete cascade, Not Null)
+    *   `provider` `text` (Not Null)
+    *   `operation` `text` (Not Null)
+    *   `prompt_tokens` `integer` (Nullable)
+    *   `completion_tokens` `integer` (Nullable)
+    *   `cost` `numeric` (Nullable)
+    *   `status` `text` (Not Null, Check: `status IN ('success', 'failed')`)
+    *   `error_message` `text` (Nullable)
+    *   `created_at` `timestamptz` (Default: `now()`, Not Null)
+
 ---
 
 ## 4. Database Schema Migration Registry
 
-The database schema is fully managed via 15 incremental SQL migrations in `supabase/migrations/`:
+The database schema is fully managed via 17 incremental SQL migrations in `supabase/migrations/`:
 
 ### Core Schema Migrations
 
@@ -497,6 +512,8 @@ The database schema is fully managed via 15 incremental SQL migrations in `supab
 13. **`20260714100000_audit_fixes.sql`**: Core data audit fix that adds missing `updated_at` columns and triggers to 22 schema tables, and `created_at` to `reports`, ensuring 100% database audit coverage.
 14. **`20260714101000_audit_realtime.sql`**: Registers `evidence_items` and `opportunity_scores` in the `supabase_realtime` publication.
 15. **`20260714102000_audit_rpc_cleanup.sql`**: **Critical security cleanup** dropping the database query function `audit_exec_sql` to secure the system from SQL injection attacks.
+16. **`20260714103000_fix_research_stages_status.sql`**: Aligns status values by changing `research_stages.status` check constraint from `'Complete'` to `'Completed'`.
+17. **`20260714104000_api_usage_logs.sql`**: Deploys the `api_usage_logs` table, fully protected by tenant-isolating RLS policies.
 
 ---
 
@@ -638,6 +655,9 @@ npx tsx scripts/audit-rls.ts
 
 # Audits nested child entities using foreign-key hierarchies
 npx tsx scripts/audit-rls-child.ts
+
+# Audits api_usage_logs table RLS tenant isolation
+npx tsx scripts/test-api-logs-rls.ts
 ```
 
 ### Deploying Edge Functions
