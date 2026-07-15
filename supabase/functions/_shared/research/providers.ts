@@ -28,6 +28,12 @@ export const evidenceItemLLMSchema = z.object({
   signal_type: z.enum(["Pain", "Demand", "Pricing", "Risk"]),
   strength: z.enum(["High", "Medium", "Low"]),
   rationale: z.string().min(1),
+  pain_point: z.string().min(1),
+  author: z.string().nullable().default(null),
+  named_entities: z.array(z.string().min(2)).max(8).default([]),
+  disconfirming: z.boolean().default(false),
+  market_size_metric: z.enum(["TAM", "SAM", "SOM", "MarketSize", "None"]).default("None"),
+  market_size_figure: z.string().nullable().default(null),
 });
 export const evidenceListLLMSchema = z.object({
   evidence: z.array(evidenceItemLLMSchema),
@@ -59,6 +65,7 @@ export interface ReasoningProvider {
     idea: string,
     customer: string,
     chunk: string,
+    context?: { family: "problem" | "solution"; pass: 1 | 2 | 3; objective: string },
   ): Promise<z.infer<typeof evidenceListLLMSchema>>;
   generateStructured<TSchema extends z.ZodTypeAny>(
     systemPrompt: string,
@@ -219,9 +226,14 @@ abstract class OpenAICompatibleReasoningProvider implements ReasoningProvider {
     }
     return schema.parse(JSON.parse(content));
   }
-  async extractEvidence(idea: string, customer: string, chunk: string) {
+  async extractEvidence(
+    idea: string,
+    customer: string,
+    chunk: string,
+    context: { family: "problem" | "solution"; pass: 1 | 2 | 3; objective: string } = { family: "problem", pass: 1, objective: "broad" },
+  ) {
     return this.generateStructured(
-      `Extract only concrete evidence from the supplied source for startup idea "${idea}" and target customer "${customer}". Never invent or score. Return JSON: {"evidence":[{"title":"...","snippet":"verbatim excerpt","signal_type":"Pain|Demand|Pricing|Risk","strength":"High|Medium|Low","rationale":"..."}]}.`,
+      `Extract only concrete evidence from the supplied source for startup idea "${idea}" and target customer "${customer}". This source was retrieved in ${context.family}-space research pass ${context.pass} with objective ${context.objective}. Never invent, score, or infer a market-size number. snippet must be a verbatim excerpt. pain_point is a short normalized label for the underlying pain, workaround, objection, or competitive fact. author is the visible individual reviewer/post author, otherwise null. named_entities contains only explicitly named companies/products/communities. disconfirming is true only when the excerpt argues against demand, shows failure/shutdown/saturation, rejects payment, or shows an incumbent already solving the exact job well. market_size_metric is TAM, SAM, SOM, or MarketSize only when the excerpt itself states a numeric figure and names its source; market_size_figure must then preserve that stated figure, otherwise use None and null. Return JSON: {"evidence":[{"title":"...","snippet":"verbatim excerpt","signal_type":"Pain|Demand|Pricing|Risk","strength":"High|Medium|Low","rationale":"...","pain_point":"...","author":null,"named_entities":[],"disconfirming":false,"market_size_metric":"None","market_size_figure":null}]}.`,
       chunk,
       evidenceListLLMSchema,
     );

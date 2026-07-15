@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+function asArray<T>(value: T | T[] | null | undefined): T[] {
+  return Array.isArray(value) ? value : value == null ? [] : [value];
+}
+
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -12,8 +16,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .eq("id", id)
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  const versions = ((data as any)?.reports?.[0]?.report_versions ?? []).sort((a: any,b: any) => b.version_number-a.version_number);
-  const stored = versions[0]?.report_exports?.find((item: any) => item.format === requested);
+  const reports = asArray((data as any)?.reports);
+  const versions = asArray(reports[0]?.report_versions).sort((a: any,b: any) => b.version_number-a.version_number);
+  const stored = asArray(versions[0]?.report_exports).find((item: any) => item.format === requested);
   if (!data || !stored) return NextResponse.json({ error: "Stored export is not ready" }, { status: 409 });
   const { data: file, error: downloadError } = await supabase.storage.from("exports").download(stored.storage_path);
   if (downloadError || !file) return NextResponse.json({ error: downloadError?.message || "Export unavailable" }, { status: 403 });

@@ -108,7 +108,8 @@ async function main() {
     const evidenceRef = await clone("score_evidence_refs", { score_breakdown_id: breakdown.id, evidence_id: evidence.id });
     const report = await clone("reports", { run_id: run.id, opportunity_id: opportunity.id });
     const versionSource = await sample("report_versions");
-    const reportVersion = await insert("report_versions", { report_id: report.id, version_number: 1, payload: versionSource.payload }, false);
+    const noSizing = { TAM: null, SAM: null, SOM: null, MarketSize: null, reason: "No verifiable market-size data in the disposable RLS fixture." };
+    const reportVersion = await insert("report_versions", { report_id: report.id, version_number: 1, payload: versionSource.payload, market_sizing: noSizing }, false);
     const reportExport = await clone("report_exports", { report_version_id: reportVersion.id, format: "json" });
     const reasoning = await clone("reasoning_agent_outputs", { run_id: run.id, agent_name: "competition" });
     const usage = await clone("api_usage_logs", { run_id: run.id, provider: "rls-audit", operation: "authorization-test" });

@@ -1620,7 +1620,7 @@ export interface OpportunityScorecard { scores: CriterionScores; notes: Criterio
 export type MarketType = "B2B" | "D2C" | "Creator" | "Developer Tool" | "Local Business" | "Agency Tool" | "Student/Career" | "Other";
 export type ResearchMode = "Fast Scan" | "Deep Validation" | "Compare Ideas" | "Find Opportunities in Market";
 
-export interface EvidenceItem { id: string; source: string; sourceType: string; title: string; snippet: string; url: string; signal: "Pain" | "Demand" | "Pricing" | "Risk"; strength: "High" | "Medium" | "Low"; date: string; }
+export interface EvidenceItem { id: string; source: string; sourceType: string; title: string; snippet: string; url: string; signal: "Pain" | "Demand" | "Pricing" | "Risk"; strength: "High" | "Medium" | "Low"; date: string; evidenceFamily?: "problem" | "solution"; researchPass?: 1 | 2 | 3; sourceTier?: 1 | 2 | 3 | 4; excluded?: boolean; disconfirming?: boolean; painPoint?: string; independentSourceCount?: number; independentDomainCount?: number; }
 export interface Competitor { id: string; name: string; positioning: string; pricing: string; target: string; strength: string; gap: string; }
 export interface ScoreBreakdown { pain: number; urgency: number; willingnessToPay: number; reachability: number; competition: number; complexity: number; platformRisk: number; founderFit: number; total: number; }
 export interface PricingModel { model: string; pricePoint: string; rationale: string; firstOffer: string; targetCustomers: number; }

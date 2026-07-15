@@ -1,5 +1,6 @@
 import {
   calculateDeterministicScore,
+  computeFactors,
   CRITERIA,
   verdictFor,
 } from "./scoring-engine.ts";
@@ -26,6 +27,24 @@ Deno.test("all verdict bands and off-by-one boundaries", () => {
   for (const [score, verdict] of cases) {
     assertEquals(verdictFor(score), verdict);
   }
+});
+
+Deno.test("Tier 3 volume cannot match Tier 1/2 evidence quality", () => {
+  const base = {
+    risks: [], competitors: [], hasPricingModel: true, launchStrategyCount: 0,
+  };
+  const tierThree = Array.from({ length: 12 }, (_, i) => ({
+    id: `t3-${i}`, signal_type: "Pricing" as const, strength: "High" as const,
+    title: "General category discussion", snippet: "Pricing is discussed", source_tier: 3 as const,
+  }));
+  const tierOne = [{
+    id: "t1", signal_type: "Pricing" as const, strength: "High" as const,
+    title: "Paid plan", snippet: "$49 per month", source_tier: 1 as const,
+  }];
+  const weak = computeFactors({ ...base, evidence: tierThree }).find((f) => f.criterion === "willingnessToPay")!;
+  const strong = computeFactors({ ...base, evidence: tierOne }).find((f) => f.criterion === "willingnessToPay")!;
+  if (weak.score >= strong.score) throw new Error(`Tier 3 volume (${weak.score}) outweighed Tier 1 (${strong.score})`);
+  assertEquals(weak.evidenceIds.length, 0);
 });
 
 Deno.test("weighted score is pure and deterministic", () => {

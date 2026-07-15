@@ -26,6 +26,13 @@ export interface ScoringEvidence {
   supporting_count?: number;
   contradicting_count?: number;
   confidence?: number;
+  source_tier?: 1 | 2 | 3 | 4;
+  excluded?: boolean;
+  evidence_family?: "problem" | "solution";
+  research_pass?: 1 | 2 | 3;
+  independent_source_count?: number;
+  independent_domain_count?: number;
+  disconfirming?: boolean;
 }
 export interface ScoringRisk {
   id: string;
@@ -63,21 +70,25 @@ const lexicon = (text: string, words: string[]) =>
   words.some((w) => text.toLowerCase().includes(w));
 const refs = (items: ScoringEvidence[]) => [...new Set(items.map((e) => e.id))];
 function evidenceScore(items: ScoringEvidence[], baseline = 20): number {
-  if (!items.length) return baseline;
-  const total = items.reduce((sum, e) => {
+  const usable = items.filter((e) => !e.excluded && (e.source_tier ?? 3) < 4);
+  if (!usable.length) return baseline;
+  const total = usable.reduce((sum, e) => {
     const support = Math.max(1, e.supporting_count ?? 1);
     const contradictions = Math.max(0, e.contradicting_count ?? 0);
     const consistency = support / (support + contradictions);
-    return sum + STRENGTH[e.strength] * (e.confidence ?? 0.5) * consistency;
+    const tierWeight = ({ 1: 1, 2: .8, 3: .25, 4: 0 } as const)[e.source_tier ?? 3];
+    const independent = Math.min(1.5, 1 + .1 * Math.max(0, (e.independent_source_count ?? 1) - 1));
+    return sum + STRENGTH[e.strength] * (e.confidence ?? 0.5) * consistency * tierWeight * independent;
   }, 0);
   return clamp(
-    25 + 60 * Math.min(1, total / 3) + 15 * Math.min(1, items.length / 6),
+    20 + 65 * Math.min(1, total / 3) + 15 * Math.min(1, usable.length / 6),
   );
 }
 
 export function computeFactors(ctx: ScoringContext): FactorResult[] {
+  const usableEvidence = ctx.evidence.filter((e) => !e.excluded && (e.source_tier ?? 3) < 4);
   const by = (type: ScoringEvidence["signal_type"]) =>
-    ctx.evidence.filter((e) => e.signal_type === type);
+    usableEvidence.filter((e) => e.signal_type === type);
   const pain = by("Pain"),
     demand = by("Demand"),
     pricing = by("Pricing"),
@@ -129,8 +140,8 @@ export function computeFactors(ctx: ScoringContext): FactorResult[] {
       "complex",
     ])
   );
-  const independentSources =
-    new Set(demand.map((e) => e.source_id).filter(Boolean)).size;
+  const independentSources = Math.max(0, ...demand.map((e) => e.independent_source_count ?? 1));
+  const tierOnePricing = pricing.filter((e) => e.source_tier === 1);
   const executionRisks = ctx.risks.filter((r) =>
     r.category === "Execution" && r.severity !== "Low"
   );
@@ -160,13 +171,13 @@ export function computeFactors(ctx: ScoringContext): FactorResult[] {
     ),
     mk(
       "willingnessToPay",
-      evidenceScore(pricing, ctx.hasPricingModel ? 45 : 15),
-      pricing,
-      "Verified pricing signals and an existing pricing model.",
+      evidenceScore(tierOnePricing, tierOnePricing.length ? 25 : 10),
+      tierOnePricing,
+      tierOnePricing.length ? "Tier 1 willingness-to-pay signals, weighted by independent corroboration." : "No Tier 1 willingness-to-pay evidence; recommendations do not substitute for paid-demand proof.",
     ),
     mk(
       "buyerReachability",
-      25 + Math.min(60, demand.length * 8 + independentSources * 7),
+      20 + Math.min(65, demand.length * 5 + independentSources * 10),
       demand,
       "Demand volume and independently sourced communities.",
     ),
@@ -203,8 +214,8 @@ export function computeFactors(ctx: ScoringContext): FactorResult[] {
     ),
     mk(
       "founderFit",
-      30 + Math.min(50, ctx.evidence.length * 4),
-      ctx.evidence,
+      25 + Math.min(45, usableEvidence.filter((e) => (e.source_tier ?? 3) <= 2).length * 7),
+      usableEvidence,
       "Run-specific evidence access and domain signal coverage; no unsupported founder biography is inferred.",
     ),
     mk(
@@ -215,9 +226,9 @@ export function computeFactors(ctx: ScoringContext): FactorResult[] {
     ),
     mk(
       "speedToFirstRevenue",
-      (evidenceScore([...pricing, ...urgent], 15) +
-        (ctx.hasPricingModel ? 15 : 0)) * 0.87,
-      [...pricing, ...urgent],
+      (evidenceScore([...tierOnePricing, ...urgent], 10) +
+        (tierOnePricing.length ? 10 : 0)) * 0.87,
+      [...tierOnePricing, ...urgent],
       "Pricing proof and purchase urgency combined deterministically.",
     ),
   ];
