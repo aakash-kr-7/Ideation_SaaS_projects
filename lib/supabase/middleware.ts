@@ -69,24 +69,28 @@ export async function updateSession(request: NextRequest) {
     return createRedirectResponse(url)
   }
 
-  // Check onboarding status for authenticated users on protected pages
-  // (not on onboarding page itself, auth pages, or API routes)
-  if (user && !isPublicPath && path !== "/onboarding" && !path.startsWith("/api/")) {
+  // Keep onboarding one-way: incomplete profiles enter it; completed profiles cannot fall back into it.
+  if (user && ((!isPublicPath && !path.startsWith("/api/")) || path === "/onboarding")) {
     const { data: profile, error } = await supabase
       .from("users")
       .select("onboarding_completed")
       .eq("id", user.id)
       .single()
 
-    if (error) {
+    if (!error && profile?.onboarding_completed && path === "/onboarding") {
+      const url = request.nextUrl.clone()
+      url.pathname = "/dashboard"
+      url.search = ""
+      return createRedirectResponse(url)
+    } else if (error) {
       // If the error code is not 'PGRST116' (no rows returned), it's likely a database / table error.
       // E.g., the table doesn't exist yet in local development. We allow through in that case.
-      if (error.code === "PGRST116") {
+      if (error.code === "PGRST116" && path !== "/onboarding") {
         const url = request.nextUrl.clone()
         url.pathname = "/onboarding"
         return createRedirectResponse(url)
       }
-    } else if (!profile || !profile.onboarding_completed) {
+    } else if ((!profile || !profile.onboarding_completed) && path !== "/onboarding") {
       // If profile exists but onboarding is not completed, redirect to onboarding
       const url = request.nextUrl.clone()
       url.pathname = "/onboarding"

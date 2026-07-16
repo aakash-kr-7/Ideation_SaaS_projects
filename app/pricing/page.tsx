@@ -29,7 +29,9 @@ export default function PricingPage() {
         <p>{plan.name.toUpperCase()}</p>
         <h3>{plan.price}<small>/ month</small></h3>
         <span>{plan.intro}</span>
-        <Link href="/sign-in" className={plan.featured ? "button" : "button ghost"}>{plan.name === "Signal" ? "Start free — no card needed" : `Choose ${plan.name}`}</Link>
+        {plan.name === "Signal"
+          ? <Link href="/research/new" className="button ghost">Start free — no card needed</Link>
+          : <button className={plan.featured ? "button" : "button ghost"} disabled aria-label={`${plan.name} checkout is coming soon`}>Checkout coming soon</button>}
         <ul>{plan.items.map((item) => <li key={item}><Check size={15}/>{item}</li>)}</ul>
       </article>)}
     </div>
@@ -39,7 +41,7 @@ export default function PricingPage() {
         <h3>Deep Analysis Pass <span>$39 / report</span></h3>
         <p>{productCopy.pricing.Pass}</p>
       </div>
-      <Link href="/research/new" className="button ghost">Get one report</Link>
+      <button className="button ghost" disabled aria-label="Deep Analysis Pass checkout is coming soon">Checkout coming soon</button>
     </div>
     <div className="billing-note">
       <ShieldCheck size={18}/>

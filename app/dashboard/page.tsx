@@ -110,12 +110,12 @@ export default async function DashboardPage() {
   }));
 
   return <AppShell title="Dashboard" action={<Link className="button button-small violet-button" href="/research/new">Validate idea <ArrowRight size={15}/></Link>}>
-    <div className="page-content command-center">
+    <div className="page-content command-center" data-tour="dashboard-canvas">
 
       {/* ─── EMPTY STATE ─── */}
       {!hasData && (
         <section className="dashboard-empty-state">
-          <div className="empty-state-card">
+          <div className="empty-state-card" data-tour="reports">
             <div className="empty-state-icon">
               <Sparkles size={28} />
             </div>
@@ -206,7 +206,7 @@ export default async function DashboardPage() {
             )}
 
             {/* Previous Validations */}
-            <div className="section-card saved-card">
+            <div className="section-card saved-card" data-tour="reports">
               <header>
                 <div>
                   <p className="eyebrow cyan-eyebrow">Your reports</p>

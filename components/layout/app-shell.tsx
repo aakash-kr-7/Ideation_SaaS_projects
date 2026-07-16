@@ -15,8 +15,8 @@ import { createClient } from "@/lib/supabase/client";
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/research/new", label: "Validate idea", icon: Plus },
-  { href: "/compare", label: "Compare ideas", icon: Scale },
-  { href: "/dashboard/scoring", label: "Scoring model", icon: BarChart3 },
+  { href: "/compare", label: "Compare ideas", icon: Scale, plan: "PRINCIPAL" },
+  { href: "/dashboard/scoring", label: "Scoring model", icon: BarChart3, plan: "PRINCIPAL" },
   { href: "/pricing", label: "Pricing", icon: CreditCard },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
@@ -80,28 +80,31 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
   return (
     <div className="app-shell">
       <aside className={`sidebar ${mobileNavOpen ? "mobile-open" : ""}`}>
-        <Brand />
+        <Brand href="/dashboard" />
         <div className="workspace">
           <span className="workspace-mark">SF</span>
           <div><b>Your ideas</b><small>Validate before you build</small></div>
         </div>
         <p className="sidebar-label">NAVIGATION</p>
         <nav>
-          {links.map(({ href, label, icon: Icon }) => (
+          {links.map(({ href, label, icon: Icon, plan }) => (
             <Link
               href={href}
               key={href}
-              className={pathname === href ? "nav-link active" : "nav-link"}
+              className={pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`)) ? "nav-link active" : "nav-link"}
               onClick={() => setMobileNavOpen(false)}
+              data-tour={`nav-${href.split("/").filter(Boolean).join("-")}`}
             >
-              <Icon size={16} />{label}
+              <Icon size={16} /><span>{label}</span>{plan && <small className="nav-plan-badge">{plan}</small>}
             </Link>
           ))}
         </nav>
         <div className="side-bottom">
           <div className="side-note">
             <Circle size={10} fill="currentColor" />
-            <span><b>Free plan</b><small>1 scan remaining this month</small></span>
+            {user
+              ? <span><b>Free plan</b><small>1 scan remaining this month</small></span>
+              : <span><b>Explore SignalFit</b><small>Sign in to start validating</small></span>}
           </div>
           <p className="sidebar-footnote">SIGNALFIT · VALIDATE FIRST</p>
         </div>
@@ -126,7 +129,9 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
           </div>
           <div className="header-actions">
             {action}
-            <div className="user-menu-wrap" ref={menuRef}>
+            {!loading && !user ? (
+              <Link className="button button-small ghost" href={`/sign-in?redirectTo=${encodeURIComponent(pathname)}`}>Sign in</Link>
+            ) : <div className="user-menu-wrap" ref={menuRef}>
               <button
                 className="user-menu-trigger"
                 onClick={() => setMenuOpen(!menuOpen)}
@@ -173,10 +178,10 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
                   </button>
                 </div>
               )}
-            </div>
+            </div>}
           </div>
         </header>
-        {children}
+        <div data-tour="page-canvas">{children}</div>
       </main>
 
       {/* Mobile nav overlay */}
@@ -184,15 +189,15 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
         <div className="mobile-nav-overlay" onClick={() => setMobileNavOpen(false)} />
       )}
 
-      <Suspense fallback={null}>
+      {user && <Suspense fallback={null}>
         <TourAutoStarter
           onStartTour={() => setTourOpen(true)}
           tourCompleted={profile?.tour_completed}
         />
-      </Suspense>
+      </Suspense>}
 
       <ProductTour
-        isOpen={tourOpen}
+        isOpen={Boolean(user && tourOpen)}
         onClose={() => setTourOpen(false)}
         onComplete={() => setTourOpen(false)}
       />

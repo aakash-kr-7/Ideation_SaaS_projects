@@ -5,7 +5,12 @@ import { ArrowRight, Check, Layers3, SearchCheck, Telescope, Waypoints } from "l
 import { MarketType, ResearchMode } from "@/lib/types";
 import { createProject, startResearchRun } from "@/lib/actions/research";
 const markets: MarketType[] = ["B2B", "D2C", "Creator", "Developer Tool", "Local Business", "Agency Tool", "Student/Career", "Other"];
-const modes: Array<{name:ResearchMode; icon:typeof SearchCheck; text:string}> = [{name:"Fast Scan",icon:SearchCheck,text:"Quick signal check. ~2 minutes."},{name:"Deep Validation",icon:Telescope,text:"Full report with evidence, scoring, and next steps. ~5 min."},{name:"Compare Ideas",icon:Layers3,text:"Evaluate multiple ideas against the same criteria."},{name:"Find Opportunities in Market",icon:Waypoints,text:"Discover whitespace in a defined market."}];
+const modes: Array<{name:ResearchMode; icon:typeof SearchCheck; text:string; plan?:string; route?:string; disabled?:boolean}> = [
+ {name:"Fast Scan",icon:SearchCheck,text:"Quick signal check. ~2 minutes."},
+ {name:"Deep Validation",icon:Telescope,text:"Full report with evidence, scoring, and next steps. ~5 min.",plan:"ANALYST"},
+ {name:"Compare Ideas",icon:Layers3,text:"Open completed reports and compare them side by side.",plan:"PRINCIPAL",route:"/compare"},
+ {name:"Find Opportunities in Market",icon:Waypoints,text:"Market whitespace discovery is coming soon.",plan:"COMING SOON",disabled:true},
+];
 export function ResearchForm({projectId}:{projectId?:string}){
  const router=useRouter(); const [mode,setMode]=useState<ResearchMode>("Deep Validation"); const [idea,setIdea]=useState(""); const [submitting,setSubmitting]=useState(false); const [error,setError]=useState("");
  const submit=async(e:FormEvent<HTMLFormElement>)=>{e.preventDefault();setSubmitting(true);setError("");try{const form=new FormData(e.currentTarget);const project=projectId?{id:projectId}:await createProject({name:"Default Project"});const result=await startResearchRun({project_id:project.id,idea_name:String(form.get("ideaName")??idea),idea_description:String(form.get("ideaDescription")??""),target_customer:String(form.get("targetCustomer")??""),market_type:String(form.get("marketType")??"B2B") as MarketType,target_region:String(form.get("targetRegion")??"Global"),mode});router.push(`/research/${result.id}/progress`)}catch(caught){let message=caught instanceof Error?caught.message:"Something went wrong. Try again.";try{const parsed=JSON.parse(message);message=parsed.message??message}catch{}setError(message)}finally{setSubmitting(false)}};
@@ -43,7 +48,7 @@ export function ResearchForm({projectId}:{projectId?:string}){
        <p className="eyebrow">Validation depth</p>
        <h2>How deep should we go?</h2>
      </div>
-     <div className="mode-grid">{modes.map(({name,icon:Icon,text})=><button type="button" onClick={()=>setMode(name)} className={mode===name?"mode-card selected":"mode-card"} key={name}><span><Icon size={18}/>{mode===name&&<Check size={14}/>}</span><b>{name}</b><small>{text}</small></button>)}</div>
+     <div className="mode-grid">{modes.map(({name,icon:Icon,text,plan,route,disabled})=><button type="button" onClick={()=>route?router.push(route):setMode(name)} disabled={disabled} className={mode===name&&!route?"mode-card selected":"mode-card"} key={name}><span><Icon size={18}/>{mode===name&&!route&&<Check size={14}/>} {plan&&<i className="feature-plan-badge">{plan}</i>}</span><b>{name}</b><small>{text}</small></button>)}</div>
    </section>
    <footer className="form-footer">
      {error && <p style={{color: "var(--signal-red)"}}>{error}</p>}
