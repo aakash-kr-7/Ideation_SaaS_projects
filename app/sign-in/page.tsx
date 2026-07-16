@@ -5,13 +5,14 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { LockKeyhole, LoaderCircle, ArrowRight, Mail, Eye, EyeOff, CheckCircle2, ArrowLeft } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
 import { createClient } from "@/lib/supabase/client";
+import { authCallbackUrl, safeAuthRedirect } from "@/lib/auth-redirect";
 
 type AuthView = "sign-in" | "register" | "forgot-password";
 
 function SignInCard() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const redirectTo = searchParams.get("redirectTo") || "/dashboard";
+  const redirectTo = safeAuthRedirect(searchParams.get("redirectTo"));
   const authError = searchParams.get("error");
   const authMessage = searchParams.get("message");
 
@@ -55,18 +56,22 @@ function SignInCard() {
     clearMessages();
     try {
       const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithOAuth({
+      const { data, error: signInError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+          redirectTo: authCallbackUrl(window.location.origin, redirectTo),
+          skipBrowserRedirect: true,
         },
       });
       if (signInError) {
-        setError(signInError.message);
-        setLoading(false);
+        throw signInError;
       }
-    } catch (e: any) {
-      setError(e.message || "An unexpected error occurred.");
+      if (!data.url) {
+        throw new Error("Google sign-in did not return a redirect URL.");
+      }
+      window.location.assign(data.url);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Google sign-in could not be started.");
       setLoading(false);
     }
   };

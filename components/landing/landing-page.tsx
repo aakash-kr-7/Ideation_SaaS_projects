@@ -6,6 +6,7 @@ import Image from "next/image";
 import { ArrowRight, CheckCircle2, ChevronRight, FileSearch, Gauge, Radar, Shield, ShieldCheck, Target, TrendingUp, Users, Zap, AlertTriangle, DollarSign, Rocket, BarChart3, LoaderCircle } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
 import { createClient } from "@/lib/supabase/client";
+import { authCallbackUrl } from "@/lib/auth-redirect";
 
 const signals = [
   { name: "Reddit", logoPath: "/logos/reddit.svg" },
@@ -24,29 +25,29 @@ const marqueeSignals = [...signals, ...signals, ...signals];
 
 export function LandingPage() {
   const [activeCta, setActiveCta] = useState<string | null>(null);
+  const [authError, setAuthError] = useState("");
 
   const handleGoogleSignIn = async (ctaKey: string, redirectTo: string) => {
-    console.log(`[Google Sign In] ctaKey: ${ctaKey}, redirectTo: ${redirectTo}`);
     setActiveCta(ctaKey);
+    setAuthError("");
     try {
       const supabase = createClient();
-      console.log("[Google Sign In] Supabase client created");
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+          redirectTo: authCallbackUrl(window.location.origin, redirectTo),
+          skipBrowserRedirect: true,
         },
       });
       if (error) {
-        console.error("[Google Sign In] Error:", error.message);
-        alert(`OAuth error: ${error.message}`);
-        setActiveCta(null);
-      } else {
-        console.log("[Google Sign In] Redirecting to:", data?.url);
+        throw error;
       }
-    } catch (e: any) {
-      console.error("[Google Sign In] Unexpected Exception:", e);
-      alert(`OAuth exception: ${e.message || String(e)}`);
+      if (!data.url) {
+        throw new Error("Google sign-in did not return a redirect URL.");
+      }
+      window.location.assign(data.url);
+    } catch (e: unknown) {
+      setAuthError(e instanceof Error ? e.message : "Google sign-in could not be started.");
       setActiveCta(null);
     }
   };
@@ -80,6 +81,7 @@ export function LandingPage() {
       </div>
     </header>
     <main>
+      {authError && <div className="auth-error" role="alert">{authError}</div>}
       {/* ── HERO ── */}
       <section className="bs-hero">
         <div className="bs-hero-copy">

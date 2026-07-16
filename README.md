@@ -79,7 +79,7 @@ supabase functions serve research-worker --env-file supabase/functions/research-
 npm run build
 ```
 
-Google OAuth is disabled in the checked-in local `supabase/config.toml`. A Google OAuth end-to-end test requires enabling the provider and supplying its client credentials; email/password auth remains available for local development.
+Google OAuth is enabled by the checked-in local `supabase/config.toml` and reads its credentials from the ignored root `.env`. Follow [docs/Auth-Setup.md](./docs/Auth-Setup.md) to configure Google Cloud, restart local Supabase, and verify a brand-new-user journey. Email/password auth remains available for local development.
 
 Deployment:
 

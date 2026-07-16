@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { safeAuthRedirect } from '@/lib/auth-redirect'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -16,7 +17,7 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as 'signup' | 'recovery' | 'email' | null
-  const next = searchParams.get('next') ?? '/dashboard'
+  const next = safeAuthRedirect(searchParams.get('next'))
 
   // Handle OAuth code exchange (Google sign-in)
   if (code) {

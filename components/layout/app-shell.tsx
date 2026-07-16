@@ -66,8 +66,12 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
 
   const handleSignOut = async () => {
     const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/");
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Could not sign out:", error.message);
+      return;
+    }
+    window.location.assign("/");
   };
 
   const displayName = profile?.display_name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";

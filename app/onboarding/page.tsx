@@ -120,6 +120,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [data, setData] = useState<OnboardingData>({
     display_name: "",
     experience_level: "",
@@ -170,8 +171,9 @@ export default function OnboardingPage() {
 
   const finish = async () => {
     setSaving(true);
+    setSaveError("");
     try {
-      await fetch("/api/user/profile", {
+      const response = await fetch("/api/user/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -179,16 +181,22 @@ export default function OnboardingPage() {
           onboarding_completed: true,
         }),
       });
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.error || "We could not save your onboarding details.");
+      }
       router.replace("/dashboard?tour=start");
-    } catch {
-      router.replace("/dashboard");
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "We could not save your onboarding details.");
+      setSaving(false);
     }
   };
 
   const skip = async () => {
     setSaving(true);
+    setSaveError("");
     try {
-      await fetch("/api/user/profile", {
+      const response = await fetch("/api/user/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -196,10 +204,15 @@ export default function OnboardingPage() {
           onboarding_completed: true,
         }),
       });
-    } catch {
-      // Best effort
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.error || "We could not save your onboarding status.");
+      }
+      router.replace("/dashboard?tour=start");
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "We could not save your onboarding status.");
+      setSaving(false);
     }
-    router.replace("/dashboard?tour=start");
   };
 
   const next = () => {
@@ -229,6 +242,7 @@ export default function OnboardingPage() {
         </header>
 
         <div className="onboarding-card" key={step}>
+          {saveError && <div className="auth-error" role="alert">{saveError}</div>}
           <div className="onboarding-card-icon">
             <Icon size={22} />
           </div>

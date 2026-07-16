@@ -27,4 +27,4 @@ supabase secrets set COHERE_API_KEY=[key]
 
 The service-role key lets the worker persist a run on behalf of its owner. `WEBHOOK_SECRET` authenticates direct dispatch from the Next.js server and must never be the service-role key. The production fallback implemented in this repository is Groq -> Cerebras, not OpenRouter. Optional controls include `RESEARCH_RUN_COST_CAP_USD`, `CEREBRAS_MODEL`, `REASONING_MAX_COMPLETION_TOKENS`, and `REASONING_AGENT_PACING_MS`.
 
-Google OAuth credentials are separate Supabase Auth provider settings. The checked-in local configuration leaves Google disabled; enable it and provide the client ID/secret before claiming a Google OAuth user journey has passed.
+Google OAuth credentials are separate Supabase Auth provider settings. The checked-in local configuration enables Google but reads its Web Client ID and Client Secret from the ignored root `.env`; hosted projects store them in Supabase Dashboard. See [Auth-Setup.md](./Auth-Setup.md) for the exact Google redirect URI, Supabase redirect allow-list, restart, and verification steps.

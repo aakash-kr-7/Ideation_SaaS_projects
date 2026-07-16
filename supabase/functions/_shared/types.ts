@@ -1459,6 +1459,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ensure_user_bootstrap: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       is_team_admin: {
         Args: { team_id: string; user_id: string }
         Returns: boolean
