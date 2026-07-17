@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import {
   ArrowLeft, ArrowRight, BarChart3, Check, FileText, LayoutDashboard,
   Lightbulb, Plus, Scale, Sparkles, X,
@@ -211,7 +212,9 @@ export function ProductTour({ isOpen, onClose, onComplete }: ProductTourProps) {
         <button className="tour-close" onClick={dismiss} aria-label="Close tour"><X size={18} /></button>
         <div className="tour-step-counter"><span>{String(step + 1).padStart(2, "0")}</span> / {String(tourSteps.length).padStart(2, "0")}</div>
         <div className="tour-heading-row">
-          <div className="tour-icon-wrap"><Icon size={22} /></div>
+          <div className={`tour-icon-wrap${step === 0 ? " tour-brand-icon" : ""}`}>
+            {step === 0 ? <Image src="/brand/shouldbuild-icon.png" alt="" width={34} height={34}/> : <Icon size={22} />}
+          </div>
           {current.plan && <span className="tour-plan-badge">PAID · {current.plan}</span>}
         </div>
         <p className="eyebrow tour-section-label">{current.section}</p>

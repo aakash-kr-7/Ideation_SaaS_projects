@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   BarChart3, CreditCard, LayoutDashboard, Plus, Search, Settings, Scale,
@@ -125,7 +126,7 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
       <aside className={`sidebar ${mobileNavOpen ? "mobile-open" : ""}`}>
         <Brand href="/dashboard" />
         <div className="workspace">
-          <span className="workspace-mark">SF</span>
+          <span className="workspace-mark" aria-hidden="true"><Image src="/brand/shouldbuild-icon.png" alt="" width={28} height={28}/></span>
           <div><b>Your ideas</b><small>Validate before you build</small></div>
         </div>
         <p className="sidebar-label">NAVIGATION</p>

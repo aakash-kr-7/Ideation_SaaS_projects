@@ -253,7 +253,7 @@ export function LandingPage() {
 function MemoPreview({ expanded = false }: { expanded?: boolean }) {
   return <div className={`bs-product-frame${expanded ? " expanded" : ""}`}>
     <div className="bs-window">
-      <header><span className="bs-window-dot"/><span>SHOULDBUILD / VALIDATION REPORT</span><i>SAMPLE DATA</i></header>
+      <header><span className="bs-window-dot"/><span><span className="brand-name">Should<span className="text-accent">Build</span></span> / VALIDATION REPORT</span><i>SAMPLE DATA</i></header>
       <aside>
         <b>82</b>
         <span className="active">Verdict</span>

@@ -40,11 +40,11 @@ async function findAvailablePort(startingPort) {
 async function main() {
   const requested = requestedPort();
   const port = await findAvailablePort(requested);
-  if (port !== requested) console.log(`Port ${requested} is busy. Starting BuildSignal on http://localhost:${port} instead.`);
+  if (port !== requested) console.log(`Port ${requested} is busy. Starting ShouldBuild on http://localhost:${port} instead.`);
   const nextBin = path.join(process.cwd(), "node_modules", "next", "dist", "bin", "next");
   const child = spawn(process.execPath, [nextBin, "start", "-p", String(port)], { stdio: "inherit" });
   child.on("exit", (code) => process.exit(code ?? 0));
-  child.on("error", (error) => { console.error("Could not start BuildSignal:", error.message); process.exit(1); });
+  child.on("error", (error) => { console.error("Could not start ShouldBuild:", error.message); process.exit(1); });
 }
 
 main().catch((error) => { console.error(error.message); process.exit(1); });

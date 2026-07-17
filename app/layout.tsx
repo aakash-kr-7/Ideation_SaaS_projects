@@ -9,16 +9,25 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  applicationName: "ShouldBuild",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/apple-icon.png",
+  },
   openGraph: { 
     title: "ShouldBuild — Startup Idea Validation Tool", 
     description: "Automated product-market fit research. Run your startup idea through an adversarial pipeline to find willingness-to-pay and competitor gaps.",
     type: "website",
     url: "/",
+    siteName: "ShouldBuild",
+    images: [{ url: "/brand/shouldbuild-icon.png", width: 1199, height: 1198, alt: "ShouldBuild" }],
   },
   twitter: { 
     card: "summary_large_image", 
     title: "ShouldBuild — Automated Market Validation",
     description: "Test your startup idea against real market signals in minutes.",
+    images: ["/brand/shouldbuild-icon.png"],
   },
 };
 

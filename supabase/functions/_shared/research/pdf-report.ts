@@ -308,7 +308,8 @@ class PdfPage {
 }
 
 function addRunningHeader(page: PdfPage, section: string, title: string) {
-  page.text("SHOULDBUILD", MARGIN, 35, 8, "F2", COLORS.navy);
+  page.text("SHOULD", MARGIN, 35, 8, "F2", COLORS.navy);
+  page.text("BUILD", MARGIN + 31, 35, 8, "F2", COLORS.teal);
   page.text(
     section.toUpperCase(),
     PAGE_WIDTH - MARGIN - Math.max(70, section.length * 5.2),
@@ -329,7 +330,8 @@ function buildCover(
 ) {
   const page = new PdfPage(COLORS.midnight);
   page.rect(0, 0, 8, PAGE_HEIGHT, COLORS.teal);
-  page.text("SHOULDBUILD", MARGIN + 8, 43, 10, "F2", COLORS.white);
+  page.text("SHOULD", MARGIN + 8, 43, 10, "F2", COLORS.white);
+  page.text("BUILD", MARGIN + 8 + 39, 43, 10, "F2", COLORS.teal);
   page.text("MARKET VALIDATION DOSSIER", MARGIN + 8, 82, 7, "F2", [
     0.49,
     0.77,

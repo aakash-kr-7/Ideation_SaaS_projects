@@ -101,15 +101,25 @@ button { cursor: pointer; }
   font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
 }
 .brand {
-  display: flex; align-items: center; gap: 10px;
+  display: inline-flex; align-items: center; gap: 11px; min-width: 0;
   color: var(--text-primary); font-family: var(--display); font-size: 17px; letter-spacing: -0.03em; font-weight: 600;
 }
-.brand span {
-  display: grid; place-items: center; width: 30px; height: 30px;
-  background: var(--accent); color: #fff;
-  font-family: var(--mono); font-size: 10px; font-weight: 700; border-radius: var(--radius-sm);
+.brand-mark-shell {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  flex: 0 0 48px; width: 48px; height: 48px;
 }
-.brand b { font-weight: 700; }
+.brand-mark {
+  width: 48px; height: 48px; object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.15));
+  transition: transform .3s cubic-bezier(0.34, 1.56, 0.64, 1), filter .3s ease;
+}
+.brand-copy { display: inline-flex; align-items: center; min-width: 0; }
+.brand:hover .brand-mark {
+  transform: scale(1.06) rotate(-1.5deg);
+  filter: drop-shadow(0 4px 10px rgba(15,118,110,.25));
+}
+.brand-name { font-weight: 700; font-size: 22px; }
+.text-accent { color: var(--accent); }
 .brand i {
   padding-left: 10px; border-left: 1px solid var(--border-strong);
   color: var(--text-tertiary); font-family: var(--mono); font-size: 9px;
@@ -484,9 +494,16 @@ button { cursor: pointer; }
   border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-elevated);
 }
 .workspace-mark {
-  display: grid; place-items: center; width: 28px; height: 28px;
-  background: var(--accent); color: #fff; font-family: var(--mono);
-  font-size: 11px; font-weight: 700; border-radius: var(--radius-sm);
+  position: relative; isolation: isolate; display: grid; place-items: center; width: 30px; height: 30px;
+  background: transparent; border-radius: 50%;
+}
+.workspace-mark::before {
+  content: ""; position: absolute; z-index: -1; inset: 5px; border-radius: 50%;
+  background: rgba(112,201,181,.52); filter: blur(8px); opacity: .62;
+}
+.workspace-mark img {
+  width: 30px; height: 30px; border-radius: 50%; object-fit: cover;
+  filter: drop-shadow(0 0 7px rgba(112,201,181,.22));
 }
 .workspace b, .workspace small { display: block; }
 .workspace b { font-size: 13px; font-weight: 600; color: var(--text-primary); }
@@ -1204,6 +1221,9 @@ td small { margin-top: 3px; color: var(--text-tertiary); font-size: 10px; line-h
   font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: 0.04em;
 }
 .sample-report-page > header a { display: flex; align-items: center; gap: 6px; }
+.sample-brand-mark { position: relative; display: grid; place-items: center; width: 25px; height: 25px; margin: 0 2px; }
+.sample-brand-mark::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: rgba(112,201,181,.58); filter: blur(7px); }
+.sample-brand-mark img { position: relative; width: 24px; height: 24px; border-radius: 50%; filter: drop-shadow(0 0 5px rgba(112,201,181,.25)); }
 .sample-report-page .public-report { max-width: 1280px; margin: 0 auto; border: 0; }
 .sample-report-page .report-layout { grid-template-columns: 240px minmax(0,1fr); }
 .sample-report-page .verdict-sidebar { margin: 0; }
@@ -1548,6 +1568,9 @@ td small { margin-top: 3px; color: var(--text-tertiary); font-size: 10px; line-h
 .tour-step-counter span { color: var(--accent); font-weight: 700; }
 .tour-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
 .tour-icon-wrap { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--border-accent); border-radius: var(--radius-sm); background: var(--accent-subtle); color: var(--accent); }
+.tour-brand-icon { position: relative; isolation: isolate; border-radius: 50%; background: rgba(3,14,23,.92); box-shadow: 0 0 22px rgba(112,201,181,.14); }
+.tour-brand-icon::before { content: ""; position: absolute; z-index: -1; inset: 8px; border-radius: 50%; background: rgba(112,201,181,.62); filter: blur(9px); animation: shouldbuild-aura 4.2s ease-in-out infinite; }
+.tour-brand-icon img { border-radius: 50%; filter: drop-shadow(0 0 6px rgba(112,201,181,.28)); }
 .tour-plan-badge { padding: 5px 8px; border: 1px solid rgba(245,158,11,.28); border-radius: 999px; background: rgba(245,158,11,.08); color: #fbbf24; font-family: var(--mono); font-size: 9px; letter-spacing: .05em; }
 .tour-section-label { margin-bottom: 4px; }
 .tour-title { margin: 6px 34px 10px 0; color: var(--text-primary); font-family: var(--display); font-size: 23px; font-weight: 700; letter-spacing: -.02em; }
@@ -1882,7 +1905,7 @@ body::before { content:""; position:fixed; z-index:-1; inset:0; background:var(-
 @media (max-width:760px) {
   .bs-product-frame { transform:none }.bs-hero::after { display:none }.progress-page { padding:58px 18px; border-inline:0; border-radius:0 }.progress-live-metrics span { padding:6px 8px }.form-section::after { display:none }.report-error { margin:8vh 16px; padding:28px }.error-actions { flex-direction:column }.sample-report-page > header span { border:0; background:transparent; box-shadow:none }
 }
-@media (prefers-reduced-motion:reduce) { .bs-hero::after,.progress-page::before { animation:none!important } }
+@media (prefers-reduced-motion:reduce) { .bs-hero::after,.progress-page::before,.brand-mark-shell::before,.tour-brand-icon::before { animation:none!important } }
 
 @media print {
   .bs-nav, .sidebar, .app-header, .report-tabs, .sidebar-export, .export-panel,
@@ -1922,13 +1945,13 @@ body::before { content:""; position:fixed; z-index:-1; inset:0; background:var(-
 
 /* Restore and refine the established brand geometry. */
 .brand { gap: 10px; color: var(--text-primary); font-family: var(--display); font-size: 17px; letter-spacing: -.03em; }
-.brand > span {
+.brand > .brand-mark-shell {
   display: grid; width: 30px; height: 30px; place-items: center;
   border-radius: var(--radius-sm); background: var(--accent); color: #fff;
   box-shadow: 0 0 0 1px rgba(255,255,255,.08) inset, 0 8px 22px rgba(99,102,241,.16);
   font: 700 10px var(--mono); transition: transform var(--duration-spring) var(--ease-spring), box-shadow var(--duration-settle) var(--ease-settle);
 }
-.brand:hover > span { transform: rotate(-4deg) scale(1.06); box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 12px 30px rgba(99,102,241,.26); }
+.brand:hover > .brand-mark-shell { transform: rotate(-4deg) scale(1.06); box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 12px 30px rgba(99,102,241,.26); }
 .brand b { font-weight: 700; }
 .brand i { padding-left: 10px; border-left: 1px solid var(--border-strong); color: var(--text-tertiary); font: 500 9px var(--mono); letter-spacing: .06em; }
 
@@ -2070,7 +2093,7 @@ body::before { content:""; position:fixed; z-index:-1; inset:0; background:var(-
 .sidebar { padding: 22px 14px; border-right-color: var(--border); background: var(--bg-surface); }
 .sidebar .brand { margin: 0 8px 28px; }
 .workspace, .side-note { border-radius: var(--radius-sm); background: var(--bg-elevated); box-shadow: inset 0 1px rgba(255,255,255,.025); }
-.workspace-mark { border-radius: var(--radius-sm); background: var(--accent); color: #fff; }
+.workspace-mark { border-radius: 50%; background: transparent; color: #fff; }
 .nav-link { border-left: 2px solid transparent; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
 .nav-link.active { border-color: var(--accent); background: var(--bg-elevated); }
 .app-main::after {
@@ -2360,8 +2383,8 @@ a:focus-visible, button:focus-visible { outline-color: var(--evidence); }
   box-shadow: 0 1px rgba(255,255,255,.72), 0 14px 42px rgba(16,42,67,.065);
 }
 .bs-nav .brand, .bs-nav nav a, .bs-nav > div > a:first-child { color: var(--brand-foundation); }
-.brand > span { background: var(--accent); box-shadow: inset 0 1px rgba(255,255,255,.25), 0 8px 20px rgba(15,118,110,.2); }
-.brand:hover > span { box-shadow: inset 0 1px rgba(255,255,255,.3), 0 12px 28px rgba(15,118,110,.25); }
+.brand > .brand-mark-shell { background: var(--accent); box-shadow: inset 0 1px rgba(255,255,255,.25), 0 8px 20px rgba(15,118,110,.2); }
+.brand:hover > .brand-mark-shell { box-shadow: inset 0 1px rgba(255,255,255,.3), 0 12px 28px rgba(15,118,110,.25); }
 .bs-nav nav a::after, .bs-nav > div > a:first-child::after { box-shadow: 0 0 9px rgba(15,118,110,.36); }
 .bs-hero::before {
   background: radial-gradient(ellipse 58% 52% at 16% 48%, rgba(15,118,110,.105), transparent 70%), radial-gradient(ellipse 44% 48% at 84% 42%, rgba(37,99,235,.065), transparent 68%);
@@ -2599,7 +2622,7 @@ a[href^='http']:not(.button):not(.bs-btn) { color: var(--evidence); }
 .bs-nav .brand, .bs-nav nav a, .bs-nav > div > a:first-child { color: var(--text-primary); }
 .brand { color: var(--text-primary); }
 .brand i { border-color: var(--border-strong); color: var(--text-tertiary); }
-.brand > span { background: var(--accent); box-shadow: inset 0 1px rgba(255,255,255,.2), 0 8px 22px rgba(15,118,110,.24); }
+.brand > .brand-mark-shell { background: var(--accent); box-shadow: inset 0 1px rgba(255,255,255,.2), 0 8px 22px rgba(15,118,110,.24); }
 .bs-hero::before { background: radial-gradient(ellipse 58% 52% at 16% 48%, rgba(15,118,110,.17), transparent 70%), radial-gradient(ellipse 44% 48% at 84% 42%, rgba(37,99,235,.085), transparent 68%); }
 .bs-hero::after { border-color: rgba(114,167,255,.08); background: repeating-radial-gradient(circle at center, rgba(114,167,255,.065) 0 1px, transparent 1px 34px); }
 .bs-hero h1 { color: var(--text-primary); }
@@ -3026,4 +3049,172 @@ a[href^='http']:not(.button):not(.bs-btn) { color: var(--evidence); }
 }
 @media (prefers-reduced-motion:reduce) {
   .research-room-hero::after,.research-room-pulse i,.research-live-mark i,.research-ledger-lines .is-live i { animation: none!important; }
+}
+
+/* --------------------------------------------------------------------------
+   SHOULD BUILD — canonical brand contract
+   Keep this layer last so every theme uses the same mark/wordmark geometry.
+   -------------------------------------------------------------------------- */
+@keyframes shouldbuild-aura {
+  0%, 100% { opacity: .46; transform: scale(.84); }
+  50% { opacity: .82; transform: scale(1.16); }
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.brand > .brand-mark-shell {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  transform: none;
+}
+.brand > .brand-mark-shell::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 9px;
+  border-radius: 50%;
+  background: rgba(87,185,174,.72);
+  filter: blur(10px);
+  opacity: .62;
+  animation: shouldbuild-aura 4.2s ease-in-out infinite;
+}
+.brand > .brand-mark-shell::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 5px;
+  border-radius: 50%;
+  border: 1px solid rgba(112,207,195,.14);
+  box-shadow: 0 0 18px rgba(87,185,174,.12);
+}
+.brand .brand-mark {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  transform: scale(1.42);
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,.24)) drop-shadow(0 0 6px rgba(87,185,174,.2));
+  transition: transform .28s var(--ease-settle), filter .28s ease;
+}
+.brand:hover > .brand-mark-shell {
+  transform: none;
+  background: transparent;
+  box-shadow: none;
+}
+.brand:hover .brand-mark {
+  transform: scale(1.48) rotate(-1.5deg);
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,.28)) drop-shadow(0 0 10px rgba(87,185,174,.34));
+}
+.brand > .brand-copy {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+  transform: none;
+  transition: none;
+}
+.brand:hover > .brand-copy {
+  transform: none;
+  background: transparent;
+  box-shadow: none;
+}
+.brand .brand-name {
+  display: inline;
+  width: auto;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: 700 19px/1 var(--display);
+  letter-spacing: -.045em;
+  white-space: nowrap;
+}
+.brand .brand-name .text-accent { color: #57B9AE; }
+.brand .brand-copy > i {
+  display: block;
+  margin: 4px 0 0;
+  padding: 0;
+  border: 0;
+  color: var(--text-tertiary);
+  font: 600 7px/1 var(--mono);
+  font-style: normal;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.report-brand-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 64px;
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--border);
+  background:
+    radial-gradient(circle at 46px 50%, rgba(87,185,174,.08), transparent 88px),
+    linear-gradient(90deg, rgba(7,26,41,.98), rgba(9,31,47,.94));
+  box-shadow: inset 0 1px rgba(255,255,255,.025);
+}
+.report-brand-bar .brand { color: #F3F8F9; }
+.report-brand-bar .brand-copy > i { color: #708997; }
+.report-brand-context {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #91A6B2;
+  font: 500 9px/1 var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.report-brand-context b {
+  padding: 6px 8px;
+  border: 1px solid rgba(87,185,174,.22);
+  border-radius: 999px;
+  background: rgba(87,185,174,.08);
+  color: #72CFC3;
+  font-weight: 700;
+}
+.report-brand-context span { white-space: nowrap; }
+
+@media (max-width: 760px) {
+  .brand { gap: 8px; }
+  .brand > .brand-mark-shell { flex-basis: 34px; width: 34px; height: 34px; }
+  .brand .brand-mark { width: 34px; height: 34px; }
+  .brand .brand-name { font-size: 17px; }
+  .brand .brand-copy > i { font-size: 6px; }
+  .report-brand-bar { min-height: 58px; padding: 10px 16px; }
+  .report-brand-context span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand > .brand-mark-shell::before { animation: none!important; }
 }
