@@ -45,8 +45,8 @@ export const pricingModelSchema = z.object({
   model: z.string(),
   pricePoint: z.string(),
   rationale: z.string(),
-  first_offer: z.string(),
-  target_customers: z.number().int().nonnegative(),
+  firstOffer: z.string(),
+  targetCustomers: z.number().int().nonnegative(),
 });
 export const launchPlanSchema = z.object({
   firstCustomerChannel: z.string(),
@@ -102,9 +102,9 @@ export const scorecardSchema = z.object({
 export const opportunitySchema = z.object({
   id: z.string(),
   name: z.string(),
-  one_liner: z.string(),
-  target_customer: z.string(),
-  core_pain: z.string(),
+  oneLiner: z.string(),
+  targetCustomer: z.string(),
+  corePain: z.string(),
   market: z.string(),
   scorecard: scorecardSchema,
   evidence: z.array(evidenceSchema),
