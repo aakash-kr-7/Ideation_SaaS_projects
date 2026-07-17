@@ -927,30 +927,51 @@ export type Database = {
       };
       report_versions: {
         Row: {
+          adversarial_downgrade: boolean;
+          adversarial_gate: Json | null;
+          citation_validation: Json | null;
           created_at: string;
+          decision_integrity: Json | null;
           id: string;
           market_sizing: Json | null;
           payload: Json;
+          reasoning_flags: Json | null;
           report_id: string;
+          specialist_disputes: Json | null;
           updated_at: string;
+          verdict_score_mismatch: boolean;
           version_number: number;
         };
         Insert: {
+          adversarial_downgrade?: boolean;
+          adversarial_gate?: Json | null;
+          citation_validation?: Json | null;
           created_at?: string;
+          decision_integrity?: Json | null;
           id?: string;
           market_sizing?: Json | null;
           payload: Json;
+          reasoning_flags?: Json | null;
           report_id: string;
+          specialist_disputes?: Json | null;
           updated_at?: string;
+          verdict_score_mismatch?: boolean;
           version_number: number;
         };
         Update: {
+          adversarial_downgrade?: boolean;
+          adversarial_gate?: Json | null;
+          citation_validation?: Json | null;
           created_at?: string;
+          decision_integrity?: Json | null;
           id?: string;
           market_sizing?: Json | null;
           payload?: Json;
+          reasoning_flags?: Json | null;
           report_id?: string;
+          specialist_disputes?: Json | null;
           updated_at?: string;
+          verdict_score_mismatch?: boolean;
           version_number?: number;
         };
         Relationships: [

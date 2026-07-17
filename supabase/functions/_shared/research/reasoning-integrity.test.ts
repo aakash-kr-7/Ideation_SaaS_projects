@@ -2,6 +2,7 @@ import {
   checkVerdictConsistency,
   compareSpecialistAndChecker,
   gateVerdict,
+  narrativeSupportsVerdict,
   validateNarrativeCitations,
 } from "./reasoning-integrity.ts";
 
@@ -12,25 +13,72 @@ function assert(condition: unknown, message: string) {
 Deno.test("isolated checker disagreement is surfaced, never silently resolved", () => {
   const comparison = compareSpecialistAndChecker(
     "pricing",
-    { status: "Complete", output: { verdict_direction: "SupportsOpportunity" } },
-    { status: "Complete", output: { verdict_direction: "ChallengesOpportunity" } },
+    {
+      status: "Complete",
+      output: { verdict_direction: "SupportsOpportunity" },
+    },
+    {
+      status: "Complete",
+      output: { verdict_direction: "ChallengesOpportunity" },
+    },
   );
   assert(comparison.disputed, "opposing directions were not disputed");
-  assert(comparison.reason.includes("Disputed interpretation"), "dispute was not explicit");
+  assert(
+    comparison.reason.includes("Disputed interpretation"),
+    "dispute was not explicit",
+  );
+});
+
+Deno.test("a partially stripped minimal narrative cannot support a verdict", () => {
+  assert(
+    narrativeSupportsVerdict({
+      claimsRemoved: 0,
+      executiveSummary: [{}, {}],
+      methodology: [{}],
+    }),
+    "complete cited narrative was rejected",
+  );
+  assert(
+    !narrativeSupportsVerdict({
+      claimsRemoved: 1,
+      executiveSummary: [{}],
+      methodology: [{}],
+    }),
+    "a thinned narrative was allowed to publish",
+  );
 });
 
 Deno.test("Final Judge cannot override the code-owned verdict tier", () => {
-  const consistency = checkVerdictConsistency("Weak Signal", "Weak Signal", "Build Now");
+  const consistency = checkVerdictConsistency(
+    "Weak Signal",
+    "Weak Signal",
+    "Build Now",
+  );
   assert(consistency.finalJudgeScoreMismatch, "mismatch was not flagged");
-  assert(consistency.officialVerdict === "Weak Signal", "narrative overrode deterministic code");
+  assert(
+    consistency.officialVerdict === "Weak Signal",
+    "narrative overrode deterministic code",
+  );
 });
 
 Deno.test("strong unresolved adversarial objection applies a code-owned safety downgrade", () => {
-  const gated = gateVerdict("Build Now", { outcome: "StrongObjection", severity: "High" });
-  assert(gated.effectiveVerdict === "Weak Signal", "strong objection did not block optimistic verdict");
+  const gated = gateVerdict("Build Now", {
+    outcome: "StrongObjection",
+    severity: "High",
+  });
+  assert(
+    gated.effectiveVerdict === "Weak Signal",
+    "strong objection did not block optimistic verdict",
+  );
   assert(gated.adversarialDowngrade, "downgrade flag missing");
-  const survived = gateVerdict("Validate First", { outcome: "NoStrongDisproof", severity: "None" });
-  assert(survived.effectiveVerdict === "Validate First", "no-disproof gate changed deterministic verdict");
+  const survived = gateVerdict("Validate First", {
+    outcome: "NoStrongDisproof",
+    severity: "None",
+  });
+  assert(
+    survived.effectiveVerdict === "Validate First",
+    "no-disproof gate changed deterministic verdict",
+  );
 });
 
 Deno.test("post-generation citation validation strips unresolvable claims", () => {
@@ -42,8 +90,16 @@ Deno.test("post-generation citation validation strips unresolvable claims", () =
       { text: "Missing source", evidence_ids: [badId] },
     ],
     methodology: [{ text: "Uncited", evidence_ids: [] }],
-  }, [{ id: goodId, source_id: "source-1", excluded: false, sources: { url: "https://example.test/evidence" } }]);
+  }, [{
+    id: goodId,
+    source_id: "source-1",
+    excluded: false,
+    sources: { url: "https://example.test/evidence" },
+  }]);
   assert(!validation.valid, "invalid citations passed");
   assert(validation.claimsRemoved === 2, "wrong removal count");
-  assert(validation.executiveSummary.length === 1, "valid claim was not preserved");
+  assert(
+    validation.executiveSummary.length === 1,
+    "valid claim was not preserved",
+  );
 });

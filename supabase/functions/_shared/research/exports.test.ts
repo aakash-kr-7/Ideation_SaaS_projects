@@ -23,6 +23,41 @@ const input = {
     score: 84,
     verdict: "Validate First",
     content: "Actual run content",
+    reasoningFlags: [{
+      type: "AdversarialObjection",
+      severity: "Blocking",
+      message: "A dominant incumbent invalidates the optimistic tier.",
+      evidenceIds: ["00000000-0000-4000-8000-000000000002"],
+    }],
+    specialistDisputes: [{
+      specialist: "pricing",
+      specialistDirection: "SupportsOpportunity",
+      checkerDirection: "ChallengesOpportunity",
+      disputed: true,
+      reason: "Pricing evidence was interpreted differently.",
+    }],
+    adversarialGate: {
+      outcome: "StrongObjection",
+      severity: "High",
+      objection: "A dominant incumbent invalidates the optimistic tier.",
+      evidence_ids: ["00000000-0000-4000-8000-000000000002"],
+      unresolved: true,
+    },
+    citationValidation: {
+      valid: true,
+      claimsChecked: 3,
+      claimsRemoved: 0,
+      invalidClaims: [],
+    },
+    decisionIntegrity: {
+      deterministicVerdict: "Validate First",
+      effectiveVerdict: "Weak Signal",
+      finalJudgeWrittenVerdict: "Validate First",
+      finalJudgeScoreMismatch: false,
+      finalJudgeEffectiveMismatch: true,
+      adversarialDowngrade: true,
+      reason: "Unresolved evidence-cited objection.",
+    },
   },
 };
 
@@ -38,6 +73,20 @@ Deno.test("all export formats carry consistent run facts", () => {
     assert(output.includes(input.runId), "run ID missing");
     assert(output.includes("84"), "score missing");
     assert(output.includes("Validate First"), "verdict missing");
+    assert(
+      output.includes("A dominant incumbent invalidates the optimistic tier."),
+      "adversarial objection missing",
+    );
+    assert(output.includes("pricing"), "specialist dispute missing");
+    assert(
+      output.includes("claimsChecked") || output.includes("Claims checked"),
+      "citation audit missing",
+    );
+    assert(
+      output.includes("effectiveVerdict") ||
+        output.includes("Effective verdict"),
+      "decision integrity missing",
+    );
   }
   assert(
     outputs[1].includes(input.breakdowns[0].evidenceIds[0]),

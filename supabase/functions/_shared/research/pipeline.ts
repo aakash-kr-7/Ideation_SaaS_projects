@@ -52,8 +52,10 @@ import {
   checkVerdictConsistency,
   compareSpecialistAndChecker,
   gateVerdict,
+  narrativeSupportsVerdict,
   validateNarrativeCitations,
 } from "./reasoning-integrity.ts";
+import { validationReportSchema } from "../report-schema.ts";
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 function retryDelay(error: unknown, attempt: number) {
@@ -1710,9 +1712,9 @@ async function executeReasoningPhase(
     payload: citationValidation,
   }, { onConflict: "run_id" });
   if (citationPersistError) throw citationPersistError;
-  if (!citationValidation.executiveSummary.length) {
+  if (!narrativeSupportsVerdict(citationValidation)) {
     throw new Error(
-      "Citation integrity removed every Final Judge conclusion; no sourced narrative remains to support a verdict.",
+      "Citation integrity removed part of the Final Judge's minimal cited narrative; the remaining claims cannot honestly support a published verdict.",
     );
   }
   if (citationValidation.claimsRemoved > 0) {
@@ -1761,12 +1763,12 @@ async function executeReasoningPhase(
       evidenceIds: [],
     });
   }
-  if (judgeScoreMismatch) {
+  if (judgeScoreMismatch || judgeEffectiveMismatch) {
     reasoningFlags.push({
       type: "FinalJudgeVerdictMismatch",
       severity: "Warning",
       message:
-        `Final Judge wrote ${judge.written_verdict}; provider-free scoring mapped ${total} to ${verdict}. The written verdict was not allowed to override code.`,
+        `Final Judge wrote ${judge.written_verdict}; provider-free scoring mapped ${total} to ${verdict}, and the code-owned effective verdict is ${gatedVerdict.effectiveVerdict}. The written verdict was not allowed to override code.`,
       evidenceIds: [],
     });
   }
@@ -1956,11 +1958,28 @@ async function executeReasoningPhase(
     adversarial_gate: adversarialGate,
     citation_validation: citationValidation,
     reasoning_flags: reasoningFlags,
-    verdict_score_mismatch: judgeScoreMismatch ||
-      gatedVerdict.adversarialDowngrade,
-  }).select("id").single();
+    verdict_score_mismatch: judgeScoreMismatch,
+    decision_integrity: payload.decisionIntegrity,
+    adversarial_downgrade: gatedVerdict.adversarialDowngrade,
+  }).select("id,payload").single();
   if (rvError || !rv) {
     throw rvError || new Error("Report version insert failed");
+  }
+  const persistedReport = validationReportSchema.safeParse(rv.payload);
+  if (
+    !persistedReport.success || !persistedReport.data.reasoningFlags ||
+    !persistedReport.data.specialistDisputes ||
+    !persistedReport.data.adversarialGate ||
+    !persistedReport.data.citationValidation ||
+    !persistedReport.data.decisionIntegrity
+  ) {
+    throw new Error(
+      `Persisted report version failed the export-integrity contract: ${
+        persistedReport.success
+          ? "required integrity fields are missing"
+          : persistedReport.error.message
+      }`,
+    );
   }
   await updateState(
     id,
@@ -1984,7 +2003,9 @@ async function executeReasoningPhase(
       note: b.note,
       evidenceIds: b.evidenceIds,
     })),
-    payload,
+    // Every renderer consumes the database-returned immutable report snapshot.
+    // Exports never regenerate narrative or integrity conclusions separately.
+    payload: rv.payload,
   };
   const { data: run } = await db.from("research_runs").select(
     "projects(team_id)",
