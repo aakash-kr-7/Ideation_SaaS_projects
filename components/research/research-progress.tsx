@@ -5,6 +5,8 @@ import { Check, Database, LoaderCircle, Search, ShieldCheck, Swords, Target, Use
 import type { ResearchStatus } from "@/supabase/functions/_shared/research/status";
 import { productCopy } from "@/lib/copy";
 import { createClient } from "@/lib/supabase/client";
+import { AnimatedNumber } from "@/components/ui/animated-number";
+import { getStaggerDelay, revealUpClass, stateChangeKey } from "@/lib/motion";
 
 const stages:Array<{key:ResearchStatus;label:string;detail:string;icon:typeof Target}>=[
   {key:"Searching",label:"Understanding your idea",detail:"Parsing brief and searching 10+ source categories.",icon:Search},
@@ -75,9 +77,9 @@ export function ResearchProgress({id}:{id:string}){
     <p>{state.message}. {productCopy.microcopy.loading}</p>
     <div className="progress-track"><i style={{width:`${state.progress}%`}}/></div>
     <div className="progress-live-metrics">
-      <span><b>{state.sourceCount}</b> sources scanned</span><span><b>{state.evidenceCount}</b> evidence found</span><span><b>{state.competitorCount}</b> competitors mapped</span><span className="current-stage"><b>Now:</b> {state.stage.replaceAll("_"," ")}</span>
+      <span><b><AnimatedNumber value={state.sourceCount}/></b> sources scanned</span><span><b><AnimatedNumber value={state.evidenceCount}/></b> evidence found</span><span><b><AnimatedNumber value={state.competitorCount}/></b> competitors mapped</span><span key={stateChangeKey(state.stage)} className="current-stage sf-state-ack"><b>Now:</b> {state.stage.replaceAll("_"," ")}</span>
     </div>
-    <div className="progress-list">{stages.map(({key,label,detail,icon:Icon},i)=><div className={i<activeIndex?"done":i===activeIndex?"running":""} key={key}><span>{i<activeIndex?<Check size={14}/>:i===activeIndex?<LoaderCircle size={14}/>:<Icon size={15}/>}</span><div><b>{label}</b><small>{detail}</small></div><i>{i<activeIndex?"Done":i===activeIndex?"Running":"Pending"}</i></div>)}</div>
+    <div className="progress-list">{stages.map(({key,label,detail,icon:Icon},i)=><div className={`${i<activeIndex?"done":i===activeIndex?"running sf-state-ack":""} ${revealUpClass}`} style={getStaggerDelay(i)} key={`${key}-${i===activeIndex}`}><span>{i<activeIndex?<Check size={14}/>:i===activeIndex?<LoaderCircle size={14}/>:<Icon size={15}/>}</span><div><b>{label}</b><small>{detail}</small></div><i>{i<activeIndex?"Done":i===activeIndex?"Running":"Pending"}</i></div>)}</div>
     <div className="research-terminal"><div className="terminal-header"><span className="dot red"/><span className="dot yellow"/><span className="dot green"/><span className="terminal-title">RESEARCH LOG</span></div><div className="terminal-body">{logs.map(log=><div key={log.id} className="terminal-line"><span className="terminal-time">[{new Date(log.created_at).toLocaleTimeString()}]</span>{" "}<span className="terminal-text">{log.error_message||log.progress_detail||log.stage_name}</span></div>)}{state.stage!=="Completed"&&state.stage!=="Failed"&&<div className="terminal-line pulsing"><span className="terminal-cursor">â–ˆ</span></div>}</div></div>
     {(state.stage==="Failed"||connectionError)&&<p className="progress-error">{productCopy.microcopy.error} {state.stage==="Failed"?state.message:connectionError}</p>}
   </div>;

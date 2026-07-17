@@ -5,6 +5,7 @@ import { scoringCriteria } from "@/lib/scoring";
 import { OpportunityScorecard } from "@/lib/types";
 import { ScoreGuide } from "./ScoreGuide";
 import { ScoreBadge } from "./score-badge";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 
 export function ScoreBreakdown({ scorecard }: { scorecard: OpportunityScorecard; previousScore?: number }) {
   return <section className="engine-card score-breakdown">
@@ -16,7 +17,7 @@ export function ScoreBreakdown({ scorecard }: { scorecard: OpportunityScorecard;
       <div className="engine-score" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <ScoreBadge score={scorecard.total} size="lg" />
         <div>
-          <b style={{ fontSize: 24, fontFamily: 'var(--mono)', fontWeight: 700 }}>{scorecard.total}</b>
+          <b style={{ fontSize: 24, fontFamily: 'var(--mono)', fontWeight: 700 }}><AnimatedNumber value={scorecard.total}/></b>
           <span style={{ fontSize: 12, color: 'var(--text-tertiary)', marginLeft: 2 }}>/100</span>
         </div>
       </div>

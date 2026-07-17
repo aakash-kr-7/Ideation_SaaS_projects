@@ -8,6 +8,7 @@ import { ScoreGuide } from "@/components/scoring/ScoreGuide";
 import { VerdictBadge } from "@/components/opportunity/verdict-badge";
 import { ResearchRun, Opportunity, ScoreBreakdown, MarketType } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
+import { motion, getStaggerDelay, revealUpClass } from "@/lib/motion";
 
 export const dynamic = "force-dynamic";
 
@@ -109,7 +110,7 @@ export default async function DashboardPage() {
     action: run.opportunity?.verdict === "Build now" ? "Start building" : "Test next"
   }));
 
-  return <AppShell title="Dashboard" action={<Link className="button button-small violet-button" href="/research/new">Validate idea <ArrowRight size={15}/></Link>}>
+  return <AppShell title="Dashboard" action={<Link className={`button button-small violet-button ${motion.buttonBase}`} href="/research/new">Validate idea <ArrowRight size={15}/></Link>}>
     <div className="page-content command-center" data-tour="dashboard-canvas">
 
       {/* ─── EMPTY STATE ─── */}
@@ -147,7 +148,7 @@ export default async function DashboardPage() {
                 </div>
               </div>
             </div>
-            <Link className="button" href="/research/new">
+            <Link className={`button ${motion.buttonBase}`} href="/research/new">
               Validate your first idea <ArrowRight size={15} />
             </Link>
           </div>
@@ -196,7 +197,7 @@ export default async function DashboardPage() {
                   <Radar size={18}/>
                 </header>
                 <div className="radar-actions">
-                  {priorityActions.map(act => <article key={act.num}>
+                  {priorityActions.map((act, index) => <article key={act.num} className={revealUpClass} style={getStaggerDelay(index)}>
                     <span>{act.num}</span>
                     <div><b>{act.name}</b><p>{act.desc}</p></div>
                     <i>{act.action}</i>
@@ -215,7 +216,7 @@ export default async function DashboardPage() {
                 {completedRuns.length >= 2 && <Link href="/compare">Compare ideas</Link>}
               </header>
               {mappedRuns.length > 0 ? (
-                mappedRuns.map((run) => <Link className="saved-row" href={run.status === "Completed" ? `/research/${run.id}/results` : `/research/${run.id}/progress`} key={run.id}>
+                mappedRuns.map((run, index) => <Link className={`saved-row ${motion.transitionBase} ${motion.hoverElevateSubtle} active:scale-[0.99] ${revealUpClass}`} style={getStaggerDelay(index)} href={run.status === "Completed" ? `/research/${run.id}/results` : `/research/${run.id}/progress`} key={run.id}>
                   <span>{run.ideaName.slice(0, 2).toUpperCase()}</span>
                   <div><b>{run.ideaName}</b><small>{run.mode} · {run.createdAt}</small></div>
                   <ArrowRight size={14}/>
@@ -240,7 +241,7 @@ export default async function DashboardPage() {
                   <Link href="/research/new">Validate new idea <ArrowRight size={14}/></Link>
                 </header>
                 <div className="project-grid">
-                  {activeFiles.slice(0, 3).map((run) => <ProjectCard key={run.id} run={run}/>)}
+                  {activeFiles.slice(0, 3).map((run, index) => <div key={run.id} className={revealUpClass} style={getStaggerDelay(index)}><ProjectCard run={run}/></div>)}
                 </div>
               </div>
               {rankedFiles.length > 0 && (
@@ -251,7 +252,7 @@ export default async function DashboardPage() {
                       <h2>Strongest signals</h2>
                     </div>
                   </header>
-                  {rankedFiles.map((run, index) => <Link href={`/research/${run.id}/results`} key={run.id}>
+                  {rankedFiles.map((run, index) => <Link href={`/research/${run.id}/results`} key={run.id} className={`leaderboard-row ${motion.transitionBase} ${motion.hoverElevateSubtle} active:scale-[0.99] ${revealUpClass}`} style={getStaggerDelay(index)}>
                     <span>{String(index + 1).padStart(2, "0")}</span>
                     <div><b>{run.ideaName}</b><small>{run.opportunity?.target_customer}</small></div>
                     <ScoreBadge score={run.opportunity?.score.total ?? 0} size="sm"/>

@@ -10,6 +10,7 @@ import { VerdictBadge } from "@/components/opportunity/verdict-badge";
 import { ScoreBadge } from "@/components/scoring/score-badge";
 import { WeightEditor } from "@/components/scoring/WeightEditor";
 import { recalculateScorecard } from "@/lib/recalculate-scorecard";
+import { getStaggerDelay, motion, revealUpClass } from "@/lib/motion";
 
 const tabs = ["Verdict", "Evidence", "Competitors", "Scoring", "MVP Blueprint", "Pricing", "Launch", "Action plan", "Risks", "Export"] as const;
 type Tab = typeof tabs[number];
@@ -47,7 +48,7 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
   const verdictClass = o.scorecard.verdict.toLowerCase().replace(/\s+/g, "-");
 
   return <div className={publicMode ? "validation-report public-report premium-report" : "validation-report premium-report"}>
-    {toast && <div className="report-toast" role="status">{toast}</div>}
+    {toast && <div className="report-toast sf-confirmation" role="status">{toast}</div>}
     
     <header className="report-engine-hero">
       <div>
@@ -107,9 +108,9 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
 
       <div className="report-main">
         <nav className="report-tabs">
-          {tabs.map(t => <button key={t} className={tab === t ? "active" : ""} onClick={() => setTab(t)}>{t}</button>)}
+          {tabs.map(t => <button key={t} className={`${tab === t ? "active" : ""} ${motion.buttonTight}`} aria-pressed={tab === t} onClick={() => setTab(t)}>{t}</button>)}
         </nav>
-        <div className="report-tab-content">
+        <div className="report-tab-content sf-content-enter" key={tab}>
           {tab === "Verdict" && <Verdict report={report}/>}
           {tab === "Evidence" && <EvidenceView report={report}/>}
           {tab === "Competitors" && <CompetitorView report={report}/>}
@@ -154,7 +155,7 @@ function Verdict({ report }: { report: ReportType }) {
 
 function EvidenceView({ report }: { report: ReportType }) {
   return <div className="evidence-card-grid">
-    {report.opportunity.evidence.map((e, index) => <article key={e.id}>
+    {report.opportunity.evidence.map((e, index) => <article tabIndex={0} className={`${motion.cardInteractive} ${revealUpClass}`} style={getStaggerDelay(index)} key={e.id}>
       <div>
         <b>{e.sourceType}</b>
         <span>{categoryFor(e.signal)}</span>
@@ -194,7 +195,7 @@ function CompetitorView({ report }: { report: ReportType }) {
         </tr>
       </thead>
       <tbody>
-        {report.opportunity.competitors.map((c, index) => <tr key={c.id}>
+        {report.opportunity.competitors.map((c, index) => <tr className={revealUpClass} style={getStaggerDelay(index)} key={c.id}>
           <td><b>{c.name}</b></td>
           <td>{c.target}</td>
           <td>{c.pricing}</td>
@@ -287,7 +288,7 @@ function PricingView({ report }: { report: ReportType }) {
   ];
   return <>
     <div className="pricing-strategy-cards">
-      {cards.map(([name, price, limits, reason]) => <article key={name}>
+      {cards.map(([name, price, limits, reason], index) => <article tabIndex={0} className={`${motion.cardInteractive} ${revealUpClass}`} style={getStaggerDelay(index)} key={name}>
         <span>{name}</span>
         <b>{price}</b>
         <small>{limits}</small>
@@ -429,7 +430,7 @@ function ChecklistView({ report }: { report: ReportType }) {
 function RiskView({ report }: { report: ReportType }) {
   return <div className="risk-heatmap detailed-risk">
     {report.opportunity.risks.map(existing => {
-      return <article key={existing.id} className={existing.severity.toLowerCase()}>
+      return <article tabIndex={0} key={existing.id} className={`${existing.severity.toLowerCase()} ${motion.cardInteractive}`}>
         <div>
           <span>{existing.category} risk</span>
           <b>{existing.severity} likelihood</b>

@@ -1,24 +1,25 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   BarChart3, CreditCard, LayoutDashboard, Plus, Search, Settings, Scale,
-  Circle, LogOut, ChevronDown, BookOpen, User
+  Circle, LogOut, ChevronDown, BookOpen, User, Command, ArrowRight, X
 } from "lucide-react";
 import { Brand } from "./brand";
 import { ProductTour } from "./product-tour";
 import { useAuth } from "./auth-provider";
 import { createClient } from "@/lib/supabase/client";
+import { motion, getStaggerDelay, revealUpClass } from "@/lib/motion";
 
 const links = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/research/new", label: "Validate idea", icon: Plus },
-  { href: "/compare", label: "Compare ideas", icon: Scale, plan: "PRINCIPAL" },
-  { href: "/dashboard/scoring", label: "Scoring model", icon: BarChart3, plan: "PRINCIPAL" },
-  { href: "/pricing", label: "Pricing", icon: CreditCard },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, description: "Validation pipeline and next actions", keywords: "home overview reports" },
+  { href: "/research/new", label: "Validate idea", icon: Plus, description: "Start a market-backed validation", keywords: "new research scan" },
+  { href: "/compare", label: "Compare ideas", icon: Scale, plan: "PRINCIPAL", description: "Compare completed reports side by side", keywords: "matrix score" },
+  { href: "/dashboard/scoring", label: "Scoring model", icon: BarChart3, plan: "PRINCIPAL", description: "Inspect criteria and decision weights", keywords: "weights criteria" },
+  { href: "/pricing", label: "Pricing", icon: CreditCard, description: "Plans and validation depth", keywords: "billing plan" },
+  { href: "/settings", label: "Settings", icon: Settings, description: "Profile and workspace preferences", keywords: "account profile" },
 ];
 
 import { Suspense } from "react";
@@ -46,12 +47,54 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
   const [menuOpen, setMenuOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [quickNavOpen, setQuickNavOpen] = useState(false);
+  const [quickNavQuery, setQuickNavQuery] = useState("");
+  const [quickNavIndex, setQuickNavIndex] = useState(0);
   const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const quickNavInputRef = useRef<HTMLInputElement>(null);
+  const activeLinkIndex = Math.max(0, links.findIndex(({ href }) => pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`))));
+  const filteredLinks = useMemo(() => {
+    const query = quickNavQuery.trim().toLowerCase();
+    return query ? links.filter(item => `${item.label} ${item.description} ${item.keywords}`.toLowerCase().includes(query)) : links;
+  }, [quickNavQuery]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setQuickNavOpen(open => !open);
+      }
+      if (event.key === "Escape") setQuickNavOpen(false);
+    };
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
+
+  useEffect(() => {
+    if (!quickNavOpen) return;
+    setQuickNavQuery("");
+    setQuickNavIndex(0);
+    requestAnimationFrame(() => quickNavInputRef.current?.focus());
+  }, [quickNavOpen]);
+
+  useEffect(() => setQuickNavIndex(0), [quickNavQuery]);
+
+  const openQuickNavResult = (href: string) => {
+    setQuickNavOpen(false);
+    router.push(href);
+  };
+
+  const handleQuickNavKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (!filteredLinks.length) return;
+    if (event.key === "ArrowDown") { event.preventDefault(); setQuickNavIndex(index => (index + 1) % filteredLinks.length); }
+    if (event.key === "ArrowUp") { event.preventDefault(); setQuickNavIndex(index => (index - 1 + filteredLinks.length) % filteredLinks.length); }
+    if (event.key === "Enter") { event.preventDefault(); openQuickNavResult(filteredLinks[quickNavIndex]?.href ?? filteredLinks[0].href); }
+  };
 
   // Close menu on outside click
   useEffect(() => {
@@ -86,14 +129,17 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
           <div><b>Your ideas</b><small>Validate before you build</small></div>
         </div>
         <p className="sidebar-label">NAVIGATION</p>
-        <nav>
-          {links.map(({ href, label, icon: Icon, plan }) => (
+        <nav className="instrument-nav" style={{ "--active-index": activeLinkIndex } as CSSProperties}>
+          <span className="nav-active-indicator" aria-hidden="true" />
+          {links.map(({ href, label, icon: Icon, plan, description }, index) => (
             <Link
               href={href}
               key={href}
-              className={pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`)) ? "nav-link active" : "nav-link"}
+              className={`${pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`)) ? "nav-link active" : "nav-link"} ${motion.transitionBase} ${motion.pressTight} ${revealUpClass}`}
+              style={getStaggerDelay(index, 150, 25)}
               onClick={() => setMobileNavOpen(false)}
               data-tour={`nav-${href.split("/").filter(Boolean).join("-")}`}
+              data-preview={description}
             >
               <Icon size={16} /><span>{label}</span>{plan && <small className="nav-plan-badge">{plan}</small>}
             </Link>
@@ -114,7 +160,7 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
         <header className="app-header">
           <div className="app-header-left">
             <button
-              className="mobile-menu-toggle"
+              className={`mobile-menu-toggle ${motion.transitionBase} ${motion.pressTight}`}
               onClick={() => setMobileNavOpen(!mobileNavOpen)}
               aria-label="Toggle navigation"
             >
@@ -128,12 +174,15 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
             </div>
           </div>
           <div className="header-actions">
+            <button className={`quick-nav-trigger ${motion.buttonTight}`} onClick={() => setQuickNavOpen(true)} aria-label="Open quick navigation">
+              <Search size={14}/><span>Quick nav</span><kbd>{mounted && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl"} K</kbd>
+            </button>
             {action}
             {!loading && !user ? (
               <Link className="button button-small ghost" href={`/sign-in?redirectTo=${encodeURIComponent(pathname)}`}>Sign in</Link>
             ) : <div className="user-menu-wrap" ref={menuRef}>
               <button
-                className="user-menu-trigger"
+                className={`user-menu-trigger ${motion.transitionBase} ${motion.pressTight}`}
                 onClick={() => setMenuOpen(!menuOpen)}
                 aria-expanded={menuOpen}
               >
@@ -166,14 +215,14 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
                     <small>{user?.email}</small>
                   </div>
                   <hr />
-                  <Link href="/settings" className="user-dropdown-item" onClick={() => setMenuOpen(false)}>
+                  <Link href="/settings" className={`user-dropdown-item ${motion.transitionBase} ${motion.pressTight}`} onClick={() => setMenuOpen(false)}>
                     <User size={14} /> Profile & Settings
                   </Link>
-                  <button className="user-dropdown-item" onClick={() => { setMenuOpen(false); setTourOpen(true); }}>
+                  <button className={`user-dropdown-item ${motion.transitionBase} ${motion.pressTight}`} onClick={() => { setMenuOpen(false); setTourOpen(true); }}>
                     <BookOpen size={14} /> Take Product Tour
                   </button>
                   <hr />
-                  <button className="user-dropdown-item danger" onClick={handleSignOut}>
+                  <button className={`user-dropdown-item danger ${motion.transitionBase} ${motion.pressTight}`} onClick={handleSignOut}>
                     <LogOut size={14} /> Sign out
                   </button>
                 </div>
@@ -181,13 +230,31 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
             </div>}
           </div>
         </header>
-        <div data-tour="page-canvas">{children}</div>
+        <div key={pathname} className="sf-content-enter" data-tour="page-canvas">{children}</div>
       </main>
 
       {/* Mobile nav overlay */}
       {mobileNavOpen && (
         <div className="mobile-nav-overlay" onClick={() => setMobileNavOpen(false)} />
       )}
+
+      {quickNavOpen && <div className="quick-nav-backdrop" onMouseDown={() => setQuickNavOpen(false)}>
+        <section className="quick-nav-panel sf-content-enter" role="dialog" aria-modal="true" aria-label="Quick navigation" onMouseDown={event => event.stopPropagation()}>
+          <header className="quick-nav-search">
+            <Search size={17}/>
+            <input ref={quickNavInputRef} value={quickNavQuery} onChange={event => setQuickNavQuery(event.target.value)} onKeyDown={handleQuickNavKeyDown} placeholder="Go to a page…" aria-label="Search pages" aria-controls="quick-nav-results"/>
+            <button onClick={() => setQuickNavOpen(false)} aria-label="Close quick navigation"><X size={14}/></button>
+          </header>
+          <div id="quick-nav-results" className="quick-nav-results" role="listbox">
+            <p>Navigate</p>
+            {filteredLinks.map(({ href, label, icon: Icon, description, plan }, index) => <button key={href} role="option" aria-selected={index === quickNavIndex} className={index === quickNavIndex ? "selected" : ""} onMouseEnter={() => setQuickNavIndex(index)} onClick={() => openQuickNavResult(href)}>
+              <span><Icon size={16}/></span><div><b>{label}</b><small>{description}</small></div>{plan && <i>{plan}</i>}<ArrowRight size={14}/>
+            </button>)}
+            {!filteredLinks.length && <div className="quick-nav-empty"><Command size={18}/><b>No matching page</b><small>Try “report”, “pricing”, or “settings”.</small></div>}
+          </div>
+          <footer><span><kbd>↑</kbd><kbd>↓</kbd> select</span><span><kbd>↵</kbd> open</span><span><kbd>Esc</kbd> close</span></footer>
+        </section>
+      </div>}
 
       {user && <Suspense fallback={null}>
         <TourAutoStarter
