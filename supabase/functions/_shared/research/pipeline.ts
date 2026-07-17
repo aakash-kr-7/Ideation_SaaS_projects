@@ -11,8 +11,8 @@ import {
 import type { ResearchRequest } from "./types.ts";
 import type { ResearchStatus } from "./status.ts";
 import {
-  assertCitationsBelongToRun,
   adversarialGateSchema,
+  assertCitationsBelongToRun,
   assertNormalizedOpportunityRows,
   finalJudgeSchema,
   independentCheckerSchema,
@@ -39,10 +39,12 @@ import {
   buildBroadQueries,
   buildEscalationQueries,
   buildTargetedQueries,
+  classifyMarketSizeSource,
   classifySourceTier,
   clusterBySimilarity,
   deriveFollowUpSeeds,
   evaluateSufficiency,
+  isVerifiableMarketSizeFigure,
   type PlannedQuery,
   type ResearchPass,
 } from "./retrieval-strategy.ts";
@@ -282,27 +284,44 @@ async function acquireAndNormalize(
     throw oppError || new Error("Opportunity insert failed");
   }
   const startedAt = Date.now();
-  const retrievalBudgetMs = Number(getEnv("RESEARCH_RETRIEVAL_BUDGET_MS") || "85000");
-  const downstreamCostReserve = Number(getEnv("RESEARCH_REASONING_COST_RESERVE_USD") || ".36");
+  const retrievalBudgetMs = Number(
+    getEnv("RESEARCH_RETRIEVAL_BUDGET_MS") || "85000",
+  );
+  const downstreamCostReserve = Number(
+    getEnv("RESEARCH_REASONING_COST_RESERVE_USD") || ".36",
+  );
   const maxSourcesPerPass = input.depth === "deep" ? 4 : 3;
   const seenUrls = new Set<string>();
+  const attemptedPasses = new Set<ResearchPass>();
   let persistedEvidence: any[] = [];
-  let coverage = evaluateSufficiency([]);
+  let coverage = evaluateSufficiency([], { attemptedPasses: [] });
   let budgetLimited = false;
 
   const persistCoverage = async (pass: ResearchPass, _queryCount: number) => {
-    const { count: persistedQueryCount, error: countError } = await db.from("research_queries").select("id", { count: "exact", head: true }).eq("run_id", id).eq("pass_number", pass);
+    const { count: persistedQueryCount, error: countError } = await db.from(
+      "research_queries",
+    ).select("id", { count: "exact", head: true }).eq("run_id", id).eq(
+      "pass_number",
+      pass,
+    );
     if (countError) throw countError;
     const { error } = await db.from("research_passes").upsert({
       run_id: id,
       pass_number: pass,
-      objective: pass === 1 ? "broad" : pass === 2 ? "targeted" : "disconfirming",
+      objective: pass === 1
+        ? "broad"
+        : pass === 2
+        ? "targeted"
+        : "disconfirming",
       query_count: persistedQueryCount || 0,
-      evidence_count: persistedEvidence.filter((e) => e.research_pass === pass).length,
+      evidence_count: persistedEvidence.filter((e) =>
+        e.research_pass === pass
+      ).length,
       sufficient: coverage.sufficient,
       coverage: coverage,
       coverage_gaps: coverage.gaps,
       budget_limited: budgetLimited,
+      status: budgetLimited ? "BudgetLimited" : "Complete",
       completed_at: new Date().toISOString(),
     }, { onConflict: "run_id,pass_number" });
     if (error) throw error;
@@ -310,9 +329,20 @@ async function acquireAndNormalize(
 
   const recluster = async () => {
     const usable = persistedEvidence.filter((e) => !e.excluded);
-    if (!usable.length || !budget.canSpend(COST.cohere, downstreamCostReserve)) return;
+    if (
+      !usable.length || !budget.canSpend(COST.cohere, downstreamCostReserve)
+    ) return;
     try {
-      const vectors = await callProvider(id, embedder, "evidence_clustering", budget, db, () => embedder.embed(usable.map((e) => `${e.pain_point}. ${e.snippet}`)), 1);
+      const vectors = await callProvider(
+        id,
+        embedder,
+        "evidence_clustering",
+        budget,
+        db,
+        () =>
+          embedder.embed(usable.map((e) => `${e.pain_point}. ${e.snippet}`)),
+        1,
+      );
       const clustered = clusterBySimilarity(usable, vectors, cosine);
       for (const item of clustered) {
         const { error } = await db.from("evidence_items").update({
@@ -331,77 +361,276 @@ async function acquireAndNormalize(
   };
 
   const runPass = async (pass: ResearchPass, queries: PlannedQuery[]) => {
-    await updateState(id, "Searching", 12 + pass * 9, `Pass ${pass}: ${pass === 1 ? "broad problem and solution mapping" : pass === 2 ? "targeted follow-up from prior evidence" : "adversarial disconfirmation"}`, db);
+    const passStartedAt = new Date().toISOString();
+    const { error: passStartError } = await db.from("research_passes").upsert({
+      run_id: id,
+      pass_number: pass,
+      objective: pass === 1
+        ? "broad"
+        : pass === 2
+        ? "targeted"
+        : "disconfirming",
+      status: "Running",
+      started_at: passStartedAt,
+      completed_at: null,
+      sufficient: coverage.sufficient,
+      coverage,
+      coverage_gaps: coverage.gaps,
+      budget_limited: false,
+    }, { onConflict: "run_id,pass_number" });
+    if (passStartError) throw passStartError;
+    await updateState(
+      id,
+      "Searching",
+      12 + pass * 9,
+      `Pass ${pass}: ${
+        pass === 1
+          ? "broad problem and solution mapping"
+          : pass === 2
+          ? "targeted follow-up from prior evidence"
+          : "adversarial disconfirmation"
+      }`,
+      db,
+    );
     const candidates: any[] = [];
     let attempted = 0;
     for (const planned of queries) {
-      if (Date.now() - startedAt >= retrievalBudgetMs || !budget.canSpend(COST.tavily, downstreamCostReserve)) { budgetLimited = true; break; }
-      const { data: queryRow, error: queryError } = await db.from("research_queries").insert({
-        run_id: id, pass_number: pass, evidence_family: planned.family, objective: planned.objective,
-        query: planned.query, triggered_by_evidence_ids: planned.triggeredByEvidenceIds, status: "Running",
+      if (
+        Date.now() - startedAt >= retrievalBudgetMs ||
+        !budget.canSpend(COST.tavily, downstreamCostReserve)
+      ) {
+        budgetLimited = true;
+        break;
+      }
+      const { data: queryRow, error: queryError } = await db.from(
+        "research_queries",
+      ).insert({
+        run_id: id,
+        pass_number: pass,
+        evidence_family: planned.family,
+        objective: planned.objective,
+        query: planned.query,
+        triggered_by_evidence_ids: planned.triggeredByEvidenceIds,
+        status: "Running",
       }).select("id").single();
-      if (queryError || !queryRow) throw queryError || new Error("Research query insert failed");
+      if (queryError || !queryRow) {
+        throw queryError || new Error("Research query insert failed");
+      }
       attempted++;
       try {
-        const found = await callProvider(id, search, `search_pass_${pass}`, budget, db, () => search.search(planned.query), 1);
-        candidates.push(...found.map((r) => ({ ...r, planned, queryId: queryRow.id })));
-        await db.from("research_queries").update({ status: "Complete", result_count: found.length, completed_at: new Date().toISOString() }).eq("id", queryRow.id).eq("run_id", id);
+        const found = await callProvider(
+          id,
+          search,
+          `search_pass_${pass}`,
+          budget,
+          db,
+          () => search.search(planned.query),
+          1,
+        );
+        candidates.push(
+          ...found.map((r) => ({ ...r, planned, queryId: queryRow.id })),
+        );
+        await db.from("research_queries").update({
+          status: "Complete",
+          result_count: found.length,
+          completed_at: new Date().toISOString(),
+        }).eq("id", queryRow.id).eq("run_id", id);
       } catch (error) {
-        await db.from("research_queries").update({ status: "Failed", error_message: error instanceof Error ? error.message : String(error), completed_at: new Date().toISOString() }).eq("id", queryRow.id).eq("run_id", id);
+        await db.from("research_queries").update({
+          status: "Failed",
+          error_message: error instanceof Error ? error.message : String(error),
+          completed_at: new Date().toISOString(),
+        }).eq("id", queryRow.id).eq("run_id", id);
       }
     }
-    await updateState(id, "Extracting", 18 + pass * 10, `Pass ${pass}: extracting independently addressable sources`, db);
+    if (attempted > 0) attemptedPasses.add(pass);
+    await updateState(
+      id,
+      "Extracting",
+      18 + pass * 10,
+      `Pass ${pass}: extracting independently addressable sources`,
+      db,
+    );
     const selected: any[] = [];
     const passDomains = new Set<string>();
     const firstProblem = candidates.find((c) => c.planned.family === "problem");
-    const firstSolution = candidates.find((c) => c.planned.family === "solution");
-    const firstMarketSize = candidates.find((c) => c.planned.objective === "market-sizing");
-    const balancedCandidates = [firstProblem, firstSolution, firstMarketSize, ...candidates].filter(Boolean).filter((item, index, all) => all.findIndex((other) => other.url === item.url) === index);
+    const firstSolution = candidates.find((c) =>
+      c.planned.family === "solution"
+    );
+    const firstMarketSize = candidates.find((c) =>
+      c.planned.objective === "market-sizing"
+    );
+    const balancedCandidates = [
+      firstProblem,
+      firstSolution,
+      firstMarketSize,
+      ...candidates,
+    ].filter(Boolean).filter((item, index, all) =>
+      all.findIndex((other) => other.url === item.url) === index
+    );
     for (const result of balancedCandidates) {
       if (!result.url || seenUrls.has(result.url)) continue;
       let domain = "unknown";
-      try { domain = new URL(result.url).hostname.replace(/^www\./, ""); } catch { /* invalid URL is skipped */ continue; }
-      if (passDomains.has(domain) && candidates.some((c) => { try { return !seenUrls.has(c.url) && !passDomains.has(new URL(c.url).hostname.replace(/^www\./, "")); } catch { return false; } })) continue;
-      selected.push({ ...result, domain }); seenUrls.add(result.url); passDomains.add(domain);
+      try {
+        domain = new URL(result.url).hostname.replace(/^www\./, "");
+      } catch {
+        /* invalid URL is skipped */ continue;
+      }
+      if (
+        passDomains.has(domain) && candidates.some((c) => {
+          try {
+            return !seenUrls.has(c.url) &&
+              !passDomains.has(new URL(c.url).hostname.replace(/^www\./, ""));
+          } catch {
+            return false;
+          }
+        })
+      ) continue;
+      selected.push({ ...result, domain });
+      seenUrls.add(result.url);
+      passDomains.add(domain);
       if (selected.length >= maxSourcesPerPass) break;
     }
     for (const result of selected) {
-      if (Date.now() - startedAt >= retrievalBudgetMs || !budget.canSpend(COST.firecrawl + COST.groq, downstreamCostReserve)) { budgetLimited = true; break; }
+      if (
+        Date.now() - startedAt >= retrievalBudgetMs ||
+        !budget.canSpend(COST.firecrawl + COST.groq, downstreamCostReserve)
+      ) {
+        budgetLimited = true;
+        break;
+      }
       try {
-        const markdown = await callProvider(id, extractor, `extract_pass_${pass}`, budget, db, () => extractor.extract(result.url), 1);
-        const tier = classifySourceTier(result.url, result.title || "", markdown, result.planned.family);
+        const markdown = await callProvider(
+          id,
+          extractor,
+          `extract_pass_${pass}`,
+          budget,
+          db,
+          () => extractor.extract(result.url),
+          1,
+        );
+        const tier = classifySourceTier(
+          result.url,
+          result.title || "",
+          markdown,
+          result.planned.family,
+        );
+        const marketQualification = classifyMarketSizeSource(
+          result.url,
+          result.title || "",
+          markdown,
+        );
         const { data: source, error } = await db.from("sources").insert({
-          run_id: id, title: result.title || "Web Source", url: result.url, source_type: result.sourceType || "web",
-          text_content: markdown.slice(0, 20000), source_domain: result.domain, evidence_family: result.planned.family,
-          research_pass: pass, source_tier: tier.tier, tier_reason: tier.reason, excluded: tier.excluded,
-          exclusion_reason: tier.excluded ? tier.reason : null, research_query_id: result.queryId,
+          run_id: id,
+          title: result.title || "Web Source",
+          url: result.url,
+          source_type: result.sourceType || "web",
+          text_content: markdown.slice(0, 20000),
+          source_domain: result.domain,
+          evidence_family: result.planned.family,
+          research_pass: pass,
+          source_tier: tier.tier,
+          tier_reason: tier.reason,
+          excluded: tier.excluded,
+          exclusion_reason: tier.excluded ? tier.reason : null,
+          research_query_id: result.queryId,
+          market_size_source_qualified: marketQualification.qualified,
+          market_size_qualification_reason: marketQualification.reason,
         }).select("id").single();
         if (error || !source) throw error || new Error("Source insert failed");
         let output;
-        const context = { family: result.planned.family, pass, objective: result.planned.objective };
+        const context = {
+          family: result.planned.family,
+          pass,
+          objective: result.planned.objective,
+        };
         try {
-          output = await callProvider(id, reasoner, `evidence_extraction_pass_${pass}`, budget, db, () => reasoner.extractEvidence(input.ideaName, input.targetCustomer, chunk(markdown)[0], context), 1);
+          output = await callProvider(
+            id,
+            reasoner,
+            `evidence_extraction_pass_${pass}`,
+            budget,
+            db,
+            () =>
+              reasoner.extractEvidence(
+                input.ideaName,
+                input.targetCustomer,
+                chunk(markdown)[0],
+                context,
+              ),
+            1,
+          );
         } catch (error) {
-          if (!budget.canSpend(COST.cerebras, downstreamCostReserve)) throw error;
+          if (!budget.canSpend(COST.cerebras, downstreamCostReserve)) {
+            throw error;
+          }
           reasoner = createAnalysisProvider(true);
-          output = await callProvider(id, reasoner, `evidence_extraction_pass_${pass}_fallback`, budget, db, () => reasoner.extractEvidence(input.ideaName, input.targetCustomer, chunk(markdown)[0], context), 1);
+          output = await callProvider(
+            id,
+            reasoner,
+            `evidence_extraction_pass_${pass}_fallback`,
+            budget,
+            db,
+            () =>
+              reasoner.extractEvidence(
+                input.ideaName,
+                input.targetCustomer,
+                chunk(markdown)[0],
+                context,
+              ),
+            1,
+          );
         }
         const exact = new Set<string>();
         for (const e of output.evidence) {
           const key = e.snippet.toLowerCase().replace(/\W/g, "");
           if (!key || exact.has(key)) continue;
           exact.add(key);
-          const { data, error: evidenceError } = await db.from("evidence_items").insert({
-            run_id: id, opportunity_id: opp.id, source_id: source.id, signal_type: e.signal_type, strength: e.strength,
-            title: e.title, snippet: e.snippet, verified: !tier.excluded, supporting_count: 1, contradicting_count: e.disconfirming ? 1 : 0,
-            confidence: e.strength === "High" ? .85 : e.strength === "Medium" ? .65 : .45,
-            evidence_family: result.planned.family, research_pass: pass, source_tier: tier.tier, excluded: tier.excluded,
-            disconfirming: e.disconfirming, pain_point: e.pain_point,
-            author: e.author, named_entities: e.named_entities, source_domain: result.domain,
-            market_size_metric: e.market_size_metric === "None" ? null : e.market_size_metric,
-            market_size_figure: e.market_size_metric === "None" ? null : e.market_size_figure,
-          }).select("id,source_id,signal_type,strength,title,snippet,evidence_family,research_pass,source_tier,excluded,disconfirming,pain_point,author,named_entities,source_domain,market_size_metric,market_size_figure,independent_source_count,independent_domain_count").single();
-          if (evidenceError || !data) throw evidenceError || new Error("Evidence insert failed");
+          const hasGroundedMarketFigure = marketQualification.qualified &&
+            e.market_size_metric !== "None" &&
+            isVerifiableMarketSizeFigure(e.market_size_figure);
+          const { data, error: evidenceError } = await db.from("evidence_items")
+            .insert({
+              run_id: id,
+              opportunity_id: opp.id,
+              source_id: source.id,
+              signal_type: e.signal_type,
+              strength: e.strength,
+              title: e.title,
+              snippet: e.snippet,
+              verified: !tier.excluded,
+              supporting_count: 1,
+              contradicting_count: e.disconfirming ? 1 : 0,
+              confidence: e.strength === "High"
+                ? .85
+                : e.strength === "Medium"
+                ? .65
+                : .45,
+              evidence_family: result.planned.family,
+              research_pass: pass,
+              source_tier: tier.tier,
+              excluded: tier.excluded,
+              research_query_id: result.queryId,
+              tier_reason: tier.reason,
+              exclusion_reason: tier.excluded ? tier.reason : null,
+              disconfirming: e.disconfirming,
+              pain_point: e.pain_point,
+              author: e.author,
+              named_entities: e.named_entities,
+              source_domain: result.domain,
+              market_size_source_qualified: marketQualification.qualified,
+              market_size_metric: hasGroundedMarketFigure
+                ? e.market_size_metric
+                : null,
+              market_size_figure: hasGroundedMarketFigure
+                ? e.market_size_figure
+                : null,
+            }).select(
+              "id,source_id,research_query_id,signal_type,strength,title,snippet,evidence_family,research_pass,source_tier,tier_reason,excluded,exclusion_reason,disconfirming,pain_point,author,named_entities,source_domain,market_size_source_qualified,market_size_metric,market_size_figure,independent_source_count,independent_domain_count",
+            ).single();
+          if (evidenceError || !data) {
+            throw evidenceError || new Error("Evidence insert failed");
+          }
           persistedEvidence.push(data);
         }
       } catch (error) {
@@ -409,14 +638,24 @@ async function acquireAndNormalize(
       }
     }
     await recluster();
-    coverage = evaluateSufficiency(persistedEvidence);
+    coverage = evaluateSufficiency(persistedEvidence, {
+      attemptedPasses: [...attemptedPasses],
+    });
     await persistCoverage(pass, attempted);
   };
 
   await runPass(1, buildBroadQueries(input));
   let seeds = deriveFollowUpSeeds(persistedEvidence);
   if (!seeds.length) {
-    seeds = persistedEvidence.filter((e) => e.pain_point).slice(0, 3).map((e) => ({ entity: input.ideaName, evidenceIds: [e.id], family: e.evidence_family, painLanguage: e.pain_point }));
+    seeds = persistedEvidence.filter((e) => e.pain_point).slice(0, 3).map((
+      e,
+    ) => ({
+      entity: e.pain_point,
+      evidenceIds: [e.id],
+      family: "problem" as const,
+      painLanguage: e.pain_point,
+      seedType: "pain" as const,
+    }));
   }
   await runPass(2, buildTargetedQueries(seeds));
   seeds = deriveFollowUpSeeds(persistedEvidence);
@@ -425,14 +664,40 @@ async function acquireAndNormalize(
     const escalation = buildEscalationQueries(input, coverage.gaps, seeds);
     if (escalation.length) await runPass(3, escalation);
   }
-  coverage = evaluateSufficiency(persistedEvidence);
+  coverage = evaluateSufficiency(persistedEvidence, {
+    attemptedPasses: [...attemptedPasses],
+  });
   const remainingGaps = [...coverage.gaps];
-  if (budgetLimited) remainingGaps.push("retrieval escalation was budget-limited");
-  await db.from("research_runs").update({ retrieval_sufficient: coverage.sufficient, retrieval_coverage: coverage, retrieval_coverage_gaps: remainingGaps, retrieval_budget_limited: budgetLimited }).eq("id", id);
-  if (!persistedEvidence.length) throw new Error("No structured evidence could be produced.");
-  const firstPain = persistedEvidence.find((e) => e.signal_type === "Pain" && !e.excluded);
-  if (firstPain) await db.from("opportunities").update({ core_pain: firstPain.title }).eq("id", opp.id);
-  await updateState(id, "Normalizing", 72, coverage.sufficient ? "Evidence clustered with sufficient cross-source coverage" : `Research incomplete: ${remainingGaps.join("; ")}`, db);
+  if (budgetLimited) {
+    remainingGaps.push("retrieval escalation was budget-limited");
+  }
+  await db.from("research_runs").update({
+    retrieval_sufficient: coverage.sufficient,
+    retrieval_coverage: coverage,
+    retrieval_coverage_gaps: remainingGaps,
+    retrieval_budget_limited: budgetLimited,
+  }).eq("id", id);
+  if (!persistedEvidence.length) {
+    throw new Error("No structured evidence could be produced.");
+  }
+  const firstPain = persistedEvidence.find((e) =>
+    e.signal_type === "Pain" && !e.excluded
+  );
+  if (firstPain) {
+    await db.from("opportunities").update({ core_pain: firstPain.title }).eq(
+      "id",
+      opp.id,
+    );
+  }
+  await updateState(
+    id,
+    "Normalizing",
+    72,
+    coverage.sufficient
+      ? "Evidence clustered with sufficient cross-source coverage"
+      : `Research incomplete: ${remainingGaps.join("; ")}`,
+    db,
+  );
   await generateAndPersistOpportunityArtifacts(
     id,
     input,
@@ -451,8 +716,14 @@ async function generateAndPersistOpportunityArtifacts(
   db: any,
   budget: CostBudget,
 ) {
-  const usableEvidence = evidence.filter((item: any) => !item.excluded && item.source_tier !== 4);
-  if (!usableEvidence.length) throw new Error("Normalized artifacts require at least one non-excluded source.");
+  const usableEvidence = evidence.filter((item: any) =>
+    !item.excluded && item.source_tier !== 4
+  );
+  if (!usableEvidence.length) {
+    throw new Error(
+      "Normalized artifacts require at least one non-excluded source.",
+    );
+  }
   const artifactContract =
     `{"competitors":[{"name":"Named entity from evidence","positioning":"One phrase","pricing":"Observed pricing or evidence-grounded description","target":"One phrase","strength":"One phrase","gap":"One phrase","evidence_ids":["UUID"]}],"risks":[{"category":"Market|Execution|Platform|Regulatory","severity":"High|Medium|Low","description":"One sentence","mitigation":"One sentence","evidence_ids":["UUID"]}],"pricing_model":{"model":"One phrase","price_point":"One phrase","rationale":"One sentence","first_offer":"One phrase","target_customers":10,"evidence_ids":["UUID"]},"mvp_plan":{"outcome":"One sentence","build_estimate":"One phrase","build_complexity":"Low|Medium|High","scope":["One phrase"],"exclusions":["One phrase"],"evidence_ids":["UUID"]},"launch_plan":{"first_customer_channel":"One phrase","outreach_message":"One sentence","success_metric":"One phrase","week_one":["One sentence"],"first_ten":["One sentence"],"evidence_ids":["UUID"]}}`;
   const allowedEvidenceIds = new Set<string>(
@@ -648,14 +919,20 @@ function specialistInput(name: SpecialistName, structured: any) {
     gtm: ["Demand", "Pain"],
   };
   const candidates = structured.evidence.filter((item: any) =>
-    !item.excluded && item.source_tier !== 4 && signals[name].includes(item.signal_type)
+    !item.excluded && item.source_tier !== 4 &&
+    signals[name].includes(item.signal_type)
   );
-  const evidence = (candidates.length ? candidates : structured.evidence.filter((item: any) => !item.excluded && item.source_tier !== 4))
-    .toSorted((a: any, b: any) =>
-      Number(b.confidence || 0) - Number(a.confidence || 0) ||
-      Number(b.supporting_count || 0) - Number(a.supporting_count || 0) ||
-      String(a.id).localeCompare(String(b.id))
-    ).slice(0, 8);
+  const evidence =
+    (candidates.length
+      ? candidates
+      : structured.evidence.filter((item: any) =>
+        !item.excluded && item.source_tier !== 4
+      ))
+      .toSorted((a: any, b: any) =>
+        Number(b.confidence || 0) - Number(a.confidence || 0) ||
+        Number(b.supporting_count || 0) - Number(a.supporting_count || 0) ||
+        String(a.id).localeCompare(String(b.id))
+      ).slice(0, 8);
   const base: any = { opportunity: structured.opportunity, evidence };
   if (name === "competition" || name === "gtm") {
     base.competitors = structured.competitors;
@@ -667,27 +944,61 @@ function specialistInput(name: SpecialistName, structured: any) {
 }
 
 export function groundedMarketSizing(evidence: any[]) {
-  const result: Record<string, any> = { TAM: null, SAM: null, SOM: null, MarketSize: null };
+  const result: Record<string, any> = {
+    TAM: null,
+    SAM: null,
+    SOM: null,
+    MarketSize: null,
+  };
   for (const item of evidence) {
     const metric = item.market_size_metric;
     const figure = item.market_size_figure;
-    if (!metric || !Object.hasOwn(result, metric) || result[metric] || item.excluded || !figure) continue;
-    if (!/\d/.test(String(figure)) || !item.id || !item.source_id || !item.sources?.url) continue;
-    result[metric] = { figure, evidenceItemId: item.id, sourceId: item.source_id, citationUrl: item.sources.url };
+    if (
+      !metric || !Object.hasOwn(result, metric) || result[metric] ||
+      item.excluded || !figure
+    ) continue;
+    if (
+      !item.market_size_source_qualified ||
+      !isVerifiableMarketSizeFigure(String(figure)) || !item.id ||
+      !item.source_id || !item.sources?.url
+    ) continue;
+    result[metric] = {
+      figure,
+      evidenceItemId: item.id,
+      sourceId: item.source_id,
+      citationUrl: item.sources.url,
+    };
   }
   const found = Object.values(result).some(Boolean);
-  return { ...result, reason: found ? null : "No verifiable market-size data found in named, cited sources." };
+  return {
+    ...result,
+    reason: found
+      ? null
+      : "No verifiable market-size data found in named, cited sources.",
+  };
 }
 
-export function assertGroundedMarketSizing(value: Record<string, any>, allowedEvidenceIds: Set<string>) {
+export function assertGroundedMarketSizing(
+  value: Record<string, any>,
+  allowedEvidenceIds: Set<string>,
+) {
   for (const metric of ["TAM", "SAM", "SOM", "MarketSize"]) {
     const entry = value[metric];
     if (entry === null) continue;
-    if (!entry?.figure || !/\d/.test(String(entry.figure)) || !entry?.sourceId || !entry?.citationUrl || !allowedEvidenceIds.has(entry.evidenceItemId)) {
-      throw new Error(`${metric} must trace to a numeric evidence item and named source citation.`);
+    if (
+      !entry?.figure || !isVerifiableMarketSizeFigure(String(entry.figure)) ||
+      !entry?.sourceId || !entry?.citationUrl ||
+      !allowedEvidenceIds.has(entry.evidenceItemId)
+    ) {
+      throw new Error(
+        `${metric} must trace to a numeric evidence item and named source citation.`,
+      );
     }
   }
-  if (!["TAM", "SAM", "SOM", "MarketSize"].some((metric) => value[metric]) && !value.reason) {
+  if (
+    !["TAM", "SAM", "SOM", "MarketSize"].some((metric) => value[metric]) &&
+    !value.reason
+  ) {
     throw new Error("Missing market-size figures require an explicit reason.");
   }
 }
@@ -821,11 +1132,12 @@ async function runIndependentChecker(
       `checker_${name}`,
       budget,
       db,
-      () => provider.generateStructured(
-        `You are the independent checker for the ${name} domain. Re-derive a judgment from the supplied database evidence in isolation. You have not seen and must not speculate about any specialist output. Return JSON exactly as {"claims":[{"claim":"One concise independently derived finding.","evidence_ids":["UUID"]}],"limitations":[],"verdict_direction":"SupportsOpportunity|Mixed|ChallengesOpportunity|Insufficient"}. Cite every claim. verdict_direction summarizes only this evidence subset. Omit unsupported claims; do not invent numbers or use parametric knowledge.`,
-        JSON.stringify(isolatedInput),
-        independentCheckerSchema,
-      ),
+      () =>
+        provider.generateStructured(
+          `You are the independent checker for the ${name} domain. Re-derive a judgment from the supplied database evidence in isolation. You have not seen and must not speculate about any specialist output. Return JSON exactly as {"claims":[{"claim":"One concise independently derived finding.","evidence_ids":["UUID"]}],"limitations":[],"verdict_direction":"SupportsOpportunity|Mixed|ChallengesOpportunity|Insufficient"}. Cite every claim. verdict_direction summarizes only this evidence subset. Omit unsupported claims; do not invent numbers or use parametric knowledge.`,
+          JSON.stringify(isolatedInput),
+          independentCheckerSchema,
+        ),
       1,
     );
     assertCitationsBelongToRun(output, allowed);
@@ -836,7 +1148,11 @@ async function runIndependentChecker(
       status: "Incomplete",
       output: {
         claims: [],
-        limitations: [`Independent checker failed: ${error instanceof Error ? error.message : String(error)}`],
+        limitations: [
+          `Independent checker failed: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        ],
         verdict_direction: "Insufficient",
       },
       attemptCount: 1,
@@ -857,7 +1173,8 @@ async function runAdversarialVerdictGate(
   ).toSorted((a: any, b: any) =>
     Number(Boolean(b.disconfirming)) - Number(Boolean(a.disconfirming)) ||
     Number(a.source_tier || 3) - Number(b.source_tier || 3) ||
-    Number(b.independent_source_count || 1) - Number(a.independent_source_count || 1)
+    Number(b.independent_source_count || 1) -
+      Number(a.independent_source_count || 1)
   ).slice(0, 12);
   try {
     const provider = createAnalysisProvider();
@@ -867,17 +1184,20 @@ async function runAdversarialVerdictGate(
       "adversarial_verdict_gate",
       budget,
       db,
-      () => provider.generateStructured(
-        `Act as a one-shot adversarial verdict gate. Your only mandate is to kill or disprove the emerging deterministic verdict using the supplied persisted evidence. You have not seen specialist conclusions. Prioritize Pass 3 disconfirmation, missing Tier 1 willingness-to-pay proof, dominant incumbents, retrieval gaps, and thin independent corroboration. Return exactly {"outcome":"StrongObjection|NoStrongDisproof|InsufficientEvidence","severity":"High|Medium|Low|None","objection":"One specific sentence, or an explicit certification that no strong disproof was found.","evidence_ids":["UUID"]}. StrongObjection requires direct citations. NoStrongDisproof must use severity None. Do not soften or balance the objection and do not propose a new score.`,
-        JSON.stringify({
-          deterministic_verdict: deterministic.verdict,
-          weakest_factors: deterministic.factors.toSorted((a: any, b: any) => a.score - b.score).slice(0, 4),
-          evidence,
-          competitors: structured.competitors,
-          retrieval: structured.retrieval,
-        }),
-        adversarialGateSchema,
-      ),
+      () =>
+        provider.generateStructured(
+          `Act as a one-shot adversarial verdict gate. Your only mandate is to kill or disprove the emerging deterministic verdict using the supplied persisted evidence. You have not seen specialist conclusions. Prioritize Pass 3 disconfirmation, missing Tier 1 willingness-to-pay proof, dominant incumbents, retrieval gaps, and thin independent corroboration. Return exactly {"outcome":"StrongObjection|NoStrongDisproof|InsufficientEvidence","severity":"High|Medium|Low|None","objection":"One specific sentence, or an explicit certification that no strong disproof was found.","evidence_ids":["UUID"]}. StrongObjection requires direct citations. NoStrongDisproof must use severity None. Do not soften or balance the objection and do not propose a new score.`,
+          JSON.stringify({
+            deterministic_verdict: deterministic.verdict,
+            weakest_factors: deterministic.factors.toSorted((a: any, b: any) =>
+              a.score - b.score
+            ).slice(0, 4),
+            evidence,
+            competitors: structured.competitors,
+            retrieval: structured.retrieval,
+          }),
+          adversarialGateSchema,
+        ),
       1,
     );
     assertCitationsBelongToRun(output, allowed);
@@ -902,21 +1222,24 @@ async function runAdversarialVerdictGate(
     const fallback = {
       outcome: "InsufficientEvidence" as const,
       severity: "None" as const,
-      objection: `Adversarial gate could not complete: ${error instanceof Error ? error.message : String(error)}`,
+      objection: `Adversarial gate could not complete: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
       evidence_ids: [] as string[],
       unresolved: false,
     };
-    const { error: persistError } = await db.from("adversarial_verdict_gates").upsert({
-      run_id: runId,
-      emerging_verdict: deterministic.verdict,
-      outcome: fallback.outcome,
-      severity: fallback.severity,
-      objection: fallback.objection,
-      evidence_ids: fallback.evidence_ids,
-      unresolved: false,
-      status: "Incomplete",
-      payload: fallback,
-    }, { onConflict: "run_id" });
+    const { error: persistError } = await db.from("adversarial_verdict_gates")
+      .upsert({
+        run_id: runId,
+        emerging_verdict: deterministic.verdict,
+        outcome: fallback.outcome,
+        severity: fallback.severity,
+        objection: fallback.objection,
+        evidence_ids: fallback.evidence_ids,
+        unresolved: false,
+        status: "Incomplete",
+        payload: fallback,
+      }, { onConflict: "run_id" });
     if (persistError) throw persistError;
     return fallback;
   }
@@ -961,7 +1284,7 @@ async function executeReasoningPhase(
   let [evQ, compQ, riskQ, pricingQ, mvpQ, launchQ, weightQ] = await Promise
     .all([
       db.from("evidence_items").select(
-        "id,source_id,signal_type,strength,title,snippet,verified,cluster_key,supporting_count,contradicting_count,confidence,evidence_family,research_pass,source_tier,excluded,disconfirming,pain_point,author,source_domain,independent_source_count,independent_domain_count,market_size_metric,market_size_figure,sources(title,url,source_type,source_tier,excluded)",
+        "id,source_id,research_query_id,signal_type,strength,title,snippet,verified,cluster_key,supporting_count,contradicting_count,confidence,evidence_family,research_pass,source_tier,tier_reason,excluded,exclusion_reason,disconfirming,pain_point,author,source_domain,independent_source_count,independent_domain_count,market_size_source_qualified,market_size_metric,market_size_figure,sources(title,url,source_type,source_tier,tier_reason,excluded,market_size_source_qualified)",
       ).eq("run_id", id),
       db.from("competitors").select(
         "id,name,positioning,pricing,target,strength,gap",
@@ -1036,15 +1359,24 @@ async function executeReasoningPhase(
       if (q.error) throw q.error;
     }
   }
-  const allowed = new Set<string>(evidence.filter((e: any) =>
-    e.id && e.source_id && !e.excluded && e.source_tier !== 4 && e.sources?.url
-  ).map((e: any) => e.id));
+  const allowed = new Set<string>(
+    evidence.filter((e: any) =>
+      e.id && e.source_id && !e.excluded && e.source_tier !== 4 &&
+      e.sources?.url
+    ).map((e: any) => e.id),
+  );
   if (!allowed.size) {
-    throw new Error("Reasoning requires evidence citations that resolve to persisted source rows.");
+    throw new Error(
+      "Reasoning requires evidence citations that resolve to persisted source rows.",
+    );
   }
   const [passQ, coverageQ] = await Promise.all([
-    db.from("research_passes").select("pass_number,objective,query_count,evidence_count,sufficient,coverage,coverage_gaps,budget_limited").eq("run_id", id).order("pass_number"),
-    db.from("research_runs").select("retrieval_sufficient,retrieval_coverage,retrieval_coverage_gaps,retrieval_budget_limited").eq("id", id).single(),
+    db.from("research_passes").select(
+      "pass_number,objective,query_count,evidence_count,sufficient,coverage,coverage_gaps,budget_limited",
+    ).eq("run_id", id).order("pass_number"),
+    db.from("research_runs").select(
+      "retrieval_sufficient,retrieval_coverage,retrieval_coverage_gaps,retrieval_budget_limited",
+    ).eq("id", id).single(),
   ]);
   if (passQ.error || coverageQ.error) throw passQ.error || coverageQ.error;
   const structured = {
@@ -1102,7 +1434,9 @@ async function executeReasoningPhase(
       id,
       "Scoring",
       78 + i * 2,
-      `Running ${name[0].toUpperCase() + name.slice(1)} Agent with an isolated independent checker`,
+      `Running ${
+        name[0].toUpperCase() + name.slice(1)
+      } Agent with an isolated independent checker`,
       db,
     );
     const specialistDeadlineMs = Math.min(
@@ -1129,7 +1463,9 @@ async function executeReasoningPhase(
         attemptCount: 1,
         output: {
           claims: [],
-          limitations: ["Checker was not started because the bounded specialist window was exhausted."],
+          limitations: [
+            "Checker was not started because the bounded specialist window was exhausted.",
+          ],
           verdict_direction: "Insufficient",
         },
       };
@@ -1141,7 +1477,14 @@ async function executeReasoningPhase(
       };
       [outputs[name], checkerResult] = await Promise.all([
         runSpecialist(name, isolatedInput, allowed, id, budget, db),
-        runIndependentChecker(name, checkerEvidenceInput, allowed, id, budget, db),
+        runIndependentChecker(
+          name,
+          checkerEvidenceInput,
+          allowed,
+          id,
+          budget,
+          db,
+        ),
       ]);
     }
     const comparison = compareSpecialistAndChecker(
@@ -1150,17 +1493,18 @@ async function executeReasoningPhase(
       checkerResult,
     );
     checkerComparisons.push(comparison);
-    const { error: checkerPersistError } = await db.from("specialist_checks").upsert({
-      run_id: id,
-      specialist_name: name,
-      status: checkerResult.status,
-      attempt_count: checkerResult.attemptCount || 1,
-      specialist_direction: comparison.specialistDirection,
-      checker_direction: comparison.checkerDirection,
-      disputed: comparison.disputed,
-      dispute_reason: comparison.reason,
-      checker_payload: checkerResult.output,
-    }, { onConflict: "run_id,specialist_name" });
+    const { error: checkerPersistError } = await db.from("specialist_checks")
+      .upsert({
+        run_id: id,
+        specialist_name: name,
+        status: checkerResult.status,
+        attempt_count: checkerResult.attemptCount || 1,
+        specialist_direction: comparison.specialistDirection,
+        checker_direction: comparison.checkerDirection,
+        disputed: comparison.disputed,
+        dispute_reason: comparison.reason,
+        checker_payload: checkerResult.output,
+      }, { onConflict: "run_id,specialist_name" });
     if (checkerPersistError) throw checkerPersistError;
     if (name === "competition") {
       outputs[name].output.metrics = deterministicCompetitionMetrics(
@@ -1202,23 +1546,41 @@ async function executeReasoningPhase(
     );
   }
   const citedFactors = factors.filter((f) => f.evidenceIds.length > 0).length;
-  const usableEvidence = evidence.filter((e: any) => !e.excluded && e.source_tier !== 4);
-  const qualityShare = usableEvidence.length
-    ? usableEvidence.filter((e: any) => e.source_tier <= 2).length / usableEvidence.length
-    : 0;
-  const corroboration = Math.max(0, ...usableEvidence.map((e: any) => Number(e.independent_source_count || 1)));
-  let confidence = Math.round(
-    citedFactors / factors.length * 55 + qualityShare * 30 + Math.min(1, corroboration / 3) * 15,
+  const usableEvidence = evidence.filter((e: any) =>
+    !e.excluded && e.source_tier !== 4
   );
-  if (!coverageQ.data?.retrieval_sufficient) confidence = Math.min(confidence, 60);
-  if (coverageQ.data?.retrieval_budget_limited) confidence = Math.min(confidence, 50);
-  const disputedCount = checkerComparisons.filter((item) => item.disputed).length;
+  const qualityShare = usableEvidence.length
+    ? usableEvidence.filter((e: any) => e.source_tier <= 2).length /
+      usableEvidence.length
+    : 0;
+  const corroboration = Math.max(
+    0,
+    ...usableEvidence.map((e: any) => Number(e.independent_source_count || 1)),
+  );
+  let confidence = Math.round(
+    citedFactors / factors.length * 55 + qualityShare * 30 +
+      Math.min(1, corroboration / 3) * 15,
+  );
+  if (!coverageQ.data?.retrieval_sufficient) {
+    confidence = Math.min(confidence, 60);
+  }
+  if (coverageQ.data?.retrieval_budget_limited) {
+    confidence = Math.min(confidence, 50);
+  }
+  const disputedCount =
+    checkerComparisons.filter((item) => item.disputed).length;
   confidence = Math.max(0, confidence - Math.min(30, disputedCount * 5));
-  if (checkerComparisons.some((item) => item.checkerDirection === "Unavailable")) {
+  if (
+    checkerComparisons.some((item) => item.checkerDirection === "Unavailable")
+  ) {
     confidence = Math.min(confidence, 55);
   }
-  if (adversarialGate.outcome === "StrongObjection") confidence = Math.min(confidence, 45);
-  if (adversarialGate.outcome === "InsufficientEvidence") confidence = Math.min(confidence, 50);
+  if (adversarialGate.outcome === "StrongObjection") {
+    confidence = Math.min(confidence, 45);
+  }
+  if (adversarialGate.outcome === "InsufficientEvidence") {
+    confidence = Math.min(confidence, 50);
+  }
   const { data: score, error: scoreError } = await db.from("opportunity_scores")
     .upsert({ opportunity_id: opp.id, total, confidence, verdict }, {
       onConflict: "opportunity_id",
@@ -1337,7 +1699,9 @@ async function executeReasoningPhase(
   }
   if (!judge) throw judgeLast;
   const citationValidation = validateNarrativeCitations(judge, evidence);
-  const { error: citationPersistError } = await db.from("citation_integrity_validations").upsert({
+  const { error: citationPersistError } = await db.from(
+    "citation_integrity_validations",
+  ).upsert({
     run_id: id,
     valid: citationValidation.valid,
     claims_checked: citationValidation.claimsChecked,
@@ -1352,7 +1716,10 @@ async function executeReasoningPhase(
     );
   }
   if (citationValidation.claimsRemoved > 0) {
-    confidence = Math.max(0, confidence - citationValidation.claimsRemoved * 10);
+    confidence = Math.max(
+      0,
+      confidence - citationValidation.claimsRemoved * 10,
+    );
     const { error: confidenceError } = await db.from("opportunity_scores")
       .update({ confidence }).eq("id", score.id);
     if (confidenceError) throw confidenceError;
@@ -1398,7 +1765,8 @@ async function executeReasoningPhase(
     reasoningFlags.push({
       type: "FinalJudgeVerdictMismatch",
       severity: "Warning",
-      message: `Final Judge wrote ${judge.written_verdict}; provider-free scoring mapped ${total} to ${verdict}. The written verdict was not allowed to override code.`,
+      message:
+        `Final Judge wrote ${judge.written_verdict}; provider-free scoring mapped ${total} to ${verdict}. The written verdict was not allowed to override code.`,
       evidenceIds: [],
     });
   }
@@ -1406,22 +1774,31 @@ async function executeReasoningPhase(
     reasoningFlags.push({
       type: "CitationIntegrityFailure",
       severity: "Warning",
-      message: `${citationValidation.claimsRemoved} unresolvable narrative claim(s) were removed before persistence.`,
+      message:
+        `${citationValidation.claimsRemoved} unresolvable narrative claim(s) were removed before persistence.`,
       evidenceIds: [],
     });
   }
-  const executiveSummaryBase = citationValidation.executiveSummary.map((x: any) => x.text).join(" ");
+  const executiveSummaryBase = citationValidation.executiveSummary.map((
+    x: any,
+  ) => x.text).join(" ");
   const executiveSummary = gatedVerdict.adversarialDowngrade
     ? `${executiveSummaryBase} Decision blocked at Weak Signal until the adversarial objection is resolved.`
     : executiveSummaryBase;
   const gaps = coverageQ.data?.retrieval_coverage_gaps || [];
-  const tierOneCount = usableEvidence.filter((e: any) => e.source_tier === 1).length;
+  const tierOneCount =
+    usableEvidence.filter((e: any) => e.source_tier === 1).length;
   const coverageStatement = coverageQ.data?.retrieval_sufficient
     ? "Retrieval covered problem space, solution space, adversarial evidence, and independent corroboration."
-    : `Retrieval incomplete: ${gaps.length ? gaps.join("; ") : "sufficiency was not established"}.`;
-  const tierOneTwoCount = usableEvidence.filter((e: any) => e.source_tier <= 2).length;
+    : `Retrieval incomplete: ${
+      gaps.length ? gaps.join("; ") : "sufficiency was not established"
+    }.`;
+  const tierOneTwoCount =
+    usableEvidence.filter((e: any) => e.source_tier <= 2).length;
   const qualityStatement = tierOneCount
-    ? `${tierOneCount} Tier 1 willingness-to-pay signal${tierOneCount === 1 ? " was" : "s were"} found; ${tierOneTwoCount} Tier 1/2 evidence rows and up to ${corroboration} independent corroborating sources produced ${confidence}% confidence after integrity modifiers.`
+    ? `${tierOneCount} Tier 1 willingness-to-pay signal${
+      tierOneCount === 1 ? " was" : "s were"
+    } found; ${tierOneTwoCount} Tier 1/2 evidence rows and up to ${corroboration} independent corroborating sources produced ${confidence}% confidence after integrity modifiers.`
     : `We found discussion but zero willingness-to-pay Tier 1 signals; ${tierOneTwoCount} Tier 1/2 rows and up to ${corroboration} independent corroborating sources limited confidence to ${confidence}%.`;
   const checkerStatement = disputedCount
     ? `${disputedCount} of six specialist interpretations were disputed or not independently reproduced.`
@@ -1431,11 +1808,17 @@ async function executeReasoningPhase(
     : adversarialGate.objection;
   const verdictIntegrityStatement = judgeScoreMismatch
     ? `Final Judge verdict mismatch: it wrote ${judge.written_verdict}, while provider-free scoring produced ${verdict}; code retained the gated verdict ${gatedVerdict.effectiveVerdict}.`
-    : `Final Judge's written verdict was consistent with provider-free scoring${gatedVerdict.adversarialDowngrade ? ", before the explicit adversarial safety downgrade" : ""}.`;
+    : `Final Judge's written verdict was consistent with provider-free scoring${
+      gatedVerdict.adversarialDowngrade
+        ? ", before the explicit adversarial safety downgrade"
+        : ""
+    }.`;
   const citationStatement = citationValidation.claimsRemoved
     ? `${citationValidation.claimsRemoved} narrative claim(s) failed source resolution and were removed.`
     : "All Final Judge narrative claims resolved to persisted evidence and source rows.";
-  const methodology = `${citationValidation.methodology.map((x: any) => x.text).join(" ")} ${coverageStatement} ${qualityStatement} ${checkerStatement} ${gateStatement} ${verdictIntegrityStatement} ${citationStatement}`;
+  const methodology = `${
+    citationValidation.methodology.map((x: any) => x.text).join(" ")
+  } ${coverageStatement} ${qualityStatement} ${checkerStatement} ${gateStatement} ${verdictIntegrityStatement} ${citationStatement}`;
   const { data: report, error: reportError } = await db.from("reports").upsert({
     run_id: id,
     opportunity_id: opp.id,
@@ -1496,7 +1879,9 @@ async function executeReasoningPhase(
         confidence,
         verdict: gatedVerdict.effectiveVerdict,
         deterministicVerdict: verdict,
-        decisionStatus: gatedVerdict.adversarialDowngrade ? "Challenged" : "Passed",
+        decisionStatus: gatedVerdict.adversarialDowngrade
+          ? "Challenged"
+          : "Passed",
       },
       evidence: evidence.map((item: any) => ({
         id: item.id,
@@ -1510,6 +1895,8 @@ async function executeReasoningPhase(
         evidenceFamily: item.evidence_family,
         researchPass: item.research_pass,
         sourceTier: item.source_tier,
+        sourceTierReason: item.tier_reason,
+        researchQueryId: item.research_query_id,
         excluded: item.excluded,
         disconfirming: item.disconfirming,
         painPoint: item.pain_point,
@@ -1569,7 +1956,8 @@ async function executeReasoningPhase(
     adversarial_gate: adversarialGate,
     citation_validation: citationValidation,
     reasoning_flags: reasoningFlags,
-    verdict_score_mismatch: judgeScoreMismatch || gatedVerdict.adversarialDowngrade,
+    verdict_score_mismatch: judgeScoreMismatch ||
+      gatedVerdict.adversarialDowngrade,
   }).select("id").single();
   if (rvError || !rv) {
     throw rvError || new Error("Report version insert failed");

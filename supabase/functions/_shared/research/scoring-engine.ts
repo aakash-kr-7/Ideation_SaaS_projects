@@ -76,17 +76,37 @@ function evidenceScore(items: ScoringEvidence[], baseline = 20): number {
     const support = Math.max(1, e.supporting_count ?? 1);
     const contradictions = Math.max(0, e.contradicting_count ?? 0);
     const consistency = support / (support + contradictions);
-    const tierWeight = ({ 1: 1, 2: .8, 3: .25, 4: 0 } as const)[e.source_tier ?? 3];
-    const independent = Math.min(1.5, 1 + .1 * Math.max(0, (e.independent_source_count ?? 1) - 1));
-    return sum + STRENGTH[e.strength] * (e.confidence ?? 0.5) * consistency * tierWeight * independent;
+    const tierWeight =
+      ({ 1: 1, 2: .8, 3: .25, 4: 0 } as const)[e.source_tier ?? 3];
+    const independent = Math.min(
+      1.5,
+      1 + .1 * Math.max(0, (e.independent_source_count ?? 1) - 1),
+    );
+    return sum +
+      STRENGTH[e.strength] * (e.confidence ?? 0.5) * consistency * tierWeight *
+        independent;
   }, 0);
   return clamp(
     20 + 65 * Math.min(1, total / 3) + 15 * Math.min(1, usable.length / 6),
   );
 }
 
+function qualityWeightedCount(items: ScoringEvidence[]) {
+  return items.reduce((sum, item) => {
+    const tier =
+      ({ 1: 1, 2: .8, 3: .25, 4: 0 } as const)[item.source_tier ?? 3];
+    const corroboration = Math.min(
+      1.35,
+      1 + .1 * Math.max(0, (item.independent_source_count ?? 1) - 1),
+    );
+    return sum + tier * corroboration;
+  }, 0);
+}
+
 export function computeFactors(ctx: ScoringContext): FactorResult[] {
-  const usableEvidence = ctx.evidence.filter((e) => !e.excluded && (e.source_tier ?? 3) < 4);
+  const usableEvidence = ctx.evidence.filter((e) =>
+    !e.excluded && (e.source_tier ?? 3) < 4
+  );
   const by = (type: ScoringEvidence["signal_type"]) =>
     usableEvidence.filter((e) => e.signal_type === type);
   const pain = by("Pain"),
@@ -140,7 +160,12 @@ export function computeFactors(ctx: ScoringContext): FactorResult[] {
       "complex",
     ])
   );
-  const independentSources = Math.max(0, ...demand.map((e) => e.independent_source_count ?? 1));
+  const independentSources = Math.max(
+    0,
+    ...demand.map((e) => e.independent_source_count ?? 1),
+  );
+  const weightedDemand = qualityWeightedCount(demand);
+  const weightedGapEvidence = qualityWeightedCount(gapEvidence);
   const tierOnePricing = pricing.filter((e) => e.source_tier === 1);
   const executionRisks = ctx.risks.filter((r) =>
     r.category === "Execution" && r.severity !== "Low"
@@ -173,11 +198,13 @@ export function computeFactors(ctx: ScoringContext): FactorResult[] {
       "willingnessToPay",
       evidenceScore(tierOnePricing, tierOnePricing.length ? 25 : 10),
       tierOnePricing,
-      tierOnePricing.length ? "Tier 1 willingness-to-pay signals, weighted by independent corroboration." : "No Tier 1 willingness-to-pay evidence; recommendations do not substitute for paid-demand proof.",
+      tierOnePricing.length
+        ? "Tier 1 willingness-to-pay signals, weighted by independent corroboration."
+        : "No Tier 1 willingness-to-pay evidence; recommendations do not substitute for paid-demand proof.",
     ),
     mk(
       "buyerReachability",
-      20 + Math.min(65, demand.length * 5 + independentSources * 10),
+      20 + Math.min(65, weightedDemand * 6 + independentSources * 9),
       demand,
       "Demand volume and independently sourced communities.",
     ),
@@ -190,7 +217,7 @@ export function computeFactors(ctx: ScoringContext): FactorResult[] {
     mk(
       "competitionGap",
       65 - ctx.competitors.length * 8 + explicitGaps.length * 10 +
-        Math.min(15, gapEvidence.length * 5),
+        Math.min(15, weightedGapEvidence * 5),
       gapEvidence,
       "Competitive density adjusted by explicit normalized gaps and gap-language evidence.",
     ),
@@ -214,13 +241,17 @@ export function computeFactors(ctx: ScoringContext): FactorResult[] {
     ),
     mk(
       "founderFit",
-      25 + Math.min(45, usableEvidence.filter((e) => (e.source_tier ?? 3) <= 2).length * 7),
+      25 +
+        Math.min(
+          45,
+          usableEvidence.filter((e) => (e.source_tier ?? 3) <= 2).length * 7,
+        ),
       usableEvidence,
       "Run-specific evidence access and domain signal coverage; no unsupported founder biography is inferred.",
     ),
     mk(
       "distributionClarity",
-      20 + Math.min(65, demand.length * 7 + ctx.launchStrategyCount * 6),
+      20 + Math.min(65, weightedDemand * 7 + ctx.launchStrategyCount * 6),
       demand,
       "Demand evidence plus persisted launch-channel specificity.",
     ),

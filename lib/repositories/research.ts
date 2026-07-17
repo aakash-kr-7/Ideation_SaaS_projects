@@ -3,6 +3,8 @@ import { Tables } from '../types'
 
 export type ResearchRunRow = Tables<'research_runs'>
 
+type ResearchRunCreate = Omit<ResearchRunRow, 'id' | 'created_at' | 'updated_at' | 'progress' | 'status' | 'error_message' | 'progress_detail' | 'retrieval_budget_limited' | 'retrieval_coverage' | 'retrieval_coverage_gaps' | 'retrieval_sufficient'>
+
 export const ResearchRepository = {
   async getProjectRuns(projectId: string) {
     const supabase = await createClient()
@@ -16,7 +18,7 @@ export const ResearchRepository = {
     return data
   },
 
-  async createResearchRun(run: Omit<ResearchRunRow, 'id' | 'created_at' | 'updated_at' | 'progress' | 'status' | 'error_message'>) {
+  async createResearchRun(run: ResearchRunCreate) {
     const supabase = await createClient()
     const { data, error } = await supabase
       .from('research_runs')
