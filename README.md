@@ -1,67 +1,38 @@
-# SignalFit
+# ShouldBuild
 
-SignalFit is an evidence-backed market-validation SaaS. An authenticated user submits a product idea; SignalFit searches the public web, extracts source material, structures and deduplicates evidence, scores the opportunity across 12 deterministic factors, and stores a cited decision report with one of five verdicts: Build Now, Validate First, Niche Down, Weak Signal, or Avoid.
+ShouldBuild is an evidence-backed market-validation application. A signed-in user describes a product idea; the research pipeline gathers public evidence and produces a cited report with deterministic scoring across 12 factors and one of five verdicts: Build Now, Validate First, Niche Down, Weak Signal, or Avoid.
 
-## Architecture
+> **Launch status:** the application builds and its core research tests pass, but it is not ready for a paid public launch. Billing, plan enforcement, production security controls, monitoring, legal pages, and hosted end-to-end verification remain. See [REMAINING_WORK.md](./REMAINING_WORK.md).
 
-```text
-Next.js App Router
-  -> authenticated research_runs insert
-  -> authenticated dispatch to Supabase Edge Function
-  -> Tavily search
-  -> Firecrawl extraction
-  -> Groq reasoning (Cerebras fallback)
-  -> Cohere embeddings
-  -> normalized Postgres records + report_versions
-  -> Supabase Realtime progress
-```
+## Implemented
 
-Postgres, Auth, Realtime, Storage, and Edge Functions run on Supabase. The live public API exposes 37 tables. Every tenant-owned table is protected by Row Level Security through the run -> project -> team relationship. `scoring_weights` is the documented exception: it is global reference data readable by every authenticated user and is not tenant-owned. The Next.js dashboard, progress API, report view, compare API, and export API read only from Supabase; no in-memory research store or mock provider is available to a real research request.
+- Next.js 15 App Router UI with Supabase Auth, onboarding, dashboard, research, live progress, reports, comparisons, settings, and a public sample report.
+- Supabase Postgres, RLS, Realtime, Storage, migrations, and one Deno Edge Function worker.
+- Tavily search, Firecrawl extraction, Cohere embeddings, Groq reasoning, and Cerebras fallback.
+- Broad, targeted, and adversarial retrieval with source tiering and citation checks.
+- Provider-free 12-factor scoring and code-owned verdict selection.
+- Immutable report versions and server-generated Markdown, JSON, CSV, and PDF exports.
+- Per-run provider cost cap, usage records, terminal failure states, and error logging.
 
-Static data used by the explicitly labelled `/sample-report` page lives in `lib/sample-reports.ts`. It is not imported by authenticated dashboards, progress views, scoring workbenches, report pages, research APIs, or the worker.
+The pricing page describes four subscription plans, but paid checkout and plan entitlements are not implemented. Existing billing and feature-limit tables are schema foundations only.
 
-## Edge source layout
-
-Supabase’s local Edge container mounts the `supabase/` directory, so worker code must not import the host application’s `lib/` tree. The permanent source of truth is:
+## System overview
 
 ```text
-supabase/functions/
-  _shared/
-    research/
-      pipeline.ts
-      providers.ts
-      status.ts
-      types.ts
-    report-schema.ts
-    scoring.ts
-    types.ts
-  research-worker/
-    index.ts
-    deno.json
+Browser
+  -> authenticated Next.js route or Server Action
+  -> Queued research_runs row
+  -> authenticated Supabase Edge Function dispatch
+  -> Tavily / Firecrawl / Cohere / Groq (Cerebras fallback)
+  -> normalized rows, deterministic score, report version, exports
+  -> Realtime progress and RLS-scoped report reads
 ```
 
-The worker imports `../_shared/research/pipeline.ts` directly. Next.js compatibility files such as `lib/scoring.ts`, `lib/report-schema.ts`, and `lib/types.ts` only re-export the shared implementation. Do not copy `lib/` into the function directory, add a vendored mirror to gitignore, or add a deploy-time source copy. Supabase bundles `functions/_shared/` as part of normal function deployment.
-
-## Canonical research status
-
-Both `research_runs.status` and the append-only `research_stages.status` history use exactly:
-
-```text
-Queued | Searching | Extracting | Normalizing | Scoring |
-Generating | Completed | Failed | Cancelled
-```
-
-The TypeScript source is `supabase/functions/_shared/research/status.ts`. A stage-history row records the same value in `stage_name` and `status`.
-
-## Provider safety and observability
-
-The production worker requires `TAVILY_API_KEY`, `FIRECRAWL_API_KEY`, `GROQ_API_KEY`, `CEREBRAS_API_KEY`, and `COHERE_API_KEY`. `CEREBRAS_MODEL` is optional and defaults to `gpt-oss-120b`; provider calls time out after 30 seconds, `REASONING_MAX_COMPLETION_TOKENS` defaults to `2048`, `REASONING_AGENT_PACING_MS` defaults to `8000`, and the reasoning phase reserves 35 seconds of its 115-second budget for Final Judge and terminal persistence. Missing credentials fail the run; no provider factory returns simulated data.
-
-Each real provider attempt, including retries and failures, writes `provider`, `operation`, token counts where the provider supplies them, estimated cost, status, and any error to `api_usage_logs`. A per-run dollar cap is enforced by `RESEARCH_RUN_COST_CAP_USD` (default `1.00`); resumed workers seed the budget from the run's persisted usage total so retries cannot reset the cap. Pipeline failures also write `error_logs`, set the run to `Failed`, and propagate a typed error to the worker.
+The worker source of truth is `supabase/functions/`. Do not copy the host application's `lib/` tree into the Edge Function.
 
 ## Local development
 
-Prerequisites: Node.js 18+, Docker Desktop, and the Supabase CLI.
+Requirements: Node.js 18+, Deno, Docker Desktop, and the Supabase CLI.
 
 ```bash
 npm install
@@ -69,40 +40,55 @@ supabase start
 npm run dev
 ```
 
-Set the Next.js Supabase variables and `WEBHOOK_SECRET` in `.env.local`. Set provider keys plus the same dedicated webhook secret in `supabase/functions/research-worker/.env`. Never use the service-role key as the webhook secret.
+1. Copy `.env.local.example` to `.env.local` for Next.js.
+2. Copy `.env.example` to `.env` only for local Google OAuth.
+3. Create ignored `supabase/functions/research-worker/.env` using [docs/Secrets.md](./docs/Secrets.md).
+4. Never commit real environment files.
 
 Checks:
 
 ```bash
 npx tsc --noEmit --incremental false
-supabase functions serve research-worker --env-file supabase/functions/research-worker/.env
+npm run test:scoring
 npm run build
 ```
 
-Google OAuth is enabled by the checked-in local `supabase/config.toml` and reads its credentials from the ignored root `.env`. Follow [docs/Auth-Setup.md](./docs/Auth-Setup.md) to configure Google Cloud, restart local Supabase, and verify a brand-new-user journey. Email/password auth remains available for local development.
+`npm run lint` is not yet a valid CI check because ESLint is unconfigured.
 
-Deployment:
+## Canonical statuses
 
-```bash
-supabase db push
-supabase secrets set --env-file supabase/functions/research-worker/.env
-supabase functions deploy research-worker --no-verify-jwt
-```
+`Queued`, `Searching`, `Extracting`, `Normalizing`, `Scoring`, `Generating`, `Completed`, `Failed`, and `Cancelled` are shared by the database, worker, API, and UI. The TypeScript source is `supabase/functions/_shared/research/status.ts`.
 
-The function performs its own dedicated bearer-secret check before parsing or processing a worker request.
-
-## Project structure
+## Project map
 
 ```text
-app/api/research/     authenticated start/progress/report/compare/export APIs
-app/research/         idea form, live progress, and stored report pages
-components/           UI and report rendering
-lib/report-data.ts    normalized, RLS-scoped production report assembly
-lib/repositories/     Next.js Supabase data access
-lib/services/         server orchestration
-lib/sample-reports.ts explicit sample-only fixtures
-supabase/migrations/  schema, RLS, Realtime, status, and usage-log migrations
-supabase/functions/   Deno worker and permanent shared runtime code
+app/                       pages and authenticated API routes
+components/                product UI and report rendering
+lib/                       auth, repositories, services, schemas, adapters
+public/                    social image and source-logo assets
+supabase/migrations/       migration-first schema and RLS
+supabase/functions/        Edge worker and shared pipeline code
+docs/                      technical and operating documentation
+REMAINING_WORK.md          canonical launch backlog
 ```
 
-See [README-BACKEND.md](./README-BACKEND.md), [README-FRONTEND.md](./README-FRONTEND.md), and [docs/Pipeline.md](./docs/Pipeline.md).
+## Documentation
+
+- [Architecture](./docs/Architecture.md)
+- [Authentication](./docs/Auth-Setup.md)
+- [Database](./docs/Database.md)
+- [Pipeline](./docs/Pipeline.md)
+- [Secrets](./docs/Secrets.md)
+- [Security](./docs/Security.md)
+- [Deployment](./docs/Deployment.md)
+- [Troubleshooting](./docs/Troubleshooting.md)
+- [Remaining work](./REMAINING_WORK.md)
+
+## Verified on 2026-07-17
+
+- `npm run build`: passed; it reports a Supabase Edge-runtime warning from middleware.
+- `npm run test:scoring`: passed, 22 tests.
+- `npm run lint`: blocked by interactive ESLint setup.
+- Dependency vulnerability audit: not completed because registry access required approval to export dependency metadata.
+
+These checks do not replace hosted migrations, live provider runs, browser E2E, RLS adversarial tests, payment tests, or production smoke tests.

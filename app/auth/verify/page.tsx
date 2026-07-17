@@ -15,7 +15,7 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     // Try to get the email from the current session or localStorage
-    const stored = typeof window !== "undefined" ? localStorage.getItem("signalfit-verify-email") : null;
+    const stored = typeof window !== "undefined" ? localStorage.getItem("shouldbuild-verify-email") : null;
     if (stored) setEmail(stored);
 
     // Check if already verified

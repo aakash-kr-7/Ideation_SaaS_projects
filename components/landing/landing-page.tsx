@@ -59,7 +59,7 @@ export function LandingPage() {
         __html: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "SoftwareApplication",
-          "name": "SignalFit",
+          "name": "ShouldBuild",
           "applicationCategory": "BusinessApplication",
           "offers": {
             "@type": "Offer",
@@ -103,7 +103,7 @@ export function LandingPage() {
         <div className="bs-hero-copy">
           <p className="bs-kicker"><Radar size={14}/> Market validation for builders</p>
           <h1>Don't guess. Run an adversarial<br/><span>market validation.</span></h1>
-          <p>SignalFit uses a multi-pass research pipeline to test your idea against real market signals. It weights willingness-to-pay over cheap talk, tries to disprove its own verdict, and delivers a cited report in ~5 minutes.</p>
+          <p>ShouldBuild uses a multi-pass research pipeline to test your idea against real market signals. It weights willingness-to-pay over cheap talk, tries to disprove its own verdict, and delivers a cited report in ~5 minutes.</p>
           <div className="bs-actions">
             <a 
               className="bs-btn bs-btn-bright" 
@@ -201,12 +201,12 @@ export function LandingPage() {
       <section className="bs-value">
         <div className="bs-section-head">
           <p className="bs-kicker">Limitations</p>
-          <h2>What SignalFit is not.</h2>
+          <h2>What ShouldBuild is not.</h2>
           <p>A credible tool knows its limits. We use data to kill bad ideas quickly, not magic to predict the future.</p>
         </div>
         <div className="bs-verdicts">
-          <VerdictCard cls="weak" title="Not a replacement for customers" desc="SignalFit structures market evidence into a verdict, but you still need to talk to real buyers to close them."/>
-          <VerdictCard cls="avoid" title="Not an 'AI generator'" desc="We do not hallucinate business plans. Every claim in a SignalFit report is tied to cited, verifiable source material."/>
+          <VerdictCard cls="weak" title="Not a replacement for customers" desc="ShouldBuild structures market evidence into a verdict, but you still need to talk to real buyers to close them."/>
+          <VerdictCard cls="avoid" title="Not an 'AI generator'" desc="We do not hallucinate business plans. Every claim in a ShouldBuild report is tied to cited, verifiable source material."/>
           <VerdictCard cls="niche" title="Not an execution guarantee" desc="We can tell you if the market wants it and what to build first. The rest is on you."/>
         </div>
       </section>
@@ -244,7 +244,7 @@ export function LandingPage() {
     </main>
     <footer>
       <Brand/>
-      <span>SignalFit · Know what to build before you build it.</span>
+      <span>ShouldBuild · Know what to build before you build it.</span>
       <span style={{ marginLeft: "auto", fontSize: "0.85em", color: "var(--dusty)", display: "flex", alignItems: "center", gap: 4 }}><ShieldCheck size={12}/> Data isolated via Supabase Row Level Security</span>
     </footer>
   </div>;
@@ -253,7 +253,7 @@ export function LandingPage() {
 function MemoPreview({ expanded = false }: { expanded?: boolean }) {
   return <div className={`bs-product-frame${expanded ? " expanded" : ""}`}>
     <div className="bs-window">
-      <header><span className="bs-window-dot"/><span>SIGNALFIT / VALIDATION REPORT</span><i>SAMPLE DATA</i></header>
+      <header><span className="bs-window-dot"/><span>SHOULDBUILD / VALIDATION REPORT</span><i>SAMPLE DATA</i></header>
       <aside>
         <b>82</b>
         <span className="active">Verdict</span>

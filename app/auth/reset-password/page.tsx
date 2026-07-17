@@ -73,7 +73,7 @@ export default function ResetPasswordPage() {
         </div>
         <div className="auth-copy">
           <h1>Set new password</h1>
-          <p>Choose a strong password for your SignalFit account.</p>
+          <p>Choose a strong password for your ShouldBuild account.</p>
         </div>
 
         {error && (

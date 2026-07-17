@@ -1,25 +1,43 @@
-# SignalFit Backend Architecture
+# Architecture
 
-## Overview
-SignalFit uses Next.js (App Router) backed by Supabase (PostgreSQL). The backend logic is organized into standard layers to ensure maintainability and separation of concerns.
+Last reconciled with the repository on 2026-07-17.
 
-## Service Layer (`lib/services/`)
-This is the entry point for all business logic.
-- Route Handlers (`app/api/...`) and Server Actions must only call Services.
-- **Never** write direct database queries or raw SQL in UI components or route handlers.
+ShouldBuild is a Next.js 15 App Router application backed by Supabase Postgres, Auth, Realtime, Storage, and a Deno Edge Function. Browser and Next.js access uses the signed-in user's session; the worker uses the service role and a dedicated dispatch secret.
 
-## Repository Layer (`lib/repositories/`)
-Repositories act as the single source of truth for database interactions.
-- All repositories import the typed Supabase server client (`lib/supabase/server.ts`).
-- Returns typed rows mapping directly to the Supabase Database types.
-- Centralizes error handling for data access.
+```text
+Next.js UI -> validated RLS-scoped run insert -> research-worker dispatch
+  -> evidence/reasoning pipeline -> normalized data, report, exports
+  -> Supabase Realtime progress and RLS-scoped reads
+```
 
-## Background worker dispatch
-Long-running extraction and generation work is offloaded to a Supabase Edge Function.
+## Boundaries
 
-1. The authenticated Next.js route or Server Action inserts a `Queued` row into `research_runs`.
-2. The same server request directly POSTs the run record to `functions/v1/research-worker` with the dedicated `WEBHOOK_SECRET`. No database webhook is required.
-3. The worker atomically claims the `Queued` row as `Searching`, schedules background work, and writes normalized records and stage history back to Postgres.
-4. Supabase Realtime notifies the progress UI of `research_runs` and `research_stages` changes.
+- `app/`: pages and route handlers.
+- `components/`: UI; authenticated report pages do not import samples.
+- `lib/repositories/` and `lib/services/`: reusable data access and orchestration.
+- `lib/actions/`: Server Actions. Research dispatch currently exists here and in the REST start route and should be consolidated.
+- `lib/report-data.ts`: production report assembly from normalized records.
+- `lib/sample-reports.ts`: fixtures allowed only on the labelled public sample route.
+- `supabase/functions/`: permanent worker source; it must not import the host `lib/` tree.
 
-The canonical statuses are `Queued`, `Searching`, `Extracting`, `Normalizing`, `Scoring`, `Generating`, `Completed`, `Failed`, and `Cancelled`.
+Some routes still query Supabase directly, so repository/service layering is a convention under migration, not an enforced invariant.
+
+## Auth and tenancy
+
+Supabase Auth uses PKCE. Middleware refreshes sessions, protects workspace pages, and routes incomplete profiles to onboarding. Tenant ownership resolves through `research_runs -> projects -> teams -> team_members`. RLS is the browser/server security boundary. The service-role worker bypasses RLS and must validate its secret and expected run state.
+
+Middleware allows all `/api/*` paths through, so each private route must explicitly authenticate or deliberately rely on RLS. New routes must never assume middleware authenticated them.
+
+## Background work and reports
+
+The app inserts a `Queued` run and directly calls `functions/v1/research-worker`; do not add a database webhook. The worker atomically claims the expected state, runs in `EdgeRuntime.waitUntil`, and persists status history, normalized output, an immutable report version, and four private Storage exports.
+
+## Known gaps
+
+- No checkout, payment webhooks, entitlement service, or atomic quota enforcement.
+- Duplicate research dispatch paths.
+- No durable queue/dead-letter system beyond state claiming and Edge background work.
+- No automated browser E2E or disposable-Supabase integration suite.
+- Middleware build emits a Supabase Edge-runtime compatibility warning.
+
+See [../REMAINING_WORK.md](../REMAINING_WORK.md).

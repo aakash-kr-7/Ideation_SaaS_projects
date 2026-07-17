@@ -308,7 +308,7 @@ class PdfPage {
 }
 
 function addRunningHeader(page: PdfPage, section: string, title: string) {
-  page.text("SIGNALFIT", MARGIN, 35, 8, "F2", COLORS.navy);
+  page.text("SHOULDBUILD", MARGIN, 35, 8, "F2", COLORS.navy);
   page.text(
     section.toUpperCase(),
     PAGE_WIDTH - MARGIN - Math.max(70, section.length * 5.2),
@@ -329,7 +329,7 @@ function buildCover(
 ) {
   const page = new PdfPage(COLORS.midnight);
   page.rect(0, 0, 8, PAGE_HEIGHT, COLORS.teal);
-  page.text("SIGNALFIT", MARGIN + 8, 43, 10, "F2", COLORS.white);
+  page.text("SHOULDBUILD", MARGIN + 8, 43, 10, "F2", COLORS.white);
   page.text("MARKET VALIDATION DOSSIER", MARGIN + 8, 82, 7, "F2", [
     0.49,
     0.77,
@@ -1073,7 +1073,7 @@ function serialize(pages: PdfPage[]) {
       dark ? [0.12, 0.29, 0.36] : COLORS.mist,
     );
     page.text(
-      "SignalFit / evidence-led market validation",
+      "ShouldBuild / evidence-led market validation",
       MARGIN,
       767,
       6.2,

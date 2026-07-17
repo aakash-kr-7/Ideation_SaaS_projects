@@ -194,7 +194,7 @@ export default function SettingsPage() {
             <KeyRound size={19} />
             <div>
               <h3>API Access</h3>
-              <p>Programmatic access to SignalFit validation reports.</p>
+              <p>Programmatic access to ShouldBuild validation reports.</p>
             </div>
           </div>
           <div className="settings-info-card">

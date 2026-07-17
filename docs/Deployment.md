@@ -1,30 +1,50 @@
-# Deployment Guide
+# Deployment
 
-## Prerequisites
-- Supabase CLI installed
-- Docker Desktop running (required for local Edge Functions and Supabase local development)
+The repository is not yet approved for a paid public launch. Use this for staging and complete every P0 gate in [../REMAINING_WORK.md](../REMAINING_WORK.md) before production.
 
-## Deploying Database Migrations
-1. Link your Supabase project (if not already linked):
+## Target layout
+
+- Next.js on a Node-compatible host.
+- One isolated Supabase project per environment for database, Auth, Realtime, Storage, and Edge Functions.
+- One canonical HTTPS domain supplied through `NEXT_PUBLIC_SITE_URL`.
+
+## Staging
+
+1. Create separate staging Supabase and application-host projects.
+2. Link and apply migrations:
+
    ```bash
-   supabase link --project-ref your-project-ref
-   ```
-2. Push your migrations to the production database:
-   ```bash
+   supabase link --project-ref STAGING_PROJECT_REF
+   supabase migration list
+   supabase db push --dry-run
    supabase db push
    ```
-   *Note: If you run into timeouts due to connection poolers on IPv4, ensure your network supports IPv6 or use the direct connection string via `--db-url`.*
 
-## Deploying Edge Functions
-1. Deploy the background worker to Supabase:
+3. Set worker secrets and deploy:
+
    ```bash
+   supabase secrets set --env-file supabase/functions/research-worker/.env
    supabase functions deploy research-worker --no-verify-jwt
    ```
-2. Configure the same dedicated `WEBHOOK_SECRET` in the Next.js server and Edge Function. The authenticated start route and Server Action directly POST to `functions/v1/research-worker`; do not add a database webhook, which would dispatch each run twice.
-3. Set Tavily, Firecrawl, Groq, Cerebras, and Cohere provider keys as described in [Secrets.md](Secrets.md).
 
-## Updating Types
-If you modify your migrations, run the following command to update TypeScript types in the Next.js app:
-```bash
-supabase gen types typescript --linked > lib/types.ts
-```
+   `--no-verify-jwt` is intentional only because the worker validates `WEBHOOK_SECRET`. Never expose that secret to the browser.
+
+4. Configure application variables from [Secrets.md](./Secrets.md) and auth from [Auth-Setup.md](./Auth-Setup.md).
+5. Build/deploy Next.js and run the smoke test below with a brand-new account.
+
+Do not add a database webhook; the app already dispatches the worker directly.
+
+## Mandatory smoke test
+
+- Landing, pricing, sample, robots, sitemap, and social image load on the canonical domain.
+- New sign-up/OAuth, onboarding, refresh, and sign-out work.
+- Fast and Deep modes reach a terminal state.
+- A completed report has citations, all normalized sections, and a consistent verdict.
+- Markdown, JSON, CSV, and PDF download and open.
+- Dashboard, compare, settings, and protected redirects work on desktop/mobile.
+- Cross-account run, report, export, team, and profile access is rejected.
+- Provider and cost-cap failures become visible `Failed` runs.
+
+## Production promotion
+
+Production needs isolated secrets, OAuth, payment webhook, monitoring, alerting, backups, legal pages, support, and rollback ownership. Apply migrations before dependent code; deploy the worker before enabling submissions. Record the commit, migration head, worker version, environment owners, smoke evidence, and rollback steps in the release ticket.

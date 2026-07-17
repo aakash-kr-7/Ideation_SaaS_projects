@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 
 /**
- * SignalFit motion vocabulary.
+ * ShouldBuild motion vocabulary.
  *
  * Curves
  * - `swift` (160ms): direct manipulation. It gets out of the pointer's way.

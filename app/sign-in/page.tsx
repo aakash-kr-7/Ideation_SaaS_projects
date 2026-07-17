@@ -90,7 +90,7 @@ function SignInCard() {
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) {
         if (signInError.message.includes("Email not confirmed")) {
-          localStorage.setItem("signalfit-verify-email", email);
+          localStorage.setItem("shouldbuild-verify-email", email);
           router.push("/auth/verify");
           return;
         }
@@ -135,7 +135,7 @@ function SignInCard() {
         setLoading(false);
         return;
       }
-      localStorage.setItem("signalfit-verify-email", email);
+      localStorage.setItem("shouldbuild-verify-email", email);
       router.push("/auth/verify");
     } catch (e: any) {
       setError(e.message || "An unexpected error occurred.");
@@ -178,7 +178,7 @@ function SignInCard() {
       {view === "sign-in" && (
         <div className="auth-view auth-view-enter">
           <div className="auth-copy">
-            <p className="eyebrow">SIGNALFIT VALIDATION PLATFORM</p>
+            <p className="eyebrow">SHOULDBUILD VALIDATION PLATFORM</p>
             <h1>Welcome back</h1>
             <p>Sign in to access your validation reports and research workspace.</p>
           </div>

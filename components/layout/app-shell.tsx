@@ -150,9 +150,9 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
             <Circle size={10} fill="currentColor" />
             {user
               ? <span><b>Free plan</b><small>1 scan remaining this month</small></span>
-              : <span><b>Explore SignalFit</b><small>Sign in to start validating</small></span>}
+              : <span><b>Explore ShouldBuild</b><small>Sign in to start validating</small></span>}
           </div>
-          <p className="sidebar-footnote">SIGNALFIT · VALIDATE FIRST</p>
+          <p className="sidebar-footnote">SHOULDBUILD · VALIDATE FIRST</p>
         </div>
       </aside>
 

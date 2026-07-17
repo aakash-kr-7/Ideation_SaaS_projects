@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════
-   SIGNALFIT — PREMIUM DESIGN SYSTEM
+   SHOULDBUILD — PREMIUM DESIGN SYSTEM
    Market validation intelligence for builders
    ═══════════════════════════════════════════════════════ */
 
@@ -1894,7 +1894,7 @@ body::before { content:""; position:fixed; z-index:-1; inset:0; background:var(-
   * { color: #000 !important; background: #fff !important; border-color: #ddd !important; }
 }
 /* ==========================================================================
-   SIGNALFIT MOTION & DEPTH PASS
+   SHOULDBUILD MOTION & DEPTH PASS
    Presentation only. Existing copy, palette, typography and structure remain.
    ========================================================================== */
 
@@ -2294,7 +2294,7 @@ body::before { content:""; position:fixed; z-index:-1; inset:0; background:var(-
 }
 
 /* ==========================================================================
-   IVORY INTELLIGENCE — 2026 SIGNALFIT VISUAL SYSTEM
+   IVORY INTELLIGENCE — 2026 SHOULDBUILD VISUAL SYSTEM
    Navy establishes authority; teal carries action; blue is reserved for proof.
    ========================================================================== */
 

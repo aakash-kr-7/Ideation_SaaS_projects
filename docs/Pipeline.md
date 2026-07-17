@@ -1,4 +1,6 @@
-# SignalFit evidence and reasoning pipeline
+# ShouldBuild evidence and reasoning pipeline
+
+Last reconciled with the worker and tests on 2026-07-17. The deterministic research suite currently contains 22 passing tests; live hosted provider and full browser verification are still launch gates tracked in [../REMAINING_WORK.md](../REMAINING_WORK.md).
 
 A research request is always authenticated and database-backed. The API inserts a `Queued` run, dispatches the Edge worker with a dedicated bearer secret, and returns a progress URL. The worker atomically claims only a `Queued` row, schedules the pipeline, and returns `202`.
 

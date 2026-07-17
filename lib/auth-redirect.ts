@@ -13,8 +13,8 @@ export function safeAuthRedirect(
   }
 
   try {
-    const parsed = new URL(value, "http://signalfit.local");
-    return parsed.origin === "http://signalfit.local"
+    const parsed = new URL(value, "http://shouldbuild.local");
+    return parsed.origin === "http://shouldbuild.local"
       ? `${parsed.pathname}${parsed.search}${parsed.hash}`
       : fallback;
   } catch {

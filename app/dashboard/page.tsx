@@ -120,7 +120,7 @@ export default async function DashboardPage() {
             <div className="empty-state-icon">
               <Sparkles size={28} />
             </div>
-            <h2>Welcome to SignalFit</h2>
+            <h2>Welcome to ShouldBuild</h2>
             <p>
               Describe your first product idea and get a market-backed verdict in minutes.
               We&apos;ll analyze buyer pain, competition, pricing, risks, and give you a concrete next step.

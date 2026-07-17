@@ -22,7 +22,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!data || !stored) return NextResponse.json({ error: "Stored export is not ready" }, { status: 409 });
   const { data: file, error: downloadError } = await supabase.storage.from("exports").download(stored.storage_path);
   if (downloadError || !file) return NextResponse.json({ error: downloadError?.message || "Export unavailable" }, { status: 403 });
-  const safeName = String(data.idea_name).replace(/[^a-z0-9-_]+/gi, "-").replace(/^-|-$/g, "") || "signalfit";
+  const safeName = String(data.idea_name).replace(/[^a-z0-9-_]+/gi, "-").replace(/^-|-$/g, "") || "shouldbuild";
   const metadata: Record<string,{type:string;ext:string}> = { json:{type:"application/json",ext:"json"}, markdown:{type:"text/markdown",ext:"md"}, csv:{type:"text/csv",ext:"csv"}, pdf:{type:"application/pdf",ext:"pdf"} };
   const meta = metadata[requested] || metadata.json;
   return new NextResponse(await file.arrayBuffer(), { headers: { "Content-Type": meta.type, "Content-Disposition": `attachment; filename="${safeName}-report.${meta.ext}"`, "X-SignalFit-Storage-Path": stored.storage_path } });

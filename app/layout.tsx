@@ -3,21 +3,21 @@ import "./globals.css";
 import { AuthProvider } from "@/components/layout/auth-provider";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://signalfit.app"),
-  title: "SignalFit — Startup Idea Validation Tool",
-  description: "Automated product-market fit research. SignalFit uses a multi-pass pipeline to test your idea against real market signals and delivers a 12-factor cited verdict.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://shouldbuild.app"),
+  title: "ShouldBuild — Startup Idea Validation Tool",
+  description: "Automated product-market fit research. ShouldBuild uses a multi-pass pipeline to test your idea against real market signals and delivers a 12-factor cited verdict.",
   alternates: {
     canonical: "/",
   },
   openGraph: { 
-    title: "SignalFit — Startup Idea Validation Tool", 
+    title: "ShouldBuild — Startup Idea Validation Tool", 
     description: "Automated product-market fit research. Run your startup idea through an adversarial pipeline to find willingness-to-pay and competitor gaps.",
     type: "website",
     url: "/",
   },
   twitter: { 
     card: "summary_large_image", 
-    title: "SignalFit — Automated Market Validation",
+    title: "ShouldBuild — Automated Market Validation",
     description: "Test your startup idea against real market signals in minutes.",
   },
 };

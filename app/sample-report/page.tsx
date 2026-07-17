@@ -7,5 +7,5 @@ export default async function SampleReportPage({ searchParams }: { searchParams:
   const { id } = await searchParams;
   const report = validationReports.find(r => r.opportunity.id === id) || validationReports[0];
 
-  return <main className="sample-report-page"><header><Link href="/"><ArrowLeft size={15}/>Back to SignalFit</Link><span>PUBLIC SAMPLE REPORT</span></header><ValidationReport report={report} publicMode/></main>;
+  return <main className="sample-report-page"><header><Link href="/"><ArrowLeft size={15}/>Back to ShouldBuild</Link><span>PUBLIC SAMPLE REPORT</span></header><ValidationReport report={report} publicMode/></main>;
 }

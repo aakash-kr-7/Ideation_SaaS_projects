@@ -20,7 +20,7 @@ interface TourStep {
 const tourSteps: TourStep[] = [
   {
     icon: Sparkles,
-    section: "Welcome to SignalFit",
+    section: "Welcome to ShouldBuild",
     title: "Validate first. Build with evidence.",
     body: "This quick walkthrough shows where each workflow lives and how to move from an idea to a decision-ready report.",
     tip: "You can replay this tour anytime from your profile menu.",
@@ -37,7 +37,7 @@ const tourSteps: TourStep[] = [
     icon: Plus,
     section: "Validate idea",
     title: "Start with one specific buyer problem",
-    body: "Describe the buyer, their current workaround, and the outcome they need. SignalFit turns that brief into a structured market scan.",
+    body: "Describe the buyer, their current workaround, and the outcome they need. ShouldBuild turns that brief into a structured market scan.",
     tip: "Specific buyers create much stronger evidence than broad audiences.",
     selector: '[data-tour="nav-research-new"]',
   },
