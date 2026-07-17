@@ -53,6 +53,22 @@ export function LandingPage() {
   };
 
   return <div className="bs-modern">
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "name": "SignalFit",
+          "applicationCategory": "BusinessApplication",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        })
+      }}
+    />
     <header className="bs-nav">
       <Brand/>
       <nav>
@@ -86,8 +102,8 @@ export function LandingPage() {
       <section className="bs-hero">
         <div className="bs-hero-copy">
           <p className="bs-kicker"><Radar size={14}/> Market validation for builders</p>
-          <h1>Stop building products<br/>nobody <span>wants.</span></h1>
-          <p>Describe your idea. Get a market-backed verdict — Build Now, Validate First, Niche Down, or Avoid — with buyer pain, competition, pricing, risks, and a first-customer plan.</p>
+          <h1>Don't guess. Run an adversarial<br/><span>market validation.</span></h1>
+          <p>SignalFit uses a multi-pass research pipeline to test your idea against real market signals. It weights willingness-to-pay over cheap talk, tries to disprove its own verdict, and delivers a cited report in ~5 minutes.</p>
           <div className="bs-actions">
             <a 
               className="bs-btn bs-btn-bright" 
@@ -143,14 +159,14 @@ export function LandingPage() {
       {/* ── HOW IT WORKS ── */}
       <section className="bs-proof">
         <div className="bs-section-head">
-          <p className="bs-kicker">How it works</p>
-          <h2>From raw idea to market-backed verdict in minutes.</h2>
-          <p>Three steps. No guessing. No weeks of manual research. Just a clear answer on whether to build, validate, narrow down, or walk away.</p>
+          <p className="bs-kicker">The methodology</p>
+          <h2>Built to try and prove itself wrong.</h2>
+          <p>We don't just look for people agreeing with your idea. The pipeline is actively adversarial, searching for existing workarounds and reasons not to build before finalizing a 12-factor score.</p>
         </div>
         <div className="bs-loop">
-          <Brief number="01" title="Describe your idea" text="Tell us the product, the target buyer, and the problem it solves. Takes about 30 seconds."/>
-          <Brief number="02" title="We analyze the market" text="SignalFit scans Reddit, G2, Product Hunt, competitor pricing, and 6 more source categories for real market signals."/>
-          <Brief number="03" title="Get your verdict" text="Receive a scored report with a clear verdict — Build Now, Validate First, Niche Down, or Avoid — plus your exact next steps."/>
+          <Brief number="01" title="Multi-Pass Research" text="The engine runs broad, targeted, and explicitly disconfirming search passes across forums, competitor sites, and directories."/>
+          <Brief number="02" title="Source Tiering" text="Not all signals are equal. We weight willingness-to-pay evidence higher than discussion-only evidence."/>
+          <Brief number="03" title="Adversarial Verdict Gate" text="Before finalizing the score, the system actively challenges its own conclusion to prevent confirmation bias, delivering a cited report."/>
         </div>
       </section>
 
@@ -179,6 +195,20 @@ export function LandingPage() {
         </div>
         <MemoPreview expanded/>
         <Link className="bs-btn bs-btn-outline" href="/sample-report">Read the full sample report <ArrowRight size={15}/></Link>
+      </section>
+
+      {/* ── WHAT THIS IS NOT ── */}
+      <section className="bs-value">
+        <div className="bs-section-head">
+          <p className="bs-kicker">Limitations</p>
+          <h2>What SignalFit is not.</h2>
+          <p>A credible tool knows its limits. We use data to kill bad ideas quickly, not magic to predict the future.</p>
+        </div>
+        <div className="bs-verdicts">
+          <VerdictCard cls="weak" title="Not a replacement for customers" desc="SignalFit structures market evidence into a verdict, but you still need to talk to real buyers to close them."/>
+          <VerdictCard cls="avoid" title="Not an 'AI generator'" desc="We do not hallucinate business plans. Every claim in a SignalFit report is tied to cited, verifiable source material."/>
+          <VerdictCard cls="niche" title="Not an execution guarantee" desc="We can tell you if the market wants it and what to build first. The rest is on you."/>
+        </div>
       </section>
 
       {/* ── PRICING ── */}
@@ -212,7 +242,11 @@ export function LandingPage() {
         </a>
       </section>
     </main>
-    <footer><Brand/><span>SignalFit · Know what to build before you build it.</span></footer>
+    <footer>
+      <Brand/>
+      <span>SignalFit · Know what to build before you build it.</span>
+      <span style={{ marginLeft: "auto", fontSize: "0.85em", color: "var(--dusty)", display: "flex", alignItems: "center", gap: 4 }}><ShieldCheck size={12}/> Data isolated via Supabase Row Level Security</span>
+    </footer>
   </div>;
 }
 

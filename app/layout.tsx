@@ -4,10 +4,22 @@ import { AuthProvider } from "@/components/layout/auth-provider";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://signalfit.app"),
-  title: "SignalFit — Know what to build before you build it",
-  description: "Validate your product idea in minutes. See buyer pain, competition, pricing, risks, MVP scope, and a clear build/validate/avoid verdict — backed by real market signals.",
-  openGraph: { title: "SignalFit — Stop building products nobody wants.", description: "Get a market-backed verdict on your product idea. Buyer pain, competition, pricing, risks, MVP scope, and your first-customer plan — in one report." },
-  twitter: { card: "summary_large_image", title: "SignalFit — Validate before you build." },
+  title: "SignalFit — Startup Idea Validation Tool",
+  description: "Automated product-market fit research. SignalFit uses a multi-pass pipeline to test your idea against real market signals and delivers a 12-factor cited verdict.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: { 
+    title: "SignalFit — Startup Idea Validation Tool", 
+    description: "Automated product-market fit research. Run your startup idea through an adversarial pipeline to find willingness-to-pay and competitor gaps.",
+    type: "website",
+    url: "/",
+  },
+  twitter: { 
+    card: "summary_large_image", 
+    title: "SignalFit — Automated Market Validation",
+    description: "Test your startup idea against real market signals in minutes.",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
