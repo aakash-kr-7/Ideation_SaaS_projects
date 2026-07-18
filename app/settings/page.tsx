@@ -169,11 +169,11 @@ export default function SettingsPage() {
             <Database size={19} />
             <div>
               <h3>Data &amp; Storage</h3>
-              <p>Your validation reports and evidence are stored securely in Supabase.</p>
+              <p>Your validation reports and evidence use tenant-scoped Supabase storage.</p>
             </div>
           </div>
           <div className="settings-info-card">
-            <p>All research data is stored securely and linked to your account. Reports are exportable as Markdown, JSON, CSV, or PDF from any report page.</p>
+            <p>Full Validation supports PDF, Markdown, CSV, and JSON exports. Quick Scan supports PDF. Export buttons appear only when the stored report includes that format.</p>
           </div>
         </section>
 
@@ -186,7 +186,7 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="settings-info-card settings-support-links">
-            <p>Contact <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> for account deletion, privacy requests, report issues, or billing support.</p>
+            <p>Contact <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> for account deletion, privacy requests, report issues, or access questions. Paid checkout is not currently available.</p>
             <div><Link href="/support">Support</Link><Link href="/legal/privacy">Privacy</Link><Link href="/legal/terms">Terms</Link><Link href="/legal/refunds">Refunds</Link></div>
           </div>
         </section>

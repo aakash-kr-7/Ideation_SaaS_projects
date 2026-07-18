@@ -117,3 +117,19 @@ Deno.test("PDF wraps citations across pages without truncating them", () => {
   assert(/\/Count [2-9]/.test(pdf), "long report was not paginated");
   assert(pdf.includes(evidenceIds.at(-1)!), "final evidence ID was truncated");
 });
+
+Deno.test("text exports preserve UTF-8 and PDF encodes WinAnsi punctuation and accents", () => {
+  const international = {
+    ...input,
+    ideaName: "Café validation — São Paulo",
+    executiveSummary: "Buyers said “não” before paying €10.",
+  };
+  const csv = renderCsv(international);
+  const markdown = renderMarkdown(international);
+  const json = renderJson({ ...international, payload: { content: international.executiveSummary } });
+  const pdf = new TextDecoder().decode(renderPdf(international));
+  assert(csv.charCodeAt(0) === 0xfeff, "CSV is missing its UTF-8 BOM");
+  assert(markdown.includes("Café validation — São Paulo"), "Markdown lost UTF-8 text");
+  assert(json.includes("não"), "JSON lost UTF-8 text");
+  assert(pdf.includes("Caf\\351 validation \\227 S\\343o Paulo"), "PDF did not encode WinAnsi text safely");
+});

@@ -6,7 +6,7 @@ import { scoringCriteria } from "@/lib/scoring";
 
 export type StoredExportFormat="json"|"markdown"|"csv"|"pdf";
 export type StoredExport={format:StoredExportFormat;storagePath:string;byteSize:number};
-export type LoadedReport={report:ValidationReport;exports:StoredExport[];sourceCount:number};
+export type LoadedReport={report:ValidationReport;exports:StoredExport[]};
 export type CompletedScorecard={id:string;name:string;scorecard:OpportunityScorecard};
 
 const reportSelect=`
@@ -36,21 +36,16 @@ function mapReport(row:any):LoadedReport{
   if(!parsed.success)throw new Error(`Completed report ${row.run_id} failed payload validation: ${parsed.error.message}`);
   return {
     report:parsed.data as ValidationReport,
-    exports:(latestVersion?.report_exports??[]).map((item:any)=>({format:item.format,storagePath:item.storage_path,byteSize:Number(item.byte_size)})),
-    sourceCount:0
+    exports:(latestVersion?.report_exports??[]).map((item:any)=>({format:item.format,storagePath:item.storage_path,byteSize:Number(item.byte_size)}))
   };
 }
 
 export async function loadReportForRun(runId:string):Promise<LoadedReport|null>{
   const supabase=await createClient();
-  const [{data,error},sources]=await Promise.all([
-    supabase.from("reports").select(reportSelect).eq("run_id",runId).maybeSingle(),
-    supabase.from("sources").select("id",{count:"exact",head:true}).eq("run_id",runId)
-  ]);
+  const {data,error}=await supabase.from("reports").select(reportSelect).eq("run_id",runId).maybeSingle();
   if(error)throw error;
-  if(sources.error)throw sources.error;
   if(!data)return null;
-  const loaded=mapReport(data);loaded.sourceCount=sources.count??0;return loaded;
+  return mapReport(data);
 }
 
 export async function loadCompletedReports():Promise<LoadedReport[]>{

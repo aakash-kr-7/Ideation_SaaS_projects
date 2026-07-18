@@ -15,7 +15,7 @@ export default async function DynamicResultsPage({ params }: { params: Promise<{
     return (
       <AppShell title="Validation report">
         <div className="page-content">
-          <ValidationReport report={loaded.report} runId={id} sourceCount={loaded.sourceCount} />
+          <ValidationReport report={loaded.report} runId={id} />
         </div>
       </AppShell>
     );

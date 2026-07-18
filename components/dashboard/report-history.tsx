@@ -4,17 +4,17 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { getReportModeConfig, type ReportMode } from "@/lib/report-modes";
+import { filterReportHistory, type HistoryFilter } from "@/lib/report-mode-ui";
 
 type HistoryRun = {
   id: string; ideaName: string; mode: ReportMode; status: string; createdAt: string;
   score?: number; verdict?: string; sourceCount: number;
 };
-type Filter = "all" | "quick" | "full" | "completed" | "failed" | "progress";
-const filters: Array<[Filter, string]> = [["all", "All"], ["quick", "Quick Scans"], ["full", "Full Validations"], ["completed", "Completed"], ["failed", "Failed"], ["progress", "In progress"]];
+const filters: Array<[HistoryFilter, string]> = [["all", "All"], ["quick", "Quick Scan"], ["full", "Full Validation"], ["completed", "Completed"], ["failed", "Failed"], ["progress", "In progress"]];
 
 export function ReportHistory({ runs }: { runs: HistoryRun[] }) {
-  const [filter, setFilter] = useState<Filter>("all");
-  const visible = runs.filter(run => filter === "all" || (filter === "quick" && run.mode === "quick_scan") || (filter === "full" && run.mode === "full_validation") || (filter === "completed" && run.status === "Completed") || (filter === "failed" && run.status === "Failed") || (filter === "progress" && !["Completed", "Failed", "Cancelled"].includes(run.status)));
+  const [filter, setFilter] = useState<HistoryFilter>("all");
+  const visible = filterReportHistory(runs, filter);
   return <>
     <div className="report-history-filters" role="group" aria-label="Filter report history">
       {filters.map(([value, label]) => <button type="button" key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}

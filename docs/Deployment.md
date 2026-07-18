@@ -1,6 +1,6 @@
 # Deployment
 
-The repository is not yet approved for a paid public launch. Use this for staging and complete every P0 gate in [../REMAINING_WORK.md](../REMAINING_WORK.md) before production.
+The repository has no paid checkout. Use this for staging and require current security, provider, tenancy, migration, and browser smoke evidence before production.
 
 ## Target layout
 
@@ -38,13 +38,13 @@ Do not add a database webhook; the app already dispatches the worker directly.
 
 - Landing, pricing, sample, robots, sitemap, and social image load on the canonical domain.
 - New sign-up/OAuth, onboarding, refresh, and sign-out work.
-- Fast and Deep modes reach a terminal state.
+- Quick Scan and Full Validation reach an honest terminal state.
 - A completed report has citations, all normalized sections, and a consistent verdict.
-- Markdown, JSON, CSV, and PDF download and open.
+- Quick Scan PDF downloads and opens; Full Validation Markdown, JSON, CSV, and PDF downloads and open.
 - Dashboard, compare, settings, and protected redirects work on desktop/mobile.
 - Cross-account run, report, export, team, and profile access is rejected.
 - Provider and cost-cap failures become visible `Failed` runs.
 
 ## Production promotion
 
-Production needs isolated secrets, OAuth, payment webhook, monitoring, alerting, backups, legal pages, support, and rollback ownership. Apply migrations before dependent code; deploy the worker before enabling submissions. Record the commit, migration head, worker version, environment owners, smoke evidence, and rollback steps in the release ticket.
+Production needs isolated secrets, OAuth, monitoring, alerting, backups, legal review, support, and rollback ownership. A paid launch additionally requires a reviewed billing integration and webhook. Apply migrations before dependent code; deploy the worker before enabling submissions. Record the commit, migration head, worker version, environment owners, smoke evidence, and rollback steps in the release ticket.

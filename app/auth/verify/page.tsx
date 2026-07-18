@@ -78,7 +78,7 @@ export default function VerifyEmailPage() {
             <span>2</span>
             <div>
               <b>Click the verification link</b>
-              <small>The link expires in 60 minutes</small>
+              <small>Use the link before it expires</small>
             </div>
           </div>
           <div className="verify-step">

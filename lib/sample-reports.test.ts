@@ -1,13 +1,14 @@
 import { sampleFullValidation, sampleQuickScan } from "./sample-reports.ts";
 import { calculateWeightedScore } from "./scoring.ts";
 import { validationReportSchema } from "./report-schema.ts";
+import { countEvidenceSources } from "./report-mode-ui.ts";
 
 declare const Deno: { test(name: string, fn: () => void | Promise<void>): void };
 
 function assert(value: unknown, message: string) { if (!value) throw new Error(message); }
 function verify(report: typeof sampleQuickScan, expectedSources: number) {
   assert(validationReportSchema.safeParse(report).success, `${report.reportMode} payload must validate`);
-  assert(report.opportunity.evidence.length === expectedSources, `${report.reportMode} source count mismatch`);
+  assert(countEvidenceSources(report.opportunity.evidence) === expectedSources, `${report.reportMode} source count mismatch`);
   assert(report.opportunity.scorecard.total === calculateWeightedScore(report.opportunity.scorecard.scores, report.opportunity.scorecard.weights), `${report.reportMode} score was not deterministic`);
   const ids = new Set(report.opportunity.evidence.map(item => item.id));
   Object.values(report.opportunity.scorecard.evidenceRefs).flat().forEach(id => assert(ids.has(id), `${report.reportMode} score references missing evidence ${id}`));

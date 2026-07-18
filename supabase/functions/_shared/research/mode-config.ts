@@ -26,6 +26,19 @@ export interface EvidenceSufficiencyRules {
 }
 
 export interface ModeProgressStep {
+  key:
+    | "queued"
+    | "broad_research"
+    | "targeted_research"
+    | "adversarial_research"
+    | "extraction"
+    | "normalization"
+    | "specialist_analysis"
+    | "independent_checks"
+    | "deterministic_scoring"
+    | "report_generation"
+    | "exports"
+    | "completed";
   status: ResearchStatus;
   label: string;
 }
@@ -102,13 +115,16 @@ export const REPORT_MODE_CONFIG = {
       "limitations",
     ],
     progress: [
-      { status: "Queued", label: "Preparing research" },
-      { status: "Searching", label: "Searching market signals" },
-      { status: "Extracting", label: "Extracting evidence" },
-      { status: "Normalizing", label: "Normalizing findings" },
-      { status: "Scoring", label: "Scoring the opportunity" },
-      { status: "Generating", label: "Generating Quick Scan" },
-      { status: "Completed", label: "Quick Scan ready" },
+      { key: "queued", status: "Queued", label: "Preparing research" },
+      { key: "broad_research", status: "Searching", label: "Broad evidence search" },
+      { key: "adversarial_research", status: "Searching", label: "Contradictory evidence search" },
+      { key: "extraction", status: "Extracting", label: "Extracting evidence" },
+      { key: "normalization", status: "Normalizing", label: "Normalizing findings" },
+      { key: "specialist_analysis", status: "Scoring", label: "Running concise specialist analysis" },
+      { key: "deterministic_scoring", status: "Scoring", label: "Computing the 12-factor score" },
+      { key: "report_generation", status: "Generating", label: "Generating Quick Scan" },
+      { key: "exports", status: "Generating", label: "Creating PDF export" },
+      { key: "completed", status: "Completed", label: "Quick Scan ready" },
     ],
   },
   full_validation: {
@@ -159,17 +175,18 @@ export const REPORT_MODE_CONFIG = {
       "exports",
     ],
     progress: [
-      { status: "Queued", label: "Preparing research" },
-      { status: "Searching", label: "Broad market search" },
-      { status: "Searching", label: "Targeted follow-up search" },
-      { status: "Searching", label: "Adversarial research" },
-      { status: "Extracting", label: "Extracting evidence" },
-      { status: "Normalizing", label: "Normalizing findings" },
-      { status: "Scoring", label: "Running specialist analysis" },
-      { status: "Scoring", label: "Scoring the opportunity" },
-      { status: "Generating", label: "Generating Full Validation" },
-      { status: "Generating", label: "Creating exports" },
-      { status: "Completed", label: "Full Validation ready" },
+      { key: "queued", status: "Queued", label: "Preparing research" },
+      { key: "broad_research", status: "Searching", label: "Broad market search" },
+      { key: "targeted_research", status: "Searching", label: "Targeted follow-up search" },
+      { key: "adversarial_research", status: "Searching", label: "Adversarial research" },
+      { key: "extraction", status: "Extracting", label: "Extracting evidence" },
+      { key: "normalization", status: "Normalizing", label: "Normalizing findings" },
+      { key: "specialist_analysis", status: "Scoring", label: "Running specialist analysis" },
+      { key: "independent_checks", status: "Scoring", label: "Running independent checks" },
+      { key: "deterministic_scoring", status: "Scoring", label: "Computing the 12-factor score" },
+      { key: "report_generation", status: "Generating", label: "Generating Full Validation" },
+      { key: "exports", status: "Generating", label: "Creating all exports" },
+      { key: "completed", status: "Completed", label: "Full Validation ready" },
     ],
   },
 } as const satisfies Record<ReportMode, ReportModeConfig>;

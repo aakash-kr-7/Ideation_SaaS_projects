@@ -4,8 +4,8 @@ import { AuthProvider } from "@/components/layout/auth-provider";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://shouldbuild.app"),
-  title: "ShouldBuild — Startup Idea Validation Tool",
-  description: "Automated product-market fit research. ShouldBuild uses a multi-pass pipeline to test your idea against real market signals and delivers a 12-factor cited verdict.",
+  title: "ShouldBuild — Evidence-backed idea research",
+  description: "ShouldBuild searches public web sources and produces cited reports with a deterministic 12-factor score and verdict.",
   alternates: {
     canonical: "/",
   },
@@ -16,8 +16,8 @@ export const metadata: Metadata = {
     apple: "/icon.svg",
   },
   openGraph: { 
-    title: "ShouldBuild — Startup Idea Validation Tool", 
-    description: "Automated product-market fit research. Run your startup idea through an adversarial pipeline to find willingness-to-pay and competitor gaps.",
+    title: "ShouldBuild — Evidence-backed idea research", 
+    description: "Choose a Quick Scan or Full Validation and review cited public-source evidence with a deterministic score.",
     type: "website",
     url: "/",
     siteName: "ShouldBuild",
@@ -25,8 +25,8 @@ export const metadata: Metadata = {
   },
   twitter: { 
     card: "summary_large_image", 
-    title: "ShouldBuild — Automated Market Validation",
-    description: "Test your startup idea against cited market signals and an adversarial research pipeline.",
+    title: "ShouldBuild — Evidence-backed idea research",
+    description: "Review cited public-source evidence through Quick Scan or Full Validation.",
     images: ["/brand/shouldbuild-mark.svg"],
   },
 };

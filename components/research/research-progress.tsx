@@ -23,11 +23,11 @@ import { createClient } from "@/lib/supabase/client";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import { getStaggerDelay, revealUpClass, stateChangeKey } from "@/lib/motion";
 import { getReportModeConfig, type ReportMode } from "@/lib/report-modes";
+import { deriveProgressSteps } from "@/lib/report-mode-ui";
 
 type ProgressState = {
   mode: ReportMode;
   stage: ResearchStatus;
-  progress: number;
   message: string;
   evidenceCount: number;
   sourceCount: number;
@@ -172,7 +172,6 @@ export function ResearchProgress({ id }: { id: string }) {
   const [state, setState] = useState<ProgressState>({
     mode: "full_validation",
     stage: "Queued",
-    progress: 0,
     message: "Queued for analysis",
     evidenceCount: 0,
     sourceCount: 0,
@@ -299,7 +298,6 @@ export function ResearchProgress({ id }: { id: string }) {
       setState((previous) => ({
         ...previous,
         stage: run.status,
-        progress: run.progress ?? 0,
         message,
         idea: run.idea_name ?? previous.idea,
         mode: run.mode ?? previous.mode,
@@ -450,8 +448,14 @@ export function ResearchProgress({ id }: { id: string }) {
   const disputedCount = checks.filter((check) => check.disputed).length;
   const config = getReportModeConfig(state.mode);
   const isRunning = !["Completed", "Failed", "Cancelled"].includes(state.stage);
-  const statusOrder: ResearchStatus[] = ["Queued", "Searching", "Extracting", "Normalizing", "Scoring", "Generating", "Completed"];
-  const currentStatusIndex = statusOrder.indexOf(state.stage);
+  const progressSteps = deriveProgressSteps(config, {
+    stage: state.stage,
+    stageDetails: logs.map((log) => log.progress_detail ?? ""),
+    passes: passes.map((pass) => ({ passNumber: pass.pass_number, status: pass.status })),
+    checkerCount: checks.length,
+  });
+  const completedStepCount = progressSteps.filter((step) => step.state === "complete").length;
+  const measuredProgress = progressSteps.length ? Math.round((completedStepCount / progressSteps.length) * 100) : 0;
 
   return (
     <div className={`research-room premium-progress mode-${state.mode}`} aria-live="polite">
@@ -481,23 +485,20 @@ export function ResearchProgress({ id }: { id: string }) {
 
       <section
         className="research-room-progress"
-        aria-label={`${state.progress}% complete`}
+        aria-label={`${completedStepCount} of ${progressSteps.length} persisted stages complete`}
       >
         <div className="research-room-track">
-          <i style={{ width: `${state.progress}%` }} />
+          <i style={{ width: `${measuredProgress}%` }} />
         </div>
         <span>
-          <AnimatedNumber value={state.progress} />%
+          <AnimatedNumber value={completedStepCount} />/{progressSteps.length} stages
         </span>
       </section>
 
       <ol className="mode-progress-sequence" aria-label={`${config.label} progress stages`}>
-        {config.progress.map((step, index) => {
-          const stepStatusIndex = statusOrder.indexOf(step.status);
-          const complete = currentStatusIndex > stepStatusIndex || state.stage === "Completed";
-          const active = state.stage === step.status && !complete;
-          return <li key={`${step.status}-${index}`} className={complete ? "complete" : active ? "active" : "pending"}>
-            <span>{complete ? <Check size={12} /> : index + 1}</span><b>{step.label}</b>
+        {progressSteps.map((step, index) => {
+          return <li key={step.key} className={step.state}>
+            <span>{step.state === "complete" ? <Check size={12} /> : index + 1}</span><b>{step.label}</b>
           </li>;
         })}
       </ol>

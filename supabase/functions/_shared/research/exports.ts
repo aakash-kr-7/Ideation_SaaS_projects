@@ -170,7 +170,7 @@ export function renderCsv(input: ExportBundleInput) {
     note: "",
     evidenceIds: [],
   }];
-  return [
+  return `\uFEFF${[
     header,
     ...rows.map((b) =>
       [
@@ -191,7 +191,7 @@ export function renderCsv(input: ExportBundleInput) {
         JSON.stringify(integrity.decisionIntegrity || null),
       ].map(csvCell).join(",")
     ),
-  ].join("\r\n");
+  ].join("\r\n")}`;
 }
 export function renderPdf(input: ExportBundleInput): Uint8Array {
   return renderPremiumPdf(input);

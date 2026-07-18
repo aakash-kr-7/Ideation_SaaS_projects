@@ -1,6 +1,6 @@
 # Security review
 
-Last reviewed: 2026-07-17. This is an engineering review, not an independent penetration test or compliance certification.
+Last reviewed: 2026-07-18. This is an engineering review, not an independent penetration test or compliance certification.
 
 ## Existing controls
 
@@ -12,9 +12,9 @@ Last reviewed: 2026-07-17. This is an engineering review, not an independent pen
 
 ## Open findings
 
-### High — no server-side plan or quota enforcement
+### High — billing integration is intentionally absent
 
-Any authenticated user can start Fast or Deep research regardless of advertised plan. Billing and `feature_limits` are unused. Implement webhook-backed entitlements and atomically reserve quota with run creation in every start path.
+Server-side report entitlements and atomic reservation exist for Quick Scan and Full Validation. No payment provider, webhook, catalogue, subscription, renewal, or cancellation flow exists; paid access must remain visibly unavailable until those pieces and their tests are complete.
 
 ### High — `user-assets` upload is not owner-scoped
 
@@ -38,11 +38,11 @@ Middleware allows `/api/*`; some handlers authenticate explicitly while others r
 
 ### Medium — missing dependency/CI security gates
 
-ESLint, dependency auditing, secret scanning, static analysis, and automated updates are absent. An npm audit was not completed because external registry access would export dependency metadata and was not approved. Add approved scans and resolve the Supabase Edge warning.
+Dependency auditing, secret scanning, static analysis, and automated updates are absent. ESLint is configured, but it is not a substitute for those security gates. Add approved scans and resolve the Supabase Edge warning.
 
 ### Medium — incomplete account/data lifecycle
 
-Add user export/deletion, billing cancellation, team lifecycle, retention, backups/restore drill, incident response, privacy/terms, and security/support contacts.
+Add user export/deletion, team lifecycle, retention verification, backups/restore drills, incident response, legal review, and security/support contacts. Billing cancellation becomes applicable only if subscriptions launch.
 
 ### Low — no explicit browser security headers
 
@@ -56,5 +56,3 @@ Add and test CSP, HSTS, frame, referrer, permissions, MIME-sniffing, and cross-o
 - Complete approved dependency, secret, static-analysis, and penetration tests.
 - Test payment signatures, replay, event ordering, and idempotency.
 - Configure rate limits, budgets, alerts, backups, retention, and incident response.
-
-Track acceptance in [../REMAINING_WORK.md](../REMAINING_WORK.md).

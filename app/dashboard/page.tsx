@@ -7,9 +7,11 @@ import { ScoreBadge } from "@/components/scoring/score-badge";
 import { ScoreGuide } from "@/components/scoring/ScoreGuide";
 import { VerdictBadge } from "@/components/opportunity/verdict-badge";
 import { ResearchRun, Opportunity, ScoreBreakdown, MarketType } from "@/lib/types";
+import { validationReportSchema } from "@/lib/report-schema";
 import { createClient } from "@/lib/supabase/server";
 import { motion, getStaggerDelay, revealUpClass } from "@/lib/motion";
 import { ReportHistory } from "@/components/dashboard/report-history";
+import { countEvidenceSources } from "@/lib/report-mode-ui";
 
 export const dynamic = "force-dynamic";
 
@@ -18,25 +20,18 @@ export default async function DashboardPage() {
   const { data: databaseRuns, error } = await supabase
     .from("research_runs")
     .select(`id, idea_name, idea_description, target_customer, market_type, target_region, mode, status, progress, created_at,
-      opportunities(
-        id, name, one_liner, target_customer, market, core_pain,
-        evidence_items(id, signal_type, strength, title, snippet, created_at, sources(title, source_type, url)),
-        competitors(id, name, positioning, pricing, target, strength, gap),
-        pricing_models(model, price_point, rationale, first_offer, target_customers),
-        mvp_plans(outcome, build_estimate, build_complexity, mvp_scope_items(item_type, description)),
-        launch_plans(first_customer_channel, outreach_message, success_metric, launch_strategies(strategy_type, description)),
-        risks(id, category, severity, description, mitigation),
-        opportunity_scores(total, confidence, verdict, score_breakdowns(criterion, score))
-      )`)
+      reports(report_versions(version_number, payload))`)
     .order("created_at", { ascending: false });
   if (error) throw error;
 
   const mappedRuns: ResearchRun[] = (databaseRuns || []).map((run: any) => {
     let opportunity: Opportunity | undefined = undefined;
-    const o = run.opportunities?.[0];
-    const scorecard = Array.isArray(o?.opportunity_scores) ? o?.opportunity_scores[0] : o?.opportunity_scores;
-    if (o && scorecard) {
-      const scores = Object.fromEntries((scorecard.score_breakdowns || []).map((item: any) => [item.criterion, Number(item.score)]));
+    const versions = (run.reports?.[0]?.report_versions ?? []).sort((a: any, b: any) => b.version_number - a.version_number);
+    const parsed = validationReportSchema.safeParse(versions[0]?.payload);
+    if (parsed.success) {
+      const o = parsed.data.opportunity;
+      const scorecard = o.scorecard;
+      const scores = scorecard.scores;
       const legacyScore: ScoreBreakdown = {
         pain: scores.painSeverity,
         urgency: scores.purchaseUrgency,
@@ -46,28 +41,22 @@ export default async function DashboardPage() {
         complexity: scores.mvpSpeed,
         platformRisk: scores.platformDependencyRisk,
         founderFit: scores.founderFit,
-        total: Number(scorecard.total)
+        total: scorecard.total
       };
-      const pricing = Array.isArray(o.pricing_models) ? o.pricing_models[0] : o.pricing_models;
-      const mvp = Array.isArray(o.mvp_plans) ? o.mvp_plans[0] : o.mvp_plans;
-      const launch = Array.isArray(o.launch_plans) ? o.launch_plans[0] : o.launch_plans;
-      const strategies = launch?.launch_strategies || [];
-      const scopeItems = mvp?.mvp_scope_items || [];
-
       opportunity = {
         id: o.id,
         name: o.name,
-        one_liner: o.one_liner,
-        target_customer: o.target_customer,
+        one_liner: o.oneLiner,
+        target_customer: o.targetCustomer,
         market: o.market as MarketType,
         score: legacyScore,
         verdict: scorecard.verdict === "Build Now" ? "Build now" : scorecard.verdict === "Avoid" ? "Avoid for now" : "Validate first",
-        confidence: Number(scorecard.confidence),
-        evidence: (o.evidence_items || []).map((e: any) => ({ id:e.id,source:e.sources?.title || "Source",sourceType:e.sources?.source_type || "Unknown",title:e.title,snippet:e.snippet,url:e.sources?.url || "",signal:e.signal_type,strength:e.strength,date:e.created_at.slice(0,10) })),
+        confidence: scorecard.confidence,
+        evidence: o.evidence as Opportunity["evidence"],
         competitors: o.competitors,
-        pricing: {model:pricing?.model || "",pricePoint:pricing?.price_point || "",rationale:pricing?.rationale || "",firstOffer:pricing?.first_offer || "",targetCustomers:pricing?.target_customers || 0},
-        mvp: {outcome:mvp?.outcome || "",scope:scopeItems.filter((item:any)=>item.item_type==="Scope").map((item:any)=>item.description),exclusions:scopeItems.filter((item:any)=>item.item_type==="Exclusion").map((item:any)=>item.description),buildEstimate:mvp?.build_estimate || ""},
-        launch: {firstCustomerChannel:launch?.first_customer_channel || "",weekOne:strategies.filter((item:any)=>item.strategy_type==="WeekOne").map((item:any)=>item.description),outreachMessage:launch?.outreach_message || "",successMetric:launch?.success_metric || ""},
+        pricing: o.pricing,
+        mvp: o.mvp,
+        launch: o.launch,
         risks: o.risks
       };
     }
@@ -138,7 +127,7 @@ export default async function DashboardPage() {
                 <span>2</span>
                 <div>
                   <b>We analyze the market</b>
-                  <small>Real signals from Reddit, G2, Product Hunt, and more</small>
+                  <small>Evidence from public web sources returned by configured research providers</small>
                 </div>
               </div>
               <div>
@@ -217,7 +206,7 @@ export default async function DashboardPage() {
                 {completedRuns.length >= 2 && <Link href="/compare">Compare ideas</Link>}
               </header>
               {mappedRuns.length > 0 ? (
-                <ReportHistory runs={mappedRuns.map(run => ({ id: run.id, ideaName: run.ideaName, mode: run.mode, status: run.status, createdAt: run.createdAt, score: run.opportunity?.score.total, verdict: run.opportunity?.verdict, sourceCount: run.opportunity?.evidence.length ?? 0 }))}/>
+                <ReportHistory runs={mappedRuns.map(run => ({ id: run.id, ideaName: run.ideaName, mode: run.mode, status: run.status, createdAt: run.createdAt, score: run.opportunity?.score.total, verdict: run.opportunity?.verdict, sourceCount: countEvidenceSources(run.opportunity?.evidence ?? []) }))}/>
               ) : (
                 <div className="saved-empty">
                   <p>Your validated ideas will appear here.</p>

@@ -1,16 +1,16 @@
 # ShouldBuild evidence and reasoning pipeline
 
-Last reconciled with the worker and tests on 2026-07-17. The deterministic research suite currently contains 22 passing tests; live hosted provider and full browser verification are still launch gates tracked in [../REMAINING_WORK.md](../REMAINING_WORK.md).
+Last reconciled with the worker on 2026-07-18. Use current test output rather than a checked-in passing-test count; live hosted provider and browser verification remain deployment gates.
 
 A research request is always authenticated and database-backed. The API inserts a `Queued` run, dispatches the Edge worker with a dedicated bearer secret, and returns a progress URL. The worker atomically claims only a `Queued` row, schedules the pipeline, and returns `202`.
 
 ## Stages
 
-1. `Searching`: run up to five Tavily queries.
-2. `Extracting`: persist up to three independently addressable URLs and their Firecrawl markdown.
-3. `Normalizing`: use Groq to extract evidence, fall back to Cerebras on Groq failure, then deduplicate with Cohere embeddings (Jaccard is the non-generative dedup fallback).
-4. `Scoring`: run six citation-validating specialists over database rows, then compute the deterministic 12-factor score in provider-free code.
-5. `Generating`: run the Final Judge over specialist JSON plus stored score breakdowns, create an immutable report version, and upload JSON, Markdown, CSV, and PDF artifacts to private Storage.
+1. `Searching`: execute the query families and passes allowed by the shared report-mode configuration.
+2. `Extracting`: persist independently addressable URLs up to the selected mode's extraction budget.
+3. `Normalizing`: extract structured evidence with the configured primary and fallback providers, then deduplicate with embeddings (Jaccard is the non-generative fallback).
+4. `Scoring`: run the specialists and checks enabled for the mode, then compute the deterministic 12-factor score in provider-free code.
+5. `Generating`: create an immutable report version and upload the mode-configured exports to private Storage (Quick Scan PDF; Full Validation JSON, Markdown, CSV, and PDF).
 6. `Completed` or `Failed`: persist the terminal run state and append the matching stage-history row.
 
 `research_runs.status`, `research_stages.status`, `research_stages.stage_name`, the worker, and the UI share the values exported by `supabase/functions/_shared/research/status.ts`.
@@ -35,7 +35,7 @@ The Competition, Market, Pricing, Risk, Demand, and GTM specialists read only st
 
 All structured LLM work uses `ReasoningProvider.generateStructured`. Groq remains primary and Cerebras remains the fallback, with each physical attempt recorded in `api_usage_logs` and charged against the same per-run `CostBudget` used by evidence acquisition. Each specialist receives at most eight deterministically selected, relevant evidence rows. `CEREBRAS_MODEL` is optional and defaults to `gpt-oss-120b`; provider requests time out after 30 seconds, `REASONING_MAX_COMPLETION_TOKENS` defaults to `2048`, and `REASONING_AGENT_PACING_MS` defaults to `8000`. The reasoning phase is bounded to 115 seconds and reserves its final 35 seconds for Final Judge and terminal persistence. Once the specialist window is exhausted, remaining sections are persisted as incomplete; if scoring reaches the reserved boundary, the run fails with a specific logged reason instead of being killed in a transient state. `FORCE_SPECIALIST_AGENT_FAILURE=<agent name>` is a test-only environment switch for exercising the bounded failure path.
 
-Each specialist now runs alongside a context-isolated Cerebras checker. The checker receives the same underlying evidence/source rows but never the specialist output; their categorical directions are compared only after both return, and mismatches persist as disputed interpretations. A one-shot Groq adversarial verdict gate starts from provider-free score factors before the specialist loop and receives no specialist conclusions. Running these checks concurrently preserves the 115-second phase and its 35-second Final Judge reserve. The added seven minimum provider attempts cost approximately `$0.14`, so `RESEARCH_REASONING_COST_RESERVE_USD` defaults to `$0.36` instead of `$0.22`; `RESEARCH_RUN_COST_CAP_USD` remains unchanged.
+In Full Validation, each configured specialist runs alongside a context-isolated checker, and the adversarial verdict gate starts from provider-free score factors. The checker receives the same underlying evidence rows but not the specialist output; mismatches persist as disputed interpretations. Quick Scan uses the smaller specialist/checker set defined by the same mode configuration. Cost and time caps are configuration boundaries, not customer-facing price or duration promises.
 
 Final Judge receives the completed disputes and adversarial gate but cannot set the official verdict. Code compares its `written_verdict` with the provider-free mapping and persists any mismatch. A medium/high evidence-cited adversarial objection applies a visible code-owned safety downgrade to `Weak Signal` while preserving the original deterministic verdict separately. After generation, every narrative claim is resolved against a non-excluded `evidence_items` row with a persisted source URL. Invalid claims are removed and recorded; if no sourced executive conclusion remains, the run fails instead of publishing unsupported prose.
 
@@ -49,14 +49,14 @@ Weights are read from `scoring_weights`; the migration seeds the current documen
 
 ## Report versions and exports
 
-Each generation inserts the next `report_versions.version_number`; database triggers reject updates and deletes of version rows. The worker renders JSON, Markdown, CSV, and PDF server-side, uploads them to `exports/<team UUID>/<run UUID>/v<version>/`, hashes each object, and records its path, size, and SHA-256 digest in `report_exports`. The download API returns these stored objects instead of compiling a report in the browser or route handler.
+Each generation inserts the next `report_versions.version_number`; database triggers reject updates and deletes of version rows. The worker renders the mode-configured formats server-side, uploads them to `exports/<team UUID>/<run UUID>/v<version>/`, hashes each object, and records its path, size, and SHA-256 digest in `report_exports`. The download API returns these stored objects instead of compiling a report in the browser or route handler.
 
 The `exports` bucket remains private. Its select policy derives the tenant UUID from the first path component and requires a matching `team_members` row for `auth.uid()`. Cross-team guessed paths therefore fail at the Storage policy even when the object name is known.
 
 ## Providers, retry, fallback, and cost
 
-- Tavily: search, maximum five logical queries.
-- Firecrawl: page extraction, maximum three unique URLs.
+- Tavily: search within the selected mode's query/pass budget.
+- Firecrawl: extraction within the selected mode's source budget.
 - Groq `llama-3.3-70b-versatile`: primary structured evidence and report reasoning.
 - Cerebras `gpt-oss-120b` (configurable with `CEREBRAS_MODEL`): reasoning fallback.
 - Cohere `embed-english-v3.0`: semantic deduplication.

@@ -2,7 +2,7 @@
 
 ShouldBuild is an evidence-backed market-validation application. A signed-in user describes a product idea; the research pipeline gathers public evidence and produces a cited report with deterministic scoring across 12 factors and one of five verdicts: Build Now, Validate First, Niche Down, Weak Signal, or Avoid.
 
-> **Launch status:** the application builds and its core research tests pass, but it is not ready for a paid public launch. Billing, plan enforcement, production security controls, monitoring, legal pages, and hosted end-to-end verification remain. See [REMAINING_WORK.md](./REMAINING_WORK.md).
+> **Launch status:** paid checkout is not available. The repository includes report entitlements and a trusted paid-credit grant boundary, but no billing provider, products, prices, subscriptions, or purchase flow. Hosted provider, security, and end-to-end verification remain deployment responsibilities.
 
 ## Implemented
 
@@ -11,10 +11,10 @@ ShouldBuild is an evidence-backed market-validation application. A signed-in use
 - Tavily search, Firecrawl extraction, Cohere embeddings, Groq reasoning, and Cerebras fallback.
 - Broad, targeted, and adversarial retrieval with source tiering and citation checks.
 - Provider-free 12-factor scoring and code-owned verdict selection.
-- Immutable report versions and server-generated Markdown, JSON, CSV, and PDF exports.
+- Immutable report versions and mode-aware server exports: Quick Scan PDF; Full Validation Markdown, JSON, CSV, and PDF.
 - Per-run provider cost cap, usage records, terminal failure states, and error logging.
 
-The pricing page describes four subscription plans, but paid checkout and plan entitlements are not implemented. Existing billing and feature-limit tables are schema foundations only.
+The access page deliberately marks paid Full Validation, subscriptions, and report packs unavailable. The database currently enforces one-credit Quick Scan and three-credit Full Validation reservations; it does not implement billing.
 
 ## System overview
 
@@ -50,10 +50,10 @@ Checks:
 ```bash
 npx tsc --noEmit --incremental false
 npm run test:scoring
+npm run lint
 npm run build
+npm run audit:truth
 ```
-
-`npm run lint` is not yet a valid CI check because ESLint is unconfigured.
 
 ## Canonical statuses
 
@@ -69,7 +69,6 @@ public/                    social image and source-logo assets
 supabase/migrations/       migration-first schema and RLS
 supabase/functions/        Edge worker and shared pipeline code
 docs/                      technical and operating documentation
-REMAINING_WORK.md          canonical launch backlog
 ```
 
 ## Documentation
@@ -82,13 +81,9 @@ REMAINING_WORK.md          canonical launch backlog
 - [Security](./docs/Security.md)
 - [Deployment](./docs/Deployment.md)
 - [Troubleshooting](./docs/Troubleshooting.md)
-- [Remaining work](./REMAINING_WORK.md)
 
-## Verified on 2026-07-17
+## Verification
 
-- `npm run build`: passed; it reports a Supabase Edge-runtime warning from middleware.
-- `npm run test:scoring`: passed, 22 tests.
-- `npm run lint`: blocked by interactive ESLint setup.
-- Dependency vulnerability audit: not completed because registry access required approval to export dependency metadata.
+Run the commands above in the target environment. A checked-in status statement is not a substitute for current CI output or hosted smoke testing.
 
-These checks do not replace hosted migrations, live provider runs, browser E2E, RLS adversarial tests, payment tests, or production smoke tests.
+These checks do not replace hosted migrations, live provider runs, browser E2E, RLS adversarial tests, or production smoke tests. Payment testing is not applicable until a billing integration exists.

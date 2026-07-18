@@ -8,9 +8,8 @@ import { Brand } from "@/components/layout/brand";
 import { createClient } from "@/lib/supabase/client";
 import { authCallbackUrl } from "@/lib/auth-redirect";
 import { LegalFooter } from "@/components/layout/legal-footer";
-import { launchPricing, regionalPrice, type PricingRegionHint } from "@/lib/pricing";
-import { usePricingRegion } from "@/components/pricing/use-pricing-region";
 import { sampleFullValidation } from "@/lib/sample-reports";
+import { countEvidenceSources } from "@/lib/report-mode-ui";
 
 const signals = [
   { name: "Reddit", logoPath: "/logos/reddit.svg" },
@@ -27,13 +26,9 @@ const signals = [
 // Duplicate for seamless marquee loop
 const marqueeSignals = [...signals, ...signals, ...signals];
 
-export function LandingPage({ initialRegion = "auto" }: { initialRegion?: PricingRegionHint }) {
+export function LandingPage() {
   const [activeCta, setActiveCta] = useState<string | null>(null);
   const [authError, setAuthError] = useState("");
-  const pricingRegion = usePricingRegion(initialRegion);
-  const quickPrice = regionalPrice(launchPricing.oneOff.quick, pricingRegion);
-  const fullPrice = regionalPrice(launchPricing.oneOff.full, pricingRegion);
-  const proPrice = regionalPrice(launchPricing.plans.proMonthly, pricingRegion);
 
   const handleGoogleSignIn = async (ctaKey: string, redirectTo: string) => {
     setActiveCta(ctaKey);
@@ -124,7 +119,7 @@ export function LandingPage({ initialRegion = "auto" }: { initialRegion?: Pricin
             </a>
             <Link className="bs-link" href="/sample-report?mode=full_validation">See a Full Validation <ChevronRight size={15}/></Link>
           </div>
-          <small><ShieldCheck size={14}/> Real market signals · Every source cited · No fake data</small>
+          <small><ShieldCheck size={14}/> Public-source research · Cited report claims · No sample fallback in real reports</small>
         </div>
         <MemoPreview/>
       </section>
@@ -141,7 +136,7 @@ export function LandingPage({ initialRegion = "auto" }: { initialRegion?: Pricin
       </section>
 
       {/* ── SIGNAL STRIP ── */}
-      <div className="bs-signal-strip-label">Research incorporates signals from trusted public platforms</div>
+      <div className="bs-signal-strip-label">Examples of public platforms that search results may reference</div>
       <section className="bs-signal-strip">
         <div>
           {marqueeSignals.map((signal, i) => (
@@ -161,17 +156,17 @@ export function LandingPage({ initialRegion = "auto" }: { initialRegion?: Pricin
       {/* ── WHAT YOU GET ── */}
       <section className="bs-value" id="how">
         <div className="bs-section-head">
-          <p className="bs-kicker">What you get in every report</p>
-          <h2>One report. Every answer you need before building.</h2>
-          <p>Each validation covers buyer pain, competition, pricing intelligence, risk assessment, MVP scope, and a step-by-step launch plan.</p>
+          <p className="bs-kicker">What Full Validation adds</p>
+          <h2>Go from evidence screen to a decision-ready build brief.</h2>
+          <p>Quick Scan covers the score, verdict, core evidence, risks, pricing direction, and next actions. Full Validation adds the detailed specialist sections below.</p>
         </div>
         <div className="bs-value-grid">
-          <Value icon={Users} title="Buyer pain analysis" text="Find out if real people actually have this problem — and how badly they want it solved."/>
+          <Value icon={Users} title="Buyer pain analysis" text="Review public evidence about the problem and identify what still needs direct buyer confirmation."/>
           <Value icon={Target} title="Competition breakdown" text="See who you're up against, what they charge, where the gaps are, and what you can exploit."/>
-          <Value icon={DollarSign} title="Pricing intelligence" text="Know what buyers will pay before you set a price. Anchored to real competitive data."/>
+          <Value icon={DollarSign} title="Pricing direction" text="Assess cited pricing and willingness-to-pay signals, then validate the recommendation with a real purchase decision."/>
           <Value icon={AlertTriangle} title="Risk assessment" text="See the risks before they cost you weeks. Market, execution, platform, and distribution."/>
-          <Value icon={Zap} title="MVP scope" text="Know exactly what to build first and what to skip. No feature creep. No wasted sprints."/>
-          <Value icon={Rocket} title="Launch playbook" text="Get a plan to reach your first 10 paying customers. Channels, outreach scripts, and success metrics."/>
+          <Value icon={Zap} title="MVP scope" text="Review a proposed first scope and explicit exclusions, then validate them before implementation."/>
+          <Value icon={Rocket} title="Launch direction" text="Get evidence-informed channels, outreach language, and success criteria to test with potential customers."/>
         </div>
       </section>
 
@@ -226,7 +221,7 @@ export function LandingPage({ initialRegion = "auto" }: { initialRegion?: Pricin
         <div className="bs-verdicts">
           <VerdictCard cls="weak" title="Not a replacement for customers" desc="ShouldBuild structures market evidence into a verdict, but you still need to talk to real buyers to close them."/>
           <VerdictCard cls="avoid" title="Not an 'AI generator'" desc="We do not hallucinate business plans. Every claim in a ShouldBuild report is tied to cited, verifiable source material."/>
-          <VerdictCard cls="niche" title="Not an execution guarantee" desc="We can tell you if the market wants it and what to build first. The rest is on you."/>
+          <VerdictCard cls="niche" title="Not an execution guarantee" desc="The report surfaces evidence, uncertainty, and a recommended next test. It cannot prove the market will respond."/>
         </div>
       </section>
 
@@ -234,17 +229,16 @@ export function LandingPage({ initialRegion = "auto" }: { initialRegion?: Pricin
       <section id="pricing" className="bs-pricing">
         <div>
           <p className="bs-kicker">Pricing</p>
-          <h2>Start free. Pay when an idea deserves deeper research.</h2>
-          <p>One useful Quick Scan every month, with no card required. Buy a report once or subscribe when you validate regularly.</p>
+          <h2>Start with the monthly Quick Scan entitlement.</h2>
+          <p>One Quick Scan entitlement is available each calendar month. Paid checkout and subscriptions are not available yet.</p>
         </div>
         <div className="bs-price-row">
-          <span>Free<b>{regionalPrice(launchPricing.plans.free, pricingRegion)}</b><small>1 Quick Scan every 30 days</small></span>
-          <span>Quick Scan<b>{quickPrice}</b><small>One-off · 1 credit</small></span>
-          <span className="active">Full Validation<b>{fullPrice}</b><small>One-off · 3 credits</small></span>
-          <span>Pro<b>{proPrice}</b><small>6 credits each month</small></span>
+          <span className="active">Quick Scan<b>Available</b><small>1 entitlement each calendar month</small></span>
+          <span>Full Validation<b>Unavailable</b><small>Paid credit purchase is not connected</small></span>
+          <span>Pro<b>Not launched</b><small>Plan terms are not finalized</small></span>
         </div>
-        <Link className="bs-btn bs-btn-bright" href="/pricing">Compare plans and reports <ArrowRight size={15}/></Link>
-        <small className="pricing-disclosure">{pricingRegion === "india" ? "India pricing shown in INR." : "Global pricing shown in USD."} Taxes included where applicable.</small>
+        <Link className="bs-btn bs-btn-bright" href="/pricing">See current report access <ArrowRight size={15}/></Link>
+        <small className="pricing-disclosure">No checkout or payment collection is active.</small>
       </section>
 
       {/* ── FINAL CTA ── */}
@@ -293,7 +287,7 @@ function MemoPreview({ expanded = false }: { expanded?: boolean }) {
         <div className="bs-dashboard-stats">
           <Stat n={String(scorecard.total)} label="Overall score"/>
           <Stat n={`${scorecard.confidence}%`} label="Evidence confidence"/>
-          <Stat n={String(evidence.length)} label="Sources analyzed"/>
+          <Stat n={String(countEvidenceSources(evidence))} label="Distinct cited sources"/>
         </div>
         <div className="bs-dashboard-panel">
           <div>

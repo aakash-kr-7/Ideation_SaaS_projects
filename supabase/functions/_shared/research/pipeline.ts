@@ -2124,11 +2124,11 @@ async function executeReasoningPhase(
     },
     markdown: {
       body: new TextEncoder().encode(renderMarkdown(exportInput)),
-      type: "text/markdown",
+      type: "text/markdown; charset=utf-8",
     },
     csv: {
       body: new TextEncoder().encode(renderCsv(exportInput)),
-      type: "text/csv",
+      type: "text/csv; charset=utf-8",
     },
     pdf: { body: renderPdf(exportInput), type: "application/pdf" },
   };

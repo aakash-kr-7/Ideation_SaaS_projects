@@ -19,7 +19,7 @@ const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, description: "Validation pipeline and next actions", keywords: "home overview reports" },
   { href: "/research/new", label: "Validate idea", icon: Plus, description: "Start a market-backed validation", keywords: "new research scan" },
   { href: "/compare", label: "Compare ideas", icon: Scale, description: "Compare completed reports side by side", keywords: "matrix score" },
-  { href: "/dashboard/scoring", label: "Scoring model", icon: BarChart3, plan: "PRO", description: "Inspect criteria and decision weights", keywords: "weights criteria" },
+  { href: "/dashboard/scoring", label: "Scoring model", icon: BarChart3, description: "Inspect criteria and decision weights", keywords: "weights criteria" },
   { href: "/pricing", label: "Pricing", icon: CreditCard, description: "Plans and validation depth", keywords: "billing plan" },
   { href: "/settings", label: "Settings", icon: Settings, description: "Profile and workspace preferences", keywords: "account profile" },
 ];
@@ -145,7 +145,7 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
         <p className="sidebar-label">NAVIGATION</p>
         <nav className="instrument-nav" aria-label="Main navigation" style={{ "--active-index": activeLinkIndex } as CSSProperties}>
           {activeLinkIndex >= 0 && <span className="nav-active-indicator" aria-hidden="true" />}
-          {links.map(({ href, label, icon: Icon, plan, description }, index) => (
+          {links.map(({ href, label, icon: Icon, description }, index) => (
             <Link
               href={href}
               key={href}
@@ -155,7 +155,7 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
               data-tour={`nav-${href.split("/").filter(Boolean).join("-")}`}
               data-preview={description}
             >
-              <Icon size={16} /><span>{label}</span>{plan && <small className="nav-plan-badge">{plan}</small>}
+              <Icon size={16} /><span>{label}</span>
             </Link>
           ))}
         </nav>
@@ -267,8 +267,8 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
           </header>
           <div id="quick-nav-results" className="quick-nav-results" role="listbox">
             <p>Navigate</p>
-            {filteredLinks.map(({ href, label, icon: Icon, description, plan }, index) => <button key={href} role="option" aria-selected={index === quickNavIndex} className={index === quickNavIndex ? "selected" : ""} onMouseEnter={() => setQuickNavIndex(index)} onClick={() => openQuickNavResult(href)}>
-              <span><Icon size={16}/></span><div><b>{label}</b><small>{description}</small></div>{plan && <i>{plan}</i>}<ArrowRight size={14}/>
+            {filteredLinks.map(({ href, label, icon: Icon, description }, index) => <button key={href} role="option" aria-selected={index === quickNavIndex} className={index === quickNavIndex ? "selected" : ""} onMouseEnter={() => setQuickNavIndex(index)} onClick={() => openQuickNavResult(href)}>
+              <span><Icon size={16}/></span><div><b>{label}</b><small>{description}</small></div><ArrowRight size={14}/>
             </button>)}
             {!filteredLinks.length && <div className="quick-nav-empty"><Command size={18}/><b>No matching page</b><small>Try “report”, “pricing”, or “settings”.</small></div>}
           </div>

@@ -10,19 +10,17 @@ import { VerdictBadge } from "@/components/opportunity/verdict-badge";
 import { ScoreBadge } from "@/components/scoring/score-badge";
 import { getStaggerDelay, motion, revealUpClass } from "@/lib/motion";
 import { getReportModeConfig } from "@/lib/report-modes";
+import { countEvidenceSources, REPORT_TABS, type ReportTab } from "@/lib/report-mode-ui";
 
-const quickTabs = ["Conclusion", "Evidence", "Competition", "Score breakdown", "Pricing", "Next actions", "Risks", "Exports"] as const;
-const fullTabs = ["Conclusion", "Evidence", "Demand", "Competition", "Market", "Pricing", "MVP scope", "Go-to-market", "Risks", "Adversarial", "Score breakdown", "Sources", "Exports"] as const;
-type Tab = typeof quickTabs[number] | typeof fullTabs[number];
-
-export function ValidationReport({ report, scorecard, publicMode = false, runId, sourceCount }: { report: ReportType; scorecard?: ReportType["opportunity"]["scorecard"]; publicMode?: boolean; runId?: string; sourceCount?: number }) {
-  const [tab, setTab] = useState<Tab>("Conclusion");
+export function ValidationReport({ report, scorecard, publicMode = false, runId }: { report: ReportType; scorecard?: ReportType["opportunity"]["scorecard"]; publicMode?: boolean; runId?: string }) {
+  const [tab, setTab] = useState<ReportTab>("Conclusion");
   const [toast, setToast] = useState("");
   const o = useMemo(() => ({ ...report.opportunity, scorecard: scorecard ?? report.opportunity.scorecard }), [report, scorecard]);
   const config = getReportModeConfig(report.reportMode);
-  const tabs: readonly Tab[] = report.reportMode === "quick_scan" ? quickTabs : fullTabs;
+  const tabs = REPORT_TABS[report.reportMode] as readonly ReportTab[];
   const strongestPositive = o.evidence.find((item) => item.id === report.strongestPositiveEvidenceId) ?? o.evidence.find((item) => !item.disconfirming && !item.excluded);
   const strongestNegative = o.evidence.find((item) => item.id === report.strongestNegativeEvidenceId) ?? o.evidence.find((item) => item.disconfirming && !item.excluded) ?? o.evidence.find((item) => item.signal === "Risk");
+  const canonicalSourceCount = countEvidenceSources(o.evidence);
 
   const exportFile = async (format: "md" | "json" | "csv" | "pdf") => {
     const payload = { ...report, opportunity: o };
@@ -42,9 +40,9 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
       setToast("Print dialog opened for sample PDF");
       return;
     }
-    if (format === "md") downloadExport(`${o.name}-report.md`, reportToMarkdown(payload), "text/markdown");
-    if (format === "json") downloadExport(`${o.name}-report.json`, JSON.stringify(payload, null, 2), "application/json");
-    if (format === "csv") downloadExport(`${o.name}-summary.csv`, reportToCsv(payload), "text/csv");
+    if (format === "md") downloadExport(`${o.name}-report.md`, reportToMarkdown(payload), "text/markdown; charset=utf-8");
+    if (format === "json") downloadExport(`${o.name}-report.json`, JSON.stringify(payload, null, 2), "application/json; charset=utf-8");
+    if (format === "csv") downloadExport(`${o.name}-summary.csv`, reportToCsv(payload), "text/csv; charset=utf-8");
     setToast(`${format.toUpperCase()} export prepared`);
     setTimeout(() => setToast(""), 2200);
   };
@@ -83,7 +81,7 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
     <section className="report-decision-strip" aria-label={`${config.label} decision summary`}>
       <article><span>Official verdict</span><b>{o.scorecard.verdict}</b></article>
       <article><span>Evidence confidence</span><b>{o.scorecard.confidence}%</b></article>
-      <article><span>Sources analyzed</span><b>{sourceCount ?? new Set(o.evidence.map((item) => item.url)).size}</b></article>
+      <article><span>Sources analyzed</span><b>{canonicalSourceCount}</b></article>
       {report.reportMode === "full_validation" && <article><span>Evidence quality</span><b>{o.evidence.filter((item) => !item.excluded && (item.sourceTier ?? 4) <= 2).length} Tier 1/2 findings</b></article>}
       <article><span>{report.reportMode === "quick_scan" ? "Strongest positive signal" : "Most important opportunity"}</span><b>{strongestPositive?.title ?? "Not enough supporting evidence"}</b></article>
       <article><span>{report.reportMode === "quick_scan" ? "Strongest negative signal" : "Most important objection"}</span><b>{strongestNegative?.title ?? report.adversarialGate?.objection ?? "No independent negative signal resolved"}</b></article>
@@ -106,7 +104,7 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
         <div className="sidebar-metrics">
           <Metric label="Report date" value={report.generatedAt}/>
           <Metric label="Report type" value={config.label}/>
-          <Metric label="Sources analyzed" value={String(sourceCount ?? new Set(o.evidence.map(item => item.url)).size)}/>
+          <Metric label="Sources analyzed" value={String(canonicalSourceCount)}/>
           <Metric label="Evidence found" value={String(o.evidence.length)}/>
           <Metric label="Competitors mapped" value={String(o.competitors.length)}/>
         </div>
@@ -163,6 +161,9 @@ function Verdict({ report }: { report: ReportType }) {
         <p><b>Strongest signal:</b> {o.evidence[0]?.snippet}</p>
         <p><b>Primary risk:</b> {o.risks[0]?.description}</p>
         <p><b>Validate first:</b> {o.launch.successMetric}</p>
+        {!!report.narrativeCitations?.executive_summary.length && <div className="sentence-citations">
+          {report.narrativeCitations.executive_summary.map((claim, index) => <p key={`${claim.text}-${index}`}>{claim.text}<EvidenceCitations report={report} evidenceIds={claim.evidence_ids}/></p>)}
+        </div>}
       </div>
     </div>
     <div className="verdict-grid">
@@ -206,7 +207,7 @@ function categoryFor(signal: string) {
 }
 
 function CompetitorView({ report }: { report: ReportType }) {
-  return <div className="competitor-table-wrap">
+  return <><SpecialistClaims report={report} name="competition"/><div className="competitor-table-wrap">
     <table className="competitor-table">
       <thead>
         <tr>
@@ -229,7 +230,7 @@ function CompetitorView({ report }: { report: ReportType }) {
         </tr>)}
       </tbody>
     </table>
-  </div>;
+  </div></>;
 }
 
 function ScoringView({ scorecard }: { scorecard: ReportType["opportunity"]["scorecard"] }) {
@@ -242,8 +243,8 @@ function ScoringView({ scorecard }: { scorecard: ReportType["opportunity"]["scor
       <p><b>Strongest drivers:</b> {ordered.slice(0, 3).map(([key]) => pretty(key)).join(", ")}. <b>Weakest drivers:</b> {ordered.slice(-3).map(([key]) => pretty(key)).join(", ")}.</p>
       <p>The score reflects current evidence, not a forecast. Confidence would increase with direct buyer interviews, a paid pilot commitment, and a source-backed pricing comparison.</p>
       <div>
-        <span>Active assumptions</span>
-        <small>Buyers will pay for a narrow workflow layer rather than accept the current workaround.</small>
+        <span>Willingness-to-pay evidence</span>
+        <small>{scorecard.notes.willingnessToPay}</small>
       </div>
     </section>
   </>;
@@ -259,34 +260,30 @@ function MvpView({ report }: { report: ReportType }) {
   return <>
     <div className="mvp-timeline phased">
       <article>
-        <span>Version 0 · Validate</span>
+        <span>Validation target</span>
         <b>{o.launch.successMetric}</b>
         <p>{o.launch.outreachMessage}</p>
       </article>
       <article>
-        <span>Version 1 · Core MVP</span>
+        <span>MVP outcome</span>
         <b>{m.outcome}</b>
         <p>{m.scope.join(" · ")}</p>
       </article>
       <article>
-        <span>Version 2 · Paid workflow</span>
+        <span>Initial pricing direction</span>
         <b>{o.pricing.firstOffer}</b>
         <p>{o.pricing.rationale}</p>
       </article>
       <article>
-        <span>Version 3 · Retention</span>
-        <b>{m.buildEstimate}</b>
-        <p>{m.exclusions.join(" · ")}</p>
+        <span>Persisted build assessment</span>
+        <b>{m.buildComplexity} complexity</b>
+        <p>{m.buildEstimate}</p>
       </article>
     </div>
     <div className="scope-groups">
       <article>
         <b>Must-have</b>
-        <p>{m.scope.slice(0, 2).join(" · ")}</p>
-      </article>
-      <article>
-        <b>Should-have</b>
-        <p>{m.scope.slice(2).join(" · ")}</p>
+        <p>{m.scope.join(" · ")}</p>
       </article>
       <article>
         <b>Exclude for now</b>
@@ -302,9 +299,10 @@ function PricingView({ report }: { report: ReportType }) {
     ["Pricing model", p.model, "Persisted model", p.rationale],
     ["Core price", p.pricePoint, "Persisted price point", p.rationale],
     ["First offer", p.firstOffer, "Initial paid validation", p.rationale],
-    ["Initial target", `${p.targetCustomers} customers`, "Persisted customer target", p.rationale]
+    ...(p.targetCustomers > 0 ? [["Initial target", `${p.targetCustomers} customers`, "Persisted customer target", p.rationale]] : [])
   ];
   return <>
+    <SpecialistClaims report={report} name="pricing"/>
     <div className="pricing-strategy-cards">
       {cards.map(([name, price, limits, reason], index) => <article tabIndex={0} className={`${motion.cardInteractive} ${revealUpClass}`} style={getStaggerDelay(index)} key={name}>
         <span>{name}</span>
@@ -320,6 +318,7 @@ function PricingView({ report }: { report: ReportType }) {
 function LaunchView({ report }: { report: ReportType }) {
   const l = report.opportunity.launch;
   return <div className="launch-plan">
+    <SpecialistClaims report={report} name="gtm"/>
     <div className="launch-columns">
       <article>
         <p className="eyebrow">First 10 customers</p>
@@ -359,43 +358,16 @@ function ChecklistView({ report }: { report: ReportType }) {
     const actions = [...o.launch.weekOne, o.launch.successMetric, o.launch.outreachMessage, `Test the initial offer: ${o.pricing.firstOffer}`].filter((item, index, all) => item && all.indexOf(item) === index).slice(0, 3);
     return <section className="quick-next-actions"><p className="eyebrow">Recommended next three validation actions</p>{actions.map((item, index) => <article key={item}><span>0{index + 1}</span><b>{item}</b></article>)}</section>;
   }
-  const sections = [
-    {
-      title: "Phase 1: Setup & Hypothesis Framing",
-      items: [
-        { key: "h1", text: `Define customer segment: "${o.targetCustomer}"` },
-        { key: "h2", text: `Verify core pain: "${o.corePain}"` },
-        { key: "h3", text: `Draft outreach message: "${o.launch.outreachMessage.slice(0, 60)}..."` },
-        { key: "h4", text: `Document what NOT to build: "${o.notToBuildFirst?.[0] || 'System replacement'}"` }
-      ]
-    },
-    {
-      title: "Phase 2: Customer Pain Mining Interviews",
-      items: [
-        { key: "i1", text: "Create a list of 40 potential buyers in the target niche" },
-        { key: "i2", text: "Execute the cold email/DM campaign using the outreach message" },
-        { key: "i3", text: "Conduct 8 structured problem interviews (no pitching allowed)" },
-        { key: "i4", text: "Verify the current workaround (e.g. spreadsheet or manual process)" }
-      ]
-    },
-    {
-      title: "Phase 3: Financial Intent Verification",
-      items: [
-        { key: "v1", text: `Present early-access concierge offer: "${o.pricing.firstOffer}"` },
-        { key: "v2", text: "Attempt to secure 2 paid pilot deposits or upfront preorders" },
-        { key: "v3", text: "Record objections verbatim to refine value positioning" },
-        { key: "v4", text: `Track primary channel yield: "${o.launch.firstCustomerChannel}"` }
-      ]
-    },
-    {
-      title: "Phase 4: Launch Scope Lock & Execution Review",
-      items: [
-        { key: "s1", text: `Confirm MVP scope matches: ${o.mvp.scope.slice(0, 2).join(" and ")}` },
-        { key: "s2", text: `Mitigate primary risk: "${o.risks[0]?.description || 'Market rejection'}"` },
-        { key: "s3", text: `Ensure platform dependency risk is monitored` }
-      ]
-    }
-  ];
+  const sectionInputs = [
+    ["Immediate validation actions", o.launch.weekOne],
+    ["First-customer plan", o.launch.firstTenStrategy],
+    ["MVP scope decisions", [...o.mvp.scope.map(item => `Build: ${item}`), ...o.mvp.exclusions.map(item => `Do not build: ${item}`)]],
+    ["Risk mitigation", o.risks.map(risk => `${risk.description} — ${risk.mitigation}`)],
+  ] as const;
+  const sections = sectionInputs.map(([title, items], sectionIndex) => ({
+    title,
+    items: items.filter(Boolean).map((text, itemIndex) => ({ key: `${sectionIndex}-${itemIndex}`, text })),
+  })).filter(section => section.items.length);
 
   const toggle = (key: string) => {
     const next = { ...checked, [key]: !checked[key] };
@@ -410,8 +382,8 @@ function ChecklistView({ report }: { report: ReportType }) {
   return <div className="validation-checklist-tab">
     <div className="checklist-progress-card">
       <div>
-        <h4>Interactive Validation Checklist</h4>
-        <p>Treat this report as an active project. Validate these assumptions before writing code.</p>
+        <h4>Interactive report checklist</h4>
+        <p>These actions, scope choices, and mitigations come from this report payload.</p>
       </div>
       <div className="checklist-progress-bar-wrap">
         <span>{checkedItems} / {totalItems} completed ({progressPercent}%)</span>
@@ -442,7 +414,7 @@ function ChecklistView({ report }: { report: ReportType }) {
 }
 
 function RiskView({ report }: { report: ReportType }) {
-  return <div className="risk-heatmap detailed-risk">
+  return <><SpecialistClaims report={report} name="risk"/><div className="risk-heatmap detailed-risk">
     {report.opportunity.risks.map(existing => {
       return <article tabIndex={0} key={existing.id} className={`${existing.severity.toLowerCase()} ${motion.cardInteractive}`}>
         <div>
@@ -453,22 +425,35 @@ function RiskView({ report }: { report: ReportType }) {
         <p><strong>Mitigation: </strong>{existing.mitigation}</p>
       </article>;
     })}
-  </div>;
+  </div></>;
 }
 
-function SpecialistView({ report, name }: { report: ReportType; name: "demand" | "market" }) {
+type SpecialistName = "competition" | "market" | "pricing" | "risk" | "demand" | "gtm";
+
+function SpecialistClaims({ report, name }: { report: ReportType; name: SpecialistName }) {
   const section = report.specialistSections?.[name] as { status?: string; output?: { claims?: Array<{ claim?: string; evidence_ids?: string[] }>; limitations?: string[] } } | undefined;
   const claims = section?.output?.claims ?? [];
   return <section className="specialist-report-section">
     <header><p className="eyebrow">{name} specialist</p><h3>{section?.status === "Complete" ? `${name[0].toUpperCase() + name.slice(1)} analysis` : "Incomplete specialist section"}</h3></header>
-    {claims.length ? <div>{claims.map((claim, index) => <article key={`${claim.claim}-${index}`}><b>{claim.claim}</b><small>{claim.evidence_ids?.length ?? 0} evidence reference{claim.evidence_ids?.length === 1 ? "" : "s"}</small></article>)}</div> : <p className="report-empty-section">This section could not be completed from the persisted evidence. No substitute narrative was generated.</p>}
+    {claims.length ? <div>{claims.map((claim, index) => <article key={`${claim.claim}-${index}`}><b>{claim.claim}</b><EvidenceCitations report={report} evidenceIds={claim.evidence_ids ?? []}/></article>)}</div> : <p className="report-empty-section">This section could not be completed from the persisted evidence. No substitute narrative was generated.</p>}
     {!!section?.output?.limitations?.length && <ul>{section.output.limitations.map((item) => <li key={item}>{item}</li>)}</ul>}
   </section>;
 }
 
+function SpecialistView({ report, name }: { report: ReportType; name: "demand" | "market" }) {
+  return <SpecialistClaims report={report} name={name}/>;
+}
+
+function EvidenceCitations({ report, evidenceIds }: { report: ReportType; evidenceIds: readonly string[] }) {
+  const evidence = new Map(report.opportunity.evidence.map((item) => [item.id, item]));
+  const resolved = evidenceIds.map((id) => evidence.get(id)).filter((item): item is NonNullable<typeof item> => Boolean(item?.url));
+  if (!resolved.length) return <small className="citation-missing">No resolvable citation</small>;
+  return <small className="claim-citations">{resolved.map((item, index) => <a key={item.id} href={item.url} target="_blank" rel="noreferrer" aria-label={`Open citation ${index + 1}: ${item.title}`}>[{index + 1}]</a>)}</small>;
+}
+
 function AdversarialView({ report }: { report: ReportType }) {
   return <div className="adversarial-report-view">
-    <section><p className="eyebrow">Adversarial verdict gate</p><h3>{report.adversarialGate?.outcome ?? "Gate incomplete"}</h3><p>{report.adversarialGate?.objection ?? "No adversarial conclusion was persisted."}</p></section>
+    <section><p className="eyebrow">Adversarial verdict gate</p><h3>{report.adversarialGate?.outcome ?? "Gate incomplete"}</h3><p>{report.adversarialGate?.objection ?? "No adversarial conclusion was persisted."}</p><EvidenceCitations report={report} evidenceIds={report.adversarialGate?.evidence_ids ?? []}/></section>
     <section><p className="eyebrow">Independent checker disagreements</p>{report.specialistDisputes?.length ? report.specialistDisputes.map((item) => <article key={item.specialist} className={item.disputed ? "disputed" : "aligned"}><b>{item.specialist}</b><span>{item.reason}</span></article>) : <p className="report-empty-section">No independent checker results are available for this report.</p>}</section>
   </div>;
 }

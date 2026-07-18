@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import { Check, Plus, X } from "lucide-react";
 import { ValidationReport } from "@/lib/report-schema";
+import { countEvidenceSources, hasMixedResearchDepth } from "@/lib/report-mode-ui";
 
 export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }) {
   const [selected, setSelected] = useState<string[]>(() => {
@@ -9,7 +10,7 @@ export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }
   });
 
   const reports = useMemo(() => allReports.filter(r => selected.includes(r.opportunity.id)), [selected, allReports]);
-  const mixedDepth = new Set(reports.map(report => report.reportMode)).size > 1;
+  const mixedDepth = hasMixedResearchDepth(reports);
   
   const toggle = (id: string) => setSelected(s => s.includes(id) ? s.filter(x => x !== id) : s.length < 4 ? [...s, id] : s);
   
@@ -59,7 +60,7 @@ export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }
           <Row label="Regulatory risk" reports={reports} value={r => `${metric("regulatoryRisk")(r)} risk`} />
           <Row label="Pricing direction" reports={reports} value={r => r.opportunity.pricing.pricePoint} />
           <Row label="Evidence confidence" reports={reports} value={r => `${r.opportunity.scorecard.confidence}%`} />
-          <Row label="Sources used" reports={reports} value={r => r.opportunity.evidence.length} />
+          <Row label="Distinct cited sources" reports={reports} value={r => countEvidenceSources(r.opportunity.evidence)} />
           <Row label="First validation step" reports={reports} value={r => r.opportunity.launch.validationExperiment?.[0] ?? r.opportunity.launch.successMetric} />
         </tbody>
       </table>

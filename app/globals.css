@@ -3333,3 +3333,8 @@ a[href^='http']:not(.button):not(.bs-btn) { color: var(--evidence); }
   .legal-document h1 { font-size: 38px; }
   .support-hero { padding-top: 56px; }
 }
+.sentence-citations { display: grid; gap: 8px; margin-top: 14px; }
+.sentence-citations > p { margin: 0; padding: 10px 12px; border-left: 2px solid var(--accent); background: var(--accent-subtle); }
+.claim-citations { display: inline-flex; gap: 5px; margin-left: 8px; font-family: var(--mono); }
+.claim-citations a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.citation-missing { display: block; margin-top: 6px; color: var(--text-tertiary); }

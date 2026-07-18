@@ -193,6 +193,16 @@ export const decisionIntegritySchema = z.object({
   adversarialDowngrade: z.boolean(),
   reason: z.string().nullable(),
 });
+export const narrativeClaimSchema = z.object({
+  text: z.string().min(1),
+  evidence_ids: z.array(z.string().uuid()).min(1),
+  score_criteria: z.array(z.string()).default([]),
+});
+export const narrativeCitationsSchema = z.object({
+  written_verdict: verdictSchema,
+  executive_summary: z.array(narrativeClaimSchema).min(1),
+  methodology: z.array(narrativeClaimSchema).min(1),
+});
 export const validationReportSchema = z.object({
   id: z.string(),
   version: z.literal("1.0"),
@@ -208,6 +218,7 @@ export const validationReportSchema = z.object({
   adversarialGate: adversarialGateReportSchema.optional(),
   citationValidation: citationValidationReportSchema.optional(),
   decisionIntegrity: decisionIntegritySchema.optional(),
+  narrativeCitations: narrativeCitationsSchema.optional(),
   evidenceGaps: z.array(z.string()).default([]),
   limitations: z.array(z.string()).default([]),
   reportSections: z.array(z.string()).default([]),
@@ -260,6 +271,7 @@ export interface ValidationReport {
   adversarialGate?: z.infer<typeof adversarialGateReportSchema>;
   citationValidation?: z.infer<typeof citationValidationReportSchema>;
   decisionIntegrity?: z.infer<typeof decisionIntegritySchema>;
+  narrativeCitations?: z.infer<typeof narrativeCitationsSchema>;
   evidenceGaps: string[];
   limitations: string[];
   reportSections: string[];

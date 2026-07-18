@@ -34,7 +34,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { data: file, error: downloadError } = await supabase.storage.from("exports").download(stored.storage_path);
   if (downloadError || !file) return NextResponse.json({ error: downloadError?.message || "Export unavailable" }, { status: 403 });
   const safeName = String(data.idea_name).replace(/[^a-z0-9-_]+/gi, "-").replace(/^-|-$/g, "") || "shouldbuild";
-  const metadata: Record<string,{type:string;ext:string}> = { json:{type:"application/json",ext:"json"}, markdown:{type:"text/markdown",ext:"md"}, csv:{type:"text/csv",ext:"csv"}, pdf:{type:"application/pdf",ext:"pdf"} };
+  const metadata: Record<string,{type:string;ext:string}> = { json:{type:"application/json; charset=utf-8",ext:"json"}, markdown:{type:"text/markdown; charset=utf-8",ext:"md"}, csv:{type:"text/csv; charset=utf-8",ext:"csv"}, pdf:{type:"application/pdf",ext:"pdf"} };
   const meta = metadata[requested] || metadata.json;
   return new NextResponse(await file.arrayBuffer(), { headers: { "Content-Type": meta.type, "Content-Disposition": `attachment; filename="${safeName}-report.${meta.ext}"`, "X-ShouldBuild-Storage-Path": stored.storage_path } });
 }

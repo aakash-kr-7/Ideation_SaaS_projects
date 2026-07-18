@@ -15,7 +15,6 @@ interface TourStep {
   tip: string;
   selector?: string;
   fallback?: string;
-  plan?: string;
 }
 
 const tourSteps: TourStep[] = [
@@ -58,16 +57,14 @@ const tourSteps: TourStep[] = [
     body: "Compare two or more completed reports against the same criteria to decide which opportunity deserves attention first.",
     tip: "Compare willingness to pay and path to revenue alongside the overall score.",
     selector: '[data-tour="nav-compare"]',
-    plan: "Pro feature",
   },
   {
     icon: BarChart3,
     section: "Scoring model",
     title: "Model your own decision priorities",
     body: "Adjust the 12 scoring weights to reflect speed, risk tolerance, distribution, or revenue goals and see the verdict respond.",
-    tip: "Full Validation includes PDF, Markdown, CSV, and JSON exports; Pro includes every export format.",
+    tip: "Full Validation includes PDF, Markdown, CSV, and JSON exports. Quick Scan includes PDF.",
     selector: '[data-tour="nav-dashboard-scoring"]',
-    plan: "Pro feature",
   },
 ];
 
@@ -215,7 +212,6 @@ export function ProductTour({ isOpen, onClose, onComplete }: ProductTourProps) {
           <div className={`tour-icon-wrap${step === 0 ? " tour-brand-icon" : ""}`}>
             {step === 0 ? <Image src="/brand/shouldbuild-mark.svg" alt="" width={34} height={34}/> : <Icon size={22} />}
           </div>
-          {current.plan && <span className="tour-plan-badge">PAID · {current.plan}</span>}
         </div>
         <p className="eyebrow tour-section-label">{current.section}</p>
         <h2 className="tour-title" id="tour-title">{current.title}</h2>

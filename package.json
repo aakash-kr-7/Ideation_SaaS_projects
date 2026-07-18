@@ -8,11 +8,12 @@
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "test": "npm run test:scoring",
-    "test:scoring": "deno test --unstable-sloppy-imports lib/sample-reports.test.ts supabase/functions/_shared/research/mode-config.test.ts supabase/functions/_shared/research/scoring-engine.test.ts supabase/functions/_shared/research/retrieval-strategy.test.ts supabase/functions/_shared/research/reasoning.test.ts supabase/functions/_shared/research/reasoning-integrity.test.ts supabase/functions/_shared/research/exports.test.ts supabase/functions/_shared/research/providers.test.ts",
+    "test:scoring": "deno test --unstable-sloppy-imports lib/sample-reports.test.ts lib/report-mode-ui.test.ts supabase/functions/_shared/research/mode-config.test.ts supabase/functions/_shared/research/scoring-engine.test.ts supabase/functions/_shared/research/retrieval-strategy.test.ts supabase/functions/_shared/research/reasoning.test.ts supabase/functions/_shared/research/reasoning-integrity.test.ts supabase/functions/_shared/research/exports.test.ts supabase/functions/_shared/research/providers.test.ts",
     "start": "node scripts/start-server.cjs",
     "start:3000": "node scripts/start-server.cjs --port=3000",
     "start:3001": "node scripts/start-server.cjs --port=3001",
-    "lint": "eslint . --max-warnings=0"
+    "lint": "eslint . --max-warnings=0",
+    "audit:truth": "node scripts/audit-product-truth.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

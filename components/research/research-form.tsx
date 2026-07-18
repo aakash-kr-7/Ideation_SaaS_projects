@@ -73,10 +73,7 @@ export function ResearchForm({
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!available) {
-      router.push("/pricing");
-      return;
-    }
+    if (!available) return;
     setSubmitting(true);
     setError("");
     try {
@@ -146,7 +143,7 @@ export function ResearchForm({
     <section className={`form-section mode-section ${revealUpClass}`} style={getStaggerDelay(2)}>
       <div className="mode-heading-row">
         <div><p className="eyebrow">Report type</p><h2>Choose the depth of this decision.</h2></div>
-        <div className="credit-balance"><WalletCards size={16} /><span><b>{creditSnapshot?.paid_credits ?? 0}</b> paid credits</span><small>{creditSnapshot?.free_quick_scans_remaining ? "1 free Quick Scan available" : "Monthly Quick Scan used"}</small></div>
+        <div className="credit-balance"><WalletCards size={16} /><span><b>{creditSnapshot ? creditSnapshot.paid_credits : "Unavailable"}</b> paid credits</span><small>{creditSnapshot ? (creditSnapshot.free_quick_scans_remaining ? "Monthly Quick Scan available" : "Monthly Quick Scan used") : "Entitlement status unavailable"}</small></div>
       </div>
       <div className="mode-grid production-mode-grid">
         {(["quick_scan", "full_validation"] as const).map((reportMode) => {
@@ -178,8 +175,8 @@ export function ResearchForm({
       </div>
       {available ? <button className={`button ${motion.buttonBase} ${submitting ? "is-loading" : ""}`} type="submit" disabled={submitting}>
         {submitting ? <><Loader2 className="animate-spin" size={17} /> Reserving credit…</> : <>Run {selected.label} <ArrowRight size={17} /></>}
-      </button> : <button className={`button ${motion.buttonBase}`} type="button" onClick={() => router.push("/pricing")}>
-        Get credits for {selected.label} <ArrowRight size={17} />
+      </button> : <button className={`button ${motion.buttonBase}`} type="button" disabled title="Paid checkout is not available yet">
+        {creditSnapshot ? `${selected.label} unavailable` : "Entitlement unavailable"}
       </button>}
     </footer>
   </form>;
