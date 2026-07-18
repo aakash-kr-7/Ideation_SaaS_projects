@@ -5,15 +5,19 @@ import { useRouter } from "next/navigation";
 import { Mail, ArrowRight, LoaderCircle, CheckCircle2 } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
 import { createClient } from "@/lib/supabase/client";
+import { authEntryUrl, safeAuthRedirect } from "@/lib/auth-redirect";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
+  const [nextPath, setNextPath] = useState("/dashboard");
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [email, setEmail] = useState("");
 
   useEffect(() => {
+    const intendedDestination = safeAuthRedirect(new URL(window.location.href).searchParams.get("next"));
+    setNextPath(intendedDestination);
     // Try to get the email from the current session or localStorage
     const stored = typeof window !== "undefined" ? localStorage.getItem("shouldbuild-verify-email") : null;
     if (stored) setEmail(stored);
@@ -22,7 +26,9 @@ export default function VerifyEmailPage() {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user?.email_confirmed_at) {
-        router.replace("/dashboard");
+        const storedRedirect = localStorage.getItem("shouldbuild-auth-redirect");
+        localStorage.removeItem("shouldbuild-auth-redirect");
+        router.replace(safeAuthRedirect(storedRedirect, intendedDestination));
       }
     });
   }, [router]);
@@ -38,7 +44,13 @@ export default function VerifyEmailPage() {
     setResending(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.resend({ type: "signup", email });
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(nextPath)}`,
+        },
+      });
       if (error) throw error;
       setResent(true);
       setCooldown(60);
@@ -106,7 +118,7 @@ export default function VerifyEmailPage() {
               "Resend verification email"
             )}
           </button>
-          <button className="button" onClick={() => router.push("/sign-in")}>
+          <button className="button" onClick={() => router.push(authEntryUrl(nextPath))}>
             Back to sign in <ArrowRight size={14} />
           </button>
         </div>

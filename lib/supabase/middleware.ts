@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { onboardingUrl, safeAuthRedirect } from '@/lib/auth-redirect'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -60,6 +61,7 @@ export async function updateSession(request: NextRequest) {
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone()
     url.pathname = "/sign-in"
+    url.search = ""
     url.searchParams.set("redirectTo", path + request.nextUrl.search)
     return createRedirectResponse(url)
   }
@@ -67,7 +69,10 @@ export async function updateSession(request: NextRequest) {
   // Redirect authenticated users away from sign-in
   if (user && path === "/sign-in") {
     const url = request.nextUrl.clone()
-    url.pathname = "/dashboard"
+    const destination = safeAuthRedirect(request.nextUrl.searchParams.get("redirectTo"))
+    const parsedDestination = new URL(destination, request.url)
+    url.pathname = parsedDestination.pathname
+    url.search = parsedDestination.search
     return createRedirectResponse(url)
   }
 
@@ -89,13 +94,17 @@ export async function updateSession(request: NextRequest) {
       // E.g., the table doesn't exist yet in local development. We allow through in that case.
       if (error.code === "PGRST116" && path !== "/onboarding") {
         const url = request.nextUrl.clone()
-        url.pathname = "/onboarding"
+        const onboarding = new URL(onboardingUrl(`${path}${request.nextUrl.search}`), request.url)
+        url.pathname = onboarding.pathname
+        url.search = onboarding.search
         return createRedirectResponse(url)
       }
     } else if ((!profile || !profile.onboarding_completed) && path !== "/onboarding") {
       // If profile exists but onboarding is not completed, redirect to onboarding
       const url = request.nextUrl.clone()
-      url.pathname = "/onboarding"
+      const onboarding = new URL(onboardingUrl(`${path}${request.nextUrl.search}`), request.url)
+      url.pathname = onboarding.pathname
+      url.search = onboarding.search
       return createRedirectResponse(url)
     }
   }

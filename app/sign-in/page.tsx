@@ -18,7 +18,7 @@ function SignInCard() {
   const authError = searchParams.get("error");
   const authMessage = searchParams.get("message");
 
-  const [view, setView] = useState<AuthView>("sign-in");
+  const [view, setView] = useState<AuthView>(searchParams.get("view") === "register" ? "register" : "sign-in");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(
     authError ? (authMessage ? decodeURIComponent(authMessage) : "Authentication failed. Please try again.") : ""
@@ -93,7 +93,8 @@ function SignInCard() {
       if (signInError) {
         if (signInError.message.includes("Email not confirmed")) {
           localStorage.setItem("shouldbuild-verify-email", email);
-          router.push("/auth/verify");
+          localStorage.setItem("shouldbuild-auth-redirect", redirectTo);
+          router.push(`/auth/verify?next=${encodeURIComponent(redirectTo)}`);
           return;
         }
         setError(signInError.message === "Invalid login credentials" ? "Incorrect email or password." : signInError.message);
@@ -138,7 +139,8 @@ function SignInCard() {
         return;
       }
       localStorage.setItem("shouldbuild-verify-email", email);
-      router.push("/auth/verify");
+      localStorage.setItem("shouldbuild-auth-redirect", redirectTo);
+      router.push(`/auth/verify?next=${encodeURIComponent(redirectTo)}`);
     } catch (error: unknown) {
       setError(errorMessage(error));
       setLoading(false);

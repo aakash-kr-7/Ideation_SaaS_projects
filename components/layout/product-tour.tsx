@@ -45,7 +45,7 @@ const tourSteps: TourStep[] = [
     icon: FileText,
     section: "Reports",
     title: "Open the right state every time",
-    body: "Completed work opens as a report; active work opens its live progress view. Reports contain evidence, risks, pricing, MVP scope, and an action plan.",
+    body: "Completed work opens as a report; active work opens its live progress view. Quick Scan stays concise, while Full Validation adds MVP scope, launch planning, and deeper adversarial analysis.",
     tip: "Read the evidence and recommended action—not only the headline score.",
     selector: '[data-tour="reports"]',
     fallback: '[data-tour="nav-dashboard"]',
@@ -94,11 +94,12 @@ export function ProductTour({ isOpen, onClose, onComplete }: ProductTourProps) {
 
   const rememberCompletion = useCallback(async () => {
     try {
-      await fetch("/api/user/profile", {
+      const response = await fetch("/api/user/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tour_completed: true }),
       });
+      if (!response.ok) throw new Error("Tour completion could not be saved.");
     } catch {
       // The tour can still close if profile persistence is temporarily unavailable.
     }

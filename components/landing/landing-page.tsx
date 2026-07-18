@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, CheckCircle2, ChevronRight, FileSearch, Gauge, Radar, Shield, ShieldCheck, Target, Users, Zap, AlertTriangle, DollarSign, Rocket, LoaderCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronRight, FileSearch, Gauge, Radar, Shield, ShieldCheck, Target, Users, Zap, AlertTriangle, DollarSign, Rocket } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
-import { createClient } from "@/lib/supabase/client";
-import { authCallbackUrl } from "@/lib/auth-redirect";
+import { authEntryUrl } from "@/lib/auth-redirect";
 import { LegalFooter } from "@/components/layout/legal-footer";
 import { sampleFullValidation } from "@/lib/sample-reports";
 import { countEvidenceSources } from "@/lib/report-mode-ui";
@@ -27,34 +25,6 @@ const signals = [
 const marqueeSignals = [...signals, ...signals, ...signals];
 
 export function LandingPage() {
-  const [activeCta, setActiveCta] = useState<string | null>(null);
-  const [authError, setAuthError] = useState("");
-
-  const handleGoogleSignIn = async (ctaKey: string, redirectTo: string) => {
-    setActiveCta(ctaKey);
-    setAuthError("");
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: authCallbackUrl(window.location.origin, redirectTo),
-          skipBrowserRedirect: true,
-        },
-      });
-      if (error) {
-        throw error;
-      }
-      if (!data.url) {
-        throw new Error("Google sign-in did not return a redirect URL.");
-      }
-      window.location.assign(data.url);
-    } catch (e: unknown) {
-      setAuthError(e instanceof Error ? e.message : "Google sign-in could not be started.");
-      setActiveCta(null);
-    }
-  };
-
   return <div className="bs-modern">
     <script
       type="application/ld+json"
@@ -80,27 +50,17 @@ export function LandingPage() {
         <a href="#pricing">Pricing</a>
       </nav>
       <div>
-        <a 
-          href="#" 
-          style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-          onClick={(e) => { e.preventDefault(); handleGoogleSignIn("signin", "/dashboard"); }}
-        >
-          {activeCta === "signin" && <LoaderCircle size={14} className="animate-spin" />}
-          Sign in
-        </a>
-        <a 
+        <Link href={authEntryUrl("/dashboard")}>Sign in</Link>
+        <Link
           className="bs-btn bs-btn-bright" 
-          href="#" 
+          href={authEntryUrl("/dashboard", "register")}
           style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-          onClick={(e) => { e.preventDefault(); handleGoogleSignIn("get-started", "/dashboard"); }}
         >
-          {activeCta === "get-started" && <LoaderCircle size={14} className="animate-spin" />}
           Get started <ArrowRight size={15}/>
-        </a>
+        </Link>
       </div>
     </header>
     <main>
-      {authError && <div className="auth-error" role="alert">{authError}</div>}
       {/* ── HERO ── */}
       <section className="bs-hero">
         <div className="bs-hero-copy">
@@ -108,15 +68,13 @@ export function LandingPage() {
           <h1>Don't guess. Run an adversarial<br/><span>market validation.</span></h1>
           <p>ShouldBuild tests your idea against real market signals, weighs evidence quality, and actively searches for reasons the opportunity may fail. Start with a rapid screen, then go deeper only when the evidence justifies it.</p>
           <div className="bs-actions">
-            <a 
+            <Link
               className="bs-btn bs-btn-bright" 
-              href="#" 
+              href={authEntryUrl("/research/new?mode=quick_scan", "register")}
               style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
-              onClick={(e) => { e.preventDefault(); handleGoogleSignIn("validate-hero", "/research/new?mode=quick_scan"); }}
             >
-              {activeCta === "validate-hero" && <LoaderCircle size={14} className="animate-spin" />}
               Run your free Quick Scan <ArrowRight size={16}/>
-            </a>
+            </Link>
             <Link className="bs-link" href="/sample-report?mode=full_validation">See a Full Validation <ChevronRight size={15}/></Link>
           </div>
           <small><ShieldCheck size={14}/> Public-source research · Cited report claims · No sample fallback in real reports</small>
@@ -245,15 +203,13 @@ export function LandingPage() {
       <section className="bs-final">
         <p className="bs-kicker">Ready to validate?</p>
         <h2>Your next idea deserves<br/>better than a guess.</h2>
-        <a 
+        <Link
           className="bs-btn bs-btn-bright" 
-          href="#" 
+          href={authEntryUrl("/research/new?mode=quick_scan", "register")}
           style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
-          onClick={(e) => { e.preventDefault(); handleGoogleSignIn("validate-final", "/research/new?mode=quick_scan"); }}
         >
-          {activeCta === "validate-final" && <LoaderCircle size={14} className="animate-spin" />}
           Run your free Quick Scan <ArrowRight size={16}/>
-        </a>
+        </Link>
       </section>
     </main>
     <LegalFooter />
@@ -282,7 +238,7 @@ function MemoPreview({ expanded = false }: { expanded?: boolean }) {
             <small>IDEA BEING VALIDATED</small>
             <h3>{report.opportunity.name}</h3>
           </div>
-          <button>{scorecard.verdict}</button>
+          <span className="bs-verdict-label">{scorecard.verdict}</span>
         </div>
         <div className="bs-dashboard-stats">
           <Stat n={String(scorecard.total)} label="Overall score"/>

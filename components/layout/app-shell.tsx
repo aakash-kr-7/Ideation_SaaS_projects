@@ -194,7 +194,9 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
               <Search size={14}/><span>Quick nav</span><kbd>{mounted && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl"} K</kbd>
             </button>
             {action}
-            {!loading && !user ? (
+            {loading ? (
+              <span className="user-menu-loading" aria-label="Loading account" />
+            ) : !user ? (
               <Link className="button button-small ghost" href={`/sign-in?redirectTo=${encodeURIComponent(pathname)}`}>Sign in</Link>
             ) : <div className="user-menu-wrap" ref={menuRef}>
               <button

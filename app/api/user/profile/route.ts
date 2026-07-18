@@ -1,5 +1,20 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { z } from "zod";
+
+const profileUpdateSchema = z.object({
+  display_name: z.string().trim().max(120).nullable().optional(),
+  experience_level: z.string().max(80).nullable().optional(),
+  preferred_market: z.string().max(80).nullable().optional(),
+  target_customer_type: z.string().max(240).nullable().optional(),
+  revenue_goal: z.string().max(80).nullable().optional(),
+  business_model: z.string().max(80).nullable().optional(),
+  technical_level: z.string().max(80).nullable().optional(),
+  region: z.string().max(80).nullable().optional(),
+  launch_channels: z.array(z.string().max(80)).max(20).nullable().optional(),
+  onboarding_completed: z.boolean().optional(),
+  tour_completed: z.boolean().optional(),
+}).strict();
 
 export async function GET() {
   const supabase = await createClient();
@@ -57,7 +72,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
+  const parsedBody = profileUpdateSchema.safeParse(await request.json().catch(() => null));
+  if (!parsedBody.success) {
+    return NextResponse.json({ error: "Invalid profile update." }, { status: 400 });
+  }
+  const body = parsedBody.data;
 
   // Repair older environments where the auth.users provisioning trigger was
   // missing or had not created the user's profile/team records.
@@ -66,17 +85,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: bootstrapError.message }, { status: 500 });
   }
 
-  // 1. Upsert to users table
+  const userPatch = {
+    ...(body.display_name !== undefined ? { display_name: body.display_name } : {}),
+    ...(body.onboarding_completed !== undefined ? { onboarding_completed: body.onboarding_completed } : {}),
+    ...(body.tour_completed !== undefined ? { tour_completed: body.tour_completed } : {}),
+    email: user.email,
+    updated_at: new Date().toISOString(),
+  };
+
+  // Update only fields present in this request. Tour completion must not reset onboarding.
   const { data: userData, error: userError } = await supabase
     .from("users")
-    .upsert({
-      id: user.id,
-      display_name: body.display_name ?? null,
-      email: user.email,
-      onboarding_completed: body.onboarding_completed ?? false,
-      tour_completed: body.tour_completed ?? false,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "id" })
+    .update(userPatch)
+    .eq("id", user.id)
     .select()
     .single();
 
@@ -84,23 +105,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: userError.message }, { status: 500 });
   }
 
-  // 2. Upsert to user_preferences table
+  const preferenceKeys = [
+    "experience_level", "preferred_market", "target_customer_type", "revenue_goal",
+    "business_model", "technical_level", "region", "launch_channels",
+  ] as const;
+  const preferencePatch = Object.fromEntries(
+    preferenceKeys.flatMap((key) => body[key] !== undefined ? [[key, body[key]]] : []),
+  );
+
+  if (Object.keys(preferencePatch).length > 0) {
+    const { error: prefUpdateError } = await supabase
+      .from("user_preferences")
+      .upsert({ user_id: user.id, ...preferencePatch, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    if (prefUpdateError) {
+      return NextResponse.json({ error: prefUpdateError.message }, { status: 500 });
+    }
+  }
+
   const { data: prefData, error: prefError } = await supabase
     .from("user_preferences")
-    .upsert({
-      user_id: user.id,
-      experience_level: body.experience_level ?? null,
-      preferred_market: body.preferred_market ?? null,
-      target_customer_type: body.target_customer_type ?? null,
-      revenue_goal: body.revenue_goal ?? null,
-      business_model: body.business_model ?? null,
-      technical_level: body.technical_level ?? null,
-      region: body.region ?? null,
-      launch_channels: body.launch_channels ?? null,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "user_id" })
-    .select()
-    .single();
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   if (prefError) {
     return NextResponse.json({ error: prefError.message }, { status: 500 });
@@ -110,14 +136,14 @@ export async function POST(request: Request) {
     profile: {
       id: user.id,
       display_name: userData.display_name,
-      experience_level: prefData.experience_level,
-      preferred_market: prefData.preferred_market,
-      target_customer_type: prefData.target_customer_type,
-      revenue_goal: prefData.revenue_goal,
-      business_model: prefData.business_model,
-      technical_level: prefData.technical_level,
-      region: prefData.region,
-      launch_channels: prefData.launch_channels,
+      experience_level: prefData?.experience_level ?? null,
+      preferred_market: prefData?.preferred_market ?? null,
+      target_customer_type: prefData?.target_customer_type ?? null,
+      revenue_goal: prefData?.revenue_goal ?? null,
+      business_model: prefData?.business_model ?? null,
+      technical_level: prefData?.technical_level ?? null,
+      region: prefData?.region ?? null,
+      launch_channels: prefData?.launch_channels ?? null,
       onboarding_completed: userData.onboarding_completed,
       tour_completed: userData.tour_completed,
     }

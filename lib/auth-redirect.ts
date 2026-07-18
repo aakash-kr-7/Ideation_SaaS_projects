@@ -27,3 +27,16 @@ export function authCallbackUrl(origin: string, redirectTo: string) {
   callback.searchParams.set("next", safeAuthRedirect(redirectTo));
   return callback.toString();
 }
+
+export type AuthEntryView = "sign-in" | "register";
+
+export function authEntryUrl(redirectTo: string, view: AuthEntryView = "sign-in") {
+  const params = new URLSearchParams({ redirectTo: safeAuthRedirect(redirectTo) });
+  if (view === "register") params.set("view", "register");
+  return `/sign-in?${params.toString()}`;
+}
+
+export function onboardingUrl(redirectTo: string) {
+  const params = new URLSearchParams({ next: safeAuthRedirect(redirectTo) });
+  return `/onboarding?${params.toString()}`;
+}

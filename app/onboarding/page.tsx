@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, ArrowLeft, Check, User, Briefcase, Target, Rocket, Code, LoaderCircle } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
 import { createClient } from "@/lib/supabase/client";
+import { safeAuthRedirect } from "@/lib/auth-redirect";
 
 interface OnboardingData {
   display_name: string;
@@ -121,6 +122,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [nextPath, setNextPath] = useState("/dashboard");
   const [data, setData] = useState<OnboardingData>({
     display_name: "",
     experience_level: "",
@@ -134,6 +136,7 @@ export default function OnboardingPage() {
   });
 
   useEffect(() => {
+    setNextPath(safeAuthRedirect(new URL(window.location.href).searchParams.get("next")));
     // Pre-fill name from auth profile
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -185,7 +188,8 @@ export default function OnboardingPage() {
         const result = await response.json().catch(() => null);
         throw new Error(result?.error || "We could not save your onboarding details.");
       }
-      router.replace("/dashboard?tour=start");
+      const separator = nextPath.includes("?") ? "&" : "?";
+      router.replace(`${nextPath}${separator}tour=start`);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "We could not save your onboarding details.");
       setSaving(false);
@@ -208,7 +212,8 @@ export default function OnboardingPage() {
         const result = await response.json().catch(() => null);
         throw new Error(result?.error || "We could not save your onboarding status.");
       }
-      router.replace("/dashboard?tour=start");
+      const separator = nextPath.includes("?") ? "&" : "?";
+      router.replace(`${nextPath}${separator}tour=start`);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "We could not save your onboarding status.");
       setSaving(false);

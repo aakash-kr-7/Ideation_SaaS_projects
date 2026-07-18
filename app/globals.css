@@ -270,8 +270,8 @@ button { cursor: pointer; }
   max-width: 320px; margin: 6px 0 0; color: var(--text-primary);
   font-family: var(--display); font-size: 18px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2;
 }
-.bs-dashboard-top button {
-  height: max-content; border: 1px solid var(--signal-green);
+.bs-dashboard-top .bs-verdict-label {
+  display: inline-flex; align-items: center; height: max-content; border: 1px solid var(--signal-green);
   background: var(--signal-green-dim); color: var(--signal-green);
   padding: 6px 10px; font-family: var(--mono); font-size: 9px;
   font-weight: 600; border-radius: var(--radius-sm);
@@ -1596,6 +1596,7 @@ td small { margin-top: 3px; color: var(--text-tertiary); font-size: 10px; line-h
 /* ─── USER DROPDOWN MENU ─── */
 .user-menu-wrap { position: relative; }
 .user-menu-trigger { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; display: flex; align-items: center; gap: 8px; color: var(--text-primary); cursor: pointer; transition: all 0.2s; }
+.user-menu-loading { width: 96px; height: 34px; border: 1px solid var(--border); border-radius: var(--radius); background: linear-gradient(90deg, var(--bg-surface), var(--bg-hover), var(--bg-surface)); background-size: 200% 100%; animation: sf-shimmer 1.2s linear infinite; }
 .user-menu-trigger:hover { background: var(--bg-hover); border-color: var(--border-strong); }
 .user-avatar { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-strong); }
 .user-avatar-fallback { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: white; display: grid; place-items: center; font-size: 11px; font-weight: 700; font-family: var(--mono); }

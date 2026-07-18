@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const { user, profile, refreshProfile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [formData, setFormData] = useState({
     display_name: "",
     experience_level: "",
@@ -39,8 +40,9 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveError("");
     try {
-      await fetch("/api/user/profile", {
+      const response = await fetch("/api/user/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -48,11 +50,18 @@ export default function SettingsPage() {
           onboarding_completed: true,
         }),
       });
+      if (!response.ok) {
+        const result: unknown = await response.json().catch(() => null);
+        const message = typeof result === "object" && result !== null && "error" in result && typeof result.error === "string"
+          ? result.error
+          : "We could not save your settings.";
+        throw new Error(message);
+      }
       await refreshProfile();
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch {
-      // Handle error
+    } catch (error: unknown) {
+      setSaveError(error instanceof Error ? error.message : "We could not save your settings.");
     } finally {
       setSaving(false);
     }
@@ -82,6 +91,7 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="settings-form">
+            {saveError && <div className="auth-error" role="alert">{saveError}</div>}
             <label className="settings-field">
               <span>Display name</span>
               <input
