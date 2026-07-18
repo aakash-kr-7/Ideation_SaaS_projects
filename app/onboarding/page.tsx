@@ -145,7 +145,7 @@ export default function OnboardingPage() {
     });
   }, []);
 
-  const update = (field: keyof OnboardingData, value: any) => {
+  const update = <Field extends keyof OnboardingData>(field: Field, value: OnboardingData[Field]) => {
     setData(d => ({ ...d, [field]: value }));
   };
 

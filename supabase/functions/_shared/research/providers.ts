@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { SearchResult } from "./types.ts";
 
-declare const Deno: any;
+declare const Deno: { env?: { get(key: string): string | undefined } } | undefined;
 export function getEnv(key: string): string | undefined {
   if (typeof Deno !== "undefined" && Deno.env) {
     try {
@@ -37,6 +37,9 @@ export const evidenceItemLLMSchema = z.object({
 });
 export const evidenceListLLMSchema = z.object({
   evidence: z.array(evidenceItemLLMSchema),
+});
+const tavilyResponseSchema = z.object({
+  results: z.array(z.object({ title: z.string().optional(), url: z.string().url(), content: z.string().optional() })).default([]),
 });
 
 export interface ProviderUsage {
@@ -94,13 +97,13 @@ export class TavilySearchProvider implements SearchProvider {
         `Tavily search request failed: ${response.status} ${response.statusText}`,
       );
     }
-    const data = await response.json();
-    return (data.results || []).map((r: any, idx: number) => ({
-      id: `tav-${idx}-${Date.now()}`,
-      title: r.title || "Untitled source",
-      url: r.url || "",
-      source: new URL(r.url).hostname.replace("www.", "") || "web",
-      snippet: r.content || "",
+    const data = tavilyResponseSchema.parse(await response.json());
+    return data.results.map((result, index) => ({
+      id: `tav-${index}-${Date.now()}`,
+      title: result.title || "Untitled source",
+      url: result.url,
+      source: new URL(result.url).hostname.replace("www.", "") || "web",
+      snippet: result.content || "",
       publishedAt: new Date().toISOString(),
       sourceType: "web",
     }));

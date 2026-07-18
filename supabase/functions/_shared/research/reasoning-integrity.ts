@@ -14,10 +14,15 @@ export interface SpecialistComparison {
   reason: string;
 }
 
+interface DirectionResult {
+  status?: string;
+  output?: { verdict_direction?: VerdictDirection };
+}
+
 export function compareSpecialistAndChecker(
   specialist: string,
-  specialistResult: any,
-  checkerResult: any,
+  specialistResult: DirectionResult | null | undefined,
+  checkerResult: DirectionResult | null | undefined,
 ): SpecialistComparison {
   const specialistDirection = specialistResult?.status === "Complete"
     ? specialistResult.output?.verdict_direction || "Unavailable"
@@ -119,7 +124,7 @@ interface NarrativeClaim {
 
 export function validateNarrativeCitations(
   judge: { executive_summary: NarrativeClaim[]; methodology: NarrativeClaim[] },
-  evidenceRows: any[],
+  evidenceRows: Array<{ id?: string; source_id?: string | null; excluded?: boolean; sources?: { url?: string | null } | null }>,
 ) {
   const resolvable = new Map(
     evidenceRows.filter((row) =>

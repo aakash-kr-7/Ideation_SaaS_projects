@@ -114,7 +114,7 @@ async function costBudgetForRun(runId: string, db: any, config: ReportModeConfig
     );
   }
   const persistedSpend = (data || []).reduce(
-    (sum: number, row: any) => sum + Number(row.cost || 0),
+    (sum, row) => sum + Number(row.cost || 0),
     0,
   );
   const environmentCap = Number(getEnv("RESEARCH_RUN_COST_CAP_USD") || config.providerCostCapUsd);
@@ -202,7 +202,7 @@ async function updateState(
   detail: string,
   db: any,
 ) {
-  const values: any = {
+  const values: { status: ResearchStatus; progress: number; progress_detail: string; updated_at: string; error_message?: string } = {
     status,
     progress,
     progress_detail: detail,
@@ -1336,8 +1336,7 @@ async function executeReasoningPhase(
     throw oppError ||
       new Error("No normalized opportunity exists for this run.");
   }
-  const [evQ, compQ, riskQ, pricingQ, mvpQ, launchQ, weightQ] = await Promise
-    .all([
+  const [evQ, initialCompQ, initialRiskQ, initialPricingQ, initialMvpQ, initialLaunchQ, weightQ] = await Promise.all([
       db.from("evidence_items").select(
         "id,source_id,research_query_id,signal_type,strength,title,snippet,verified,cluster_key,supporting_count,contradicting_count,confidence,evidence_family,research_pass,source_tier,tier_reason,excluded,exclusion_reason,disconfirming,pain_point,author,source_domain,independent_source_count,independent_domain_count,market_size_source_qualified,market_size_metric,market_size_figure,sources(title,url,source_type,source_tier,tier_reason,excluded,market_size_source_qualified)",
       ).eq("run_id", id),
@@ -1360,6 +1359,11 @@ async function executeReasoningPhase(
       ).maybeSingle(),
       db.from("scoring_weights").select("criterion,weight"),
     ]);
+  let compQ = initialCompQ;
+  let riskQ = initialRiskQ;
+  let pricingQ = initialPricingQ;
+  let mvpQ = initialMvpQ;
+  let launchQ = initialLaunchQ;
   for (const q of [evQ, compQ, riskQ, pricingQ, mvpQ, launchQ, weightQ]) {
     if (q.error) throw q.error;
   }

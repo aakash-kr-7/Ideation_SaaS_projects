@@ -12,8 +12,14 @@ import { createClient } from "@/lib/supabase/server";
 import { motion, getStaggerDelay, revealUpClass } from "@/lib/motion";
 import { ReportHistory } from "@/components/dashboard/report-history";
 import { countEvidenceSources } from "@/lib/report-mode-ui";
+import { firstRelation, relationArray } from "@/lib/supabase/relations";
 
 export const dynamic = "force-dynamic";
+
+const marketTypes: readonly MarketType[] = ["B2B", "D2C", "Creator", "Developer Tool", "Local Business", "Agency Tool", "Student/Career", "Other"];
+function isMarketType(value: string): value is MarketType {
+  return marketTypes.some((market) => market === value);
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -24,9 +30,9 @@ export default async function DashboardPage() {
     .order("created_at", { ascending: false });
   if (error) throw error;
 
-  const mappedRuns: ResearchRun[] = (databaseRuns || []).map((run: any) => {
+  const mappedRuns: ResearchRun[] = (databaseRuns || []).map((run) => {
     let opportunity: Opportunity | undefined = undefined;
-    const versions = (run.reports?.[0]?.report_versions ?? []).sort((a: any, b: any) => b.version_number - a.version_number);
+    const versions = relationArray(firstRelation(run.reports)?.report_versions).sort((a, b) => b.version_number - a.version_number);
     const parsed = validationReportSchema.safeParse(versions[0]?.payload);
     if (parsed.success) {
       const o = parsed.data.opportunity;
@@ -48,11 +54,11 @@ export default async function DashboardPage() {
         name: o.name,
         one_liner: o.oneLiner,
         target_customer: o.targetCustomer,
-        market: o.market as MarketType,
+        market: isMarketType(o.market) ? o.market : "Other",
         score: legacyScore,
         verdict: scorecard.verdict === "Build Now" ? "Build now" : scorecard.verdict === "Avoid" ? "Avoid for now" : "Validate first",
         confidence: scorecard.confidence,
-        evidence: o.evidence as Opportunity["evidence"],
+        evidence: o.evidence,
         competitors: o.competitors,
         pricing: o.pricing,
         mvp: o.mvp,
@@ -66,7 +72,7 @@ export default async function DashboardPage() {
       ideaName: run.idea_name,
       ideaDescription: run.idea_description,
       targetCustomer: run.target_customer,
-      marketType: run.market_type,
+      marketType: isMarketType(run.market_type) ? run.market_type : "Other",
       targetRegion: run.target_region,
       mode: run.mode,
       status: run.status,

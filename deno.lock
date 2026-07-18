@@ -907,6 +907,7 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@eslint/eslintrc@^3.3.6",
         "npm:@google/generative-ai@~0.24.1",
         "npm:@supabase/ssr@0.12",
         "npm:@supabase/supabase-js@^2.110.2",

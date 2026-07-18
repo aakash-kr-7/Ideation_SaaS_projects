@@ -6,14 +6,15 @@
     "dev": "next dev",
     "dev:3001": "next dev -p 3001",
     "build": "next build",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --incremental false",
     "test": "npm run test:scoring",
     "test:scoring": "deno test --unstable-sloppy-imports lib/sample-reports.test.ts lib/report-mode-ui.test.ts supabase/functions/_shared/research/mode-config.test.ts supabase/functions/_shared/research/scoring-engine.test.ts supabase/functions/_shared/research/retrieval-strategy.test.ts supabase/functions/_shared/research/reasoning.test.ts supabase/functions/_shared/research/reasoning-integrity.test.ts supabase/functions/_shared/research/exports.test.ts supabase/functions/_shared/research/providers.test.ts",
     "start": "node scripts/start-server.cjs",
     "start:3000": "node scripts/start-server.cjs --port=3000",
     "start:3001": "node scripts/start-server.cjs --port=3001",
     "lint": "eslint . --max-warnings=0",
-    "audit:truth": "node scripts/audit-product-truth.mjs"
+    "audit:truth": "node scripts/audit-product-truth.mjs",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -27,6 +28,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.6",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",

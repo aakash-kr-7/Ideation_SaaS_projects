@@ -2,8 +2,9 @@ import Link from "next/link";
 import { ArrowRight, Scale, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { CompareMatrix } from "@/components/opportunity/CompareMatrix";
-import { validationReportSchema, type ValidationReport as ValidationReportData } from "@/lib/report-schema";
+import { validationReportSchema } from "@/lib/report-schema";
 import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +16,9 @@ export default async function ComparePage() {
     .eq("research_runs.status", "Completed")
     .order("created_at", { referencedTable: "report_versions", ascending: false });
   if (error) throw error;
-  const reports = (data || []).flatMap((row: any) => {
-    const parsed = validationReportSchema.safeParse(row.report_versions?.[0]?.payload);
-    return parsed.success ? [parsed.data as unknown as ValidationReportData] : [];
+  const reports = (data || []).flatMap((row) => {
+    const parsed = validationReportSchema.safeParse(firstRelation(row.report_versions)?.payload);
+    return parsed.success ? [parsed.data] : [];
   });
 
   if (reports.length < 2) {

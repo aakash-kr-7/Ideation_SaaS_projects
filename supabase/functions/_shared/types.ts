@@ -35,6 +35,12 @@ export type Database = {
   };
   public: {
     Tables: {
+      adversarial_verdict_gates: {
+        Row: { id: string; run_id: string; emerging_verdict: string; outcome: string; severity: string; objection: string; evidence_ids: string[]; unresolved: boolean; status: string; payload: Json; created_at: string };
+        Insert: { id?: string; run_id: string; emerging_verdict: string; outcome: string; severity: string; objection: string; evidence_ids?: string[]; unresolved?: boolean; status: string; payload: Json; created_at?: string };
+        Update: { id?: string; run_id?: string; emerging_verdict?: string; outcome?: string; severity?: string; objection?: string; evidence_ids?: string[]; unresolved?: boolean; status?: string; payload?: Json; created_at?: string };
+        Relationships: [{ foreignKeyName: "adversarial_verdict_gates_run_id_fkey"; columns: ["run_id"]; isOneToOne: true; referencedRelation: "research_runs"; referencedColumns: ["id"] }];
+      };
       analytics_events: {
         Row: {
           created_at: string;
@@ -69,6 +75,12 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      citation_integrity_validations: {
+        Row: { id: string; run_id: string; valid: boolean; claims_checked: number; claims_removed: number; invalid_claims: Json; payload: Json; created_at: string };
+        Insert: { id?: string; run_id: string; valid: boolean; claims_checked: number; claims_removed: number; invalid_claims?: Json; payload: Json; created_at?: string };
+        Update: { id?: string; run_id?: string; valid?: boolean; claims_checked?: number; claims_removed?: number; invalid_claims?: Json; payload?: Json; created_at?: string };
+        Relationships: [{ foreignKeyName: "citation_integrity_validations_run_id_fkey"; columns: ["run_id"]; isOneToOne: true; referencedRelation: "research_runs"; referencedColumns: ["id"] }];
       };
       api_usage_logs: {
         Row: {
@@ -924,6 +936,12 @@ export type Database = {
           },
         ];
       };
+      report_exports: {
+        Row: { id: string; report_version_id: string; format: string; storage_path: string; byte_size: number; sha256: string; created_at: string };
+        Insert: { id?: string; report_version_id: string; format: string; storage_path: string; byte_size: number; sha256: string; created_at?: string };
+        Update: { id?: string; report_version_id?: string; format?: string; storage_path?: string; byte_size?: number; sha256?: string; created_at?: string };
+        Relationships: [{ foreignKeyName: "report_exports_report_version_id_fkey"; columns: ["report_version_id"]; isOneToOne: false; referencedRelation: "report_versions"; referencedColumns: ["id"] }];
+      };
       report_versions: {
         Row: {
           adversarial_downgrade: boolean;
@@ -1566,6 +1584,12 @@ export type Database = {
           },
         ];
       };
+      specialist_checks: {
+        Row: { id: string; run_id: string; specialist_name: string; status: string; attempt_count: number; specialist_direction: string; checker_direction: string; disputed: boolean; dispute_reason: string; checker_payload: Json; created_at: string };
+        Insert: { id?: string; run_id: string; specialist_name: string; status: string; attempt_count: number; specialist_direction: string; checker_direction: string; disputed: boolean; dispute_reason: string; checker_payload: Json; created_at?: string };
+        Update: { id?: string; run_id?: string; specialist_name?: string; status?: string; attempt_count?: number; specialist_direction?: string; checker_direction?: string; disputed?: boolean; dispute_reason?: string; checker_payload?: Json; created_at?: string };
+        Relationships: [{ foreignKeyName: "specialist_checks_run_id_fkey"; columns: ["run_id"]; isOneToOne: false; referencedRelation: "research_runs"; referencedColumns: ["id"] }];
+      };
       team_members: {
         Row: {
           created_at: string;
@@ -1737,9 +1761,49 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      create_research_run_with_reservation: {
+        Args: {
+          p_project_id: string;
+          p_idea_name: string;
+          p_idea_description: string;
+          p_target_customer: string;
+          p_market_type: string;
+          p_target_region: string;
+          p_assumptions: Json;
+          p_mode: ReportMode;
+          p_idempotency_key: string;
+          p_request_id: string;
+        };
+        Returns: {
+          run_id: string;
+          run_status: string;
+          report_mode: ReportMode;
+          credit_cost: number;
+          credit_source: string;
+          available_paid_credits: number;
+          free_quick_scans_remaining: number;
+          duplicate: boolean;
+        }[];
+      };
       ensure_user_bootstrap: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
+      };
+      fail_queued_research_dispatch: {
+        Args: { p_run_id: string; p_error_message: string };
+        Returns: string;
+      };
+      get_team_credit_snapshot: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          team_id: string;
+          paid_credits: number;
+          reserved_paid_credits: number;
+          free_quick_scans_remaining: number;
+          quick_scans_available: number;
+          full_validations_available: number;
+          free_cycle_started_at: string;
+        }[];
       };
       is_team_admin: {
         Args: { team_id: string; user_id: string };

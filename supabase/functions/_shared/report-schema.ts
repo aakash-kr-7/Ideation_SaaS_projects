@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { scoringCriteria } from "./scoring.ts";
 import { reportModeSchema } from "./research/mode-config.ts";
 import type {
   Competitor,
@@ -9,6 +8,7 @@ import type {
   OpportunityScorecard,
   PricingModel,
   RiskItem,
+  ScoringCriterion,
 } from "./types.ts";
 
 // Original/Legacy frontend-facing schemas
@@ -23,9 +23,9 @@ export const evidenceSchema = z.object({
   strength: z.enum(["High", "Medium", "Low"]),
   date: z.string(),
   evidenceFamily: z.enum(["problem", "solution"]).optional(),
-  researchPass: z.number().int().min(1).max(3).optional(),
+  researchPass: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
   researchQueryId: z.string().uuid().nullable().optional(),
-  sourceTier: z.number().int().min(1).max(4).optional(),
+  sourceTier: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).optional(),
   sourceTierReason: z.string().nullable().optional(),
   excluded: z.boolean().optional(),
   disconfirming: z.boolean().optional(),
@@ -70,6 +70,23 @@ export const mvpPlanSchema = z.object({
   buildEstimate: z.string(),
   buildComplexity: z.enum(["Low", "Medium", "High"]),
 });
+const scoreNumber = () => z.number().min(0).max(100);
+const weightNumber = () => z.number().min(0);
+const criterionScoreShape = {
+  painSeverity: scoreNumber(), purchaseUrgency: scoreNumber(), willingnessToPay: scoreNumber(), buyerReachability: scoreNumber(),
+  mvpSpeed: scoreNumber(), competitionGap: scoreNumber(), retentionPotential: scoreNumber(), platformDependencyRisk: scoreNumber(),
+  regulatoryRisk: scoreNumber(), founderFit: scoreNumber(), distributionClarity: scoreNumber(), speedToFirstRevenue: scoreNumber(),
+} satisfies Record<ScoringCriterion, z.ZodNumber>;
+const criterionStringShape = {
+  painSeverity: z.string().min(1), purchaseUrgency: z.string().min(1), willingnessToPay: z.string().min(1), buyerReachability: z.string().min(1),
+  mvpSpeed: z.string().min(1), competitionGap: z.string().min(1), retentionPotential: z.string().min(1), platformDependencyRisk: z.string().min(1),
+  regulatoryRisk: z.string().min(1), founderFit: z.string().min(1), distributionClarity: z.string().min(1), speedToFirstRevenue: z.string().min(1),
+} satisfies Record<ScoringCriterion, z.ZodString>;
+const criterionWeightShape = {
+  painSeverity: weightNumber(), purchaseUrgency: weightNumber(), willingnessToPay: weightNumber(), buyerReachability: weightNumber(),
+  mvpSpeed: weightNumber(), competitionGap: weightNumber(), retentionPotential: weightNumber(), platformDependencyRisk: weightNumber(),
+  regulatoryRisk: weightNumber(), founderFit: weightNumber(), distributionClarity: weightNumber(), speedToFirstRevenue: weightNumber(),
+} satisfies Record<ScoringCriterion, z.ZodNumber>;
 const verdictSchema = z.enum([
   "Build Now",
   "Validate First",
@@ -78,22 +95,10 @@ const verdictSchema = z.enum([
   "Avoid",
 ]);
 export const scorecardSchema = z.object({
-  scores: z.object(
-    Object.fromEntries(
-      scoringCriteria.map((c) => [c.key, z.number().min(0).max(100)]),
-    ) as Record<string, z.ZodNumber>,
-  ),
-  notes: z.object(
-    Object.fromEntries(
-      scoringCriteria.map((c) => [c.key, z.string().min(1)]),
-    ) as Record<string, z.ZodString>,
-  ),
+  scores: z.object(criterionScoreShape),
+  notes: z.object(criterionStringShape),
   evidenceRefs: z.record(z.string(), z.array(z.string())).default({}),
-  weights: z.object(
-    Object.fromEntries(
-      scoringCriteria.map((c) => [c.key, z.number().min(0)]),
-    ) as Record<string, z.ZodNumber>,
-  ),
+  weights: z.object(criterionWeightShape),
   total: z.number().min(0).max(100),
   confidence: z.number().min(0).max(100),
   verdict: verdictSchema,

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { compareOpportunities } from "@/lib/scoring";
 import { validationReportSchema, type ValidationReport } from "@/lib/report-schema";
 import { createClient } from "@/lib/supabase/server";
+import { firstRelation } from "@/lib/supabase/relations";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -16,9 +17,9 @@ export async function POST(request: Request) {
     .order("created_at", { referencedTable: "report_versions", ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const payloads: ValidationReport[] = (data || []).flatMap((row: any) => {
-    const parsed = validationReportSchema.safeParse(row.report_versions?.[0]?.payload);
-    return parsed.success ? [parsed.data as unknown as ValidationReport] : [];
+  const payloads: ValidationReport[] = (data || []).flatMap((row) => {
+    const parsed = validationReportSchema.safeParse(firstRelation(row.report_versions)?.payload);
+    return parsed.success ? [parsed.data] : [];
   });
   const reports = payloads.map(({ opportunity }) => ({
     id: opportunity.id, name: opportunity.name, scorecard: opportunity.scorecard,

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { LockKeyhole, LoaderCircle, ArrowRight, Mail, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
 import { createClient } from "@/lib/supabase/client";
+import { errorMessage } from "@/lib/supabase/relations";
 import { authCallbackUrl, safeAuthRedirect } from "@/lib/auth-redirect";
 
 type AuthView = "sign-in" | "register" | "forgot-password";
@@ -100,8 +101,8 @@ function SignInCard() {
         return;
       }
       router.replace(redirectTo);
-    } catch (e: any) {
-      setError(e.message || "An unexpected error occurred.");
+    } catch (error: unknown) {
+      setError(errorMessage(error));
       setLoading(false);
     }
   };
@@ -138,8 +139,8 @@ function SignInCard() {
       }
       localStorage.setItem("shouldbuild-verify-email", email);
       router.push("/auth/verify");
-    } catch (e: any) {
-      setError(e.message || "An unexpected error occurred.");
+    } catch (error: unknown) {
+      setError(errorMessage(error));
       setLoading(false);
     }
   };
@@ -165,8 +166,8 @@ function SignInCard() {
       }
       setSuccess("Password reset link sent. Check your email.");
       setLoading(false);
-    } catch (e: any) {
-      setError(e.message || "An unexpected error occurred.");
+    } catch (error: unknown) {
+      setError(errorMessage(error));
       setLoading(false);
     }
   };

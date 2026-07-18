@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { KeyRound, ArrowRight, LoaderCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
 import { createClient } from "@/lib/supabase/client";
+import { errorMessage } from "@/lib/supabase/relations";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -42,8 +43,8 @@ export default function ResetPasswordPage() {
 
       setSuccess(true);
       setTimeout(() => router.push("/dashboard"), 2000);
-    } catch (e: any) {
-      setError(e.message || "Failed to reset password. The link may have expired.");
+    } catch (error: unknown) {
+      setError(errorMessage(error, "Failed to reset password. The link may have expired."));
     } finally {
       setLoading(false);
     }

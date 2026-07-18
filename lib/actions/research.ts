@@ -7,6 +7,7 @@ import { ProjectsRepository } from "@/lib/repositories/projects";
 import { ResearchRepository } from "@/lib/repositories/research";
 import { TeamsRepository } from "@/lib/repositories/teams";
 import { ResearchService } from "@/lib/services/research";
+import { errorMessage, isRecord } from "@/lib/supabase/relations";
 
 export async function createProject(formData: z.infer<typeof createProjectSchema>) {
   const supabase = await createClient();
@@ -17,7 +18,7 @@ export async function createProject(formData: z.infer<typeof createProjectSchema
   const validated = createProjectSchema.parse(formData);
 
   const teams = await TeamsRepository.getUserTeams();
-  const teamMember = teams[0]?.team_members.find((tm: any) => tm.user_id === user.id);
+  const teamMember = teams[0]?.team_members.find((member) => member.user_id === user.id);
 
   if (!teamMember) throw new Error("No team found for user");
 
@@ -29,8 +30,8 @@ export async function createProject(formData: z.infer<typeof createProjectSchema
       created_by: user.id,
     });
     return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+  } catch (error: unknown) {
+    throw new Error(errorMessage(error));
   }
 }
 
@@ -45,8 +46,8 @@ export async function getProjects() {
 
   try {
     return await ProjectsRepository.getTeamProjects(teamId);
-  } catch (error: any) {
-    throw new Error(error.message);
+  } catch (error: unknown) {
+    throw new Error(errorMessage(error));
   }
 }
 
@@ -54,12 +55,13 @@ export async function startResearchRun(formData: z.infer<typeof startResearchRun
   try {
     const validated = startResearchRunSchema.parse(formData);
     return await ResearchService.startResearchRun(validated);
-  } catch (err: any) {
+  } catch (error: unknown) {
+    const details = isRecord(error) ? error : {};
     throw new Error(JSON.stringify({
       status: "error",
-      code: err.code || "START_RESEARCH_RUN_FAILED",
-      message: err.message || String(err),
-      requestId: err.requestId,
+      code: typeof details.code === "string" ? details.code : "START_RESEARCH_RUN_FAILED",
+      message: errorMessage(error, String(error)),
+      requestId: typeof details.requestId === "string" ? details.requestId : undefined,
     }));
   }
 }
@@ -71,7 +73,7 @@ export async function getCreditSnapshot() {
 export async function getResearchRuns(projectId: string) {
   try {
     return await ResearchRepository.getProjectRuns(projectId);
-  } catch (error: any) {
-    throw new Error(error.message);
+  } catch (error: unknown) {
+    throw new Error(errorMessage(error));
   }
 }

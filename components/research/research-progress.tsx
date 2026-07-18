@@ -24,6 +24,7 @@ import { AnimatedNumber } from "@/components/ui/animated-number";
 import { getStaggerDelay, revealUpClass, stateChangeKey } from "@/lib/motion";
 import { getReportModeConfig, type ReportMode } from "@/lib/report-modes";
 import { deriveProgressSteps } from "@/lib/report-mode-ui";
+import { z } from "zod";
 
 type ProgressState = {
   mode: ReportMode;
@@ -127,6 +128,16 @@ type CitationValidation = {
   created_at: string;
 };
 
+const stageLogSchema: z.ZodType<StageLog> = z.object({ id: z.string(), created_at: z.string(), progress_detail: z.string().nullable(), error_message: z.string().nullable(), stage_name: z.string() });
+const researchPassSchema: z.ZodType<ResearchPass> = z.object({ id: z.string(), pass_number: z.number(), objective: z.enum(["broad", "targeted", "disconfirming"]), query_count: z.number(), evidence_count: z.number(), sufficient: z.boolean(), coverage_gaps: z.array(z.string()), budget_limited: z.boolean(), status: z.enum(["Running", "Complete", "BudgetLimited"]), started_at: z.string(), completed_at: z.string().nullable() });
+const researchQuerySchema: z.ZodType<ResearchQuery> = z.object({ id: z.string(), pass_number: z.number(), evidence_family: z.enum(["problem", "solution"]), objective: z.string(), query: z.string(), triggered_by_evidence_ids: z.array(z.string()), status: z.enum(["Running", "Complete", "Failed"]), result_count: z.number(), created_at: z.string() });
+const evidenceSourceSchema = z.object({ title: z.string().nullable(), url: z.string().nullable(), source_type: z.string().nullable(), source_domain: z.string().nullable() });
+const liveEvidenceSchema: z.ZodType<LiveEvidence> = z.object({ id: z.string(), title: z.string(), snippet: z.string(), signal_type: z.string(), strength: z.string(), evidence_family: z.enum(["problem", "solution"]).nullable(), research_pass: z.number().nullable(), source_tier: z.number().nullable(), tier_reason: z.string().nullable(), excluded: z.boolean(), disconfirming: z.boolean(), pain_point: z.string().nullable(), cluster_key: z.string().nullable(), independent_source_count: z.number(), independent_domain_count: z.number(), source_domain: z.string().nullable(), created_at: z.string(), sources: z.union([evidenceSourceSchema, z.array(evidenceSourceSchema)]).nullable() });
+const specialistCheckSchema: z.ZodType<SpecialistCheck> = z.object({ id: z.string(), specialist_name: z.string(), status: z.enum(["Complete", "Incomplete"]), checker_direction: z.string(), disputed: z.boolean(), dispute_reason: z.string(), created_at: z.string() });
+const adversarialGateSchema: z.ZodType<AdversarialGate> = z.object({ id: z.string(), outcome: z.enum(["StrongObjection", "NoStrongDisproof", "InsufficientEvidence"]), severity: z.enum(["High", "Medium", "Low", "None"]), objection: z.string(), evidence_ids: z.array(z.string()), unresolved: z.boolean(), status: z.enum(["Complete", "Incomplete"]), created_at: z.string() });
+const citationValidationSchema: z.ZodType<CitationValidation> = z.object({ id: z.string(), valid: z.boolean(), claims_checked: z.number(), claims_removed: z.number(), created_at: z.string() });
+const runUpdateSchema = z.object({ idea_name: z.string(), mode: z.enum(["quick_scan", "full_validation"]), status: z.enum(["Queued", "Searching", "Extracting", "Normalizing", "Scoring", "Generating", "Completed", "Failed", "Cancelled"]), progress_detail: z.string().nullable(), error_message: z.string().nullable(), credit_state: z.enum(["legacy", "reserved", "consumed", "restored"]) });
+
 const PASS_META = {
   1: {
     label: "Broad sweep",
@@ -223,14 +234,14 @@ export function ResearchProgress({ id }: { id: string }) {
     };
 
     const refreshStages = async () => {
-      const { data, error } = await (supabase.from("research_stages") as any)
+      const { data, error } = await supabase.from("research_stages")
         .select("id,created_at,progress_detail,error_message,stage_name")
         .eq("run_id", id).order("created_at", { ascending: true });
       if (error) {
         if (active) setConnectionError(error.message);
         return;
       }
-      if (active) setLogs((data ?? []) as StageLog[]);
+      if (active) setLogs(z.array(stageLogSchema).parse(data ?? []));
     };
 
     const refreshResearch = async () => {
@@ -242,22 +253,22 @@ export function ResearchProgress({ id }: { id: string }) {
         gateResult,
         citationResult,
       ] = await Promise.all([
-        (supabase.from("research_passes") as any).select(
+        supabase.from("research_passes").select(
           "id,pass_number,objective,query_count,evidence_count,sufficient,coverage_gaps,budget_limited,status,started_at,completed_at",
         ).eq("run_id", id).order("pass_number"),
-        (supabase.from("research_queries") as any).select(
+        supabase.from("research_queries").select(
           "id,pass_number,evidence_family,objective,query,triggered_by_evidence_ids,status,result_count,created_at",
         ).eq("run_id", id).order("created_at", { ascending: false }).limit(18),
-        (supabase.from("evidence_items") as any).select(
+        supabase.from("evidence_items").select(
           "id,title,snippet,signal_type,strength,evidence_family,research_pass,source_tier,tier_reason,excluded,disconfirming,pain_point,cluster_key,independent_source_count,independent_domain_count,source_domain,created_at,sources(title,url,source_type,source_domain)",
         ).eq("run_id", id).order("created_at", { ascending: false }).limit(24),
-        (supabase as any).from("specialist_checks").select(
+        supabase.from("specialist_checks").select(
           "id,specialist_name,status,checker_direction,disputed,dispute_reason,created_at",
         ).eq("run_id", id).order("created_at"),
-        (supabase as any).from("adversarial_verdict_gates").select(
+        supabase.from("adversarial_verdict_gates").select(
           "id,outcome,severity,objection,evidence_ids,unresolved,status,created_at",
         ).eq("run_id", id).maybeSingle(),
-        (supabase as any).from("citation_integrity_validations").select(
+        supabase.from("citation_integrity_validations").select(
           "id,valid,claims_checked,claims_removed,created_at",
         ).eq("run_id", id).maybeSingle(),
       ]);
@@ -275,12 +286,12 @@ export function ResearchProgress({ id }: { id: string }) {
         return;
       }
       if (!active) return;
-      setPasses((passResult.data ?? []) as ResearchPass[]);
-      setQueries((queryResult.data ?? []) as ResearchQuery[]);
-      setEvidence((evidenceResult.data ?? []) as LiveEvidence[]);
-      setChecks((checkResult.data ?? []) as SpecialistCheck[]);
-      setGate((gateResult.data ?? null) as AdversarialGate | null);
-      setCitation((citationResult.data ?? null) as CitationValidation | null);
+      setPasses(z.array(researchPassSchema).parse(passResult.data ?? []));
+      setQueries(z.array(researchQuerySchema).parse(queryResult.data ?? []));
+      setEvidence(z.array(liveEvidenceSchema).parse(evidenceResult.data ?? []));
+      setChecks(z.array(specialistCheckSchema).parse(checkResult.data ?? []));
+      setGate(gateResult.data ? adversarialGateSchema.parse(gateResult.data) : null);
+      setCitation(citationResult.data ? citationValidationSchema.parse(citationResult.data) : null);
     };
 
     const queueRefresh = () => {
@@ -290,8 +301,9 @@ export function ResearchProgress({ id }: { id: string }) {
       }, 120);
     };
 
-    const applyRun = (run: any) => {
+    const applyRun = (input: unknown) => {
       if (!active) return;
+      const run = runUpdateSchema.parse(input);
       const message = run.status === "Failed"
         ? run.error_message || run.progress_detail || "Research failed"
         : run.progress_detail || run.status;

@@ -78,8 +78,8 @@ export const ResearchService = {
       );
     }
 
-    const { data: reservationData, error: reservationError } = await (supabase as any)
-      .rpc("create_research_run_with_reservation", {
+    const { data: reservationData, error: reservationError } = await supabase.rpc(
+      "create_research_run_with_reservation", {
         p_project_id: validated.project_id,
         p_idea_name: validated.idea_name,
         p_idea_description: validated.idea_description,
@@ -97,7 +97,7 @@ export const ResearchService = {
     const workerSecret = process.env.WEBHOOK_SECRET;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     if (!workerSecret || !supabaseUrl) {
-      await (supabase as any).rpc("fail_queued_research_dispatch", {
+      await supabase.rpc("fail_queued_research_dispatch", {
         p_run_id: reservation.run_id,
         p_error_message: "Research worker dispatch is not configured.",
       });
@@ -120,7 +120,7 @@ export const ResearchService = {
     });
     if (!workerResponse.ok) {
       const detail = (await workerResponse.text()).slice(0, 300);
-      const { error: restoreError } = await (supabase as any).rpc(
+      const { error: restoreError } = await supabase.rpc(
         "fail_queued_research_dispatch",
         {
           p_run_id: reservation.run_id,
@@ -164,7 +164,7 @@ export const ResearchService = {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
-    const { data, error } = await (supabase as any).rpc("get_team_credit_snapshot");
+    const { data, error } = await supabase.rpc("get_team_credit_snapshot");
     if (error) throw error;
     return creditSnapshotSchema.parse(firstRow(data));
   },

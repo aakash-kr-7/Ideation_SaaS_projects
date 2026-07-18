@@ -109,7 +109,7 @@ function buildReport(mode: "quick_scan" | "full_validation"): ValidationReport {
       apiDependencies: full ? ["WhatsApp Business Platform", "Booking-system calendars or exports"] : undefined,
       notToBuildFirst: ["Booking-system replacement", "Clinical messaging", "Generic CRM", "Autonomous upselling"],
     },
-  }) as unknown as ValidationReport;
+  });
 }
 
 export const sampleQuickScan = buildReport("quick_scan");

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getReportModeConfig } from "@/lib/report-modes";
+import { errorMessage } from "@/lib/supabase/relations";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,8 +13,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     const dbClient = supabase;
     
     // Fetch run status
-    const { data: dbRun, error: dbRunError } = await (dbClient
-      .from("research_runs") as any)
+    const { data: dbRun, error: dbRunError } = await dbClient
+      .from("research_runs")
       .select("id, mode, status, progress, progress_detail, error_message, credit_state")
       .eq("id", id)
       .single();
@@ -49,7 +50,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       reportName: config.label,
       stage: dbRun.status,
       progress: dbRun.progress,
-      message: dbRun.status === "Failed" ? dbRun.error_message : (dbRun as any).progress_detail ?? dbRun.status,
+      message: dbRun.status === "Failed" ? dbRun.error_message : dbRun.progress_detail ?? dbRun.status,
       evidenceCount,
       sourceCount,
       competitorCount,
@@ -59,7 +60,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       progressSteps: config.progress,
       error: dbRun.status === "Failed" ? dbRun.error_message : null
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: errorMessage(error) }, { status: 500 });
   }
 }

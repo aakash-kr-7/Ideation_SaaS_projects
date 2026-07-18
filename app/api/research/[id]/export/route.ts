@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isExportAllowed, reportModeSchema, type ReportExportFormat } from "@/lib/report-modes";
 import { z } from "zod";
-
-function asArray<T>(value: T | T[] | null | undefined): T[] {
-  return Array.isArray(value) ? value : value == null ? [] : [value];
-}
+import { firstRelation, relationArray } from "@/lib/supabase/relations";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,7 +12,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const body = await request.json().catch(() => ({}));
   const parsedFormat = z.enum(["pdf", "markdown", "md", "csv", "json"]).safeParse(body.format);
   if (!parsedFormat.success) return NextResponse.json({ error: "Invalid export format" }, { status: 400 });
-  const requested = (parsedFormat.data === "md" ? "markdown" : parsedFormat.data) as ReportExportFormat;
+  const requested: ReportExportFormat = parsedFormat.data === "md" ? "markdown" : parsedFormat.data;
   const { data, error } = await supabase
     .from("research_runs")
     .select("idea_name, mode, reports(report_versions(version_number, report_exports(format, storage_path)))")
@@ -27,9 +24,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!isExportAllowed(mode, requested)) {
     return NextResponse.json({ error: `${requested.toUpperCase()} export is not included with this report type.` }, { status: 403 });
   }
-  const reports = asArray((data as any)?.reports);
-  const versions = asArray(reports[0]?.report_versions).sort((a: any,b: any) => b.version_number-a.version_number);
-  const stored = asArray(versions[0]?.report_exports).find((item: any) => item.format === requested);
+  const versions = relationArray(firstRelation(data.reports)?.report_versions).sort((a, b) => b.version_number - a.version_number);
+  const stored = relationArray(versions[0]?.report_exports).find((item) => item.format === requested);
   if (!stored) return NextResponse.json({ error: "Stored export is not ready" }, { status: 409 });
   const { data: file, error: downloadError } = await supabase.storage.from("exports").download(stored.storage_path);
   if (downloadError || !file) return NextResponse.json({ error: downloadError?.message || "Export unavailable" }, { status: 403 });
