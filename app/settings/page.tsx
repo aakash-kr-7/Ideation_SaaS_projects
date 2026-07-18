@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell, Database, KeyRound, ShieldCheck, UserRound, Save, LoaderCircle, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { Database, Mail, ShieldCheck, UserRound, Save, LoaderCircle, CheckCircle2 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { useAuth } from "@/components/layout/auth-provider";
+import { SUPPORT_EMAIL } from "@/lib/pricing";
 
 export default function SettingsPage() {
   const { user, profile, refreshProfile } = useAuth();
@@ -162,20 +164,6 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Other Settings */}
-        <section className="settings-section">
-          <div className="settings-section-header">
-            <Bell size={19} />
-            <div>
-              <h3>Notifications</h3>
-              <p>Get notified when a validation report is ready.</p>
-            </div>
-          </div>
-          <div className="settings-info-card">
-            <p>Email notifications for completed reports will be available in a future update.</p>
-          </div>
-        </section>
-
         <section className="settings-section">
           <div className="settings-section-header">
             <Database size={19} />
@@ -191,14 +179,15 @@ export default function SettingsPage() {
 
         <section className="settings-section">
           <div className="settings-section-header">
-            <KeyRound size={19} />
+            <Mail size={19} />
             <div>
-              <h3>API Access</h3>
-              <p>Programmatic access to ShouldBuild validation reports.</p>
+              <h3>Account, privacy, and support</h3>
+              <p>Get help or exercise your account and data rights.</p>
             </div>
           </div>
-          <div className="settings-info-card">
-            <p>API access is coming soon on the Director plan. Stay tuned.</p>
+          <div className="settings-info-card settings-support-links">
+            <p>Contact <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> for account deletion, privacy requests, report issues, or billing support.</p>
+            <div><Link href="/support">Support</Link><Link href="/legal/privacy">Privacy</Link><Link href="/legal/terms">Terms</Link><Link href="/legal/refunds">Refunds</Link></div>
           </div>
         </section>
 

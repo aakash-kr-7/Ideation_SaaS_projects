@@ -7,6 +7,9 @@ import { ArrowRight, CheckCircle2, ChevronRight, FileSearch, Gauge, Radar, Shiel
 import { Brand } from "@/components/layout/brand";
 import { createClient } from "@/lib/supabase/client";
 import { authCallbackUrl } from "@/lib/auth-redirect";
+import { LegalFooter } from "@/components/layout/legal-footer";
+import { launchPricing, regionalPrice, type PricingRegionHint } from "@/lib/pricing";
+import { usePricingRegion } from "@/components/pricing/use-pricing-region";
 
 const signals = [
   { name: "Reddit", logoPath: "/logos/reddit.svg" },
@@ -23,9 +26,13 @@ const signals = [
 // Duplicate for seamless marquee loop
 const marqueeSignals = [...signals, ...signals, ...signals];
 
-export function LandingPage() {
+export function LandingPage({ initialRegion = "auto" }: { initialRegion?: PricingRegionHint }) {
   const [activeCta, setActiveCta] = useState<string | null>(null);
   const [authError, setAuthError] = useState("");
+  const pricingRegion = usePricingRegion(initialRegion);
+  const quickPrice = regionalPrice(launchPricing.oneOff.quick, pricingRegion);
+  const fullPrice = regionalPrice(launchPricing.oneOff.full, pricingRegion);
+  const proPrice = regionalPrice(launchPricing.plans.proMonthly, pricingRegion);
 
   const handleGoogleSignIn = async (ctaKey: string, redirectTo: string) => {
     setActiveCta(ctaKey);
@@ -215,16 +222,17 @@ export function LandingPage() {
       <section id="pricing" className="bs-pricing">
         <div>
           <p className="bs-kicker">Pricing</p>
-          <h2>Know what to build. Starting at $0.</h2>
-          <p>Start with a free scan. Upgrade when you need full reports, comparison tools, or client-ready exports.</p>
+          <h2>Start free. Pay when an idea deserves deeper research.</h2>
+          <p>One useful Quick Scan every month, with no card required. Buy a report once or subscribe when you validate regularly.</p>
         </div>
         <div className="bs-price-row">
-          <span>Signal<b>$0</b><small>1 quick scan per month</small></span>
-          <span className="active">Analyst<b>$29</b><small>Full validation reports</small></span>
-          <span>Principal<b>$69</b><small>Compare + custom scoring</small></span>
-          <span>Director<b>$149</b><small>Client-ready exports</small></span>
+          <span>Free<b>{regionalPrice(launchPricing.plans.free, pricingRegion)}</b><small>1 Quick Scan every 30 days</small></span>
+          <span>Quick Scan<b>{quickPrice}</b><small>One-off · 1 credit</small></span>
+          <span className="active">Full Validation<b>{fullPrice}</b><small>One-off · 3 credits</small></span>
+          <span>Pro<b>{proPrice}</b><small>6 credits each month</small></span>
         </div>
-        <Link className="bs-btn bs-btn-bright" href="/pricing">See full pricing <ArrowRight size={15}/></Link>
+        <Link className="bs-btn bs-btn-bright" href="/pricing">Compare plans and reports <ArrowRight size={15}/></Link>
+        <small className="pricing-disclosure">{pricingRegion === "india" ? "India pricing shown in INR." : "Global pricing shown in USD."} Taxes included where applicable.</small>
       </section>
 
       {/* ── FINAL CTA ── */}
@@ -242,18 +250,14 @@ export function LandingPage() {
         </a>
       </section>
     </main>
-    <footer>
-      <Brand/>
-      <span>ShouldBuild · Know what to build before you build it.</span>
-      <span style={{ marginLeft: "auto", fontSize: "0.85em", color: "var(--dusty)", display: "flex", alignItems: "center", gap: 4 }}><ShieldCheck size={12}/> Data isolated via Supabase Row Level Security</span>
-    </footer>
+    <LegalFooter />
   </div>;
 }
 
 function MemoPreview({ expanded = false }: { expanded?: boolean }) {
   return <div className={`bs-product-frame${expanded ? " expanded" : ""}`}>
     <div className="bs-window">
-      <header><span className="bs-window-dot"/><span><span className="brand-name">Should<span className="text-accent">Build</span></span> / VALIDATION REPORT</span><i>SAMPLE DATA</i></header>
+      <header><span className="bs-window-dot"/><span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--display)", fontSize: 13, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em" }}><Image src="/brand/shouldbuild-mark.svg" alt="" width={16} height={16} style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,.15))" }}/>Should<span className="text-accent">Build</span></span><span style={{ opacity: 0.6 }}> / VALIDATION REPORT</span><i>SAMPLE DATA</i></header>
       <aside>
         <b>82</b>
         <span className="active">Verdict</span>

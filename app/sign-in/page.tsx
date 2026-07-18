@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { LockKeyhole, LoaderCircle, ArrowRight, Mail, Eye, EyeOff, CheckCircle2, ArrowLeft } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
 import { createClient } from "@/lib/supabase/client";
@@ -384,6 +385,7 @@ function SignInCard() {
         <LockKeyhole size={13} />
         Encrypted authentication via Supabase
       </small>
+      <p className="auth-legal">By continuing, you agree to the <Link href="/legal/terms">Terms of Service</Link> and acknowledge the <Link href="/legal/privacy">Privacy Policy</Link>.</p>
     </div>
   );
 }

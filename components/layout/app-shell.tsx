@@ -9,6 +9,7 @@ import {
   Circle, LogOut, ChevronDown, BookOpen, User, Command, ArrowRight, X
 } from "lucide-react";
 import { Brand } from "./brand";
+import { LegalFooter } from "./legal-footer";
 import { ProductTour } from "./product-tour";
 import { useAuth } from "./auth-provider";
 import { createClient } from "@/lib/supabase/client";
@@ -17,11 +18,18 @@ import { motion, getStaggerDelay, revealUpClass } from "@/lib/motion";
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, description: "Validation pipeline and next actions", keywords: "home overview reports" },
   { href: "/research/new", label: "Validate idea", icon: Plus, description: "Start a market-backed validation", keywords: "new research scan" },
-  { href: "/compare", label: "Compare ideas", icon: Scale, plan: "PRINCIPAL", description: "Compare completed reports side by side", keywords: "matrix score" },
-  { href: "/dashboard/scoring", label: "Scoring model", icon: BarChart3, plan: "PRINCIPAL", description: "Inspect criteria and decision weights", keywords: "weights criteria" },
+  { href: "/compare", label: "Compare ideas", icon: Scale, plan: "PRO", description: "Compare completed reports side by side", keywords: "matrix score" },
+  { href: "/dashboard/scoring", label: "Scoring model", icon: BarChart3, plan: "PRO", description: "Inspect criteria and decision weights", keywords: "weights criteria" },
   { href: "/pricing", label: "Pricing", icon: CreditCard, description: "Plans and validation depth", keywords: "billing plan" },
   { href: "/settings", label: "Settings", icon: Settings, description: "Profile and workspace preferences", keywords: "account profile" },
 ];
+
+function isActiveNavigation(href: string, pathname: string) {
+  if (href === "/dashboard") {
+    return pathname === "/dashboard" || (pathname.startsWith("/research/") && pathname !== "/research/new");
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 import { Suspense } from "react";
 
@@ -54,7 +62,7 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
   const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const quickNavInputRef = useRef<HTMLInputElement>(null);
-  const activeLinkIndex = Math.max(0, links.findIndex(({ href }) => pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`))));
+  const activeLinkIndex = links.findIndex(({ href }) => isActiveNavigation(href, pathname));
   const filteredLinks = useMemo(() => {
     const query = quickNavQuery.trim().toLowerCase();
     return query ? links.filter(item => `${item.label} ${item.description} ${item.keywords}`.toLowerCase().includes(query)) : links;
@@ -70,7 +78,11 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
         event.preventDefault();
         setQuickNavOpen(open => !open);
       }
-      if (event.key === "Escape") setQuickNavOpen(false);
+      if (event.key === "Escape") {
+        setQuickNavOpen(false);
+        setMenuOpen(false);
+        setMobileNavOpen(false);
+      }
     };
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
@@ -109,13 +121,14 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
   }, []);
 
   const handleSignOut = async () => {
-    const supabase = createClient();
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("Could not sign out:", error.message);
-      return;
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error("Could not sign out:", e);
+    } finally {
+      window.location.href = "/";
     }
-    window.location.assign("/");
   };
 
   const displayName = profile?.display_name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
@@ -123,20 +136,20 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
 
   return (
     <div className="app-shell">
-      <aside className={`sidebar ${mobileNavOpen ? "mobile-open" : ""}`}>
+      <aside id="app-sidebar" className={`sidebar ${mobileNavOpen ? "mobile-open" : ""}`}>
         <Brand href="/dashboard" />
         <div className="workspace">
-          <span className="workspace-mark" aria-hidden="true"><Image src="/brand/shouldbuild-icon.png" alt="" width={28} height={28}/></span>
+          <span className="workspace-mark" aria-hidden="true"><Image src="/brand/shouldbuild-mark.svg" alt="" width={28} height={28}/></span>
           <div><b>Your ideas</b><small>Validate before you build</small></div>
         </div>
         <p className="sidebar-label">NAVIGATION</p>
-        <nav className="instrument-nav" style={{ "--active-index": activeLinkIndex } as CSSProperties}>
-          <span className="nav-active-indicator" aria-hidden="true" />
+        <nav className="instrument-nav" aria-label="Main navigation" style={{ "--active-index": activeLinkIndex } as CSSProperties}>
+          {activeLinkIndex >= 0 && <span className="nav-active-indicator" aria-hidden="true" />}
           {links.map(({ href, label, icon: Icon, plan, description }, index) => (
             <Link
               href={href}
               key={href}
-              className={`${pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`)) ? "nav-link active" : "nav-link"} ${motion.transitionBase} ${motion.pressTight} ${revealUpClass}`}
+              className={`${isActiveNavigation(href, pathname) ? "nav-link active" : "nav-link"} ${motion.transitionBase} ${motion.pressTight} ${revealUpClass}`}
               style={getStaggerDelay(index, 150, 25)}
               onClick={() => setMobileNavOpen(false)}
               data-tour={`nav-${href.split("/").filter(Boolean).join("-")}`}
@@ -164,6 +177,8 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
               className={`mobile-menu-toggle ${motion.transitionBase} ${motion.pressTight}`}
               onClick={() => setMobileNavOpen(!mobileNavOpen)}
               aria-label="Toggle navigation"
+              aria-expanded={mobileNavOpen}
+              aria-controls="app-sidebar"
             >
               <span />
               <span />
@@ -183,9 +198,12 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
               <Link className="button button-small ghost" href={`/sign-in?redirectTo=${encodeURIComponent(pathname)}`}>Sign in</Link>
             ) : <div className="user-menu-wrap" ref={menuRef}>
               <button
+                type="button"
                 className={`user-menu-trigger ${motion.transitionBase} ${motion.pressTight}`}
                 onClick={() => setMenuOpen(!menuOpen)}
                 aria-expanded={menuOpen}
+                aria-haspopup="menu"
+                aria-label={`Open profile menu for ${displayName}`}
               >
                 {mounted ? (
                   <>
@@ -210,20 +228,20 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
               </button>
 
               {menuOpen && mounted && (
-                <div className="user-dropdown">
+                <div className="user-dropdown" role="menu" aria-label="Profile menu">
                   <div className="user-dropdown-header">
                     <b>{displayName}</b>
                     <small>{user?.email}</small>
                   </div>
                   <hr />
-                  <Link href="/settings" className={`user-dropdown-item ${motion.transitionBase} ${motion.pressTight}`} onClick={() => setMenuOpen(false)}>
+                  <Link href="/settings" role="menuitem" className={`user-dropdown-item ${motion.transitionBase} ${motion.pressTight}`} onClick={() => setMenuOpen(false)}>
                     <User size={14} /> Profile & Settings
                   </Link>
-                  <button className={`user-dropdown-item ${motion.transitionBase} ${motion.pressTight}`} onClick={() => { setMenuOpen(false); setTourOpen(true); }}>
+                  <button type="button" role="menuitem" className={`user-dropdown-item ${motion.transitionBase} ${motion.pressTight}`} onClick={() => { setMenuOpen(false); setTourOpen(true); }}>
                     <BookOpen size={14} /> Take Product Tour
                   </button>
                   <hr />
-                  <button className={`user-dropdown-item danger ${motion.transitionBase} ${motion.pressTight}`} onClick={handleSignOut}>
+                  <button type="button" role="menuitem" className={`user-dropdown-item danger ${motion.transitionBase} ${motion.pressTight}`} onClick={handleSignOut}>
                     <LogOut size={14} /> Sign out
                   </button>
                 </div>
@@ -231,7 +249,8 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
             </div>}
           </div>
         </header>
-        <div key={pathname} className="sf-content-enter" data-tour="page-canvas">{children}</div>
+        <div key={pathname} className="sf-content-enter app-page-canvas" data-tour="page-canvas">{children}</div>
+        <LegalFooter compact />
       </main>
 
       {/* Mobile nav overlay */}

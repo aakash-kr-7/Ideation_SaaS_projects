@@ -58,16 +58,16 @@ const tourSteps: TourStep[] = [
     body: "Compare two or more completed reports against the same criteria to decide which opportunity deserves attention first.",
     tip: "Compare willingness to pay and path to revenue alongside the overall score.",
     selector: '[data-tour="nav-compare"]',
-    plan: "Principal plan",
+    plan: "Pro feature",
   },
   {
     icon: BarChart3,
     section: "Scoring model",
     title: "Model your own decision priorities",
     body: "Adjust the 12 scoring weights to reflect speed, risk tolerance, distribution, or revenue goals and see the verdict respond.",
-    tip: "Exports are paid too: Markdown begins on Analyst; PDF and JSON begin on Principal.",
+    tip: "Full Validation includes PDF, Markdown, CSV, and JSON exports; Pro includes every export format.",
     selector: '[data-tour="nav-dashboard-scoring"]',
-    plan: "Principal plan",
+    plan: "Pro feature",
   },
 ];
 
@@ -213,7 +213,7 @@ export function ProductTour({ isOpen, onClose, onComplete }: ProductTourProps) {
         <div className="tour-step-counter"><span>{String(step + 1).padStart(2, "0")}</span> / {String(tourSteps.length).padStart(2, "0")}</div>
         <div className="tour-heading-row">
           <div className={`tour-icon-wrap${step === 0 ? " tour-brand-icon" : ""}`}>
-            {step === 0 ? <Image src="/brand/shouldbuild-icon.png" alt="" width={34} height={34}/> : <Icon size={22} />}
+            {step === 0 ? <Image src="/brand/shouldbuild-mark.svg" alt="" width={34} height={34}/> : <Icon size={22} />}
           </div>
           {current.plan && <span className="tour-plan-badge">PAID · {current.plan}</span>}
         </div>

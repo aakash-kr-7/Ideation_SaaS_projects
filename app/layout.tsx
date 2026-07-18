@@ -11,9 +11,9 @@ export const metadata: Metadata = {
   },
   applicationName: "ShouldBuild",
   icons: {
-    icon: "/icon.png",
-    shortcut: "/icon.png",
-    apple: "/apple-icon.png",
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
   },
   openGraph: { 
     title: "ShouldBuild — Startup Idea Validation Tool", 
@@ -21,13 +21,13 @@ export const metadata: Metadata = {
     type: "website",
     url: "/",
     siteName: "ShouldBuild",
-    images: [{ url: "/brand/shouldbuild-icon.png", width: 1199, height: 1198, alt: "ShouldBuild" }],
+    images: [{ url: "/brand/shouldbuild-mark.svg", width: 1199, height: 1198, alt: "ShouldBuild" }],
   },
   twitter: { 
     card: "summary_large_image", 
     title: "ShouldBuild — Automated Market Validation",
     description: "Test your startup idea against real market signals in minutes.",
-    images: ["/brand/shouldbuild-icon.png"],
+    images: ["/brand/shouldbuild-mark.svg"],
   },
 };
 

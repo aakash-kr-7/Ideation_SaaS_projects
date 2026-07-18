@@ -11,7 +11,6 @@ import { ScoreBadge } from "@/components/scoring/score-badge";
 import { WeightEditor } from "@/components/scoring/WeightEditor";
 import { recalculateScorecard } from "@/lib/recalculate-scorecard";
 import { getStaggerDelay, motion, revealUpClass } from "@/lib/motion";
-import { Brand } from "@/components/layout/brand";
 
 const tabs = ["Verdict", "Evidence", "Competitors", "Scoring", "MVP Blueprint", "Pricing", "Launch", "Action plan", "Risks", "Export"] as const;
 type Tab = typeof tabs[number];
@@ -51,14 +50,6 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
   return <div className={publicMode ? "validation-report public-report premium-report" : "validation-report premium-report"}>
     {toast && <div className="report-toast sf-confirmation" role="status">{toast}</div>}
 
-    <div className="report-brand-bar">
-      <Brand href={publicMode ? "/" : "/dashboard"}/>
-      <div className="report-brand-context">
-        <b>{publicMode ? "Public sample" : "Private workspace"}</b>
-        <span>Evidence-backed validation report</span>
-      </div>
-    </div>
-    
     <header className="report-engine-hero">
       <div>
         <p className="eyebrow">{publicMode ? "Sample validation report" : "Validation report"} · {report.generatedAt}</p>

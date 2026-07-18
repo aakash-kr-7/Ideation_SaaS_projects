@@ -1,2 +1,6 @@
 import { LandingPage } from "@/components/landing/landing-page";
-export default function Page() { return <LandingPage />; }
+import { getPricingRegionHint } from "@/lib/pricing-region.server";
+
+export default async function Page() {
+  return <LandingPage initialRegion={await getPricingRegionHint()} />;
+}
