@@ -9,6 +9,7 @@ import { VerdictBadge } from "@/components/opportunity/verdict-badge";
 import { ResearchRun, Opportunity, ScoreBreakdown, MarketType } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 import { motion, getStaggerDelay, revealUpClass } from "@/lib/motion";
+import { ReportHistory } from "@/components/dashboard/report-history";
 
 export const dynamic = "force-dynamic";
 
@@ -122,7 +123,7 @@ export default async function DashboardPage() {
             </div>
             <h2>Welcome to ShouldBuild</h2>
             <p>
-              Describe your first product idea and get a market-backed verdict in minutes.
+              Describe your first product idea and get a cited, market-backed verdict.
               We&apos;ll analyze buyer pain, competition, pricing, risks, and give you a concrete next step.
             </p>
             <div className="empty-state-steps">
@@ -216,11 +217,7 @@ export default async function DashboardPage() {
                 {completedRuns.length >= 2 && <Link href="/compare">Compare ideas</Link>}
               </header>
               {mappedRuns.length > 0 ? (
-                mappedRuns.map((run, index) => <Link className={`saved-row ${motion.transitionBase} ${motion.hoverElevateSubtle} active:scale-[0.99] ${revealUpClass}`} style={getStaggerDelay(index)} href={run.status === "Completed" ? `/research/${run.id}/results` : `/research/${run.id}/progress`} key={run.id}>
-                  <span>{run.ideaName.slice(0, 2).toUpperCase()}</span>
-                  <div><b>{run.ideaName}</b><small>{run.mode} · {run.createdAt}</small></div>
-                  <ArrowRight size={14}/>
-                </Link>)
+                <ReportHistory runs={mappedRuns.map(run => ({ id: run.id, ideaName: run.ideaName, mode: run.mode, status: run.status, createdAt: run.createdAt, score: run.opportunity?.score.total, verdict: run.opportunity?.verdict, sourceCount: run.opportunity?.evidence.length ?? 0 }))}/>
               ) : (
                 <div className="saved-empty">
                   <p>Your validated ideas will appear here.</p>

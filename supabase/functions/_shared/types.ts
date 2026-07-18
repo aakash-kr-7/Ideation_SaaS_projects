@@ -1,5 +1,6 @@
 // Shared, runtime-neutral database and report domain types.
 import type { ResearchStatus } from "./research/status.ts";
+import type { ReportMode } from "./research/mode-config.ts";
 export type Json =
   | string
   | number
@@ -27,9 +28,7 @@ export type Database = {
         Returns: Json;
       };
     };
-    Enums: {
-      [_ in never]: never;
-    };
+    Enums: { [_ in never]: never };
     CompositeTypes: {
       [_ in never]: never;
     };
@@ -936,6 +935,7 @@ export type Database = {
           market_sizing: Json | null;
           payload: Json;
           reasoning_flags: Json | null;
+          report_mode: ReportMode;
           report_id: string;
           specialist_disputes: Json | null;
           updated_at: string;
@@ -952,6 +952,7 @@ export type Database = {
           market_sizing?: Json | null;
           payload: Json;
           reasoning_flags?: Json | null;
+          report_mode: ReportMode;
           report_id: string;
           specialist_disputes?: Json | null;
           updated_at?: string;
@@ -968,6 +969,7 @@ export type Database = {
           market_sizing?: Json | null;
           payload?: Json;
           reasoning_flags?: Json | null;
+          report_mode?: ReportMode;
           report_id?: string;
           specialist_disputes?: Json | null;
           updated_at?: string;
@@ -1149,17 +1151,22 @@ export type Database = {
       };
       research_runs: {
         Row: {
+          assumptions: Json;
+          credit_cost: number;
+          credit_state: "legacy" | "reserved" | "consumed" | "restored";
           created_at: string;
           created_by: string | null;
           error_message: string | null;
           id: string;
           idea_description: string;
           idea_name: string;
+          idempotency_key: string | null;
           market_type: string;
-          mode: string;
+          mode: ReportMode;
           progress: number;
           progress_detail: string | null;
           project_id: string;
+          request_id: string | null;
           retrieval_budget_limited: boolean;
           retrieval_coverage: Json | null;
           retrieval_coverage_gaps: string[];
@@ -1170,17 +1177,22 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          assumptions?: Json;
+          credit_cost?: number;
+          credit_state?: "legacy" | "reserved" | "consumed" | "restored";
           created_at?: string;
           created_by?: string | null;
           error_message?: string | null;
           id?: string;
           idea_description: string;
           idea_name: string;
+          idempotency_key?: string | null;
           market_type: string;
-          mode: string;
+          mode: ReportMode;
           progress?: number;
           progress_detail?: string | null;
           project_id: string;
+          request_id?: string | null;
           retrieval_budget_limited?: boolean;
           retrieval_coverage?: Json | null;
           retrieval_coverage_gaps?: string[];
@@ -1191,17 +1203,22 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          assumptions?: Json;
+          credit_cost?: number;
+          credit_state?: "legacy" | "reserved" | "consumed" | "restored";
           created_at?: string;
           created_by?: string | null;
           error_message?: string | null;
           id?: string;
           idea_description?: string;
           idea_name?: string;
+          idempotency_key?: string | null;
           market_type?: string;
-          mode?: string;
+          mode?: ReportMode;
           progress?: number;
           progress_detail?: string | null;
           project_id?: string;
+          request_id?: string | null;
           retrieval_budget_limited?: boolean;
           retrieval_coverage?: Json | null;
           retrieval_coverage_gaps?: string[];
@@ -1733,9 +1750,7 @@ export type Database = {
         Returns: boolean;
       };
     };
-    Enums: {
-      [_ in never]: never;
-    };
+    Enums: { report_mode: ReportMode };
     CompositeTypes: {
       [_ in never]: never;
     };
@@ -1881,7 +1896,7 @@ export const Constants = {
     Enums: {},
   },
   public: {
-    Enums: {},
+    Enums: { report_mode: ["quick_scan", "full_validation"] },
   },
 } as const;
 
@@ -1936,11 +1951,7 @@ export type MarketType =
   | "Agency Tool"
   | "Student/Career"
   | "Other";
-export type ResearchMode =
-  | "Fast Scan"
-  | "Deep Validation"
-  | "Compare Ideas"
-  | "Find Opportunities in Market";
+export type ResearchMode = ReportMode;
 
 export interface EvidenceItem {
   id: string;

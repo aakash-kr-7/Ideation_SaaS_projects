@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { scoringCriteria } from "./scoring.ts";
+import { reportModeSchema } from "./research/mode-config.ts";
 import type {
   Competitor,
   EvidenceItem,
@@ -195,6 +196,7 @@ export const decisionIntegritySchema = z.object({
 export const validationReportSchema = z.object({
   id: z.string(),
   version: z.literal("1.0"),
+  reportMode: reportModeSchema.default("full_validation"),
   generatedAt: z.string(),
   executiveSummary: z.string(),
   opportunity: opportunitySchema,
@@ -206,6 +208,15 @@ export const validationReportSchema = z.object({
   adversarialGate: adversarialGateReportSchema.optional(),
   citationValidation: citationValidationReportSchema.optional(),
   decisionIntegrity: decisionIntegritySchema.optional(),
+  evidenceGaps: z.array(z.string()).default([]),
+  limitations: z.array(z.string()).default([]),
+  reportSections: z.array(z.string()).default([]),
+  availableExports: z.array(z.enum(["pdf", "markdown", "csv", "json"]))
+    .default(["pdf", "markdown", "csv", "json"]),
+  topRecommendation: z.string().optional(),
+  strongestPositiveEvidenceId: z.string().optional(),
+  strongestNegativeEvidenceId: z.string().optional(),
+  specialistSections: z.record(z.string(), z.unknown()).optional(),
 });
 
 export interface ReportOpportunity {
@@ -237,6 +248,7 @@ export interface ReportOpportunity {
 export interface ValidationReport {
   id: string;
   version: "1.0";
+  reportMode: z.infer<typeof reportModeSchema>;
   generatedAt: string;
   executiveSummary: string;
   opportunity: ReportOpportunity;
@@ -248,6 +260,14 @@ export interface ValidationReport {
   adversarialGate?: z.infer<typeof adversarialGateReportSchema>;
   citationValidation?: z.infer<typeof citationValidationReportSchema>;
   decisionIntegrity?: z.infer<typeof decisionIntegritySchema>;
+  evidenceGaps: string[];
+  limitations: string[];
+  reportSections: string[];
+  availableExports: Array<"pdf" | "markdown" | "csv" | "json">;
+  topRecommendation?: string;
+  strongestPositiveEvidenceId?: string;
+  strongestNegativeEvidenceId?: string;
+  specialistSections?: Record<string, unknown>;
 }
 
 // Database-specific schema constraints for Server Actions inputs
@@ -346,10 +366,13 @@ export const startResearchRunSchema = z.object({
     "Other",
   ]),
   target_region: z.string().min(1),
-  mode: z.enum([
-    "Fast Scan",
-    "Deep Validation",
-    "Compare Ideas",
-    "Find Opportunities in Market",
-  ]),
+  assumptions: z.object({
+    revenueTarget: z.string().max(100).optional(),
+    monetization: z.string().max(100).optional(),
+    complexityTolerance: z.string().max(100).optional(),
+    platformTolerance: z.string().max(100).optional(),
+    regulatoryTolerance: z.string().max(100).optional(),
+  }).default({}),
+  mode: reportModeSchema,
+  idempotency_key: z.string().uuid(),
 });

@@ -56,6 +56,7 @@ import {
   validateNarrativeCitations,
 } from "./reasoning-integrity.ts";
 import { validationReportSchema } from "../report-schema.ts";
+import { getReportModeConfig, type ReportModeConfig } from "./mode-config.ts";
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 function retryDelay(error: unknown, attempt: number) {
@@ -77,9 +78,10 @@ export class PipelineError extends Error {
 
 class CostBudget {
   private reserved: number;
-  readonly cap = Number(getEnv("RESEARCH_RUN_COST_CAP_USD") || "1.00");
-  constructor(persistedSpend = 0) {
+  readonly cap: number;
+  constructor(persistedSpend = 0, cap = 1) {
     this.reserved = persistedSpend;
+    this.cap = cap;
   }
   reserve(amount: number) {
     if (!Number.isFinite(this.cap) || this.cap <= 0) {
@@ -101,7 +103,7 @@ class CostBudget {
     return this.remaining() >= amount + downstreamReserve;
   }
 }
-async function costBudgetForRun(runId: string, db: any) {
+async function costBudgetForRun(runId: string, db: any, config: ReportModeConfig) {
   const { data, error } = await db.from("api_usage_logs").select("cost").eq(
     "run_id",
     runId,
@@ -115,7 +117,8 @@ async function costBudgetForRun(runId: string, db: any) {
     (sum: number, row: any) => sum + Number(row.cost || 0),
     0,
   );
-  return new CostBudget(persistedSpend);
+  const environmentCap = Number(getEnv("RESEARCH_RUN_COST_CAP_USD") || config.providerCostCapUsd);
+  return new CostBudget(persistedSpend, Math.min(config.providerCostCapUsd, environmentCap));
 }
 const COST: Record<string, number> = {
   tavily: .008,
@@ -248,6 +251,23 @@ async function logError(
     stack_trace: error instanceof Error ? error.stack || null : null,
   });
 }
+
+async function finalizeCredit(
+  runId: string,
+  outcome: "consume" | "restore",
+  db: any,
+) {
+  const { data, error } = await db.rpc("finalize_research_credit", {
+    p_run_id: runId,
+    p_outcome: outcome,
+  });
+  if (error) {
+    throw new Error(
+      `Credit ${outcome} failed for run ${runId}: ${error.message}`,
+    );
+  }
+  return data;
+}
 function cosine(a: number[], b: number[]) {
   if (!a || !b || a.length !== b.length) return 0;
   let d = 0, aa = 0, bb = 0;
@@ -270,6 +290,7 @@ async function acquireAndNormalize(
   db: any,
   budget: CostBudget,
 ) {
+  const config = getReportModeConfig(input.mode);
   const search = createSearchProvider(),
     extractor = createPageExtractor(),
     embedder = createEmbeddingProvider();
@@ -286,17 +307,23 @@ async function acquireAndNormalize(
     throw oppError || new Error("Opportunity insert failed");
   }
   const startedAt = Date.now();
-  const retrievalBudgetMs = Number(
-    getEnv("RESEARCH_RETRIEVAL_BUDGET_MS") || "85000",
+  const retrievalBudgetMs = Math.min(
+    config.retrievalTimeBudgetMs,
+    Number(getEnv("RESEARCH_RETRIEVAL_BUDGET_MS") || config.retrievalTimeBudgetMs),
   );
-  const downstreamCostReserve = Number(
-    getEnv("RESEARCH_REASONING_COST_RESERVE_USD") || ".36",
+  const downstreamCostReserve = Math.min(
+    config.reasoningCostReserveUsd,
+    Number(getEnv("RESEARCH_REASONING_COST_RESERVE_USD") || config.reasoningCostReserveUsd),
   );
-  const maxSourcesPerPass = input.depth === "deep" ? 4 : 3;
   const seenUrls = new Set<string>();
   const attemptedPasses = new Set<ResearchPass>();
   let persistedEvidence: any[] = [];
-  let coverage = evaluateSufficiency([], { attemptedPasses: [] });
+  let totalQueriesAttempted = 0;
+  let coverage = evaluateSufficiency(
+    [],
+    { attemptedPasses: [] },
+    config.evidenceSufficiency,
+  );
   let budgetLimited = false;
 
   const persistCoverage = async (pass: ResearchPass, _queryCount: number) => {
@@ -396,7 +423,11 @@ async function acquireAndNormalize(
     );
     const candidates: any[] = [];
     let attempted = 0;
-    for (const planned of queries) {
+    const queryLimit = Math.min(
+      config.queriesPerPass[pass],
+      Math.max(0, config.searchQueryLimit - totalQueriesAttempted),
+    );
+    for (const planned of queries.slice(0, queryLimit)) {
       if (
         Date.now() - startedAt >= retrievalBudgetMs ||
         !budget.canSpend(COST.tavily, downstreamCostReserve)
@@ -419,6 +450,7 @@ async function acquireAndNormalize(
         throw queryError || new Error("Research query insert failed");
       }
       attempted++;
+      totalQueriesAttempted++;
       try {
         const found = await callProvider(
           id,
@@ -454,6 +486,10 @@ async function acquireAndNormalize(
       db,
     );
     const selected: any[] = [];
+    const availableSourceSlots = Math.min(
+      config.sourcesPerPass[pass],
+      Math.max(0, config.extractionLimit - seenUrls.size),
+    );
     const passDomains = new Set<string>();
     const firstProblem = candidates.find((c) => c.planned.family === "problem");
     const firstSolution = candidates.find((c) =>
@@ -471,6 +507,7 @@ async function acquireAndNormalize(
       all.findIndex((other) => other.url === item.url) === index
     );
     for (const result of balancedCandidates) {
+      if (availableSourceSlots === 0) break;
       if (!result.url || seenUrls.has(result.url)) continue;
       let domain = "unknown";
       try {
@@ -491,7 +528,7 @@ async function acquireAndNormalize(
       selected.push({ ...result, domain });
       seenUrls.add(result.url);
       passDomains.add(domain);
-      if (selected.length >= maxSourcesPerPass) break;
+      if (selected.length >= availableSourceSlots) break;
     }
     for (const result of selected) {
       if (
@@ -640,13 +677,23 @@ async function acquireAndNormalize(
       }
     }
     await recluster();
-    coverage = evaluateSufficiency(persistedEvidence, {
-      attemptedPasses: [...attemptedPasses],
-    });
+    coverage = evaluateSufficiency(
+      persistedEvidence,
+      { attemptedPasses: [...attemptedPasses] },
+      config.evidenceSufficiency,
+    );
     await persistCoverage(pass, attempted);
   };
 
-  await runPass(1, buildBroadQueries(input));
+  const broadQueries = buildBroadQueries(input);
+  const balancedBroadQueries = [
+    broadQueries.find((query) => query.family === "problem"),
+    broadQueries.find((query) => query.family === "solution" && query.objective !== "market-sizing"),
+    ...broadQueries,
+  ].filter((query, index, all): query is PlannedQuery =>
+    Boolean(query) && all.findIndex((candidate) => candidate?.query === query?.query) === index
+  );
+  if (config.passes.includes(1)) await runPass(1, balancedBroadQueries);
   let seeds = deriveFollowUpSeeds(persistedEvidence);
   if (!seeds.length) {
     seeds = persistedEvidence.filter((e) => e.pain_point).slice(0, 3).map((
@@ -659,16 +706,18 @@ async function acquireAndNormalize(
       seedType: "pain" as const,
     }));
   }
-  await runPass(2, buildTargetedQueries(seeds));
+  if (config.passes.includes(2)) await runPass(2, buildTargetedQueries(seeds));
   seeds = deriveFollowUpSeeds(persistedEvidence);
-  await runPass(3, buildAdversarialQueries(input, seeds));
-  if (!coverage.sufficient && !budgetLimited) {
+  if (config.passes.includes(3)) await runPass(3, buildAdversarialQueries(input, seeds));
+  if (!coverage.sufficient && !budgetLimited && config.passes.includes(3)) {
     const escalation = buildEscalationQueries(input, coverage.gaps, seeds);
     if (escalation.length) await runPass(3, escalation);
   }
-  coverage = evaluateSufficiency(persistedEvidence, {
-    attemptedPasses: [...attemptedPasses],
-  });
+  coverage = evaluateSufficiency(
+    persistedEvidence,
+    { attemptedPasses: [...attemptedPasses] },
+    config.evidenceSufficiency,
+  );
   const remainingGaps = [...coverage.gaps];
   if (budgetLimited) {
     remainingGaps.push("retrieval escalation was budget-limited");
@@ -679,8 +728,10 @@ async function acquireAndNormalize(
     retrieval_coverage_gaps: remainingGaps,
     retrieval_budget_limited: budgetLimited,
   }).eq("id", id);
-  if (!persistedEvidence.length) {
-    throw new Error("No structured evidence could be produced.");
+  if (!coverage.sufficient) {
+    throw new Error(
+      `${config.label} could not meet the evidence-sufficiency contract: ${remainingGaps.join("; ")}.`,
+    );
   }
   const firstPain = persistedEvidence.find((e) =>
     e.signal_type === "Pain" && !e.excluded
@@ -1253,9 +1304,11 @@ async function executeReasoningPhase(
   db: any,
   budget = new CostBudget(),
 ) {
+  const config = getReportModeConfig(input.mode);
   const reasoningStartedAt = Date.now();
-  const reasoningPhaseBudgetMs = Number(
-    getEnv("REASONING_PHASE_BUDGET_MS") || "115000",
+  const reasoningPhaseBudgetMs = Math.min(
+    config.reasoningTimeBudgetMs,
+    Number(getEnv("REASONING_PHASE_BUDGET_MS") || config.reasoningTimeBudgetMs),
   );
   const finalJudgeReserveMs = Number(
     getEnv("FINAL_JUDGE_RESERVE_MS") || "35000",
@@ -1283,7 +1336,7 @@ async function executeReasoningPhase(
     throw oppError ||
       new Error("No normalized opportunity exists for this run.");
   }
-  let [evQ, compQ, riskQ, pricingQ, mvpQ, launchQ, weightQ] = await Promise
+  const [evQ, compQ, riskQ, pricingQ, mvpQ, launchQ, weightQ] = await Promise
     .all([
       db.from("evidence_items").select(
         "id,source_id,research_query_id,signal_type,strength,title,snippet,verified,cluster_key,supporting_count,contradicting_count,confidence,evidence_family,research_pass,source_tier,tier_reason,excluded,exclusion_reason,disconfirming,pain_point,author,source_domain,independent_source_count,independent_domain_count,market_size_source_qualified,market_size_metric,market_size_figure,sources(title,url,source_type,source_tier,tier_reason,excluded,market_size_source_qualified)",
@@ -1407,15 +1460,24 @@ async function executeReasoningPhase(
   const verdict = verdictFor(total);
   // Starts early and sees no specialist output; this keeps the one-shot kill attempt
   // inside the existing 115-second phase without consuming Final Judge reserve.
-  const adversarialGatePromise = runAdversarialVerdictGate(
-    id,
-    { total, verdict, factors },
-    structured,
-    allowed,
-    budget,
-    db,
-  );
-  const names = Object.keys(specialistSchemas) as SpecialistName[];
+  const adversarialGatePromise = config.useAdversarialGate
+    ? runAdversarialVerdictGate(
+      id,
+      { total, verdict, factors },
+      structured,
+      allowed,
+      budget,
+      db,
+    )
+    : Promise.resolve({
+      outcome: "InsufficientEvidence" as const,
+      severity: "None" as const,
+      objection: "This report mode does not run the adversarial verdict gate.",
+      evidence_ids: [] as string[],
+      unresolved: false,
+      status: "Incomplete" as const,
+    });
+  const names = [...config.specialists] as SpecialistName[];
   const outputs: any = {};
   const checkerComparisons: any[] = [];
   const specialistBudgetMs = Number(
@@ -1438,14 +1500,14 @@ async function executeReasoningPhase(
       78 + i * 2,
       `Running ${
         name[0].toUpperCase() + name.slice(1)
-      } Agent with an isolated independent checker`,
+      } Agent${config.checkers.includes(name) ? " with an isolated independent checker" : ""}`,
       db,
     );
     const specialistDeadlineMs = Math.min(
       specialistBudgetMs,
       reasoningPhaseBudgetMs - finalJudgeReserveMs,
     );
-    let checkerResult: any;
+    let checkerResult: any = null;
     if (Date.now() - reasoningStartedAt >= specialistDeadlineMs) {
       const error = new Error(
         `Skipped ${name} specialist after the bounded specialist-phase time budget was exhausted.`,
@@ -1460,54 +1522,69 @@ async function executeReasoningPhase(
         payload: output,
       }, { onConflict: "run_id,agent_name" });
       outputs[name] = { status: "Incomplete", output };
-      checkerResult = {
-        status: "Incomplete",
-        attemptCount: 1,
-        output: {
-          claims: [],
-          limitations: [
-            "Checker was not started because the bounded specialist window was exhausted.",
-          ],
-          verdict_direction: "Insufficient",
-        },
-      };
+      if (config.checkers.includes(name)) {
+        checkerResult = {
+          status: "Incomplete",
+          attemptCount: 1,
+          output: {
+            claims: [],
+            limitations: [
+              "Checker was not started because the bounded specialist window was exhausted.",
+            ],
+            verdict_direction: "Insufficient",
+          },
+        };
+      }
     } else {
       const isolatedInput = specialistInput(name, structured);
       const checkerEvidenceInput = {
         opportunity: isolatedInput.opportunity,
         evidence: isolatedInput.evidence,
       };
-      [outputs[name], checkerResult] = await Promise.all([
-        runSpecialist(name, isolatedInput, allowed, id, budget, db),
-        runIndependentChecker(
+      if (config.checkers.includes(name)) {
+        [outputs[name], checkerResult] = await Promise.all([
+          runSpecialist(name, isolatedInput, allowed, id, budget, db),
+          runIndependentChecker(
+            name,
+            checkerEvidenceInput,
+            allowed,
+            id,
+            budget,
+            db,
+          ),
+        ]);
+      } else {
+        outputs[name] = await runSpecialist(
           name,
-          checkerEvidenceInput,
+          isolatedInput,
           allowed,
           id,
           budget,
           db,
-        ),
-      ]);
+        );
+      }
     }
-    const comparison = compareSpecialistAndChecker(
-      name,
-      outputs[name],
-      checkerResult,
-    );
-    checkerComparisons.push(comparison);
-    const { error: checkerPersistError } = await db.from("specialist_checks")
-      .upsert({
-        run_id: id,
-        specialist_name: name,
-        status: checkerResult.status,
-        attempt_count: checkerResult.attemptCount || 1,
-        specialist_direction: comparison.specialistDirection,
-        checker_direction: comparison.checkerDirection,
-        disputed: comparison.disputed,
-        dispute_reason: comparison.reason,
-        checker_payload: checkerResult.output,
-      }, { onConflict: "run_id,specialist_name" });
-    if (checkerPersistError) throw checkerPersistError;
+    if (checkerResult) {
+      const comparison = compareSpecialistAndChecker(
+        name,
+        outputs[name],
+        checkerResult,
+      );
+      checkerComparisons.push(comparison);
+      const { error: checkerPersistError } = await db.from("specialist_checks")
+        .upsert({
+          run_id: id,
+          specialist_name: name,
+          status: checkerResult.status,
+          attempt_count: checkerResult.attemptCount || 1,
+          specialist_direction: comparison.specialistDirection,
+          checker_direction: comparison.checkerDirection,
+          disputed: comparison.disputed,
+          dispute_reason: comparison.reason,
+          checker_payload: checkerResult.output,
+        }, { onConflict: "run_id,specialist_name" });
+      if (checkerPersistError) throw checkerPersistError;
+    }
     if (name === "competition") {
       outputs[name].output.metrics = deterministicCompetitionMetrics(
         compQ.data || [],
@@ -1802,9 +1879,11 @@ async function executeReasoningPhase(
       tierOneCount === 1 ? " was" : "s were"
     } found; ${tierOneTwoCount} Tier 1/2 evidence rows and up to ${corroboration} independent corroborating sources produced ${confidence}% confidence after integrity modifiers.`
     : `We found discussion but zero willingness-to-pay Tier 1 signals; ${tierOneTwoCount} Tier 1/2 rows and up to ${corroboration} independent corroborating sources limited confidence to ${confidence}%.`;
-  const checkerStatement = disputedCount
-    ? `${disputedCount} of six specialist interpretations were disputed or not independently reproduced.`
-    : "All six specialist directions were independently reproduced by isolated checkers.";
+  const checkerStatement = config.checkers.length === 0
+    ? `${config.label} does not include independent specialist checker paths.`
+    : disputedCount
+    ? `${disputedCount} of ${config.checkers.length} specialist interpretations were disputed or not independently reproduced.`
+    : `All ${config.checkers.length} specialist directions were independently reproduced by isolated checkers.`;
   const gateStatement = adversarialGate.outcome === "StrongObjection"
     ? `Adversarial gate objection: ${adversarialGate.objection}`
     : adversarialGate.objection;
@@ -1840,9 +1919,26 @@ async function executeReasoningPhase(
   const version = (lastVersion?.version_number || 0) + 1;
   const marketSizing = groundedMarketSizing(evidence);
   assertGroundedMarketSizing(marketSizing, allowed);
+  const strongestPositive = evidence.find((item: any) =>
+    !item.excluded && !item.disconfirming && item.source_tier !== 4
+  );
+  const strongestNegative = evidence.find((item: any) =>
+    !item.excluded && item.disconfirming && item.source_tier !== 4
+  ) || evidence.find((item: any) =>
+    !item.excluded && item.signal_type === "Risk" && item.source_tier !== 4
+  );
+  const evidenceGaps = coverageQ.data?.retrieval_coverage_gaps || [];
+  const limitations = [
+    config.outputDepth === "concise"
+      ? "Quick Scan is a rapid screen, not an exhaustive market study."
+      : "Full Validation reduces uncertainty but does not guarantee a business outcome.",
+    ...evidenceGaps,
+    marketSizing.reason || "Market sizing is included only when a figure resolves to qualified persisted evidence.",
+  ];
   const payload = {
     id,
     version: "1.0",
+    reportMode: input.mode,
     versionNumber: version,
     generatedAt: new Date().toISOString(),
     executiveSummary,
@@ -1860,6 +1956,13 @@ async function executeReasoningPhase(
       reason: gatedVerdict.reason,
     },
     marketSizing,
+    evidenceGaps,
+    limitations,
+    reportSections: [...config.reportSections],
+    availableExports: [...config.exports],
+    topRecommendation: launchQ.data.success_metric,
+    strongestPositiveEvidenceId: strongestPositive?.id,
+    strongestNegativeEvidenceId: strongestNegative?.id,
     retrieval: structured.retrieval,
     opportunity: {
       id: opp.id,
@@ -1951,6 +2054,7 @@ async function executeReasoningPhase(
   };
   const { data: rv, error: rvError } = await db.from("report_versions").insert({
     report_id: report.id,
+    report_mode: input.mode,
     version_number: version,
     payload,
     market_sizing: marketSizing,
@@ -1985,11 +2089,12 @@ async function executeReasoningPhase(
     id,
     "Generating",
     97,
-    "Generating JSON, Markdown, CSV, and PDF exports",
+    `Creating ${config.exports.map((format) => format.toUpperCase()).join(", ")} export${config.exports.length === 1 ? "" : "s"}`,
     db,
   );
   const exportInput: ExportBundleInput = {
     runId: id,
+    reportMode: input.mode,
     ideaName: opp.name,
     total,
     verdict: gatedVerdict.effectiveVerdict,
@@ -2012,7 +2117,7 @@ async function executeReasoningPhase(
   ).eq("id", id).single();
   const teamId = run?.projects?.team_id;
   if (!teamId) throw new Error("Unable to resolve export tenant path.");
-  const artifacts: any = {
+  const artifacts: Record<string, { body: Uint8Array; type: string }> = {
     json: {
       body: new TextEncoder().encode(renderJson(exportInput)),
       type: "application/json",
@@ -2027,7 +2132,8 @@ async function executeReasoningPhase(
     },
     pdf: { body: renderPdf(exportInput), type: "application/pdf" },
   };
-  for (const [format, file] of Object.entries(artifacts) as any) {
+  for (const format of config.exports) {
+    const file = artifacts[format];
     const ext = format === "markdown" ? "md" : format;
     const path = `${teamId}/${id}/v${version}/report.${ext}`;
     const { error: uploadError } = await db.storage.from("exports").upload(
@@ -2052,7 +2158,7 @@ async function executeReasoningPhase(
     id,
     "Completed",
     100,
-    "Reasoning report and four immutable exports completed",
+    `${config.label} and ${config.exports.length} immutable export${config.exports.length === 1 ? "" : "s"} completed`,
     db,
   );
   return {
@@ -2070,13 +2176,16 @@ export async function runReasoningPhase(
   db: any,
   budget?: CostBudget,
 ) {
+  const config = getReportModeConfig(input.mode);
   try {
-    return await executeReasoningPhase(
+    const result = await executeReasoningPhase(
       id,
       input,
       db,
-      budget || await costBudgetForRun(id, db),
+      budget || await costBudgetForRun(id, db, config),
     );
+    await finalizeCredit(id, "consume", db);
+    return result;
   } catch (error) {
     await logError(id, `reasoning-worker:${id}`, error, db);
     try {
@@ -2087,6 +2196,7 @@ export async function runReasoningPhase(
         error instanceof Error ? error.message : String(error),
         db,
       );
+      await finalizeCredit(id, "restore", db);
     } catch (stateError) {
       console.error("Failed to persist reasoning terminal state", stateError);
     }
@@ -2103,15 +2213,18 @@ export async function runResearchPipeline(
   input: ResearchRequest,
   db?: any,
 ) {
+  const config = getReportModeConfig(input.mode);
   try {
     if (!db) {
       throw new Error(
         "A database client is required; offline execution is disabled.",
       );
     }
-    const budget = await costBudgetForRun(id, db);
+    const budget = await costBudgetForRun(id, db, config);
     await acquireAndNormalize(id, input, db, budget);
-    return await executeReasoningPhase(id, input, db, budget);
+    const result = await executeReasoningPhase(id, input, db, budget);
+    await finalizeCredit(id, "consume", db);
+    return result;
   } catch (error) {
     if (db) {
       await logError(id, `research-worker:${id}`, error, db);
@@ -2123,6 +2236,7 @@ export async function runResearchPipeline(
           error instanceof Error ? error.message : String(error),
           db,
         );
+        await finalizeCredit(id, "restore", db);
       } catch (stateError) {
         console.error("Failed to persist terminal state", stateError);
       }

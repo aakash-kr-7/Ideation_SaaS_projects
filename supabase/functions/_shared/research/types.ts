@@ -16,7 +16,7 @@ export interface ResearchRequest {
   targetCustomer: string;
   marketType: string;
   targetRegion: string;
-  depth: "fast" | "deep";
+  mode: ResearchMode;
 }
 export interface SearchQuery {
   id: string;

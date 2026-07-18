@@ -1,8 +1,6 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { z } from "zod";
-import { evidenceSchema } from "@/lib/report-schema";
 
 export async function addEvidence(formData: Record<string, any>) {
   const supabase = await createClient();

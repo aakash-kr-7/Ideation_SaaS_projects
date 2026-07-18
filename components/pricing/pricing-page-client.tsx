@@ -13,7 +13,7 @@ const oneOffProducts = [
     name: "Quick Scan",
     description: "Find out whether an idea deserves a serious investigation.",
     credits: "1 credit",
-    href: "/research/new?mode=fast",
+    href: "/research/new?mode=quick_scan",
     items: ["12-factor score and official verdict", "Evidence confidence and clickable citations", "Competitor, pricing, risk, and next-step snapshots", "Branded PDF and permanent report history"],
   },
   {
@@ -21,7 +21,7 @@ const oneOffProducts = [
     name: "Full Validation",
     description: "Stress-test the idea before committing meaningful time or money.",
     credits: "3 credits",
-    href: "/research/new?mode=deep",
+    href: "/research/new?mode=full_validation",
     featured: true,
     items: ["Multi-pass and adversarial research", "Competition, demand, market, pricing, risk, and GTM analysis", "Detailed 12-factor score and MVP scope", "PDF, Markdown, CSV, and JSON exports"],
   },
@@ -84,7 +84,7 @@ export function PricingPageClient({ initialRegion }: { initialRegion: PricingReg
         <article className="plan">
           <p>FREE</p><h3>{regionalPrice(launchPricing.plans.free, region)}</h3>
           <span>For checking one idea at a time without a purchase.</span>
-          <Link href="/research/new?mode=fast" className="button ghost">Start free — no card</Link>
+          <Link href="/research/new?mode=quick_scan" className="button ghost">Start free — no card</Link>
           <ul>{["1 Quick Scan every 30 days", "Unlimited saved reports", "Branded PDF download", "Compare up to 2 reports", "Self-service support", "Free credits do not roll over"].map(item => <li key={item}><Check size={15}/>{item}</li>)}</ul>
         </article>
         <article className="plan featured">

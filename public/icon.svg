@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>ShouldBuild</title>
+  <path fill="#57B9AE" d="M18 9h27a10 10 0 0 1 0 20H26a4 4 0 1 0 0 8h20a11 11 0 0 1 0 22H20v-8h26a3 3 0 1 0 0-6H26a12 12 0 1 1 0-24h19a2 2 0 1 0 0-4H18z"/>
+  <path fill="#DDF7F3" d="m15 39 6 6 12-12 5 5-17 17-11-11z"/>
+</svg>

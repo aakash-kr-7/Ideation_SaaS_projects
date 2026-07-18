@@ -21,7 +21,7 @@ export type CriterionNotes = Record<ScoringCriterion, string>;
 export type CriterionEvidence = Partial<Record<ScoringCriterion, string[]>>;
 export interface OpportunityScorecard { scores: CriterionScores; notes: CriterionNotes; evidenceRefs: CriterionEvidence; weights: ScoringWeights; total: number; confidence: number; verdict: EngineVerdict; }
 export type MarketType = "B2B" | "D2C" | "Creator" | "Developer Tool" | "Local Business" | "Agency Tool" | "Student/Career" | "Other";
-export type ResearchMode = "Fast Scan" | "Deep Validation" | "Compare Ideas" | "Find Opportunities in Market";
+export type ResearchMode = "quick_scan" | "full_validation";
 
 export interface EvidenceItem { id: string; source: string; sourceType: string; title: string; snippet: string; url: string; signal: "Pain" | "Demand" | "Pricing" | "Risk"; strength: "High" | "Medium" | "Low"; date: string; }
 export interface Competitor { id: string; name: string; positioning: string; pricing: string; target: string; strength: string; gap: string; }

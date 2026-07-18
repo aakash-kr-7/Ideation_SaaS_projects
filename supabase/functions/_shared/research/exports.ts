@@ -2,6 +2,7 @@ import { renderPremiumPdf } from "./pdf-report.ts";
 
 export interface ExportBundleInput {
   runId: string;
+  reportMode?: "quick_scan" | "full_validation";
   ideaName: string;
   total: number;
   verdict: string;

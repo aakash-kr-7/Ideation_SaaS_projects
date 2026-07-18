@@ -22,8 +22,10 @@ import { productCopy } from "@/lib/copy";
 import { createClient } from "@/lib/supabase/client";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import { getStaggerDelay, revealUpClass, stateChangeKey } from "@/lib/motion";
+import { getReportModeConfig, type ReportMode } from "@/lib/report-modes";
 
 type ProgressState = {
+  mode: ReportMode;
   stage: ResearchStatus;
   progress: number;
   message: string;
@@ -31,6 +33,7 @@ type ProgressState = {
   sourceCount: number;
   competitorCount: number;
   idea: string;
+  creditState: "legacy" | "reserved" | "consumed" | "restored";
 };
 
 type StageLog = {
@@ -167,6 +170,7 @@ function compactLabel(value: string) {
 export function ResearchProgress({ id }: { id: string }) {
   const router = useRouter();
   const [state, setState] = useState<ProgressState>({
+    mode: "full_validation",
     stage: "Queued",
     progress: 0,
     message: "Queued for analysis",
@@ -174,6 +178,7 @@ export function ResearchProgress({ id }: { id: string }) {
     sourceCount: 0,
     competitorCount: 0,
     idea: "your idea",
+    creditState: "reserved",
   });
   const [logs, setLogs] = useState<StageLog[]>([]);
   const [passes, setPasses] = useState<ResearchPass[]>([]);
@@ -297,13 +302,15 @@ export function ResearchProgress({ id }: { id: string }) {
         progress: run.progress ?? 0,
         message,
         idea: run.idea_name ?? previous.idea,
+        mode: run.mode ?? previous.mode,
+        creditState: run.credit_state ?? previous.creditState,
       }));
       if (run.status === "Completed") router.push(`/research/${id}/results`);
     };
 
     const hydrate = async () => {
       const { data, error } = await supabase.from("research_runs").select(
-        "id,idea_name,status,progress,progress_detail,error_message",
+        "id,idea_name,mode,status,progress,progress_detail,error_message,credit_state",
       ).eq("id", id).single();
       if (error) {
         if (active) setConnectionError(error.message);
@@ -441,10 +448,13 @@ export function ResearchProgress({ id }: { id: string }) {
   }, [evidence]);
 
   const disputedCount = checks.filter((check) => check.disputed).length;
-  const isRunning = state.stage !== "Completed" && state.stage !== "Failed";
+  const config = getReportModeConfig(state.mode);
+  const isRunning = !["Completed", "Failed", "Cancelled"].includes(state.stage);
+  const statusOrder: ResearchStatus[] = ["Queued", "Searching", "Extracting", "Normalizing", "Scoring", "Generating", "Completed"];
+  const currentStatusIndex = statusOrder.indexOf(state.stage);
 
   return (
-    <div className="research-room premium-progress" aria-live="polite">
+    <div className={`research-room premium-progress mode-${state.mode}`} aria-live="polite">
       <header className="research-room-hero">
         <div className="research-room-pulse" aria-hidden="true">
           <Radar size={30} />
@@ -452,7 +462,7 @@ export function ResearchProgress({ id }: { id: string }) {
           <i />
         </div>
         <div>
-          <p className="eyebrow">LIVE RESEARCH ROOM</p>
+          <p className="eyebrow">{config.label.toUpperCase()} · LIVE RESEARCH ROOM</p>
           <h1>
             Building the case for <em>{state.idea}</em>
           </h1>
@@ -480,6 +490,17 @@ export function ResearchProgress({ id }: { id: string }) {
           <AnimatedNumber value={state.progress} />%
         </span>
       </section>
+
+      <ol className="mode-progress-sequence" aria-label={`${config.label} progress stages`}>
+        {config.progress.map((step, index) => {
+          const stepStatusIndex = statusOrder.indexOf(step.status);
+          const complete = currentStatusIndex > stepStatusIndex || state.stage === "Completed";
+          const active = state.stage === step.status && !complete;
+          return <li key={`${step.status}-${index}`} className={complete ? "complete" : active ? "active" : "pending"}>
+            <span>{complete ? <Check size={12} /> : index + 1}</span><b>{step.label}</b>
+          </li>;
+        })}
+      </ol>
 
       <section
         className="research-room-metrics"
@@ -852,10 +873,18 @@ export function ResearchProgress({ id }: { id: string }) {
       )}
 
       {(state.stage === "Failed" || connectionError) && (
-        <p className="progress-error">
-          {productCopy.microcopy.error}{" "}
-          {state.stage === "Failed" ? state.message : connectionError}
-        </p>
+        <div className="progress-error" role="alert">
+          <p>{productCopy.microcopy.error} {state.stage === "Failed" ? state.message : connectionError}</p>
+          {state.stage === "Failed" && <b>{state.creditState === "restored" ? "The reserved credit was restored automatically." : "Credit restoration is being verified. Contact support if this status does not update."}</b>}
+          <button type="button" onClick={() => router.push(`/research/new?mode=${state.mode}&retryFrom=${id}`)}>Retry with the same brief</button>
+        </div>
+      )}
+      {state.stage === "Cancelled" && (
+        <div className="progress-error is-cancelled" role="status">
+          <p>This {config.label} was cancelled before completion.</p>
+          <b>{state.creditState === "restored" ? "The reserved credit was restored." : "Credit restoration is being verified."}</b>
+          <button type="button" onClick={() => router.push(`/research/new?mode=${state.mode}&retryFrom=${id}`)}>Start again with the same brief</button>
+        </div>
       )}
     </div>
   );

@@ -6,6 +6,7 @@ import { z } from "zod";
 import { ProjectsRepository } from "@/lib/repositories/projects";
 import { ResearchRepository } from "@/lib/repositories/research";
 import { TeamsRepository } from "@/lib/repositories/teams";
+import { ResearchService } from "@/lib/services/research";
 
 export async function createProject(formData: z.infer<typeof createProjectSchema>) {
   const supabase = await createClient();
@@ -50,59 +51,21 @@ export async function getProjects() {
 }
 
 export async function startResearchRun(formData: z.infer<typeof startResearchRunSchema>) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
-
-  let runId: string | null = null;
   try {
     const validated = startResearchRunSchema.parse(formData);
-
-    const data = await ResearchRepository.createResearchRun({
-      project_id: validated.project_id,
-      idea_name: validated.idea_name,
-      idea_description: validated.idea_description,
-      target_customer: validated.target_customer,
-      market_type: validated.market_type as any, // Map to enum safely if needed
-      target_region: validated.target_region,
-      mode: validated.mode as any,
-      created_by: user.id,
-    });
-    runId = data.id;
-
-    const workerSecret = process.env.WEBHOOK_SECRET;
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (!workerSecret || !supabaseUrl) throw new Error("Research worker dispatch is not configured.");
-    const workerResponse = await fetch(`${supabaseUrl}/functions/v1/research-worker`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${workerSecret}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ record: data }),
-    });
-    if (!workerResponse.ok) {
-      const detail = await workerResponse.text();
-      throw new Error(`Research worker rejected the run (${workerResponse.status}): ${detail.slice(0, 300)}`);
-    }
-
-    return data;
+    return await ResearchService.startResearchRun(validated);
   } catch (err: any) {
-    if (runId) {
-      await supabase.from("research_runs").update({ status: "Failed", progress: 100, error_message: err.message || String(err) }).eq("id", runId);
-    }
-    // Log error to error_logs table
-    await supabase.from("error_logs").insert({
-      user_id: user.id,
-      context: "startResearchRun",
-      error_message: err.message || String(err),
-      stack_trace: err.stack || null,
-    });
-
-    // Surface as a structured typed error
     throw new Error(JSON.stringify({
       status: "error",
-      code: "START_RESEARCH_RUN_FAILED",
-      message: err.message || String(err)
+      code: err.code || "START_RESEARCH_RUN_FAILED",
+      message: err.message || String(err),
+      requestId: err.requestId,
     }));
   }
+}
+
+export async function getCreditSnapshot() {
+  return ResearchService.getCreditSnapshot();
 }
 
 export async function getResearchRuns(projectId: string) {

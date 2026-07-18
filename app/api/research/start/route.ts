@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { researchRequestSchema } from "@/lib/research/schema";
-import { ResearchService } from "@/lib/services/research";
+import { ResearchLaunchError, ResearchService } from "@/lib/services/research";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
@@ -19,8 +19,6 @@ export async function POST(request: Request) {
   }
 
   const input = parsed.data;
-  let runId: string | null = null;
-
   try {
     const { data: membership, error: membershipError } = await supabase
       .from("team_members")
@@ -39,7 +37,7 @@ export async function POST(request: Request) {
       .limit(1);
     if (projectReadError) throw projectReadError;
 
-    let projectId = projects?.[0]?.id;
+    let projectId = input.projectId ?? projects?.[0]?.id;
     if (!projectId) {
       const { data: project, error: projectCreateError } = await supabase
         .from("projects")
@@ -58,67 +56,36 @@ export async function POST(request: Request) {
 
     const run = await ResearchService.startResearchRun({
       project_id: projectId,
-      created_by: user.id,
       idea_name: input.ideaName,
       idea_description: input.ideaDescription,
       target_customer: input.targetCustomer,
       market_type: input.marketType,
       target_region: input.targetRegion,
-      mode: input.depth === "fast" ? "Fast Scan" : "Deep Validation",
+      assumptions: input.assumptions,
+      mode: input.mode,
+      idempotency_key: input.idempotencyKey,
     });
-    runId = run.id;
-
-    const workerSecret = process.env.WEBHOOK_SECRET;
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (!workerSecret || !supabaseUrl) {
-      throw new Error("Research worker dispatch is not configured.");
-    }
-
-    const workerResponse = await fetch(`${supabaseUrl}/functions/v1/research-worker`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${workerSecret}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        record: {
-          id: run.id,
-          idea_name: input.ideaName,
-          idea_description: input.ideaDescription,
-          target_customer: input.targetCustomer,
-          market_type: input.marketType,
-          target_region: input.targetRegion,
-          mode: input.depth === "fast" ? "Fast Scan" : "Deep Validation",
-        },
-      }),
-    });
-
-    if (!workerResponse.ok) {
-      const detail = await workerResponse.text();
-      throw new Error(`Research worker rejected the run (${workerResponse.status}): ${detail.slice(0, 300)}`);
-    }
 
     return NextResponse.json({
       id: run.id,
-      status: "Queued",
+      status: run.status,
+      mode: run.mode,
+      creditCost: run.creditCost,
+      requestId: run.requestId,
       progressUrl: `/api/research/${run.id}/progress`,
       reportUrl: `/api/research/${run.id}`,
     }, { status: 202 });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (runId) {
-      await supabase.from("research_runs").update({
-        status: "Failed",
-        progress: 100,
-        error_message: message,
-      }).eq("id", runId);
-    }
+    const requestId = error instanceof ResearchLaunchError ? error.requestId : crypto.randomUUID();
+    const code = error instanceof ResearchLaunchError ? error.code : "RESEARCH_LAUNCH_FAILED";
+    const status = error instanceof ResearchLaunchError ? error.status : 500;
     await supabase.from("error_logs").insert({
       user_id: user.id,
       context: "api:research:start",
       error_message: message,
       stack_trace: error instanceof Error ? error.stack || null : null,
     });
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: { code, message, requestId } }, { status });
   }
 }

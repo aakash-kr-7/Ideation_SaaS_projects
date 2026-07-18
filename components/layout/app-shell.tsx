@@ -18,7 +18,7 @@ import { motion, getStaggerDelay, revealUpClass } from "@/lib/motion";
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, description: "Validation pipeline and next actions", keywords: "home overview reports" },
   { href: "/research/new", label: "Validate idea", icon: Plus, description: "Start a market-backed validation", keywords: "new research scan" },
-  { href: "/compare", label: "Compare ideas", icon: Scale, plan: "PRO", description: "Compare completed reports side by side", keywords: "matrix score" },
+  { href: "/compare", label: "Compare ideas", icon: Scale, description: "Compare completed reports side by side", keywords: "matrix score" },
   { href: "/dashboard/scoring", label: "Scoring model", icon: BarChart3, plan: "PRO", description: "Inspect criteria and decision weights", keywords: "weights criteria" },
   { href: "/pricing", label: "Pricing", icon: CreditCard, description: "Plans and validation depth", keywords: "billing plan" },
   { href: "/settings", label: "Settings", icon: Settings, description: "Profile and workspace preferences", keywords: "account profile" },
@@ -163,7 +163,7 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
           <div className="side-note">
             <Circle size={10} fill="currentColor" />
             {user
-              ? <span><b>Free plan</b><small>1 scan remaining this month</small></span>
+              ? <span><b>Workspace active</b><small>Credits are verified when a report starts</small></span>
               : <span><b>Explore ShouldBuild</b><small>Sign in to start validating</small></span>}
           </div>
           <p className="sidebar-footnote">SHOULDBUILD · VALIDATE FIRST</p>

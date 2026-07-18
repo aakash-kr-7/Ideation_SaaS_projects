@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async () => {
     try {
       const response = await fetch("/api/user/profile");
       if (response.ok) {
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = useCallback(async () => {
     if (user) {
-      await fetchProfile(user.id);
+      await fetchProfile();
     }
   }, [user, fetchProfile]);
 
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Get initial user
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
-      if (user) fetchProfile(user.id);
+      if (user) fetchProfile();
       setLoading(false);
     });
 
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const newUser = session?.user ?? null;
       setUser(newUser);
       if (newUser) {
-        fetchProfile(newUser.id);
+        fetchProfile();
       } else {
         setProfile(null);
       }

@@ -329,10 +329,11 @@ function buildCover(
   passes: PdfPass[],
 ) {
   const page = new PdfPage(COLORS.midnight);
+  const reportName = input.reportMode === "quick_scan" ? "QUICK SCAN" : "FULL VALIDATION";
   page.rect(0, 0, 8, PAGE_HEIGHT, COLORS.teal);
   page.text("SHOULD", MARGIN + 8, 43, 10, "F2", COLORS.white);
   page.text("BUILD", MARGIN + 8 + 39, 43, 10, "F2", COLORS.teal);
-  page.text("MARKET VALIDATION DOSSIER", MARGIN + 8, 82, 7, "F2", [
+  page.text(`${reportName} / EVIDENCE REPORT`, MARGIN + 8, 82, 7, "F2", [
     0.49,
     0.77,
     0.73,
@@ -466,7 +467,7 @@ function buildScorecard(input: ExportBundleInput, evidence: PdfEvidence[]) {
     4,
   );
 
-  let top = 268;
+  const top = 268;
   input.breakdowns.forEach((factor, index) => {
     const y = top + index * 31;
     const name = label(factor.criterion);

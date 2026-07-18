@@ -3,13 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, CheckCircle2, ChevronRight, FileSearch, Gauge, Radar, Shield, ShieldCheck, Target, TrendingUp, Users, Zap, AlertTriangle, DollarSign, Rocket, BarChart3, LoaderCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronRight, FileSearch, Gauge, Radar, Shield, ShieldCheck, Target, Users, Zap, AlertTriangle, DollarSign, Rocket, LoaderCircle } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
 import { createClient } from "@/lib/supabase/client";
 import { authCallbackUrl } from "@/lib/auth-redirect";
 import { LegalFooter } from "@/components/layout/legal-footer";
 import { launchPricing, regionalPrice, type PricingRegionHint } from "@/lib/pricing";
 import { usePricingRegion } from "@/components/pricing/use-pricing-region";
+import { sampleFullValidation } from "@/lib/sample-reports";
 
 const signals = [
   { name: "Reddit", logoPath: "/logos/reddit.svg" },
@@ -110,22 +111,33 @@ export function LandingPage({ initialRegion = "auto" }: { initialRegion?: Pricin
         <div className="bs-hero-copy">
           <p className="bs-kicker"><Radar size={14}/> Market validation for builders</p>
           <h1>Don't guess. Run an adversarial<br/><span>market validation.</span></h1>
-          <p>ShouldBuild uses a multi-pass research pipeline to test your idea against real market signals. It weights willingness-to-pay over cheap talk, tries to disprove its own verdict, and delivers a cited report in ~5 minutes.</p>
+          <p>ShouldBuild tests your idea against real market signals, weighs evidence quality, and actively searches for reasons the opportunity may fail. Start with a rapid screen, then go deeper only when the evidence justifies it.</p>
           <div className="bs-actions">
             <a 
               className="bs-btn bs-btn-bright" 
               href="#" 
               style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
-              onClick={(e) => { e.preventDefault(); handleGoogleSignIn("validate-hero", "/research/new"); }}
+              onClick={(e) => { e.preventDefault(); handleGoogleSignIn("validate-hero", "/research/new?mode=quick_scan"); }}
             >
               {activeCta === "validate-hero" && <LoaderCircle size={14} className="animate-spin" />}
-              Validate your idea — free <ArrowRight size={16}/>
+              Run your free Quick Scan <ArrowRight size={16}/>
             </a>
-            <Link className="bs-link" href="/sample-report">See a sample report <ChevronRight size={15}/></Link>
+            <Link className="bs-link" href="/sample-report?mode=full_validation">See a Full Validation <ChevronRight size={15}/></Link>
           </div>
           <small><ShieldCheck size={14}/> Real market signals · Every source cited · No fake data</small>
         </div>
         <MemoPreview/>
+      </section>
+
+      <section className="bs-report-types" aria-labelledby="report-types-title">
+        <div className="bs-section-head">
+          <p className="bs-kicker">Two levels of evidence</p>
+          <h2 id="report-types-title">Screen quickly. Investigate deeply when it matters.</h2>
+        </div>
+        <div className="bs-report-type-grid">
+          <article><Gauge size={22}/><p className="eyebrow">1 credit · one free monthly</p><h3>Quick Scan</h3><p>A rapid evidence-backed screen to determine whether an idea deserves deeper research.</p><ul><li>Concise score, verdict, and evidence signals</li><li>Best for filtering ideas before investing more</li></ul></article>
+          <article className="featured"><Shield size={22}/><p className="eyebrow">3 credits · flagship report</p><h3>Full Validation</h3><p>Multi-pass adversarial research with complete specialist analysis, MVP scope, pricing logic, and launch direction.</p><ul><li>Broader evidence and explicit objections</li><li>Best before committing meaningful time or money</li></ul></article>
+        </div>
       </section>
 
       {/* ── SIGNAL STRIP ── */}
@@ -201,7 +213,7 @@ export function LandingPage({ initialRegion = "auto" }: { initialRegion?: Pricin
           <p>Not a wall of AI-generated text. A structured decision document where evidence, interpretation, and risks are separate and inspectable.</p>
         </div>
         <MemoPreview expanded/>
-        <Link className="bs-btn bs-btn-outline" href="/sample-report">Read the full sample report <ArrowRight size={15}/></Link>
+        <Link className="bs-btn bs-btn-outline" href="/sample-report?mode=full_validation">Read the full sample report <ArrowRight size={15}/></Link>
       </section>
 
       {/* ── WHAT THIS IS NOT ── */}
@@ -243,10 +255,10 @@ export function LandingPage({ initialRegion = "auto" }: { initialRegion?: Pricin
           className="bs-btn bs-btn-bright" 
           href="#" 
           style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
-          onClick={(e) => { e.preventDefault(); handleGoogleSignIn("validate-final", "/research/new"); }}
+          onClick={(e) => { e.preventDefault(); handleGoogleSignIn("validate-final", "/research/new?mode=quick_scan"); }}
         >
           {activeCta === "validate-final" && <LoaderCircle size={14} className="animate-spin" />}
-          Validate your first idea — free <ArrowRight size={16}/>
+          Run your free Quick Scan <ArrowRight size={16}/>
         </a>
       </section>
     </main>
@@ -255,11 +267,13 @@ export function LandingPage({ initialRegion = "auto" }: { initialRegion?: Pricin
 }
 
 function MemoPreview({ expanded = false }: { expanded?: boolean }) {
+  const report = sampleFullValidation;
+  const { scorecard, evidence } = report.opportunity;
   return <div className={`bs-product-frame${expanded ? " expanded" : ""}`}>
     <div className="bs-window">
       <header><span className="bs-window-dot"/><span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--display)", fontSize: 13, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em" }}><Image src="/brand/shouldbuild-mark.svg" alt="" width={16} height={16} style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,.15))" }}/>Should<span className="text-accent">Build</span></span><span style={{ opacity: 0.6 }}> / VALIDATION REPORT</span><i>SAMPLE DATA</i></header>
       <aside>
-        <b>82</b>
+        <b>{scorecard.total}</b>
         <span className="active">Verdict</span>
         <span>Evidence</span>
         <span>Competition</span>
@@ -272,24 +286,24 @@ function MemoPreview({ expanded = false }: { expanded?: boolean }) {
         <div className="bs-dashboard-top">
           <div>
             <small>IDEA BEING VALIDATED</small>
-            <h3>Recruiter resume reformatting engine</h3>
+            <h3>{report.opportunity.name}</h3>
           </div>
-          <button>Validate First</button>
+          <button>{scorecard.verdict}</button>
         </div>
         <div className="bs-dashboard-stats">
-          <Stat n="82" label="Overall score"/>
-          <Stat n="68%" label="Evidence confidence"/>
-          <Stat n="12" label="Sources analyzed"/>
+          <Stat n={String(scorecard.total)} label="Overall score"/>
+          <Stat n={`${scorecard.confidence}%`} label="Evidence confidence"/>
+          <Stat n={String(evidence.length)} label="Sources analyzed"/>
         </div>
         <div className="bs-dashboard-panel">
           <div>
-            <b>Verdict: Validate First</b>
-            <small>Strong workflow pain with clear willingness to pay. Test document parsing accuracy before building.</small>
-            <p><i/> Run a paid pilot with 3 agencies using messy PDF templates.</p>
-            <p><i/> Conduct 5 buyer interviews before defining the MVP.</p>
+            <b>Verdict: {scorecard.verdict}</b>
+            <small>{report.executiveSummary}</small>
+            <p><i/> {report.opportunity.launch.weekOne[0]}</p>
+            <p><i/> {report.opportunity.launch.weekOne[2]}</p>
           </div>
           <div className="bs-dashboard-panel score">
-            <b>82</b>
+            <b>{scorecard.total}</b>
             <small>Overall<br/>score</small>
           </div>
         </div>

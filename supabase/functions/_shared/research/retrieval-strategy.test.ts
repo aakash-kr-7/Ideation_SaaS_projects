@@ -22,7 +22,7 @@ const idea = {
   targetCustomer: "boutique creative agencies",
   marketType: "B2B",
   targetRegion: "United States",
-  depth: "deep" as const,
+  mode: "full_validation" as const,
 };
 
 Deno.test("constructs separate broad, evidence-triggered targeted, and adversarial passes", () => {
@@ -272,8 +272,9 @@ Deno.test("sufficiency remains false until solution coverage and disconfirmation
 
   const passTwo = [...passOne, { id: "s2", evidence_family: "solution" as const, research_pass: 2 as const, source_tier: 3 as const, excluded: false, signal_type: "Demand" as const, snippet: "teams compare alternatives", source_id: "src-s2", source_domain: "g2.com", author: "carol" }];
   const afterTwo = evaluateSufficiency(passTwo, { attemptedPasses: [1, 2] });
-  assert(afterTwo.gaps.length === 1 && afterTwo.gaps[0].includes("disconfirmation"), `Pass 2 gaps were not isolated to disconfirmation: ${afterTwo.gaps.join(", ")}`);
+  assert(afterTwo.gaps.every((gap) => gap.includes("disconfirm")), `Pass 2 gaps were not isolated to disconfirmation: ${afterTwo.gaps.join(", ")}`);
 
-  const afterThree = evaluateSufficiency(passTwo, { attemptedPasses: [1, 2, 3] });
+  const passThree = [...passTwo, { id: "d1", evidence_family: "solution" as const, research_pass: 3 as const, source_tier: 2 as const, excluded: false, signal_type: "Risk" as const, snippet: "incumbent feature removes the proposed wedge", source_id: "src-d1", source_domain: "incumbent.example", author: null, disconfirming: true }];
+  const afterThree = evaluateSufficiency(passThree, { attemptedPasses: [1, 2, 3] });
   assert(afterThree.sufficient, `Pass 3 attempt did not close retrieval coverage: ${afterThree.gaps.join(", ")}`);
 });

@@ -1,24 +1,28 @@
 "use client";
 import { useMemo, useState, useEffect } from "react";
-import { AlertTriangle, Check, Download, FileJson, FileSpreadsheet, FileText, ListChecks, ShieldCheck, Circle, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, Download, FileJson, FileSpreadsheet, FileText, ListChecks, ShieldCheck, Circle, CheckCircle2 } from "lucide-react";
 import { ValidationReport as ReportType } from "@/lib/report-schema";
 import { reportToCsv, reportToMarkdown, downloadExport } from "@/lib/report-export";
 import { ScoreBreakdown } from "@/components/scoring/ScoreBreakdown";
-import { PricingCalculator } from "@/components/report/PricingCalculator";
 import { ValidationExperiment } from "@/components/report/ValidationExperiment";
 import { VerdictBadge } from "@/components/opportunity/verdict-badge";
 import { ScoreBadge } from "@/components/scoring/score-badge";
-import { WeightEditor } from "@/components/scoring/WeightEditor";
-import { recalculateScorecard } from "@/lib/recalculate-scorecard";
 import { getStaggerDelay, motion, revealUpClass } from "@/lib/motion";
+import { getReportModeConfig } from "@/lib/report-modes";
 
-const tabs = ["Verdict", "Evidence", "Competitors", "Scoring", "MVP Blueprint", "Pricing", "Launch", "Action plan", "Risks", "Export"] as const;
-type Tab = typeof tabs[number];
+const quickTabs = ["Conclusion", "Evidence", "Competition", "Score breakdown", "Pricing", "Next actions", "Risks", "Exports"] as const;
+const fullTabs = ["Conclusion", "Evidence", "Demand", "Competition", "Market", "Pricing", "MVP scope", "Go-to-market", "Risks", "Adversarial", "Score breakdown", "Sources", "Exports"] as const;
+type Tab = typeof quickTabs[number] | typeof fullTabs[number];
 
 export function ValidationReport({ report, scorecard, publicMode = false, runId, sourceCount }: { report: ReportType; scorecard?: ReportType["opportunity"]["scorecard"]; publicMode?: boolean; runId?: string; sourceCount?: number }) {
-  const [tab, setTab] = useState<Tab>("Verdict");
+  const [tab, setTab] = useState<Tab>("Conclusion");
   const [toast, setToast] = useState("");
   const o = useMemo(() => ({ ...report.opportunity, scorecard: scorecard ?? report.opportunity.scorecard }), [report, scorecard]);
+  const config = getReportModeConfig(report.reportMode);
+  const tabs: readonly Tab[] = report.reportMode === "quick_scan" ? quickTabs : fullTabs;
+  const strongestPositive = o.evidence.find((item) => item.id === report.strongestPositiveEvidenceId) ?? o.evidence.find((item) => !item.disconfirming && !item.excluded);
+  const strongestNegative = o.evidence.find((item) => item.id === report.strongestNegativeEvidenceId) ?? o.evidence.find((item) => item.disconfirming && !item.excluded) ?? o.evidence.find((item) => item.signal === "Risk");
 
   const exportFile = async (format: "md" | "json" | "csv" | "pdf") => {
     const payload = { ...report, opportunity: o };
@@ -52,7 +56,8 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
 
     <header className="report-engine-hero">
       <div>
-        <p className="eyebrow">{publicMode ? "Sample validation report" : "Validation report"} · {report.generatedAt}</p>
+        <p className="eyebrow">{publicMode ? "Sample validation report" : config.label} · {report.generatedAt}</p>
+        <span className={`report-mode-badge mode-${report.reportMode}`}>{config.label}</span>
         <h2>{o.name}</h2>
         <p>{o.oneLiner}</p>
         <div className="report-header-meta">
@@ -75,6 +80,16 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
       </div>
     </header>
 
+    <section className="report-decision-strip" aria-label={`${config.label} decision summary`}>
+      <article><span>Official verdict</span><b>{o.scorecard.verdict}</b></article>
+      <article><span>Evidence confidence</span><b>{o.scorecard.confidence}%</b></article>
+      <article><span>Sources analyzed</span><b>{sourceCount ?? new Set(o.evidence.map((item) => item.url)).size}</b></article>
+      {report.reportMode === "full_validation" && <article><span>Evidence quality</span><b>{o.evidence.filter((item) => !item.excluded && (item.sourceTier ?? 4) <= 2).length} Tier 1/2 findings</b></article>}
+      <article><span>{report.reportMode === "quick_scan" ? "Strongest positive signal" : "Most important opportunity"}</span><b>{strongestPositive?.title ?? "Not enough supporting evidence"}</b></article>
+      <article><span>{report.reportMode === "quick_scan" ? "Strongest negative signal" : "Most important objection"}</span><b>{strongestNegative?.title ?? report.adversarialGate?.objection ?? "No independent negative signal resolved"}</b></article>
+      <article className="report-recommendation"><span>Recommendation</span><b>{report.topRecommendation ?? o.launch.successMetric}</b></article>
+    </section>
+
     <div className="report-layout">
       <aside className="verdict-sidebar">
         <p className="eyebrow">Decision snapshot</p>
@@ -90,7 +105,7 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
         </div>
         <div className="sidebar-metrics">
           <Metric label="Report date" value={report.generatedAt}/>
-          <Metric label="Analysis type" value="Full Validation"/>
+          <Metric label="Report type" value={config.label}/>
           <Metric label="Sources analyzed" value={String(sourceCount ?? new Set(o.evidence.map(item => item.url)).size)}/>
           <Metric label="Evidence found" value={String(o.evidence.length)}/>
           <Metric label="Competitors mapped" value={String(o.competitors.length)}/>
@@ -100,9 +115,9 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
         <span><ListChecks size={14}/> Assumptions labelled</span>
         <span><AlertTriangle size={14}/> Not a guarantee</span>
         <div className="sidebar-export">
-          <button onClick={() => exportFile("md")}><FileText size={13}/>MD</button>
-          <button onClick={() => exportFile("pdf")}><FileSpreadsheet size={13}/>PDF</button>
-          <button onClick={() => exportFile("json")}><FileJson size={13}/>JSON</button>
+          {report.availableExports.includes("markdown") && <button onClick={() => exportFile("md")}><FileText size={13}/>MD</button>}
+          {report.availableExports.includes("pdf") && <button onClick={() => exportFile("pdf")}><FileSpreadsheet size={13}/>PDF</button>}
+          {report.availableExports.includes("json") && <button onClick={() => exportFile("json")}><FileJson size={13}/>JSON</button>}
         </div>
       </aside>
 
@@ -111,18 +126,23 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
           {tabs.map(t => <button key={t} className={`${tab === t ? "active" : ""} ${motion.buttonTight}`} aria-pressed={tab === t} onClick={() => setTab(t)}>{t}</button>)}
         </nav>
         <div className="report-tab-content sf-content-enter" key={tab}>
-          {tab === "Verdict" && <Verdict report={report}/>}
+          {tab === "Conclusion" && <Verdict report={report}/>}
           {tab === "Evidence" && <EvidenceView report={report}/>}
-          {tab === "Competitors" && <CompetitorView report={report}/>}
-          {tab === "Scoring" && <ScoringView report={report} scorecard={o.scorecard}/>}
-          {tab === "MVP Blueprint" && <MvpView report={report}/>}
+          {tab === "Demand" && <SpecialistView report={report} name="demand"/>}
+          {tab === "Competition" && <CompetitorView report={report}/>}
+          {tab === "Market" && <SpecialistView report={report} name="market"/>}
+          {tab === "Score breakdown" && <ScoringView scorecard={o.scorecard}/>}
+          {tab === "MVP scope" && <MvpView report={report}/>}
           {tab === "Pricing" && <PricingView report={report}/>}
-          {tab === "Launch" && <LaunchView report={report}/>}
-          {tab === "Action plan" && <ChecklistView report={report}/>}
+          {tab === "Go-to-market" && <LaunchView report={report}/>}
+          {tab === "Next actions" && <ChecklistView report={report}/>}
           {tab === "Risks" && <RiskView report={report}/>}
-          {tab === "Export" && <ExportView onExport={exportFile}/>}
+          {tab === "Adversarial" && <AdversarialView report={report}/>}
+          {tab === "Sources" && <SourcesView report={report}/>}
+          {tab === "Exports" && <ExportView onExport={exportFile} formats={report.availableExports}/>}
         </div>
         <FinalBlock report={report}/>
+        {report.reportMode === "quick_scan" && !publicMode && <section className="quick-upgrade-card"><div><p className="eyebrow">Need a deeper answer?</p><h3>Run Full Validation using the same idea.</h3><p>Your project, buyer, geography, brief, and saved assumptions will be carried forward. Entitlement is confirmed before a new run is created.</p></div><Link className="button" href={`/research/new?mode=full_validation&upgradeFrom=${runId ?? report.id}`}>Run Full Validation</Link></section>}
       </div>
     </div>
   </div>;
@@ -150,6 +170,10 @@ function Verdict({ report }: { report: ReportType }) {
       <article><span>Core workflow pain</span><b>{o.corePain}</b></article>
       <article><span>Current workaround</span><b>{o.evidence.find(e => e.signal === "Pain")?.snippet ?? "Requires direct buyer confirmation."}</b></article>
     </div>
+    <section className="report-limitations">
+      <div><p className="eyebrow">Limitations and missing evidence</p><h3>{report.evidenceGaps.length ? "The decision still has evidence gaps." : "No hidden gaps were removed from the report."}</h3></div>
+      <ul>{report.limitations.map((item) => <li key={item}>{item}</li>)}</ul>
+    </section>
   </>;
 }
 
@@ -166,7 +190,8 @@ function EvidenceView({ report }: { report: ReportType }) {
         <span>{e.source}</span>
         <span>{e.date}</span>
         <span>{e.strength} confidence</span>
-        <span>{Math.max(58, 88 - index * 7)} relevance</span>
+        {e.sourceTier && <span>Tier {e.sourceTier} source</span>}
+        {e.disconfirming && <span>Contradictory evidence</span>}
       </div>
       <footer>
         <a href={e.url} target="_blank" rel="noreferrer">Source URL ↗</a>
@@ -191,7 +216,6 @@ function CompetitorView({ report }: { report: ReportType }) {
           <th>Strength</th>
           <th>Weakness</th>
           <th>Exploitable gap</th>
-          <th>Threat level</th>
         </tr>
       </thead>
       <tbody>
@@ -202,20 +226,17 @@ function CompetitorView({ report }: { report: ReportType }) {
           <td>{c.strength}</td>
           <td>{c.positioning}</td>
           <td>{c.gap}</td>
-          <td><span className={index === 0 ? "threat medium" : "threat low"}>{index === 0 ? "Medium" : "Low"}</span></td>
         </tr>)}
       </tbody>
     </table>
   </div>;
 }
 
-function ScoringView({ report, scorecard }: { report: ReportType; scorecard: ReportType["opportunity"]["scorecard"] }) {
-  const [weights, setWeights] = useState(scorecard.weights);
-  const recalculated = useMemo(() => recalculateScorecard(scorecard, weights), [scorecard, weights]);
-  const entries = Object.entries(recalculated.scores);
+function ScoringView({ scorecard }: { scorecard: ReportType["opportunity"]["scorecard"] }) {
+  const entries = Object.entries(scorecard.scores);
   const ordered = [...entries].sort((a, b) => b[1] - a[1]);
   return <>
-    <div className="workbench-grid"><WeightEditor weights={weights} defaultValue={scorecard.weights} onChange={setWeights}/><ScoreBreakdown scorecard={recalculated}/></div>
+    <div className="canonical-scorecard"><div><p className="eyebrow">Official deterministic score</p><h3>{scorecard.total}/100 · {scorecard.verdict}</h3><p>The displayed verdict is computed by the shared scoring engine. Narrative generation cannot override it.</p></div><ScoreBreakdown scorecard={scorecard}/></div>
     <section className="score-explanation">
       <p className="eyebrow">Score analysis</p>
       <p><b>Strongest drivers:</b> {ordered.slice(0, 3).map(([key]) => pretty(key)).join(", ")}. <b>Weakest drivers:</b> {ordered.slice(-3).map(([key]) => pretty(key)).join(", ")}.</p>
@@ -277,9 +298,6 @@ function MvpView({ report }: { report: ReportType }) {
 
 function PricingView({ report }: { report: ReportType }) {
   const p = report.opportunity.pricing;
-  let parsedPrice = 0;
-  const match = p.pricePoint.match(/\d+/);
-  if (match) parsedPrice = Number(match[0]);
   const cards = [
     ["Pricing model", p.model, "Persisted model", p.rationale],
     ["Core price", p.pricePoint, "Persisted price point", p.rationale],
@@ -295,12 +313,7 @@ function PricingView({ report }: { report: ReportType }) {
         <p>{reason}</p>
       </article>)}
     </div>
-    <PricingCalculator starterPrice={parsedPrice} proPrice={parsedPrice * 2} agencyPrice={parsedPrice * 4}/>
-    <div className="revenue-path">
-      <div><b>Path to $500 MRR</b><span>{Math.ceil(500 / parsedPrice)} Starter customers at {p.pricePoint}</span></div>
-      <div><b>Path to $3,000 MRR</b><span>{Math.ceil(3000 / (parsedPrice * 2))} Pro customers at ${parsedPrice * 2}/mo</span></div>
-      <p>These are pricing scenarios, not revenue projections.</p>
-    </div>
+    <div className="report-pricing-caveat"><AlertTriangle size={15}/><p>This is evidence-backed pricing direction, not a revenue projection. Validate willingness to pay with a real purchase or paid pilot.</p></div>
   </>;
 }
 
@@ -333,7 +346,19 @@ function LaunchView({ report }: { report: ReportType }) {
 function ChecklistView({ report }: { report: ReportType }) {
   const o = report.opportunity;
   const reportId = o.id;
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
 
+  useEffect(() => {
+    const data = window.localStorage.getItem(`checklist-${reportId}`);
+    if (data) {
+      try { setChecked(JSON.parse(data)); } catch {}
+    }
+  }, [reportId]);
+
+  if (report.reportMode === "quick_scan") {
+    const actions = [...o.launch.weekOne, o.launch.successMetric, o.launch.outreachMessage, `Test the initial offer: ${o.pricing.firstOffer}`].filter((item, index, all) => item && all.indexOf(item) === index).slice(0, 3);
+    return <section className="quick-next-actions"><p className="eyebrow">Recommended next three validation actions</p>{actions.map((item, index) => <article key={item}><span>0{index + 1}</span><b>{item}</b></article>)}</section>;
+  }
   const sections = [
     {
       title: "Phase 1: Setup & Hypothesis Framing",
@@ -371,17 +396,6 @@ function ChecklistView({ report }: { report: ReportType }) {
       ]
     }
   ];
-
-  const [checked, setChecked] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    const data = window.localStorage.getItem(`checklist-${reportId}`);
-    if (data) {
-      try {
-        setChecked(JSON.parse(data));
-      } catch (e) {}
-    }
-  }, [reportId]);
 
   const toggle = (key: string) => {
     const next = { ...checked, [key]: !checked[key] };
@@ -433,7 +447,7 @@ function RiskView({ report }: { report: ReportType }) {
       return <article tabIndex={0} key={existing.id} className={`${existing.severity.toLowerCase()} ${motion.cardInteractive}`}>
         <div>
           <span>{existing.category} risk</span>
-          <b>{existing.severity} likelihood</b>
+          <b>{existing.severity} severity</b>
         </div>
         <h3>{existing.description}</h3>
         <p><strong>Mitigation: </strong>{existing.mitigation}</p>
@@ -442,17 +456,40 @@ function RiskView({ report }: { report: ReportType }) {
   </div>;
 }
 
-function ExportView({ onExport }: { onExport: (format: "md" | "json" | "csv" | "pdf") => void | Promise<void> }) {
+function SpecialistView({ report, name }: { report: ReportType; name: "demand" | "market" }) {
+  const section = report.specialistSections?.[name] as { status?: string; output?: { claims?: Array<{ claim?: string; evidence_ids?: string[] }>; limitations?: string[] } } | undefined;
+  const claims = section?.output?.claims ?? [];
+  return <section className="specialist-report-section">
+    <header><p className="eyebrow">{name} specialist</p><h3>{section?.status === "Complete" ? `${name[0].toUpperCase() + name.slice(1)} analysis` : "Incomplete specialist section"}</h3></header>
+    {claims.length ? <div>{claims.map((claim, index) => <article key={`${claim.claim}-${index}`}><b>{claim.claim}</b><small>{claim.evidence_ids?.length ?? 0} evidence reference{claim.evidence_ids?.length === 1 ? "" : "s"}</small></article>)}</div> : <p className="report-empty-section">This section could not be completed from the persisted evidence. No substitute narrative was generated.</p>}
+    {!!section?.output?.limitations?.length && <ul>{section.output.limitations.map((item) => <li key={item}>{item}</li>)}</ul>}
+  </section>;
+}
+
+function AdversarialView({ report }: { report: ReportType }) {
+  return <div className="adversarial-report-view">
+    <section><p className="eyebrow">Adversarial verdict gate</p><h3>{report.adversarialGate?.outcome ?? "Gate incomplete"}</h3><p>{report.adversarialGate?.objection ?? "No adversarial conclusion was persisted."}</p></section>
+    <section><p className="eyebrow">Independent checker disagreements</p>{report.specialistDisputes?.length ? report.specialistDisputes.map((item) => <article key={item.specialist} className={item.disputed ? "disputed" : "aligned"}><b>{item.specialist}</b><span>{item.reason}</span></article>) : <p className="report-empty-section">No independent checker results are available for this report.</p>}</section>
+  </div>;
+}
+
+function SourcesView({ report }: { report: ReportType }) {
+  return <div className="report-source-list">
+    {report.opportunity.evidence.map((item) => <article key={item.id}><div><b>{item.source}</b><span>{item.sourceTier ? `Tier ${item.sourceTier}` : item.sourceType}</span>{item.excluded && <i>Excluded from scoring</i>}</div><p>{item.title}</p>{item.url ? <a href={item.url} target="_blank" rel="noreferrer">Inspect source ↗</a> : <span>Source URL unavailable</span>}</article>)}
+  </div>;
+}
+
+function ExportView({ onExport, formats }: { onExport: (format: "md" | "json" | "csv" | "pdf") => void | Promise<void>; formats: ReportType["availableExports"] }) {
   return <div className="export-panel">
     <Download size={21}/>
     <div>
       <h3>Decision-ready exports</h3>
-      <p>Export the full validation report, structured data, or a summary CSV.</p>
+      <p>Only exports included with this report type are shown.</p>
     </div>
-    <button onClick={() => onExport("md")}><FileText size={15}/>Markdown</button>
-    <button onClick={() => onExport("pdf")}><FileSpreadsheet size={15}/>PDF</button>
-    <button onClick={() => onExport("json")}><FileJson size={15}/>JSON</button>
-    <button onClick={() => onExport("csv")}><FileSpreadsheet size={15}/>CSV</button>
+    {formats.includes("markdown") && <button onClick={() => onExport("md")}><FileText size={15}/>Markdown</button>}
+    {formats.includes("pdf") && <button onClick={() => onExport("pdf")}><FileSpreadsheet size={15}/>PDF</button>}
+    {formats.includes("json") && <button onClick={() => onExport("json")}><FileJson size={15}/>JSON</button>}
+    {formats.includes("csv") && <button onClick={() => onExport("csv")}><FileSpreadsheet size={15}/>CSV</button>}
   </div>;
 }
 
@@ -463,8 +500,8 @@ function FinalBlock({ report }: { report: ReportType }) {
     <h3>{o.scorecard.verdict}</h3>
     <div>
       <span><b>Next action: </b>{o.launch.successMetric}</span>
-      <span><b>Build first: </b>{o.mvp.scope[0]}</span>
-      <span><b>Do not build: </b>{o.mvp.exclusions[0]}</span>
+      {report.reportMode === "full_validation" && <span><b>Build first: </b>{o.mvp.scope[0]}</span>}
+      {report.reportMode === "full_validation" && <span><b>Do not build: </b>{o.mvp.exclusions[0]}</span>}
       <span><b>Prove before scaling: </b>{o.launch.successMetric}</span>
     </div>
   </section>;

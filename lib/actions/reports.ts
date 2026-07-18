@@ -1,8 +1,6 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { validationReportSchema } from "@/lib/report-schema";
-import { z } from "zod";
 
 export async function getReportForRun(runId: string) {
   const supabase = await createClient();
@@ -56,25 +54,6 @@ export async function publishReport(reportId: string) {
     .from("reports")
     .update({ status: "Published", updated_at: new Date().toISOString() })
     .eq("id", reportId)
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
-}
-
-export async function createReportVersion(reportId: string, versionNumber: number, payload: any) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
-
-  const { data, error } = await supabase
-    .from("report_versions")
-    .insert({
-      report_id: reportId,
-      version_number: versionNumber,
-      payload
-    })
     .select()
     .single();
 

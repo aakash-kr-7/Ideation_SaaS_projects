@@ -9,6 +9,7 @@ export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }
   });
 
   const reports = useMemo(() => allReports.filter(r => selected.includes(r.opportunity.id)), [selected, allReports]);
+  const mixedDepth = new Set(reports.map(report => report.reportMode)).size > 1;
   
   const toggle = (id: string) => setSelected(s => s.includes(id) ? s.filter(x => x !== id) : s.length < 4 ? [...s, id] : s);
   
@@ -18,8 +19,9 @@ export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }
   return <section className="compare-engine">
     <div className="compare-library-note">
       <b>Compare your ideas side by side</b>
-      <span>Select up to 4 ideas to compare against the same scoring criteria.</span>
+      <span>Select up to 4 ideas. Canonical score factors are comparable; report depth and evidence coverage may differ.</span>
     </div>
+    {mixedDepth && <div className="comparison-depth-warning" role="note"><b>Different research depth</b><span>This comparison includes a Quick Scan and a Full Validation. Missing specialist detail in a Quick Scan is expected and does not mean the evidence was negative.</span></div>}
     
     <div className="compare-picker">
       {allReports.map(r => {
@@ -36,6 +38,7 @@ export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }
           <tr>
             <th>Criteria</th>
             {reports.map(r => <th key={r.opportunity.id}>
+              <span className={`report-mode-badge ${r.reportMode}`}>{r.reportMode === "quick_scan" ? "Quick Scan" : "Full Validation"}</span>
               <b>{r.opportunity.name}</b>
               <small>{r.opportunity.targetCustomer}</small>
               <button onClick={() => toggle(r.opportunity.id)} aria-label={`Remove ${r.opportunity.name}`}>
@@ -54,20 +57,9 @@ export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }
           <Row label="Retention potential" reports={reports} value={r => metric("retentionPotential")(r)} />
           <Row label="Platform risk" reports={reports} value={r => `${metric("platformDependencyRisk")(r)} risk`} />
           <Row label="Regulatory risk" reports={reports} value={r => `${metric("regulatoryRisk")(r)} risk`} />
-          <Row label="Path to $500 MRR" reports={reports} value={r => {
-            const p = r.opportunity.pricing;
-            let val = 79;
-            const match = p.pricePoint.match(/\d+/);
-            if (match) val = Number(match[0]);
-            return `${Math.ceil(500/val)} customers`;
-          }} />
-          <Row label="Path to $3,000 MRR" reports={reports} value={r => {
-            const p = r.opportunity.pricing;
-            let val = 79;
-            const match = p.pricePoint.match(/\d+/);
-            if (match) val = Number(match[0]);
-            return `${Math.ceil(3000/(val*2))} Pro customers`;
-          }} />
+          <Row label="Pricing direction" reports={reports} value={r => r.opportunity.pricing.pricePoint} />
+          <Row label="Evidence confidence" reports={reports} value={r => `${r.opportunity.scorecard.confidence}%`} />
+          <Row label="Sources used" reports={reports} value={r => r.opportunity.evidence.length} />
           <Row label="First validation step" reports={reports} value={r => r.opportunity.launch.validationExperiment?.[0] ?? r.opportunity.launch.successMetric} />
         </tbody>
       </table>

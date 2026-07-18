@@ -6,11 +6,13 @@
     "dev": "next dev",
     "dev:3001": "next dev -p 3001",
     "build": "next build",
-    "test:scoring": "deno test supabase/functions/_shared/research/scoring-engine.test.ts supabase/functions/_shared/research/retrieval-strategy.test.ts supabase/functions/_shared/research/reasoning.test.ts supabase/functions/_shared/research/reasoning-integrity.test.ts supabase/functions/_shared/research/exports.test.ts supabase/functions/_shared/research/providers.test.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run test:scoring",
+    "test:scoring": "deno test --unstable-sloppy-imports lib/sample-reports.test.ts supabase/functions/_shared/research/mode-config.test.ts supabase/functions/_shared/research/scoring-engine.test.ts supabase/functions/_shared/research/retrieval-strategy.test.ts supabase/functions/_shared/research/reasoning.test.ts supabase/functions/_shared/research/reasoning-integrity.test.ts supabase/functions/_shared/research/exports.test.ts supabase/functions/_shared/research/providers.test.ts",
     "start": "node scripts/start-server.cjs",
     "start:3000": "node scripts/start-server.cjs --port=3000",
     "start:3001": "node scripts/start-server.cjs --port=3001",
-    "lint": "next lint"
+    "lint": "eslint . --max-warnings=0"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -28,6 +30,8 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.20",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
     "typescript": "^5.5.3"

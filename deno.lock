@@ -915,6 +915,8 @@
         "npm:@types/react@^18.3.3",
         "npm:autoprefixer@^10.4.20",
         "npm:dotenv@^17.4.2",
+        "npm:eslint-config-next@^15.5.20",
+        "npm:eslint@^9.39.5",
         "npm:lucide-react@0.446",
         "npm:next@15.5.20",
         "npm:postcss@^8.4.47",

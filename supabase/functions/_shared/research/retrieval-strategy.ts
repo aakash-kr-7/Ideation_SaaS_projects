@@ -1,4 +1,5 @@
 import type { ResearchRequest } from "./types.ts";
+import type { EvidenceSufficiencyRules } from "./mode-config.ts";
 
 export type EvidenceFamily = "problem" | "solution";
 export type ResearchPass = 1 | 2 | 3;
@@ -30,6 +31,7 @@ export interface RetrievalEvidence {
 export interface SufficiencyResult {
   sufficient: boolean;
   gaps: string[];
+  usableEvidence: number;
   problemEvidence: number;
   solutionEvidence: number;
   disconfirmingEvidence: number;
@@ -559,6 +561,16 @@ export function classifySourceTier(
 export function evaluateSufficiency(
   evidence: RetrievalEvidence[],
   context: { attemptedPasses?: ResearchPass[] } = {},
+  rules: EvidenceSufficiencyRules = {
+    minimumUsableEvidence: 4,
+    minimumProblemSources: 2,
+    minimumSolutionSources: 2,
+    minimumDisconfirmingEvidence: 1,
+    requireDisconfirmingAttempt: true,
+    requireTierOneEvidence: true,
+    requireTierOneOrTwoEvidence: true,
+    minimumIndependentCorroboration: 2,
+  },
 ): SufficiencyResult {
   const usable = evidence.filter((e) => !e.excluded);
   const problem = usable.filter((e) => e.evidence_family === "problem");
@@ -574,27 +586,36 @@ export function evaluateSufficiency(
   const disconfirmationAttempted = context.attemptedPasses?.includes(3) ??
     evidence.some((e) => e.research_pass === 3);
   const gaps: string[] = [];
-  if (problemSources < 2) {
+  if (usable.length < rules.minimumUsableEvidence) {
+    gaps.push(`fewer than ${rules.minimumUsableEvidence} usable evidence items`);
+  }
+  if (problemSources < rules.minimumProblemSources) {
     gaps.push("insufficient problem-space evidence from independent sources");
   }
-  if (solutionSources < 2) {
+  if (solutionSources < rules.minimumSolutionSources) {
     gaps.push("insufficient solution-space evidence from independent sources");
   }
-  if (!disconfirmationAttempted) {
+  if (rules.requireDisconfirmingAttempt && !disconfirmationAttempted) {
     gaps.push("disconfirmation has not yet been attempted");
   }
-  if (!usable.some((e) => e.source_tier === 1)) {
+  if (disconfirming.length < rules.minimumDisconfirmingEvidence) {
+    gaps.push("insufficient meaningful disconfirming evidence");
+  }
+  if (rules.requireTierOneEvidence && !usable.some((e) => e.source_tier === 1)) {
     gaps.push("no willingness-to-pay Tier 1 signal");
   }
-  if (!usable.some((e) => e.source_tier <= 2)) {
+  if (rules.requireTierOneOrTwoEvidence && !usable.some((e) => e.source_tier <= 2)) {
     gaps.push("no Tier 1/2 evidence");
   }
-  if (maxCorroboration < 2) {
-    gaps.push("no pain cluster corroborated by two independent sources");
+  if (maxCorroboration < rules.minimumIndependentCorroboration) {
+    gaps.push(
+      `no pain cluster corroborated by ${rules.minimumIndependentCorroboration} independent source${rules.minimumIndependentCorroboration === 1 ? "" : "s"}`,
+    );
   }
   return {
     sufficient: gaps.length === 0,
     gaps,
+    usableEvidence: usable.length,
     problemEvidence: problemSources,
     solutionEvidence: solutionSources,
     disconfirmingEvidence: disconfirming.length,

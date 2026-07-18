@@ -3,6 +3,7 @@ import {
   runReasoningPhase,
   runResearchPipeline,
 } from "../_shared/research/pipeline.ts";
+import { getReportModeConfig } from "../_shared/research/mode-config.ts";
 
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
 
@@ -77,20 +78,22 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Map record data to ResearchRequest
+    const claimed = update1Data[0];
+    const modeConfig = getReportModeConfig(claimed.mode);
+    // Build the request only from the canonical row returned by the atomic claim.
     const requestPayload = {
-      ideaName: record.idea_name,
-      ideaDescription: record.idea_description,
-      targetCustomer: record.target_customer,
-      marketType: record.market_type || "B2B",
-      targetRegion: record.target_region || "Global",
-      depth: (record.mode === "Fast Scan" ? "fast" : "deep") as "fast" | "deep",
+      ideaName: claimed.idea_name,
+      ideaDescription: claimed.idea_description,
+      targetCustomer: claimed.target_customer,
+      marketType: claimed.market_type || "B2B",
+      targetRegion: claimed.target_region || "Global",
+      mode: modeConfig.mode,
     };
 
     console.log(
       `Scheduling ${
         reasoningOnly ? "reasoning" : "full evidence"
-      } pipeline for run ${record.id}...`,
+      } ${modeConfig.label} pipeline for run ${record.id} (request ${claimed.request_id ?? "unknown"})...`,
     );
     EdgeRuntime.waitUntil(
       (reasoningOnly

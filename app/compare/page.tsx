@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Scale, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { CompareMatrix } from "@/components/opportunity/CompareMatrix";
-import type { ValidationReport as ValidationReportData } from "@/lib/report-schema";
+import { validationReportSchema, type ValidationReport as ValidationReportData } from "@/lib/report-schema";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -11,12 +11,14 @@ export default async function ComparePage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("reports")
-    .select("report_versions(payload), research_runs!inner(status)")
-    .eq("research_runs.status", "Completed");
+    .select("report_versions(payload, created_at), research_runs!inner(status)")
+    .eq("research_runs.status", "Completed")
+    .order("created_at", { referencedTable: "report_versions", ascending: false });
   if (error) throw error;
-  const reports = (data || [])
-    .map((row: any) => row.report_versions?.[0]?.payload)
-    .filter((report: unknown): report is ValidationReportData => Boolean(report));
+  const reports = (data || []).flatMap((row: any) => {
+    const parsed = validationReportSchema.safeParse(row.report_versions?.[0]?.payload);
+    return parsed.success ? [parsed.data as unknown as ValidationReportData] : [];
+  });
 
   if (reports.length < 2) {
     return (

@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   twitter: { 
     card: "summary_large_image", 
     title: "ShouldBuild — Automated Market Validation",
-    description: "Test your startup idea against real market signals in minutes.",
+    description: "Test your startup idea against cited market signals and an adversarial research pipeline.",
     images: ["/brand/shouldbuild-mark.svg"],
   },
 };

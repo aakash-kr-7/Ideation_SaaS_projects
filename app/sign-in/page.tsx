@@ -3,7 +3,7 @@
 import { Suspense, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LockKeyhole, LoaderCircle, ArrowRight, Mail, Eye, EyeOff, CheckCircle2, ArrowLeft } from "lucide-react";
+import { LockKeyhole, LoaderCircle, ArrowRight, Mail, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
 import { createClient } from "@/lib/supabase/client";
 import { authCallbackUrl, safeAuthRedirect } from "@/lib/auth-redirect";

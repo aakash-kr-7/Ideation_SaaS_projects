@@ -89,7 +89,7 @@ async function main() {
     const run = await insert("research_runs", {
       project_id: project.id, created_by: victimId, idea_name: `RLS fixture ${suffix}`,
       idea_description: "Disposable cross-tenant authorization fixture", target_customer: "Security auditors",
-      market_type: "B2B", target_region: "Global", mode: "Fast Scan", status: "Queued", progress: 0,
+      market_type: "B2B", target_region: "Global", mode: "quick_scan", status: "Queued", progress: 0,
     });
     const stage = await insert("research_stages", { run_id: run.id, stage_name: "Queued", status: "Queued", progress_detail: "RLS fixture" });
     const comparison = await insert("saved_comparisons", { project_id: project.id, name: `RLS ${suffix}`, run_ids: [run.id], created_by: victimId });
