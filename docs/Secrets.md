@@ -18,6 +18,7 @@ Only `NEXT_PUBLIC_` values are browser-visible. `WEBHOOK_SECRET` is server-only.
 ```env
 SUPABASE_URL=https://PROJECT_REF.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=server-only-service-role-key
+SUPABASE_SERVICE_ROLE_KEY=server-only-service-role-key
 WEBHOOK_SECRET=the-same-dedicated-worker-secret
 TAVILY_API_KEY=...
 FIRECRAWL_API_KEY=...

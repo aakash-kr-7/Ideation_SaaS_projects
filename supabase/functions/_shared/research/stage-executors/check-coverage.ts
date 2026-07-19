@@ -13,7 +13,7 @@ import { evaluateSufficiency, type RetrievalEvidence, type ResearchPass } from "
 export async function executeCheckCoverage(
   ctx: StageContext,
 ): Promise<StageResult> {
-  const { runId, db, config, startedAt } = ctx;
+  const { runId, researchCycle, db, config, startedAt } = ctx;
 
   // --- Load all evidence for the run ---
   const { data: evidence, error: evError } = await db
@@ -31,7 +31,8 @@ export async function executeCheckCoverage(
   const { data: passes } = await db
     .from("research_passes")
     .select("pass_number")
-    .eq("run_id", runId);
+    .eq("run_id", runId)
+    .eq("research_cycle", researchCycle);
 
   const attemptedPasses = (passes || []).map((p: any) => p.pass_number as ResearchPass);
 
@@ -66,6 +67,7 @@ export async function executeCheckCoverage(
     await db.from("research_passes").upsert(
       {
         run_id: runId,
+        research_cycle: researchCycle,
         pass_number: passNumber,
         objective: passNumber === 1 ? "broad" : passNumber === 2 ? "targeted" : "disconfirming",
         evidence_count: passEvidence.length,
@@ -75,7 +77,7 @@ export async function executeCheckCoverage(
         status: "Complete",
         completed_at: new Date().toISOString(),
       },
-      { onConflict: "run_id,pass_number" },
+      { onConflict: "run_id,research_cycle,pass_number" },
     );
   }
 

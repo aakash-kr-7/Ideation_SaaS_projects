@@ -23,6 +23,29 @@ export const PIPELINE_STAGES = [
 
 export type PipelineStage = (typeof PIPELINE_STAGES)[number];
 
+/**
+ * The stable identity of a logical queue job. Attempts deliberately do not
+ * appear here: retrying work must claim the same durable job row.
+ */
+export interface StageAddress {
+  readonly runId: string;
+  readonly researchCycle: number;
+  readonly stage: PipelineStage;
+  readonly stageIteration: number;
+  readonly batchIndex: number;
+  readonly shardKey?: string | null;
+}
+
+const addressPart = (value: string | number | null | undefined) =>
+  String(value ?? "").trim().replaceAll("|", "%7C");
+
+/** Canonical, null-safe idempotency key used by every executor and RPC. */
+export function stageAddressKey(address: StageAddress): string {
+  return [address.runId, address.researchCycle, address.stage, address.stageIteration, address.batchIndex, address.shardKey]
+    .map(addressPart)
+    .join("|");
+}
+
 export function isPipelineStage(value: unknown): value is PipelineStage {
   return (
     typeof value === "string" &&
@@ -37,6 +60,27 @@ export const BATCHED_STAGES: ReadonlySet<PipelineStage> = new Set([
   "extract_evidence",
   "gap_research",
 ]);
+
+/** Maximum number of research cycles (initial + gap iterations). */
+export const MAX_RESEARCH_CYCLES = 3;
+
+/**
+ * Durable orchestration cursor persisted for every run.
+ * Records enough state to resume safely without inferring
+ * continuation state from row counts alone.
+ */
+export interface PipelineCursor {
+  readonly runId: string;
+  readonly researchCycle: number;
+  readonly currentStage: PipelineStage | null;
+  readonly stageIteration: number;
+  readonly nextBatchIndex: number;
+  readonly lastCompletedJobId: string | null;
+  readonly lastProgressAt: string;
+  readonly coverageRequestedCycle: boolean;
+  readonly coverageGaps: string[];
+  readonly terminalizationStarted: boolean;
+}
 
 /** Default stage → next stage transitions. */
 export const STAGE_TRANSITIONS: Record<PipelineStage, PipelineStage | null> = {
@@ -78,12 +122,14 @@ export interface StageContext {
   readonly runId: string;
   readonly jobId: string;
   readonly attemptNumber: number;
+  readonly researchCycle: number;
   readonly stageIteration: number;
   readonly batchIndex: number;
   readonly batchSize: number;
   readonly inputMeta: Record<string, unknown>;
   readonly config: import("./mode-config.ts").ReportModeConfig;
   readonly db: any; // SupabaseClient — typed as any for Deno/Node compatibility
+  readonly dependencies: import("./dependencies.ts").ResearchDependencies;
   readonly startedAt: number; // Date.now() at start of execution
 }
 
@@ -98,6 +144,9 @@ export interface StageResult {
   readonly nextBatchIndex: number;
   readonly nextBatchSize: number;
   readonly nextJobPurpose: string;
+  /** Set only by gap research; the transition RPC increments the cycle once. */
+  readonly startNewResearchCycle?: boolean;
+  readonly coverageGaps?: string[];
   readonly outputMeta: Record<string, unknown>;
   readonly metrics: StageMetrics;
   readonly error?: StageError;
@@ -139,6 +188,8 @@ export function stageCompleted(
       | "nextBatchIndex"
       | "nextBatchSize"
       | "nextJobPurpose"
+      | "startNewResearchCycle"
+      | "coverageGaps"
     >
   > = {},
 ): StageResult {
@@ -150,6 +201,8 @@ export function stageCompleted(
     nextBatchIndex: overrides.nextBatchIndex ?? 0,
     nextBatchSize: overrides.nextBatchSize ?? 0,
     nextJobPurpose: overrides.nextJobPurpose ?? "stage",
+    startNewResearchCycle: overrides.startNewResearchCycle,
+    coverageGaps: overrides.coverageGaps,
     outputMeta,
     metrics,
   };

@@ -8,7 +8,6 @@
 
 import type { StageContext, StageResult } from "../stages.ts";
 import { stageCompleted, stageFailed } from "../stages.ts";
-import { createEmbeddingProvider } from "../providers.ts";
 import { callProvider, costBudgetForRun, cosine } from "../pipeline-utils.ts";
 import { clusterBySimilarity, type RetrievalEvidence } from "../retrieval-strategy.ts";
 import { clusterEvidence, evidenceConfidence } from "../evidence-intelligence.ts";
@@ -16,7 +15,7 @@ import { clusterEvidence, evidenceConfidence } from "../evidence-intelligence.ts
 export async function executeDeduplicateCluster(
   ctx: StageContext,
 ): Promise<StageResult> {
-  const { runId, db, config, startedAt } = ctx;
+  const { runId, db, config, startedAt, dependencies } = ctx;
 
   // --- Load all non-excluded evidence ---
   const { data: evidence, error: evError } = await db
@@ -45,7 +44,7 @@ export async function executeDeduplicateCluster(
 
   // --- Embed evidence snippets ---
   const budget = await costBudgetForRun(runId, db, config);
-  const embedder = createEmbeddingProvider();
+  const embedder = dependencies.embeddings;
   const snippets = evidence.map((e: any) => e.snippet.slice(0, 500));
 
   let vectors: number[][];

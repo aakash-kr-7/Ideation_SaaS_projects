@@ -209,7 +209,7 @@ export const REPORT_MODE_CONFIG = {
     timeLimits: { totalMs: 180_000, retrievalMs: 90_000, reasoningMs: 70_000, stageDefaultMs: 60_000 },
     costLimits: { totalUsd: 0.50, retrievalReserveUsd: 0.25, reasoningReserveUsd: 0.15 },
     chartAvailability: ["score_radar", "evidence_distribution"],
-    maxGapResearchIterations: 1,
+    maxGapResearchIterations: 2,
     maxJobsPerRun: 80,
   },
   full_validation: {

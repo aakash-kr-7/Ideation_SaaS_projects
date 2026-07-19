@@ -337,17 +337,20 @@ export function chunk(text: string, size = 4000) {
  * Ensure a pipeline_metrics row exists for a run and return it.
  */
 export async function ensureMetrics(runId: string, db: any) {
-  const { data, error } = await db
+  // `ignoreDuplicates` intentionally returns no representation on PostgreSQL;
+  // chaining `.single()` therefore turns a harmless duplicate into a worker
+  // failure. Ensure first, then read the canonical row.
+  const { error: ensureError } = await db
     .from("research_pipeline_metrics")
     .upsert(
       { run_id: runId },
       { onConflict: "run_id", ignoreDuplicates: true },
-    )
-    .select("*")
-    .single();
-  if (error) {
-    throw new Error(`Failed to ensure pipeline metrics: ${error.message}`);
+    );
+  if (ensureError) {
+    throw new Error(`Failed to ensure pipeline metrics: ${ensureError.message}`);
   }
+  const { data, error } = await db.from("research_pipeline_metrics").select("*").eq("run_id", runId).single();
+  if (error) throw new Error(`Failed to read pipeline metrics: ${error.message}`);
   return data;
 }
 

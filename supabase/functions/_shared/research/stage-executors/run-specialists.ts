@@ -8,7 +8,6 @@
 
 import type { StageContext, StageResult } from "../stages.ts";
 import { stageCompleted, stageFailed } from "../stages.ts";
-import { createAnalysisProvider } from "../providers.ts";
 import {
   specialistSchemas,
   type SpecialistName,
@@ -17,7 +16,7 @@ import {
   assertCitationsBelongToRun,
 } from "../reasoning.ts";
 import { compareSpecialistAndChecker } from "../reasoning-integrity.ts";
-import { callProvider, costBudgetForRun, updateState, logError, wait } from "../pipeline-utils.ts";
+import { costBudgetForRun, updateState, logError, wait } from "../pipeline-utils.ts";
 import { hasTimeBudget, hasCostBudget } from "../job-queue.ts";
 import { getEnv } from "../providers.ts";
 
@@ -42,7 +41,7 @@ function specialistPrompt(
 export async function executeRunSpecialists(
   ctx: StageContext,
 ): Promise<StageResult> {
-  const { runId, db, config, startedAt, inputMeta } = ctx;
+  const { runId, db, config, startedAt, inputMeta, dependencies } = ctx;
 
   // --- Reconstruct context ---
   const opportunityId = inputMeta.opportunityId as string;
@@ -67,7 +66,6 @@ export async function executeRunSpecialists(
 
   const allowed = new Set(allowedIds);
   const budget = await costBudgetForRun(runId, db, config);
-  const reasoner = createAnalysisProvider();
   const agentPacingMs = Number(getEnv("REASONING_AGENT_PACING_MS") || "8000");
 
   // --- Run specialist agents ---
@@ -106,10 +104,7 @@ export async function executeRunSpecialists(
     const { system, user } = specialistPrompt(name, structured, allowedIds);
 
     try {
-      const result = await callProvider(
-        runId, reasoner, `specialist:${name}`, budget, db,
-        () => reasoner.generateStructured(system, user, schema),
-      );
+      const result = await dependencies.reasoning.generate({ runId, operation: `specialist:${name}`, db, budget, systemPrompt: system, userPrompt: user, schema });
 
       assertCitationsBelongToRun(result, allowed);
       specialistOutputs[name] = { status: "Complete", output: result };
@@ -149,14 +144,7 @@ export async function executeRunSpecialists(
       let checkerResult: any = null;
 
       try {
-        const result = await callProvider(
-          runId, reasoner, `checker:${name}`, budget, db,
-          () => reasoner.generateStructured(
-            system.replace("specialist", "independent checker"),
-            user,
-            independentCheckerSchema,
-          ),
-        );
+        const result = await dependencies.reasoning.generate({ runId, operation: `checker:${name}`, db, budget, systemPrompt: system.replace("specialist", "independent checker"), userPrompt: user, schema: independentCheckerSchema });
         assertCitationsBelongToRun(result, allowed);
         checkerResult = { status: "Complete", output: result };
       } catch (error) {
@@ -211,14 +199,7 @@ export async function executeRunSpecialists(
     await updateState(runId, "Scoring", 88, "Running adversarial verdict gate", db);
 
     try {
-      const result = await callProvider(
-        runId, reasoner, "adversarial_gate", budget, db,
-        () => reasoner.generateStructured(
-          `You are an adversarial examiner. Look for the strongest objection against this opportunity. Return JSON with outcome, severity, objection, and evidence_ids.`,
-          JSON.stringify({ opportunity: opp, evidence: evidence?.filter((e: any) => allowedIds.includes(e.id)).slice(0, 20) }),
-          adversarialGateSchema,
-        ),
-      );
+      const result = await dependencies.reasoning.generate({ runId, operation: "adversarial_gate", db, budget, systemPrompt: `You are an adversarial examiner. Look for the strongest objection against this opportunity. Return JSON with outcome, severity, objection, and evidence_ids.`, userPrompt: JSON.stringify({ opportunity: opp, evidence: evidence?.filter((e: any) => allowedIds.includes(e.id)).slice(0, 20) }), schema: adversarialGateSchema });
 
       assertCitationsBelongToRun(result, allowed);
       adversarialResult = { ...result, unresolved: result.outcome === "StrongObjection", status: "Complete" };

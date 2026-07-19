@@ -8,8 +8,7 @@
 
 import type { StageContext, StageResult } from "../stages.ts";
 import { stageCompleted, stageFailed, BATCH_DEFAULTS, adaptBatchSize, MAX_STAGE_ITERATIONS } from "../stages.ts";
-import { createAnalysisProvider } from "../providers.ts";
-import { callProvider, costBudgetForRun, chunk } from "../pipeline-utils.ts";
+import { costBudgetForRun, chunk } from "../pipeline-utils.ts";
 import { classifySourceTier, classifyMarketSizeSource, isVerifiableMarketSizeFigure } from "../retrieval-strategy.ts";
 import { hasTimeBudget, hasCostBudget } from "../job-queue.ts";
 import { sourceAcceptance } from "../retrieval.ts";
@@ -17,7 +16,7 @@ import { sourceAcceptance } from "../retrieval.ts";
 export async function executeExtractEvidence(
   ctx: StageContext,
 ): Promise<StageResult> {
-  const { runId, db, config, stageIteration, batchIndex, startedAt } = ctx;
+  const { runId, db, config, stageIteration, batchIndex, startedAt, dependencies } = ctx;
   const maxIterations = MAX_STAGE_ITERATIONS.extract_evidence ?? 15;
 
   if (stageIteration >= maxIterations) {
@@ -76,7 +75,6 @@ export async function executeExtractEvidence(
   );
 
   // --- Extract evidence ---
-  const reasoner = createAnalysisProvider();
   const batch = unextracted.slice(0, batchSize);
   let evidenceExtracted = 0;
 
@@ -106,24 +104,13 @@ export async function executeExtractEvidence(
       if (!hasTimeBudget(startedAt, config.timeLimits.stageDefaultMs, 10_000)) break;
 
       try {
-        const result = await callProvider(
-          runId,
-          reasoner,
-          `extract:${source.evidence_family}:pass${source.research_pass}`,
-          budget,
-          db,
-          () =>
-            reasoner.extractEvidence(
-              run.idea_name,
-              run.target_customer,
-              textChunk,
-              {
-                family: source.evidence_family || "problem",
-                pass: source.research_pass || 1,
-                objective: "broad",
-              },
-            ),
-        );
+        const result = await dependencies.reasoning.extractEvidence({
+          runId, operation: `extract:${source.evidence_family}:pass${source.research_pass}`, db, budget,
+          idea: run.idea_name, customer: run.target_customer, chunk: textChunk,
+          context: {
+            family: source.evidence_family || "problem", pass: source.research_pass || 1, objective: "broad",
+          },
+        });
 
         // Persist extracted evidence items
         for (const item of result.evidence || []) {

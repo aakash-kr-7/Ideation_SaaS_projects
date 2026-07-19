@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { startResearchRunSchema } from "@/lib/report-schema";
 import { getReportModeConfig } from "@/lib/report-modes";
 import { ResearchRepository } from "@/lib/repositories/research";
@@ -45,24 +46,29 @@ export const ResearchService = {
     const reservation = reservationResultSchema.parse(firstRow(data));
     const workerSecret = process.env.WEBHOOK_SECRET;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    let admin: ReturnType<typeof createServiceRoleClient>;
     if (!workerSecret || !supabaseUrl) {
+      // The reservation RPC has already authenticated this caller; its paired cleanup RPC is idempotent.
       await supabase.rpc("fail_queued_research_dispatch", { p_run_id: reservation.run_id, p_error_message: "Research worker dispatch is not configured." });
       throw new ResearchLaunchError("WORKER_NOT_CONFIGURED", "Research processing is temporarily unavailable. Your reserved credit was restored.", requestId, 503);
     }
+    try { admin = createServiceRoleClient(); } catch (error) {
+      await supabase.rpc("fail_queued_research_dispatch", { p_run_id: reservation.run_id, p_error_message: "Service-role queue credentials are not configured." });
+      throw new ResearchLaunchError("WORKER_NOT_CONFIGURED", error instanceof Error ? error.message : "Research processing is unavailable.", requestId, 503);
+    }
 
     // Canonical path: reservation RPC -> staged queue job -> authenticated worker wake-up.
-    const { error: updateError } = await supabase.from("research_runs").update({ max_jobs_per_run: config.maxJobsPerRun } as never).eq("id", reservation.run_id);
+    const { error: updateError } = await admin.from("research_runs").update({ max_jobs_per_run: config.maxJobsPerRun } as never).eq("id", reservation.run_id);
     if (updateError) {
-      await supabase.rpc("fail_queued_research_dispatch", { p_run_id: reservation.run_id, p_error_message: `Pipeline initialization failed: ${updateError.message}` });
+      await privilegedRpc(admin, "fail_queued_research_dispatch", { p_run_id: reservation.run_id, p_error_message: `Pipeline initialization failed: ${updateError.message}` });
       throw new ResearchLaunchError("PIPELINE_INITIALIZATION_FAILED", "Research processing could not start. Your reserved credit was restored.", requestId, 503);
     }
-    const enqueue = supabase.rpc as unknown as (name: string, params: unknown) => Promise<{ error: { message: string } | null }>;
-    const { error: enqueueError } = await enqueue("enqueue_research_job", {
+    const enqueueError = await privilegedRpc(admin, "enqueue_research_job", {
       p_run_id: reservation.run_id, p_stage: "plan_research", p_input_meta: { mode: validated.mode }, p_stage_iteration: 0,
       p_batch_index: 0, p_batch_size: 0, p_job_purpose: "stage", p_parent_job_id: null, p_max_attempts: 3, p_visible_after: new Date().toISOString(),
     });
     if (enqueueError) {
-      await supabase.rpc("fail_queued_research_dispatch", { p_run_id: reservation.run_id, p_error_message: `Job enqueue failed: ${enqueueError.message}` });
+      await privilegedRpc(admin, "fail_queued_research_dispatch", { p_run_id: reservation.run_id, p_error_message: `Job enqueue failed: ${enqueueError.message}` });
       throw new ResearchLaunchError("JOB_ENQUEUE_FAILED", "Research processing could not start. Your reserved credit was restored.", requestId, 503);
     }
     fetch(`${supabaseUrl}/functions/v1/research-worker`, {
@@ -85,5 +91,11 @@ export const ResearchService = {
 
   async getResearchRuns(projectId: string) { return ResearchRepository.getProjectRuns(projectId); },
 };
+
+async function privilegedRpc(client: ReturnType<typeof createServiceRoleClient>, name: string, params: Record<string, unknown>) {
+  const rpc = client.rpc as unknown as (rpcName: string, rpcParams: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+  const { error } = await rpc(name, params);
+  return error;
+}
 
 export type CreditSnapshot = z.infer<typeof creditSnapshotSchema>;

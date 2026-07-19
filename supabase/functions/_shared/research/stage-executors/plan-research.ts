@@ -13,7 +13,7 @@ import { ensureMetrics } from "../pipeline-utils.ts";
 export async function executePlanResearch(
   ctx: StageContext,
 ): Promise<StageResult> {
-  const { runId, db } = ctx;
+  const { runId, researchCycle, db } = ctx;
 
   // --- Load the research run input ---
   const { data: run, error: runError } = await db
@@ -74,6 +74,7 @@ export async function executePlanResearch(
     await db.from("research_queries").upsert(
       {
         run_id: runId,
+        research_cycle: researchCycle,
         pass_number: 1,
         evidence_family: query.family,
         query_family: query.queryFamily || null,
@@ -83,7 +84,7 @@ export async function executePlanResearch(
         status: "Running",
         result_count: 0,
       },
-      { onConflict: "run_id,pass_number,query", ignoreDuplicates: true },
+      { onConflict: "run_id,research_cycle,query", ignoreDuplicates: true },
     );
   }
 

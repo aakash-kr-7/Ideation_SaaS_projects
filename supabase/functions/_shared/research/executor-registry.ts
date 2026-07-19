@@ -64,7 +64,9 @@ export async function executeStage(
   try {
     return await executor(ctx);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = error instanceof Error
+      ? `${error.message}${error.stack ? `\n${error.stack}` : ""}`
+      : String(error);
 
     // Classify the error
     if (/cost cap|budget/i.test(message)) {

@@ -3,6 +3,8 @@ import { getReportModeConfig } from "../_shared/research/mode-config.ts";
 import { claimJob, commitStageResult, validateJobStage } from "../_shared/research/job-queue.ts";
 import { executeStage } from "../_shared/research/executor-registry.ts";
 import type { StageContext } from "../_shared/research/stages.ts";
+import { createProductionDependencies } from "../_shared/research/dependencies.ts";
+import { createFixtureDependencies } from "../_shared/research/test-fixtures.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,15 +21,21 @@ Deno.serve(async (req: Request) => {
     if (!authorized) return jsonResponse({ error: "Unauthorized" }, 401);
 
     const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", serviceRoleKey ?? "");
+    const fixtureMode = req.headers.get("X-Research-Fixture") === "deterministic";
+    const fixtureOptions = req.headers.get("X-Fixture-Options");
+    let options = {};
+    if (fixtureMode && fixtureOptions) {
+      try { options = JSON.parse(fixtureOptions); } catch { /* ignore parse errors */ }
+    }
     // Requests only wake a durable queue consumer. They can never execute a run payload directly.
-    return await handleStagedClaim(db);
+    return await handleStagedClaim(db, fixtureMode, options);
   } catch (error) {
     console.error("Worker error:", error);
     return jsonResponse({ error: error instanceof Error ? error.message : String(error) }, 500);
   }
 });
 
-async function handleStagedClaim(db: any): Promise<Response> {
+async function handleStagedClaim(db: any, fixtureMode = false, fixtureOptions: any = {}): Promise<Response> {
   const workerId = `worker-${crypto.randomUUID().slice(0, 8)}`;
   const job = await claimJob(db, workerId, 55_000);
   if (!job) return jsonResponse({ message: "No pending jobs", worker: workerId });
@@ -43,14 +51,15 @@ async function handleStagedClaim(db: any): Promise<Response> {
   }
 
   const ctx: StageContext = {
-    runId: job.run_id, jobId: job.id, attemptNumber: job.attempt_count, stageIteration: job.stage_iteration,
+    runId: job.run_id, jobId: job.id, attemptNumber: job.attempt_count, researchCycle: job.research_cycle, stageIteration: job.stage_iteration,
     batchIndex: job.batch_index, batchSize: job.batch_size, inputMeta: job.input_meta || {},
     config: getReportModeConfig(run.mode), db, startedAt: Date.now(),
+    dependencies: fixtureMode ? createFixtureDependencies(fixtureOptions) : createProductionDependencies(db),
   };
   const stage = validateJobStage(job.stage);
-  const result = await executeStage(stage, ctx);
-  await commitStageResult(db, job.id, result);
-  return jsonResponse({ message: "Stage processed", job_id: job.id, stage, status: result.status, next_stage: result.nextStage, worker: workerId }, 202);
+  const stageResult = await executeStage(stage, ctx);
+  await commitStageResult(db, job.id, stageResult, { fixtureMode });
+  return jsonResponse({ message: "Stage processed", job_id: job.id, stage, status: stageResult.status, next_stage: stageResult.nextStage, worker: workerId }, 202);
 }
 
 function jsonResponse(body: unknown, status = 200): Response {

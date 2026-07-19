@@ -15,7 +15,7 @@ import { updateState, logError } from "../pipeline-utils.ts";
 export async function executeGenerateExports(
   ctx: StageContext,
 ): Promise<StageResult> {
-  const { runId, db, config, startedAt, inputMeta } = ctx;
+  const { runId, db, config, startedAt, inputMeta, dependencies } = ctx;
 
   const reportId = inputMeta.reportId as string;
   const reportVersionId = inputMeta.reportVersionId as string;
@@ -135,9 +135,8 @@ export async function executeGenerateExports(
       const storagePath = `${project?.team_id}/${runId}/v${versionNumber}/report.${format}`;
 
       // Upload to storage
-      const { error: uploadError } = await db.storage
-        .from("exports")
-        .upload(storagePath, bytes, {
+      let uploadError: unknown = null;
+      try { await dependencies.storage.upload(storagePath, bytes, {
           contentType: format === "pdf"
             ? "application/pdf"
             : format === "json"
@@ -146,7 +145,7 @@ export async function executeGenerateExports(
             ? "text/csv"
             : "text/markdown",
           upsert: true,
-        });
+        }); } catch (error) { uploadError = error; }
 
       if (uploadError) {
         await logError(runId, `export:${format}:upload`, uploadError, db);

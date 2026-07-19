@@ -63,7 +63,7 @@ Deno.test("Quick Scan source-target operating ranges", () => {
   // Domain targets
   assertEquals(mode.independentDomainTarget, 8, "QS independent domain target");
   // Gap research
-  assertEquals(mode.maxGapResearchIterations, 1, "QS max gap research iterations");
+  assertEquals(mode.maxGapResearchIterations, 2, "QS max gap research iterations");
   // Max jobs
   assertEquals(mode.maxJobsPerRun, 80, "QS max jobs per run");
 });

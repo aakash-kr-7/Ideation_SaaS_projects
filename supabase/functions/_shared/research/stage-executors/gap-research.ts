@@ -22,14 +22,14 @@ import { hasCostBudget } from "../job-queue.ts";
 export async function executeGapResearch(
   ctx: StageContext,
 ): Promise<StageResult> {
-  const { runId, db, config, stageIteration, startedAt, inputMeta } = ctx;
+  const { runId, researchCycle, db, config, startedAt, inputMeta } = ctx;
   const maxIterations = config.maxGapResearchIterations ?? MAX_STAGE_ITERATIONS.gap_research ?? 3;
 
   // --- Check iteration limit ---
-  if (stageIteration >= maxIterations) {
+  if (researchCycle >= maxIterations) {
     return stageCompleted(
       "build_specialist_packs",
-      { reason: "max_gap_iterations", iteration: stageIteration },
+      { reason: "max_research_cycles", researchCycle },
       { duration_ms: Date.now() - startedAt },
     );
   }
@@ -111,13 +111,14 @@ export async function executeGapResearch(
   }
 
   // --- Persist new queries ---
-  const passNumber = stageIteration < 1 ? 2 : 3; // Use pass 2 for targeted, 3 for adversarial
+  const passNumber = researchCycle < 1 ? 2 : 3; // Use pass 2 for targeted, 3 for adversarial
   let queriesInserted = 0;
 
   for (const query of allNewQueries) {
     const { error } = await db.from("research_queries").upsert(
       {
         run_id: runId,
+        research_cycle: researchCycle + 1,
         pass_number: passNumber,
         evidence_family: query.family,
         objective: query.objective,
@@ -126,7 +127,7 @@ export async function executeGapResearch(
         status: "Running",
         result_count: 0,
       },
-      { onConflict: "run_id,pass_number,query", ignoreDuplicates: true },
+      { onConflict: "run_id,research_cycle,query", ignoreDuplicates: true },
     );
     if (!error) queriesInserted++;
   }
@@ -135,13 +136,14 @@ export async function executeGapResearch(
   await db.from("research_passes").upsert(
     {
       run_id: runId,
+      research_cycle: researchCycle + 1,
       pass_number: passNumber,
       objective: passNumber === 2 ? "targeted" : "disconfirming",
       query_count: queriesInserted,
       status: "Running",
       started_at: new Date().toISOString(),
     },
-    { onConflict: "run_id,pass_number" },
+    { onConflict: "run_id,research_cycle,pass_number" },
   );
 
   // --- Loop back to discover_candidates to execute the new queries ---
@@ -149,12 +151,13 @@ export async function executeGapResearch(
   // After coverage is rechecked, gap_research will be called again if still insufficient
   return stageCompleted(
     "discover_candidates",
-    { queriesInserted, gaps, passNumber, iteration: stageIteration },
+    { queriesInserted, gaps, passNumber, researchCycle },
     { duration_ms: Date.now() - startedAt },
     {
-      nextStageIteration: 0, // Reset discover iteration for the new pass
+      startNewResearchCycle: true,
+      coverageGaps: gaps,
       nextInputMeta: {
-        gapResearchIteration: stageIteration + 1,
+        researchCycle: researchCycle + 1,
         fromGapResearch: true,
       },
     },

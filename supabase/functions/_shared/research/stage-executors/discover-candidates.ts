@@ -8,15 +8,13 @@
 
 import type { StageContext, StageResult } from "../stages.ts";
 import { stageCompleted, stageFailed, BATCH_DEFAULTS, adaptBatchSize, MAX_STAGE_ITERATIONS } from "../stages.ts";
-import { createSearchProvider } from "../providers.ts";
-import { BraveDiscoveryAdapter, CommonCrawlDiscoveryAdapter, SitemapRssDiscoveryAdapter, TavilyDiscoveryAdapter, discoverWithAvailableProviders } from "../discovery.ts";
-import { callProvider, costBudgetForRun } from "../pipeline-utils.ts";
+import { costBudgetForRun } from "../pipeline-utils.ts";
 import { hasTimeBudget, hasCostBudget } from "../job-queue.ts";
 
 export async function executeDiscoverCandidates(
   ctx: StageContext,
 ): Promise<StageResult> {
-  const { runId, db, config, stageIteration, startedAt } = ctx;
+  const { runId, researchCycle, db, config, stageIteration, startedAt, dependencies } = ctx;
   const maxIterations = MAX_STAGE_ITERATIONS.discover_candidates ?? 10;
 
   if (stageIteration >= maxIterations) {
@@ -30,6 +28,7 @@ export async function executeDiscoverCandidates(
     .from("research_queries")
     .select("id, query, pass_number, evidence_family, objective, query_family")
     .eq("run_id", runId)
+    .eq("research_cycle", researchCycle)
     .eq("status", "Running")
     .order("created_at", { ascending: true });
 
@@ -61,12 +60,6 @@ export async function executeDiscoverCandidates(
   const budget = await costBudgetForRun(runId, db, config);
 
   // --- Execute search queries in batch ---
-  let search: ReturnType<typeof createSearchProvider> | null = null;
-  try { search = createSearchProvider(); } catch { /* direct / optional providers still run */ }
-  const providers = [
-    ...(search ? [new TavilyDiscoveryAdapter(search)] : []),
-    new BraveDiscoveryAdapter(), new CommonCrawlDiscoveryAdapter(), new SitemapRssDiscoveryAdapter(),
-  ];
   const batchConfig = BATCH_DEFAULTS.discover_candidates ?? { defaultSize: 20, maxSize: 30, minSize: 5 };
   const batchLimit = adaptBatchSize(
     batchConfig,
@@ -86,9 +79,7 @@ export async function executeDiscoverCandidates(
     )) break;
 
     try {
-      const results = search
-        ? await callProvider(runId, search, `search:${query.objective}`, budget, db, () => discoverWithAvailableProviders(providers, { query: query.query, family: query.query_family || query.evidence_family, pass: query.pass_number }))
-        : await discoverWithAvailableProviders(providers, { query: query.query, family: query.query_family || query.evidence_family, pass: query.pass_number });
+      const results = await dependencies.discovery.discover({ query: query.query, family: query.query_family || query.evidence_family, pass: query.pass_number });
 
       // Persist search results as raw sources (dedup by URL within run)
       for (const result of results || []) {
@@ -97,6 +88,7 @@ export async function executeDiscoverCandidates(
             run_id: runId,
             title: result.title || "Untitled",
             url: result.url,
+            canonical_url: result.url,
             source_type: result.sourceType || "web",
             text_content: "",
             source_domain: result.source || null,
@@ -106,7 +98,7 @@ export async function executeDiscoverCandidates(
             research_pass: query.pass_number,
             excluded: false,
           },
-          { onConflict: "run_id,url", ignoreDuplicates: true },
+          { onConflict: "run_id,canonical_url", ignoreDuplicates: true },
         );
         if (!srcError) candidatesDiscovered++;
       }
@@ -147,6 +139,7 @@ export async function executeDiscoverCandidates(
     .from("research_queries")
     .select("id", { count: "exact", head: true })
     .eq("run_id", runId)
+    .eq("research_cycle", researchCycle)
     .eq("status", "Running");
 
   if ((remainingCount ?? 0) > 0 && stageIteration + 1 < maxIterations) {

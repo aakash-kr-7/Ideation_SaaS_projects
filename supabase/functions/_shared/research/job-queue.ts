@@ -6,8 +6,8 @@
  * proper error handling, self-triggering, and observability hooks.
  */
 
-import type { PipelineStage, StageResult, StageMetrics } from "./stages.ts";
-import { STAGE_PROGRESS, isPipelineStage } from "./stages.ts";
+import type { PipelineStage, StageResult, StageMetrics, StageAddress } from "./stages.ts";
+import { STAGE_PROGRESS, isPipelineStage, stageAddressKey } from "./stages.ts";
 import { getEnv } from "./providers.ts";
 
 // ---------------------------------------------------------------------------
@@ -20,10 +20,13 @@ export interface ResearchJob {
   stage: PipelineStage;
   status: "pending" | "claimed" | "completed" | "failed" | "dead_letter";
   attempt_count: number;
+  research_cycle: number;
   max_attempts: number;
   stage_iteration: number;
   batch_index: number;
   batch_size: number;
+  shard_key: string | null;
+  logical_key: string;
   job_purpose: string;
   parent_job_id: string | null;
   claimed_by: string | null;
@@ -39,8 +42,7 @@ export interface ResearchJob {
 }
 
 export interface EnqueueJobParams {
-  runId: string;
-  stage: PipelineStage;
+  address: StageAddress;
   inputMeta?: Record<string, unknown>;
   stageIteration?: number;
   batchIndex?: number;
@@ -60,6 +62,10 @@ export interface CompleteJobParams {
   nextBatchIndex?: number;
   nextBatchSize?: number;
   nextJobPurpose?: string;
+  nextResearchCycle?: number;
+  nextShardKey?: string | null;
+  startNewResearchCycle?: boolean;
+  coverageGaps?: string[];
   metrics?: Partial<StageMetrics>;
 }
 
@@ -74,18 +80,21 @@ type SupabaseDb = {
 
 /**
  * Enqueue a new research job. Idempotent — duplicate inserts for the same
- * (run_id, stage, stage_iteration, batch_index, job_purpose) are harmless.
+ * StageAddress identity is the only allowed idempotency identity.
  */
 export async function enqueueJob(
   db: SupabaseDb,
   params: EnqueueJobParams,
 ): Promise<string> {
   const { data, error } = await db.rpc("enqueue_research_job", {
-    p_run_id: params.runId,
-    p_stage: params.stage,
+    p_run_id: params.address.runId,
+    p_stage: params.address.stage,
     p_input_meta: params.inputMeta ?? {},
-    p_stage_iteration: params.stageIteration ?? 0,
-    p_batch_index: params.batchIndex ?? 0,
+    p_stage_iteration: params.address.stageIteration,
+    p_batch_index: params.address.batchIndex,
+    p_research_cycle: params.address.researchCycle,
+    p_shard_key: params.address.shardKey ?? null,
+    p_logical_key: stageAddressKey(params.address),
     p_batch_size: params.batchSize ?? 0,
     p_job_purpose: params.jobPurpose ?? "stage",
     p_parent_job_id: params.parentJobId ?? null,
@@ -138,6 +147,10 @@ export async function completeJob(
     p_next_batch_index: params.nextBatchIndex ?? 0,
     p_next_batch_size: params.nextBatchSize ?? 0,
     p_next_job_purpose: params.nextJobPurpose ?? "stage",
+    p_next_research_cycle: params.nextResearchCycle ?? null,
+    p_next_shard_key: params.nextShardKey ?? null,
+    p_start_new_research_cycle: params.startNewResearchCycle ?? false,
+    p_coverage_gaps: params.coverageGaps ?? [],
     p_metrics: params.metrics ?? {},
   });
 
@@ -185,6 +198,7 @@ export async function commitStageResult(
   db: SupabaseDb,
   jobId: string,
   result: StageResult,
+  options: { fixtureMode?: boolean } = {},
 ): Promise<void> {
   if (result.status === "completed") {
     await completeJob(db, {
@@ -196,12 +210,14 @@ export async function commitStageResult(
       nextBatchIndex: result.nextBatchIndex,
       nextBatchSize: result.nextBatchSize,
       nextJobPurpose: result.nextJobPurpose,
+      startNewResearchCycle: result.startNewResearchCycle,
+      coverageGaps: result.coverageGaps,
       metrics: result.metrics,
     });
 
     // Best-effort self-trigger — fire and forget
     if (result.nextStage) {
-      attemptSelfTrigger().catch(() => {
+      attemptSelfTrigger(options.fixtureMode).catch(() => {
         // Polling fallback will pick it up
       });
     }
@@ -236,7 +252,7 @@ export async function updateRunProgress(
  * This is a best-effort call — correctness does not depend on it.
  * If it fails, the polling schedule will pick up the pending job.
  */
-export async function attemptSelfTrigger(): Promise<boolean> {
+export async function attemptSelfTrigger(fixtureMode = false): Promise<boolean> {
   const supabaseUrl = getEnv("SUPABASE_URL");
   const serviceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -251,6 +267,7 @@ export async function attemptSelfTrigger(): Promise<boolean> {
       headers: {
         "Authorization": `Bearer ${serviceRoleKey}`,
         "Content-Type": "application/json",
+        ...(fixtureMode ? { "X-Research-Fixture": "deterministic" } : {}),
       },
       body: JSON.stringify({ trigger: "self", source: "job_completion" }),
       signal: AbortSignal.timeout(5_000),

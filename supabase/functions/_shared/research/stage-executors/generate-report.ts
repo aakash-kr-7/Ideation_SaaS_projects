@@ -8,22 +8,21 @@
 
 import type { StageContext, StageResult } from "../stages.ts";
 import { stageCompleted, stageFailed } from "../stages.ts";
-import { createAnalysisProvider } from "../providers.ts";
 import { finalJudgeSchema, assertCitationsBelongToRun } from "../reasoning.ts";
 import { validateNarrativeCitations, narrativeSupportsVerdict } from "../reasoning-integrity.ts";
-import { callProvider, costBudgetForRun, updateState, logError } from "../pipeline-utils.ts";
+import { costBudgetForRun, updateState, logError } from "../pipeline-utils.ts";
 import { evidenceConfidence, reportCompleteness } from "../evidence-intelligence.ts";
 
 export async function executeGenerateReport(
   ctx: StageContext,
 ): Promise<StageResult> {
-  const { runId, db, config, startedAt, inputMeta } = ctx;
+  const { runId, db, config, startedAt, inputMeta, dependencies } = ctx;
 
   const opportunityId = inputMeta.opportunityId as string;
   const scoreId = inputMeta.scoreId as string;
   const total = inputMeta.total as number;
   const verdict = inputMeta.verdict as string;
-  const chartDatasets = inputMeta.chartDatasets as any[];
+  const chartDatasets = Array.isArray(inputMeta.chartDatasets) ? inputMeta.chartDatasets as any[] : [];
 
   if (!opportunityId || !scoreId) {
     return stageFailed("permanent", "Missing opportunityId or scoreId");
@@ -48,10 +47,17 @@ export async function executeGenerateReport(
   await updateState(runId, "Generating", 93, `Generating ${config.label}`, db);
 
   // --- Load evidence for citations ---
-  const { data: evidence } = await db
-    .from("evidence_items")
-    .select("id, source_id, excluded, source_tier, sources(url)")
-    .eq("run_id", runId);
+  const [{ data: evidence }, { data: runCoverage }] = await Promise.all([
+    db.from("evidence_items")
+      .select("id, source_id, excluded, source_tier, snippet, title, signal_type, pain_point, source_domain, disconfirming, created_at, sources(url)")
+      .eq("run_id", runId),
+    db.from("research_runs")
+      .select("retrieval_sufficient,retrieval_coverage_gaps,status")
+      .eq("id", runId)
+      .single(),
+  ]);
+
+  if (runCoverage?.status === "Cancelled") return stageFailed("permanent", "Run was cancelled before publication.");
 
   const allowed = new Set<string>(
     (evidence || [])
@@ -68,23 +74,20 @@ export async function executeGenerateReport(
 
   // --- Run Final Judge ---
   const budget = await costBudgetForRun(runId, db, config);
-  const reasoner = createAnalysisProvider();
 
   let judgeOutput: any;
   try {
-    judgeOutput = await callProvider(
-      runId, reasoner, "final_judge", budget, db,
-      () => reasoner.generateStructured(
+    judgeOutput = await dependencies.reasoning.generate({
+      runId, operation: "final_judge", db, budget,
+      systemPrompt:
         `You are the Final Judge for startup validation. Write a verdict for this idea based on the deterministic score of ${total}/100 (${verdict}). Your written_verdict must be "${verdict}". Produce exactly 2 executive_summary sentences and 1 methodology sentence. Every sentence must cite evidence_ids.`,
-        JSON.stringify({
-          score: total,
-          verdict,
-          breakdowns: breakdowns?.slice(0, 12),
-          evidenceIds: [...allowed].slice(0, 30),
-        }),
-        finalJudgeSchema,
-      ),
-    );
+      userPrompt: JSON.stringify({
+        score: total,
+        verdict,
+        breakdowns: Array.isArray(breakdowns) ? breakdowns.slice(0, 12) : [],
+        evidenceIds: [...allowed].slice(0, 30),
+      }), schema: finalJudgeSchema,
+    });
 
     assertCitationsBelongToRun(judgeOutput, allowed);
   } catch (error) {
@@ -103,6 +106,15 @@ export async function executeGenerateReport(
     };
   }
 
+  // A provider fallback may satisfy transport validation without preserving the
+  // optional narrative arrays. Keep malformed output inside the normal
+  // publication gate instead of turning it into an unbounded queue retry.
+  judgeOutput = {
+    ...judgeOutput,
+    executive_summary: Array.isArray(judgeOutput?.executive_summary) ? judgeOutput.executive_summary : [],
+    methodology: Array.isArray(judgeOutput?.methodology) ? judgeOutput.methodology : [],
+  };
+
   // --- Validate narrative citations ---
   const citationValidation = validateNarrativeCitations(judgeOutput, evidence || []);
   const narrativeValid = narrativeSupportsVerdict(citationValidation);
@@ -115,8 +127,14 @@ export async function executeGenerateReport(
     hasCompetitor: (evidence || []).some((e: any) => !e.excluded && e.source_tier <= 3),
     citationsValid: narrativeValid,
   });
-  // An unsupported executive conclusion is a hard publish failure, not a fabricated report.
-  if (!narrativeValid || !allowed.size) return stageFailed("permanent", "Executive conclusion cannot be supported by run-scoped citations.");
+  // A Published report is a normal Completed deliverable. It requires both the
+  // mode-specific retrieval gate and the report-level citation/completeness gate.
+  // Exhaustion therefore fails (and restores) the run rather than publishing a
+  // normal report with insufficient coverage.
+  if (!runCoverage?.retrieval_sufficient || !completeness.complete || !narrativeValid || !allowed.size) {
+    const gaps = Array.isArray(runCoverage?.retrieval_coverage_gaps) ? runCoverage.retrieval_coverage_gaps.join(", ") : "retrieval sufficiency was not reached";
+    return stageFailed("permanent", `Publication blocked by ${config.label} evidence policy: ${[...completeness.missing, gaps].filter(Boolean).join("; ")}`);
+  }
 
   // --- Persist citation validation ---
   await db.from("citation_integrity_validations").upsert(

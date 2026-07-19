@@ -8,15 +8,14 @@
 
 import type { StageContext, StageResult } from "../stages.ts";
 import { stageCompleted, stageFailed, BATCH_DEFAULTS, adaptBatchSize, MAX_STAGE_ITERATIONS } from "../stages.ts";
-import { createPageExtractor } from "../providers.ts";
-import { cacheTtlSeconds, retrieveWithLadder, usableCache } from "../retrieval.ts";
-import { callProvider, costBudgetForRun } from "../pipeline-utils.ts";
+import { cacheTtlSeconds, usableCache } from "../retrieval.ts";
+import { costBudgetForRun } from "../pipeline-utils.ts";
 import { hasTimeBudget, hasCostBudget } from "../job-queue.ts";
 
 export async function executeFetchSources(
   ctx: StageContext,
 ): Promise<StageResult> {
-  const { runId, db, config, batchIndex, stageIteration, startedAt } = ctx;
+  const { runId, db, config, batchIndex, stageIteration, startedAt, dependencies } = ctx;
   const maxIterations = MAX_STAGE_ITERATIONS.fetch_sources ?? 15;
 
   if (stageIteration >= maxIterations) {
@@ -87,8 +86,6 @@ export async function executeFetchSources(
   );
 
   // --- Fetch pages ---
-  let extractor: ReturnType<typeof createPageExtractor> | undefined;
-  try { extractor = createPageExtractor(); } catch { /* direct HTTP is the default */ }
   const remainingAttempts = config.pageAttemptRange.max - totalAttempted;
   const batch = unfetched.slice(0, Math.min(batchSize, remainingAttempts));
   let pagesAttempted = 0;
@@ -110,9 +107,7 @@ export async function executeFetchSources(
       const { data: cached } = await db.from("public_retrieval_cache").select("canonical_url,text_content,content_hash,content_type,etag,last_modified,expires_at,fetch_status,extraction_version").eq("canonical_url", canonical).maybeSingle();
       const page = usableCache(cached)
         ? { canonicalUrl: cached.canonical_url, text: cached.text_content, contentHash: cached.content_hash, contentType: cached.content_type || "text/html", etag: cached.etag, lastModified: cached.last_modified, strategy: "public_cache", status: cached.fetch_status || 200 }
-        : extractor
-        ? await callProvider(runId, extractor, `retrieve:${source.url}`, budget, db, () => retrieveWithLadder(source.url, extractor))
-        : await retrieveWithLadder(source.url);
+        : { canonicalUrl: canonical, text: await dependencies.extraction.extract(source.url), contentHash: null, contentType: "text/html", etag: null, lastModified: null, strategy: dependencies.extraction.name, status: 200 };
       if (page.strategy === "public_cache") cacheHits++;
       const content = page.text;
 
