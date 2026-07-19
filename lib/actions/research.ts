@@ -77,3 +77,14 @@ export async function getResearchRuns(projectId: string) {
     throw new Error(errorMessage(error));
   }
 }
+
+export async function cancelResearchRun(runId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { error } = await supabase.rpc("cancel_research_run" as any, { p_run_id: runId });
+  if (error) {
+    throw new Error(error.message);
+  }
+}

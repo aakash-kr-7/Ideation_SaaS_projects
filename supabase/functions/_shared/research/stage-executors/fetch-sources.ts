@@ -35,6 +35,26 @@ export async function executeFetchSources(
     return stageFailed("transient", "Unable to load retrieval metrics");
   }
 
+  // --- Enforce coverage-driven stopping (accepted source & domain targets) ---
+  const { data: acceptedSources } = await db
+    .from("sources")
+    .select("source_domain")
+    .eq("run_id", runId)
+    .eq("excluded", false)
+    .not("text_content", "eq", "")
+    .not("extracted_at", "is", null);
+
+  const acceptedCount = acceptedSources?.length || 0;
+  const uniqueDomains = new Set(acceptedSources?.map(s => s.source_domain).filter(Boolean)).size;
+
+  if (acceptedCount >= config.acceptedSourceTarget && uniqueDomains >= config.independentDomainTarget) {
+    return stageCompleted("extract_evidence", { reason: "coverage_targets_reached" }, {
+      pages_attempted: Number(metrics.pages_attempted || 0),
+      pages_fetched: Number(metrics.pages_fetched || 0),
+      duration_ms: Date.now() - startedAt,
+    });
+  }
+
   const totalAttempted = Number(metrics.pages_attempted || 0);
   if (totalAttempted >= config.pageAttemptRange.max) {
     return stageCompleted("extract_evidence", { reason: "page_attempt_cap_reached" }, {

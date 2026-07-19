@@ -123,7 +123,7 @@ export async function claimJob(
   });
 
   if (error) {
-    throw new JobQueueError(`claim failed: ${String(error)}`, "claim");
+    throw new JobQueueError(`claim failed: ${JSON.stringify(error)}`, "claim");
   }
 
   const rows = data as ResearchJob[];

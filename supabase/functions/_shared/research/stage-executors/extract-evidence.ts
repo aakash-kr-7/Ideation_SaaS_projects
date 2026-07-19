@@ -25,6 +25,24 @@ export async function executeExtractEvidence(
     });
   }
 
+  // --- Enforce coverage-driven stopping ---
+  const { data: acceptedSources } = await db
+    .from("sources")
+    .select("source_domain")
+    .eq("run_id", runId)
+    .eq("excluded", false)
+    .not("text_content", "eq", "")
+    .not("extracted_at", "is", null);
+
+  const acceptedCount = acceptedSources?.length || 0;
+  const uniqueDomains = new Set(acceptedSources?.map(s => s.source_domain).filter(Boolean)).size;
+
+  if (acceptedCount >= config.acceptedSourceTarget && uniqueDomains >= config.independentDomainTarget) {
+    return stageCompleted("deduplicate_cluster", { reason: "coverage_targets_reached" }, {
+      duration_ms: Date.now() - startedAt,
+    });
+  }
+
   // --- Load fetched but unextracted sources ---
   const { data: sources, error: srcError } = await db
     .from("sources")

@@ -10,6 +10,7 @@ import type { ProviderUsage } from "./providers.ts";
 import { getEnv } from "./providers.ts";
 import type { ResearchStatus } from "./status.ts";
 import type { ReportModeConfig } from "./mode-config.ts";
+import { SOURCE_REGISTRY } from "./source-registry.ts";
 
 // ---------------------------------------------------------------------------
 // Wait / retry helpers
@@ -115,7 +116,8 @@ export async function costBudgetForRun(
 // ---------------------------------------------------------------------------
 
 export const PROVIDER_COSTS: Record<string, number> = {
-  tavily: 0.008,
+  tavily: SOURCE_REGISTRY["tavily"]?.estimatedRetrievalCostUsd ?? 0.008,
+  brave: SOURCE_REGISTRY["brave"]?.estimatedRetrievalCostUsd ?? 0.001,
   firecrawl: 0.001,
   cohere: 0.0002,
   groq: 0.02,

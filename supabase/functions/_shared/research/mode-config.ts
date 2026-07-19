@@ -196,7 +196,7 @@ export const REPORT_MODE_CONFIG = {
     pageAttemptRange: { min: 25, max: 35 },
     acceptedSourceTarget: 18,
     acceptedSourceMinimum: 12,
-    independentDomainTarget: 8,
+    independentDomainTarget: 10,
     queryFamilyRequirements: {
       problem: { minQueries: 2, minSources: 4 },
       solution: { minQueries: 2, minSources: 4 },
@@ -278,7 +278,7 @@ export const REPORT_MODE_CONFIG = {
     pageAttemptRange: { min: 80, max: 120 },
     acceptedSourceTarget: 55,
     acceptedSourceMinimum: 40,
-    independentDomainTarget: 20,
+    independentDomainTarget: 25,
     queryFamilyRequirements: {
       problem: { minQueries: 4, minSources: 10 },
       solution: { minQueries: 4, minSources: 10 },

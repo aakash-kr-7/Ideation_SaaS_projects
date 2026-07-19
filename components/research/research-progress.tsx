@@ -24,6 +24,7 @@ import { AnimatedNumber } from "@/components/ui/animated-number";
 import { getStaggerDelay, revealUpClass, stateChangeKey } from "@/lib/motion";
 import { getReportModeConfig, type ReportMode } from "@/lib/report-modes";
 import { deriveProgressSteps } from "@/lib/report-mode-ui";
+import { cancelResearchRun } from "@/lib/actions/research";
 import { z } from "zod";
 
 type ProgressState = {
@@ -224,6 +225,7 @@ export function ResearchProgress({ id }: { id: string }) {
   const [citation, setCitation] = useState<CitationValidation | null>(null);
   const [metrics, setMetrics] = useState<PipelineMetrics | null>(null);
   const [connectionError, setConnectionError] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -525,6 +527,29 @@ export function ResearchProgress({ id }: { id: string }) {
         </div>
       </header>
 
+      {isRunning && (
+        <div style={{ padding: "0 2rem", textAlign: "right" }}>
+          <button 
+            type="button" 
+            className="button button-small" 
+            style={{ backgroundColor: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)" }}
+            onClick={async () => {
+              if (!confirm("Are you sure you want to cancel? If the run has not completed, your credit will be restored.")) return;
+              setIsCancelling(true);
+              try {
+                await cancelResearchRun(id);
+              } catch (e) {
+                console.error("Cancel error:", e);
+                setIsCancelling(false);
+              }
+            }}
+            disabled={isCancelling}
+          >
+            {isCancelling ? "Cancelling..." : "Cancel run"}
+          </button>
+        </div>
+      )}
+
       <section className="research-room-progress" aria-label={`${completedStepCount} of ${progressSteps.length} persisted stages complete`}>
         <span>Persisted stage ledger — no estimated completion percentage</span>
         <strong><AnimatedNumber value={completedStepCount} />/{progressSteps.length} stages resolved</strong>
@@ -576,12 +601,12 @@ export function ResearchProgress({ id }: { id: string }) {
           </div>
         </article>
         <article>
-          <BadgeCheck size={15} />
+          <ShieldAlert size={15} />
           <div>
-            <b>
-              <AnimatedNumber value={checks.length} />
+            <b style={{ color: rejectedSources > 0 ? "var(--warning)" : "inherit" }}>
+              <AnimatedNumber value={rejectedSources} />
             </b>
-            <span>independent checks</span>
+            <span>sources rejected</span>
           </div>
         </article>
       </section>
