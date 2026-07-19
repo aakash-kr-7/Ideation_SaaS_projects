@@ -2,11 +2,13 @@ import type { ResearchRequest } from "./types.ts";
 import type { EvidenceSufficiencyRules } from "./mode-config.ts";
 
 export type EvidenceFamily = "problem" | "solution";
+export type QueryFamily = "pain" | "demand" | "alternatives" | "competitors" | "pricing" | "willingness_to_pay" | "official_statistics" | "complaints" | "friction" | "failures" | "saturation" | "gtm" | "regulatory_risk";
 export type ResearchPass = 1 | 2 | 3;
 export type SourceTier = 1 | 2 | 3 | 4;
 
 export interface PlannedQuery {
   family: EvidenceFamily;
+  queryFamily?: QueryFamily;
   query: string;
   objective: "broad" | "targeted" | "disconfirming" | "market-sizing";
   triggeredByEvidenceIds: string[];
@@ -105,6 +107,7 @@ export function buildBroadQueries(input: ResearchRequest): PlannedQuery[] {
   return [
     {
       family: "problem",
+      queryFamily: "pain",
       objective: "broad",
       query: `${
         quoted(customer)
@@ -114,33 +117,35 @@ export function buildBroadQueries(input: ResearchRequest): PlannedQuery[] {
     {
       family: "problem",
       objective: "broad",
-      query: `site:reddit.com ${
-        quoted(customer)
-      } (${painAlternatives}) "how do I" OR "is there a tool" OR help`,
+      query: `${quoted(customer)} (${painAlternatives}) complaint OR workaround OR "how do I" site:news.ycombinator.com OR site:stackoverflow.com OR site:stackexchange.com`,
       triggeredByEvidenceIds: [],
     },
     {
       family: "problem",
+      queryFamily: "complaints",
       objective: "broad",
-      query: `(site:news.ycombinator.com OR site:x.com OR site:twitter.com) ${
+      query: `(site:news.ycombinator.com OR site:stackoverflow.com) ${
         quoted(pain)
       } workaround OR annoying OR manual`,
       triggeredByEvidenceIds: [],
     },
     {
       family: "solution",
+      queryFamily: "competitors",
       objective: "broad",
       query: `${quoted(idea)} software tools competitors pricing`,
       triggeredByEvidenceIds: [],
     },
     {
       family: "solution",
+      queryFamily: "pricing",
       objective: "broad",
       query: `${quoted(idea)} alternatives reviews G2 Capterra`,
       triggeredByEvidenceIds: [],
     },
     {
       family: "solution",
+      queryFamily: "official_statistics",
       objective: "market-sizing",
       query: `${quoted(idea)} ${
         quoted(region)
@@ -148,6 +153,23 @@ export function buildBroadQueries(input: ResearchRequest): PlannedQuery[] {
       triggeredByEvidenceIds: [],
     },
   ];
+}
+
+/** A mode-aware plan with traceable query families. No restricted-platform dependency. */
+export function buildIdeaAwareQueries(input: ResearchRequest): PlannedQuery[] {
+  const base = buildBroadQueries(input);
+  const customer = quoted(clean(input.targetCustomer));
+  const region = quoted(clean(input.targetRegion));
+  const subject = quoted(clean(input.ideaName));
+  const fuller: PlannedQuery[] = [
+    { family: "problem", queryFamily: "demand", objective: "broad", query: `${customer} adoption demand ${subject} ${region}`, triggeredByEvidenceIds: [] },
+    { family: "solution", queryFamily: "alternatives", objective: "broad", query: `${subject} alternatives comparison`, triggeredByEvidenceIds: [] },
+    { family: "solution", queryFamily: "willingness_to_pay", objective: "broad", query: `${subject} pricing per month customer review`, triggeredByEvidenceIds: [] },
+    { family: "problem", queryFamily: "friction", objective: "broad", query: `${customer} manual process implementation challenge cost`, triggeredByEvidenceIds: [] },
+    { family: "solution", queryFamily: "gtm", objective: "broad", query: `${subject} go to market distribution channel`, triggeredByEvidenceIds: [] },
+    { family: "problem", queryFamily: "regulatory_risk", objective: "broad", query: `${subject} regulation compliance ${region}`, triggeredByEvidenceIds: [] },
+  ];
+  return input.mode === "quick_scan" ? base.slice(0, 4) : dedupeQueries([...base, ...fuller]);
 }
 
 export interface FollowUpSeed {

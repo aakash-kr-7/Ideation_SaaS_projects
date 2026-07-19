@@ -96,6 +96,8 @@ export const ResearchService = {
 
     const workerSecret = process.env.WEBHOOK_SECRET;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const pipelineVersion = process.env.RESEARCH_PIPELINE_VERSION || "staged";
+
     if (!workerSecret || !supabaseUrl) {
       await supabase.rpc("fail_queued_research_dispatch", {
         p_run_id: reservation.run_id,
@@ -109,33 +111,103 @@ export const ResearchService = {
       );
     }
 
-    const workerResponse = await fetch(`${supabaseUrl}/functions/v1/research-worker`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${workerSecret}`,
-        "Content-Type": "application/json",
-        "X-Request-ID": requestId,
-      },
-      body: JSON.stringify({ record: { id: reservation.run_id } }),
-    });
-    if (!workerResponse.ok) {
-      const detail = (await workerResponse.text()).slice(0, 300);
-      const { error: restoreError } = await supabase.rpc(
-        "fail_queued_research_dispatch",
-        {
+    // --- Staged pipeline: enqueue the initial job ---
+    if (pipelineVersion === "staged") {
+      // Set pipeline_version on the run
+      // Bypass generated types using as never (column is added by pending migration 20260719010000)
+      const { error: pipelineUpdateError } = await supabase
+        .from("research_runs")
+        .update({
+          pipeline_version: "staged",
+          max_jobs_per_run: config.maxJobsPerRun,
+        } as never)
+        .eq("id", reservation.run_id);
+
+      if (pipelineUpdateError) {
+        await supabase.rpc("fail_queued_research_dispatch", {
           p_run_id: reservation.run_id,
-          p_error_message: `Worker rejected the run (${workerResponse.status}): ${detail}`,
+          p_error_message: `Pipeline initialization failed: ${pipelineUpdateError.message}`,
+        });
+        throw new ResearchLaunchError(
+          "PIPELINE_INITIALIZATION_FAILED",
+          "Research processing could not start. Your reserved credit was restored.",
+          requestId,
+          503,
+        );
+      }
+
+      // Bypass generated types using an unknown cast (RPC is added by pending migration 20260719010000)
+      const rpcCall = supabase.rpc as unknown as (fn: string, params: unknown) => Promise<{ error: { message: string } | null }>;
+      const { error: enqueueError } = await rpcCall("enqueue_research_job", {
+          p_run_id: reservation.run_id,
+          p_stage: "plan_research",
+          p_input_meta: { mode: validated.mode },
+          p_stage_iteration: 0,
+          p_batch_index: 0,
+          p_batch_size: 0,
+          p_job_purpose: "stage",
+          p_parent_job_id: null,
+          p_max_attempts: 3,
+          p_visible_after: new Date().toISOString(),
         },
       );
-      const restored = !restoreError;
-      throw new ResearchLaunchError(
-        "WORKER_DISPATCH_FAILED",
-        restored
-          ? "The report could not start. Your reserved credit was restored."
-          : "The report could not start and its credit reservation requires support review.",
-        requestId,
-        503,
-      );
+
+      if (enqueueError) {
+        // Job enqueue failed — restore credits
+        await supabase.rpc("fail_queued_research_dispatch", {
+          p_run_id: reservation.run_id,
+          p_error_message: `Job enqueue failed: ${enqueueError.message}`,
+        });
+        throw new ResearchLaunchError(
+          "JOB_ENQUEUE_FAILED",
+          "Research processing could not start. Your reserved credit was restored.",
+          requestId,
+          503,
+        );
+      }
+
+      // Best-effort worker trigger — the durable queue ensures correctness
+      fetch(`${supabaseUrl}/functions/v1/research-worker`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${workerSecret}`,
+          "Content-Type": "application/json",
+          "X-Request-ID": requestId,
+        },
+        body: JSON.stringify({ trigger: "self", source: "service_enqueue" }),
+      }).catch(() => {
+        // Polling fallback will pick up the job
+      });
+    } else {
+      // --- Legacy pipeline: webhook dispatch ---
+      const workerResponse = await fetch(`${supabaseUrl}/functions/v1/research-worker`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${workerSecret}`,
+          "Content-Type": "application/json",
+          "X-Request-ID": requestId,
+        },
+        body: JSON.stringify({ record: { id: reservation.run_id } }),
+      });
+      if (!workerResponse.ok) {
+        const detail = (await workerResponse.text()).slice(0, 300);
+        const { error: restoreError } = await supabase.rpc(
+          "fail_queued_research_dispatch",
+          {
+            p_run_id: reservation.run_id,
+            p_error_message: `Worker rejected the run (${workerResponse.status}): ${detail}`,
+          },
+        );
+        const restored = !restoreError;
+        throw new ResearchLaunchError(
+          "WORKER_DISPATCH_FAILED",
+          restored
+            ? "The report could not start. Your reserved credit was restored."
+            : "The report could not start and its credit reservation requires support review.",
+          requestId,
+          503,
+        );
+      }
     }
 
     console.info(JSON.stringify({
@@ -148,6 +220,7 @@ export const ResearchService = {
       creditCost: reservation.credit_cost,
       creditSource: reservation.credit_source,
       duplicate: reservation.duplicate,
+      pipelineVersion,
     }));
 
     return {

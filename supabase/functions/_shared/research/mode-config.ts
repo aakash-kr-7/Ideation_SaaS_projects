@@ -43,6 +43,44 @@ export interface ModeProgressStep {
   label: string;
 }
 
+// ---------------------------------------------------------------------------
+// Operating target interfaces — internal budgets, not marketing promises
+// ---------------------------------------------------------------------------
+
+export interface OperatingRange {
+  readonly min: number;
+  readonly max: number;
+}
+
+export interface FamilyRequirement {
+  readonly minQueries: number;
+  readonly minSources: number;
+}
+
+export interface SourceQualityThresholds {
+  readonly maxTier4Ratio: number;
+  readonly minTier1or2Ratio: number;
+}
+
+export interface BatchDefaults {
+  readonly fetchSources: number;
+  readonly extractEvidence: number;
+  readonly discoverCandidates: number;
+}
+
+export interface TimeLimits {
+  readonly totalMs: number;
+  readonly retrievalMs: number;
+  readonly reasoningMs: number;
+  readonly stageDefaultMs: number;
+}
+
+export interface CostLimits {
+  readonly totalUsd: number;
+  readonly retrievalReserveUsd: number;
+  readonly reasoningReserveUsd: number;
+}
+
 export interface ReportModeConfig {
   mode: ReportMode;
   label: string;
@@ -66,6 +104,33 @@ export interface ReportModeConfig {
   evidenceSufficiency: EvidenceSufficiencyRules;
   reportSections: readonly string[];
   progress: readonly ModeProgressStep[];
+
+  // --- New: source-target operating parameters ---
+  candidateDiscoveryTarget: OperatingRange;
+  pageAttemptRange: OperatingRange;
+  acceptedSourceTarget: number;
+  acceptedSourceMinimum: number;
+  independentDomainTarget: number;
+  queryFamilyRequirements: {
+    problem: FamilyRequirement;
+    solution: FamilyRequirement;
+  };
+  contradictoryEvidenceRequirement: {
+    minSources: number;
+    requireDisconfirmingPass: boolean;
+  };
+  officialSourceExpectation: {
+    requireTierOne: boolean;
+    requireTierOneOrTwo: boolean;
+  };
+  sourceQualityThresholds: SourceQualityThresholds;
+  batchDefaults: BatchDefaults;
+  specialistDepth: OutputDepth;
+  timeLimits: TimeLimits;
+  costLimits: CostLimits;
+  chartAvailability: readonly string[];
+  maxGapResearchIterations: number;
+  maxJobsPerRun: number;
 }
 
 export const REPORT_MODE_CONFIG = {
@@ -126,6 +191,26 @@ export const REPORT_MODE_CONFIG = {
       { key: "exports", status: "Generating", label: "Creating PDF export" },
       { key: "completed", status: "Completed", label: "Quick Scan ready" },
     ],
+    // --- Operating targets ---
+    candidateDiscoveryTarget: { min: 60, max: 100 },
+    pageAttemptRange: { min: 25, max: 35 },
+    acceptedSourceTarget: 18,
+    acceptedSourceMinimum: 12,
+    independentDomainTarget: 8,
+    queryFamilyRequirements: {
+      problem: { minQueries: 2, minSources: 4 },
+      solution: { minQueries: 2, minSources: 4 },
+    },
+    contradictoryEvidenceRequirement: { minSources: 1, requireDisconfirmingPass: true },
+    officialSourceExpectation: { requireTierOne: false, requireTierOneOrTwo: true },
+    sourceQualityThresholds: { maxTier4Ratio: 0.3, minTier1or2Ratio: 0.15 },
+    batchDefaults: { fetchSources: 10, extractEvidence: 5, discoverCandidates: 20 },
+    specialistDepth: "concise",
+    timeLimits: { totalMs: 180_000, retrievalMs: 90_000, reasoningMs: 70_000, stageDefaultMs: 60_000 },
+    costLimits: { totalUsd: 0.50, retrievalReserveUsd: 0.25, reasoningReserveUsd: 0.15 },
+    chartAvailability: ["score_radar", "evidence_distribution"],
+    maxGapResearchIterations: 1,
+    maxJobsPerRun: 80,
   },
   full_validation: {
     mode: "full_validation",
@@ -188,6 +273,26 @@ export const REPORT_MODE_CONFIG = {
       { key: "exports", status: "Generating", label: "Creating all exports" },
       { key: "completed", status: "Completed", label: "Full Validation ready" },
     ],
+    // --- Operating targets ---
+    candidateDiscoveryTarget: { min: 250, max: 400 },
+    pageAttemptRange: { min: 80, max: 120 },
+    acceptedSourceTarget: 55,
+    acceptedSourceMinimum: 40,
+    independentDomainTarget: 20,
+    queryFamilyRequirements: {
+      problem: { minQueries: 4, minSources: 10 },
+      solution: { minQueries: 4, minSources: 10 },
+    },
+    contradictoryEvidenceRequirement: { minSources: 3, requireDisconfirmingPass: true },
+    officialSourceExpectation: { requireTierOne: true, requireTierOneOrTwo: true },
+    sourceQualityThresholds: { maxTier4Ratio: 0.15, minTier1or2Ratio: 0.25 },
+    batchDefaults: { fetchSources: 10, extractEvidence: 5, discoverCandidates: 25 },
+    specialistDepth: "comprehensive",
+    timeLimits: { totalMs: 600_000, retrievalMs: 300_000, reasoningMs: 200_000, stageDefaultMs: 120_000 },
+    costLimits: { totalUsd: 2.00, retrievalReserveUsd: 1.20, reasoningReserveUsd: 0.50 },
+    chartAvailability: ["score_radar", "evidence_distribution", "competitor_matrix", "risk_heatmap", "demand_timeline"],
+    maxGapResearchIterations: 3,
+    maxJobsPerRun: 200,
   },
 } as const satisfies Record<ReportMode, ReportModeConfig>;
 
