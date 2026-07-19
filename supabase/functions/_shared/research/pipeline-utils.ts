@@ -1,5 +1,5 @@
 /**
- * Pipeline utility functions extracted from the monolithic pipeline.ts.
+ * Shared stage-scoped provider, cost, persistence, and text utilities.
  *
  * These are pure or low-side-effect helpers reused by multiple stage executors.
  * They do NOT contain orchestration logic — only I/O wrappers, cost tracking,

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Repeatable report-quality evaluation corpus. Cases describe inputs and expected evidence characteristics; they never supply report conclusions.",
+  "cases": [
+    { "id": "b2b-saas", "mode": "full_validation", "marketType": "B2B", "idea": "Invoice follow-up workflow for small accounting firms", "targetCustomer": "Independent accounting firms", "targetRegion": "United States", "expect": ["problem", "solution", "pricing", "contradiction"] },
+    { "id": "consumer-app", "mode": "quick_scan", "marketType": "D2C", "idea": "Shared household grocery planning app", "targetCustomer": "Urban shared households", "targetRegion": "United Kingdom", "expect": ["problem", "solution", "contradiction"] },
+    { "id": "developer-tool", "mode": "full_validation", "marketType": "Developer Tool", "idea": "CI log triage assistant for monorepos", "targetCustomer": "Platform engineering teams", "targetRegion": "Global", "expect": ["problem", "solution", "pricing", "contradiction"] },
+    { "id": "local-service", "mode": "quick_scan", "marketType": "Local Business", "idea": "Appointment cancellation recovery service for independent dental clinics", "targetCustomer": "Independent dental clinics", "targetRegion": "United States", "expect": ["problem", "solution", "pricing", "contradiction"] },
+    { "id": "marketplace", "mode": "full_validation", "marketType": "B2B", "idea": "Last-minute commercial kitchen rental marketplace", "targetCustomer": "Independent food businesses", "targetRegion": "Canada", "expect": ["problem", "solution", "pricing", "contradiction"] },
+    { "id": "education", "mode": "quick_scan", "marketType": "Student/Career", "idea": "Apprenticeship interview practice for trade students", "targetCustomer": "Trade-school students", "targetRegion": "Australia", "expect": ["problem", "solution", "contradiction"] },
+    { "id": "healthcare-adjacent", "mode": "full_validation", "marketType": "B2B", "idea": "Consent-aware patient intake reminder workflow", "targetCustomer": "Small outpatient clinics", "targetRegion": "United States", "expect": ["problem", "solution", "pricing", "contradiction"] },
+    { "id": "creator-tool", "mode": "quick_scan", "marketType": "Creator", "idea": "Sponsor deliverable tracker for newsletter creators", "targetCustomer": "Independent newsletter operators", "targetRegion": "Global", "expect": ["problem", "solution", "pricing", "contradiction"] },
+    { "id": "saturated", "mode": "full_validation", "marketType": "D2C", "idea": "Generic AI meal-plan generator", "targetCustomer": "Consumers seeking meal ideas", "targetRegion": "United States", "expect": ["solution", "pricing", "contradiction"] },
+    { "id": "limited-data-niche", "mode": "full_validation", "marketType": "Other", "idea": "Inventory handoff tracker for regional theater prop departments", "targetCustomer": "Regional theater production teams", "targetRegion": "United States", "expect": ["problem", "solution", "contradiction"] }
+  ]
+}

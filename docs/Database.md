@@ -37,4 +37,6 @@ supabase db push
 supabase gen types typescript --linked > lib/database.types.ts
 ```
 
+The staged queue migrations add `research_jobs`, attempts, pipeline metrics, immutable chart datasets, source registry/cache records, and evidence graph records. `research_runs_staged_pipeline_only` is intentionally `NOT VALID` during upgrade so history is preserved while new writes are staged-only; validate it after legacy history is archived. Run `recover_orphaned_research_runs` as service role during upgrade to terminalize stale pre-queue runs with no pending/claimed job.
+
 Required release checks include fresh/upgrade migrations, auth bootstrap, two-tenant CRUD/Realtime/Storage tests, grants review, immutable-version tests, backups, retention, and a restore drill. See [Security.md](./Security.md).

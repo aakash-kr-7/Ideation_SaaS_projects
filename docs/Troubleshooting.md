@@ -1,8 +1,8 @@
 # Troubleshooting
 
-## `npm run lint` is interactive
+## `npm run lint` fails
 
-ESLint is not configured. This is a release blocker, not a passing check. Add the configuration/dependencies, switch to the ESLint CLI, and make CI non-interactive.
+The repository uses the non-interactive ESLint CLI with `--max-warnings=0`. Resolve warnings and errors rather than suppressing them; CI should run the same command.
 
 ## Edge-runtime warning during build
 
@@ -19,6 +19,8 @@ Verify all migrations, then inspect `on_auth_user_created` and bootstrap functio
 ## Worker dispatch fails or stays queued
 
 Confirm matching `WEBHOOK_SECRET`, worker deployment, and Supabase URL. Inspect the start response, function logs, `research_runs`, `research_stages`, and `error_logs`. Confirm no database webhook duplicates dispatch. Dispatch rejection should mark the run `Failed`.
+
+If the worker returns `name resolution failed`, confirm the Edge runtime can resolve and reach `SUPABASE_URL`, and that `SUPABASE_SERVICE_ROLE_KEY` is configured for both `research-worker` and `research-scheduler`. This is an environment networking fault: fix it, then invoke the scheduler rather than manually claiming or completing a run.
 
 ## Normalized output fails validation
 

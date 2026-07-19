@@ -76,6 +76,7 @@ type EvidenceSource = {
   url: string | null;
   source_type: string | null;
   source_domain: string | null;
+  published_at: string | null;
 };
 
 type LiveEvidence = {
@@ -128,14 +129,28 @@ type CitationValidation = {
   created_at: string;
 };
 
+type PipelineMetrics = {
+  candidates_discovered: number;
+  pages_attempted: number;
+  pages_fetched: number;
+  sources_accepted: number;
+  sources_rejected_by_reason: Record<string, number>;
+  independent_domains: number;
+  evidence_items_extracted: number;
+  retry_count: number;
+  provider_fallback_count: number;
+  total_provider_cost_usd: number;
+};
+
 const stageLogSchema: z.ZodType<StageLog> = z.object({ id: z.string(), created_at: z.string(), progress_detail: z.string().nullable(), error_message: z.string().nullable(), stage_name: z.string() });
 const researchPassSchema: z.ZodType<ResearchPass> = z.object({ id: z.string(), pass_number: z.number(), objective: z.enum(["broad", "targeted", "disconfirming"]), query_count: z.number(), evidence_count: z.number(), sufficient: z.boolean(), coverage_gaps: z.array(z.string()), budget_limited: z.boolean(), status: z.enum(["Running", "Complete", "BudgetLimited"]), started_at: z.string(), completed_at: z.string().nullable() });
 const researchQuerySchema: z.ZodType<ResearchQuery> = z.object({ id: z.string(), pass_number: z.number(), evidence_family: z.enum(["problem", "solution"]), objective: z.string(), query: z.string(), triggered_by_evidence_ids: z.array(z.string()), status: z.enum(["Running", "Complete", "Failed"]), result_count: z.number(), created_at: z.string() });
-const evidenceSourceSchema = z.object({ title: z.string().nullable(), url: z.string().nullable(), source_type: z.string().nullable(), source_domain: z.string().nullable() });
+const evidenceSourceSchema = z.object({ title: z.string().nullable(), url: z.string().nullable(), source_type: z.string().nullable(), source_domain: z.string().nullable(), published_at: z.string().nullable() });
 const liveEvidenceSchema: z.ZodType<LiveEvidence> = z.object({ id: z.string(), title: z.string(), snippet: z.string(), signal_type: z.string(), strength: z.string(), evidence_family: z.enum(["problem", "solution"]).nullable(), research_pass: z.number().nullable(), source_tier: z.number().nullable(), tier_reason: z.string().nullable(), excluded: z.boolean(), disconfirming: z.boolean(), pain_point: z.string().nullable(), cluster_key: z.string().nullable(), independent_source_count: z.number(), independent_domain_count: z.number(), source_domain: z.string().nullable(), created_at: z.string(), sources: z.union([evidenceSourceSchema, z.array(evidenceSourceSchema)]).nullable() });
 const specialistCheckSchema: z.ZodType<SpecialistCheck> = z.object({ id: z.string(), specialist_name: z.string(), status: z.enum(["Complete", "Incomplete"]), checker_direction: z.string(), disputed: z.boolean(), dispute_reason: z.string(), created_at: z.string() });
 const adversarialGateSchema: z.ZodType<AdversarialGate> = z.object({ id: z.string(), outcome: z.enum(["StrongObjection", "NoStrongDisproof", "InsufficientEvidence"]), severity: z.enum(["High", "Medium", "Low", "None"]), objection: z.string(), evidence_ids: z.array(z.string()), unresolved: z.boolean(), status: z.enum(["Complete", "Incomplete"]), created_at: z.string() });
 const citationValidationSchema: z.ZodType<CitationValidation> = z.object({ id: z.string(), valid: z.boolean(), claims_checked: z.number(), claims_removed: z.number(), created_at: z.string() });
+const pipelineMetricsSchema: z.ZodType<PipelineMetrics> = z.object({ candidates_discovered: z.number(), pages_attempted: z.number(), pages_fetched: z.number(), sources_accepted: z.number(), sources_rejected_by_reason: z.record(z.string(), z.number()), independent_domains: z.number(), evidence_items_extracted: z.number(), retry_count: z.number(), provider_fallback_count: z.number(), total_provider_cost_usd: z.number() });
 const runUpdateSchema = z.object({ idea_name: z.string(), mode: z.enum(["quick_scan", "full_validation"]), status: z.enum(["Queued", "Searching", "Extracting", "Normalizing", "Scoring", "Generating", "Completed", "Failed", "Cancelled"]), progress_detail: z.string().nullable(), error_message: z.string().nullable(), credit_state: z.enum(["legacy", "reserved", "consumed", "restored"]) });
 
 const PASS_META = {
@@ -178,6 +193,16 @@ function compactLabel(value: string) {
   return value.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ");
 }
 
+type MetricsQueryClient = {
+  from: (table: "research_pipeline_metrics") => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        maybeSingle: () => Promise<{ data: unknown; error: { message: string } | null }>;
+      };
+    };
+  };
+};
+
 export function ResearchProgress({ id }: { id: string }) {
   const router = useRouter();
   const [state, setState] = useState<ProgressState>({
@@ -197,6 +222,7 @@ export function ResearchProgress({ id }: { id: string }) {
   const [checks, setChecks] = useState<SpecialistCheck[]>([]);
   const [gate, setGate] = useState<AdversarialGate | null>(null);
   const [citation, setCitation] = useState<CitationValidation | null>(null);
+  const [metrics, setMetrics] = useState<PipelineMetrics | null>(null);
   const [connectionError, setConnectionError] = useState("");
 
   useEffect(() => {
@@ -252,6 +278,7 @@ export function ResearchProgress({ id }: { id: string }) {
         checkResult,
         gateResult,
         citationResult,
+        metricsResult,
       ] = await Promise.all([
         supabase.from("research_passes").select(
           "id,pass_number,objective,query_count,evidence_count,sufficient,coverage_gaps,budget_limited,status,started_at,completed_at",
@@ -260,7 +287,7 @@ export function ResearchProgress({ id }: { id: string }) {
           "id,pass_number,evidence_family,objective,query,triggered_by_evidence_ids,status,result_count,created_at",
         ).eq("run_id", id).order("created_at", { ascending: false }).limit(18),
         supabase.from("evidence_items").select(
-          "id,title,snippet,signal_type,strength,evidence_family,research_pass,source_tier,tier_reason,excluded,disconfirming,pain_point,cluster_key,independent_source_count,independent_domain_count,source_domain,created_at,sources(title,url,source_type,source_domain)",
+          "id,title,snippet,signal_type,strength,evidence_family,research_pass,source_tier,tier_reason,excluded,disconfirming,pain_point,cluster_key,independent_source_count,independent_domain_count,source_domain,created_at,sources(title,url,source_type,source_domain,published_at)",
         ).eq("run_id", id).order("created_at", { ascending: false }).limit(24),
         supabase.from("specialist_checks").select(
           "id,specialist_name,status,checker_direction,disputed,dispute_reason,created_at",
@@ -271,6 +298,7 @@ export function ResearchProgress({ id }: { id: string }) {
         supabase.from("citation_integrity_validations").select(
           "id,valid,claims_checked,claims_removed,created_at",
         ).eq("run_id", id).maybeSingle(),
+        (supabase as unknown as MetricsQueryClient).from("research_pipeline_metrics").select("candidates_discovered,pages_attempted,pages_fetched,sources_accepted,sources_rejected_by_reason,independent_domains,evidence_items_extracted,retry_count,provider_fallback_count,total_provider_cost_usd").eq("run_id", id).maybeSingle(),
       ]);
 
       const firstError = [
@@ -280,6 +308,7 @@ export function ResearchProgress({ id }: { id: string }) {
         checkResult,
         gateResult,
         citationResult,
+        metricsResult,
       ].find((result) => result.error)?.error;
       if (firstError) {
         if (active) setConnectionError(firstError.message);
@@ -292,6 +321,7 @@ export function ResearchProgress({ id }: { id: string }) {
       setChecks(z.array(specialistCheckSchema).parse(checkResult.data ?? []));
       setGate(gateResult.data ? adversarialGateSchema.parse(gateResult.data) : null);
       setCitation(citationResult.data ? citationValidationSchema.parse(citationResult.data) : null);
+      setMetrics(metricsResult.data ? pipelineMetricsSchema.parse(metricsResult.data) : null);
     };
 
     const queueRefresh = () => {
@@ -467,7 +497,7 @@ export function ResearchProgress({ id }: { id: string }) {
     checkerCount: checks.length,
   });
   const completedStepCount = progressSteps.filter((step) => step.state === "complete").length;
-  const measuredProgress = progressSteps.length ? Math.round((completedStepCount / progressSteps.length) * 100) : 0;
+  const rejectedSources = metrics ? Object.values(metrics.sources_rejected_by_reason).reduce((total, count) => total + count, 0) : 0;
 
   return (
     <div className={`research-room premium-progress mode-${state.mode}`} aria-live="polite">
@@ -495,16 +525,9 @@ export function ResearchProgress({ id }: { id: string }) {
         </div>
       </header>
 
-      <section
-        className="research-room-progress"
-        aria-label={`${completedStepCount} of ${progressSteps.length} persisted stages complete`}
-      >
-        <div className="research-room-track">
-          <i style={{ width: `${measuredProgress}%` }} />
-        </div>
-        <span>
-          <AnimatedNumber value={completedStepCount} />/{progressSteps.length} stages
-        </span>
+      <section className="research-room-progress" aria-label={`${completedStepCount} of ${progressSteps.length} persisted stages complete`}>
+        <span>Persisted stage ledger — no estimated completion percentage</span>
+        <strong><AnimatedNumber value={completedStepCount} />/{progressSteps.length} stages resolved</strong>
       </section>
 
       <ol className="mode-progress-sequence" aria-label={`${config.label} progress stages`}>
@@ -522,10 +545,8 @@ export function ResearchProgress({ id }: { id: string }) {
         <article>
           <Globe2 size={15} />
           <div>
-            <b>
-              <AnimatedNumber value={state.sourceCount} />
-            </b>
-            <span>sources read</span>
+            <b><AnimatedNumber value={metrics?.sources_accepted ?? 0} /></b>
+            <span>accepted sources</span>
           </div>
         </article>
         <article>
@@ -536,6 +557,14 @@ export function ResearchProgress({ id }: { id: string }) {
             </b>
             <span>evidence rows</span>
           </div>
+        </article>
+        <article>
+          <Globe2 size={15} />
+          <div><b><AnimatedNumber value={metrics?.independent_domains ?? 0} /></b><span>independent domains</span></div>
+        </article>
+        <article>
+          <Activity size={15} />
+          <div><b><AnimatedNumber value={metrics?.candidates_discovered ?? 0} /></b><span>candidates discovered</span></div>
         </article>
         <article>
           <Target size={15} />
@@ -707,6 +736,7 @@ export function ResearchProgress({ id }: { id: string }) {
                               </span>
                             )}
                         </div>
+                        <span className="source-activity-meta">{source?.source_type ?? "Source type unavailable"}{source?.published_at ? ` · ${new Date(source.published_at).toLocaleDateString()}` : ""}</span>
                         <div
                           className="corroboration-chip"
                           title={`${item.independent_domain_count} independent domains`}
@@ -853,6 +883,12 @@ export function ResearchProgress({ id }: { id: string }) {
           )}
         </aside>
       </div>
+
+      <section className="research-observability" aria-label="Research coverage and resilience">
+        <div><span>Pipeline coverage</span><b>{metrics ? `${metrics.pages_attempted} pages attempted · ${metrics.pages_fetched} fetched · ${rejectedSources} excluded` : "Metrics will appear once discovery is persisted."}</b></div>
+        <div><span>Provider resilience</span><b>{metrics ? `${metrics.retry_count} retries · ${metrics.provider_fallback_count} fallbacks` : "No provider event persisted yet."}</b></div>
+        <div><span>Budget ledger</span><b>{metrics ? `$${metrics.total_provider_cost_usd.toFixed(2)} recorded provider cost` : "Cost ledger not persisted yet."}</b></div>
+      </section>
 
       {logs.length > 0 && (
         <section className="research-ledger">

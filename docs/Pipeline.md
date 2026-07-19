@@ -2,18 +2,21 @@
 
 Last reconciled with the worker on 2026-07-18. Use current test output rather than a checked-in passing-test count; live hosted provider and browser verification remain deployment gates.
 
-A research request is always authenticated and database-backed. The API inserts a `Queued` run, dispatches the Edge worker with a dedicated bearer secret, and returns a progress URL. The worker atomically claims only a `Queued` row, schedules the pipeline, and returns `202`.
+A research request is always authenticated and database-backed. The API and Server Action both call `ResearchService`, which reserves usage and atomically inserts a `Queued` run, enqueues `plan_research`, and wakes the Edge worker with a dedicated bearer secret. The worker atomically claims one visible job and returns `202`; the scheduler recovers stale claims and wakes pending work.
 
 ## Stages
 
-1. `Searching`: execute the query families and passes allowed by the shared report-mode configuration.
-2. `Extracting`: persist independently addressable URLs up to the selected mode's extraction budget.
-3. `Normalizing`: extract structured evidence with the configured primary and fallback providers, then deduplicate with embeddings (Jaccard is the non-generative fallback).
-4. `Scoring`: run the specialists and checks enabled for the mode, then compute the deterministic 12-factor score in provider-free code.
-5. `Generating`: create an immutable report version and upload the mode-configured exports to private Storage (Quick Scan PDF; Full Validation JSON, Markdown, CSV, and PDF).
-6. `Completed` or `Failed`: persist the terminal run state and append the matching stage-history row.
+1. `plan_research`, `discover_candidates`, `rank_candidates`, `fetch_sources`, and `extract_evidence` execute mode-bounded retrieval.
+2. `deduplicate_cluster`, `check_coverage`, and bounded `gap_research` normalize evidence and address persisted gaps.
+3. `build_specialist_packs`, `run_specialists`, and `compute_scoring` create cited analysis and the deterministic 12-factor score.
+4. `build_charts`, `generate_report`, and `generate_exports` persist immutable chart datasets, report versions, and private exports.
+5. `complete` is the only successful terminal stage. Permanent, exhausted, budget, timeout, or cancelled paths become terminal and append status history.
 
 `research_runs.status`, `research_stages.status`, `research_stages.stage_name`, the worker, and the UI share the values exported by `supabase/functions/_shared/research/status.ts`.
+
+## Canonical execution path
+
+There is no feature flag or monolithic worker path. `ResearchService.startResearchRun` is the only launch orchestration method; the REST start route and Server Action validate inputs then delegate to it. The Edge worker never accepts a run payload for direct execution: it only claims durable queue jobs. `research-scheduler` is a recovery/wake-up mechanism, not a second pipeline.
 
 ## Source of truth
 
@@ -66,3 +69,5 @@ Every physical provider attempt is logged to `api_usage_logs`, including retry f
 ## Failure semantics
 
 Missing credentials, provider exhaustion during required evidence extraction or Final Judge generation, missing evidence, cost-cap exhaustion, and database errors are fatal. A specialist-only failure is bounded to three attempts and becomes an incomplete section. Fatal errors write `error_logs`, append a `Failed` transition, update `research_runs`, and throw `PipelineError`; the worker never returns fake or empty success.
+
+The scheduler also calls `recover_stale_research_jobs` and `recover_orphaned_research_runs`. The latter terminalizes only a nonterminal run that has no pending/claimed durable job and has exceeded the stale threshold, restoring a reservation exactly once. This prevents pre-queue history or failed dispatches from remaining in an indeterminate state.

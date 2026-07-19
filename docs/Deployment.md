@@ -25,6 +25,7 @@ The repository has no paid checkout. Use this for staging and require current se
    ```bash
    supabase secrets set --env-file supabase/functions/research-worker/.env
    supabase functions deploy research-worker --no-verify-jwt
+   supabase functions deploy research-scheduler --no-verify-jwt
    ```
 
    `--no-verify-jwt` is intentional only because the worker validates `WEBHOOK_SECRET`. Never expose that secret to the browser.
@@ -32,7 +33,7 @@ The repository has no paid checkout. Use this for staging and require current se
 4. Configure application variables from [Secrets.md](./Secrets.md) and auth from [Auth-Setup.md](./Auth-Setup.md).
 5. Build/deploy Next.js and run the smoke test below with a brand-new account.
 
-Do not add a database webhook; the app already dispatches the worker directly.
+Do not add a database webhook; the app enqueues a durable staged job then wakes the worker directly. Schedule `research-scheduler` every 15-30 seconds with service-role authentication for stale-job and orphan-run recovery.
 
 ## Mandatory smoke test
 

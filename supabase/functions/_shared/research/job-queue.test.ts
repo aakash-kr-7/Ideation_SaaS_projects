@@ -15,7 +15,6 @@
  * - Service-role-only queue RPC access
  * - Cross-tenant rejection
  * - Resumption with persisted cost
- * - Feature flag routing
  */
 
 const describe = (_name: string, callback: () => void) => callback();
@@ -95,8 +94,6 @@ import {
   type PipelineStage,
 } from "./stages.ts";
 import {
-  resolvePipelineVersion,
-  isStaged,
   hasTimeBudget,
   hasCostBudget,
   validateJobStage,
@@ -370,26 +367,6 @@ describe("Budget guards", () => {
   it("hasCostBudget should respect reserve", () => {
     expect(hasCostBudget(0.8, 1.0, 0.3)).toBe(false);
     expect(hasCostBudget(0.5, 1.0, 0.3)).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Feature flag routing
-// ---------------------------------------------------------------------------
-
-describe("Feature flag routing", () => {
-  it("isStaged should identify staged pipeline version", () => {
-    expect(isStaged("staged")).toBe(true);
-    expect(isStaged("legacy")).toBe(false);
-    expect(isStaged(null)).toBe(false);
-    expect(isStaged(undefined)).toBe(false);
-    expect(isStaged("")).toBe(false);
-  });
-
-  it("resolvePipelineVersion should default to staged", () => {
-    const version = resolvePipelineVersion();
-    // This test works because env is not set in test environment
-    expect(version).toBe("staged");
   });
 });
 

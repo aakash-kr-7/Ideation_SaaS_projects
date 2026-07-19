@@ -6,7 +6,7 @@
  * 2. Executes the stage-specific business logic
  * 3. Returns a StageResult with the next stage transition
  *
- * Executors reuse validated business logic from the existing pipeline modules.
+ * Executors use shared, stage-scoped utilities and never invoke a monolithic run.
  */
 
 import type { PipelineStage, StageContext, StageExecutor, StageResult } from "./stages.ts";

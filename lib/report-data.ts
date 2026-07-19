@@ -5,15 +5,16 @@ import { scorecardSchema, validationReportSchema, type ValidationReport } from "
 import type { OpportunityScorecard } from "@/lib/types";
 import { scoringCriteria } from "@/lib/scoring";
 import { firstRecord, recordArray } from "@/lib/supabase/relations";
+import type { ReportChartDataset } from "@/components/report/ReportCharts";
 
 export type StoredExportFormat = "json" | "markdown" | "csv" | "pdf";
 export type StoredExport = { format: StoredExportFormat; storagePath: string; byteSize: number };
-export type LoadedReport = { report: ValidationReport; exports: StoredExport[] };
+export type LoadedReport = { report: ValidationReport; exports: StoredExport[]; chartDatasets: ReportChartDataset[] };
 export type CompletedScorecard = { id: string; name: string; scorecard: OpportunityScorecard };
 
 const reportSelect = `
   id, run_id, executive_summary, methodology, generated_at,
-  report_versions(id, version_number, report_mode, payload, report_exports(format, storage_path, byte_size))
+  report_versions(id, version_number, report_mode, payload, report_exports(format, storage_path, byte_size), report_chart_datasets(chart_key, chart_type, source_data, chart_config, supporting_evidence_ids))
 `;
 
 const exportRowSchema = z.object({
@@ -25,6 +26,10 @@ const reportVersionSchema = z.object({
   version_number: z.coerce.number(),
   payload: z.unknown(),
   report_exports: z.preprocess(recordArray, z.array(exportRowSchema)),
+  report_chart_datasets: z.preprocess(recordArray, z.array(z.object({
+    chart_key: z.string(), chart_type: z.string(), source_data: z.record(z.string(), z.unknown()),
+    chart_config: z.record(z.string(), z.unknown()), supporting_evidence_ids: z.array(z.string()),
+  }))),
 });
 const reportRowSchema = z.object({
   run_id: z.string(),
@@ -78,6 +83,10 @@ function mapReport(input: unknown): LoadedReport {
   return {
     report: parsed.data,
     exports: latestVersion.report_exports.map((item) => ({ format: item.format, storagePath: item.storage_path, byteSize: item.byte_size })),
+    chartDatasets: latestVersion.report_chart_datasets.map((item) => ({
+      chartKey: item.chart_key, chartType: item.chart_type, sourceData: item.source_data,
+      chartConfig: item.chart_config, supportingEvidenceIds: item.supporting_evidence_ids,
+    })),
   };
 }
 

@@ -20,9 +20,9 @@ The access page deliberately marks paid Full Validation, subscriptions, and repo
 
 ```text
 Browser
-  -> authenticated Next.js route or Server Action
-  -> Queued research_runs row
-  -> authenticated Supabase Edge Function dispatch
+  -> authenticated Next.js route or Server Action -> ResearchService
+  -> reservation RPC + Queued research_runs row + staged queue job
+  -> authenticated Supabase Edge Function job claim
   -> Tavily / Firecrawl / Cohere / Groq (Cerebras fallback)
   -> normalized rows, deterministic score, report version, exports
   -> Realtime progress and RLS-scoped report reads

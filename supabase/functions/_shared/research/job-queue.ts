@@ -293,29 +293,6 @@ export async function recoverStaleJobs(
 }
 
 // ---------------------------------------------------------------------------
-// Feature flag for pipeline version
-// ---------------------------------------------------------------------------
-
-export type PipelineVersion = "legacy" | "staged";
-
-/**
- * Determine which pipeline version to use for a new run.
- * During migration, the staged pipeline is behind a server-side flag.
- */
-export function resolvePipelineVersion(): PipelineVersion {
-  const flag = getEnv("RESEARCH_PIPELINE_VERSION");
-  if (flag === "legacy") return "legacy";
-  return "staged";
-}
-
-/**
- * Check whether a run should use the staged pipeline.
- */
-export function isStaged(pipelineVersion: string | null | undefined): boolean {
-  return pipelineVersion === "staged";
-}
-
-// ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
 

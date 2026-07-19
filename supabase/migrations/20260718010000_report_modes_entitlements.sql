@@ -165,6 +165,7 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+#variable_conflict use_column
 declare
   v_user_id uuid := auth.uid();
   v_team_id uuid;

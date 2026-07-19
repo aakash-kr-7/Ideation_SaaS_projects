@@ -3,6 +3,7 @@ import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, Download, FileJson, FileSpreadsheet, FileText, ListChecks, ShieldCheck, Circle, CheckCircle2 } from "lucide-react";
 import { ValidationReport as ReportType } from "@/lib/report-schema";
+import type { EvidenceItem } from "@/lib/types";
 import { reportToCsv, reportToMarkdown, downloadExport } from "@/lib/report-export";
 import { ScoreBreakdown } from "@/components/scoring/ScoreBreakdown";
 import { ValidationExperiment } from "@/components/report/ValidationExperiment";
@@ -11,16 +12,23 @@ import { ScoreBadge } from "@/components/scoring/score-badge";
 import { getStaggerDelay, motion, revealUpClass } from "@/lib/motion";
 import { getReportModeConfig } from "@/lib/report-modes";
 import { countEvidenceSources, REPORT_TABS, type ReportTab } from "@/lib/report-mode-ui";
+import { ReportCharts, type ReportChartDataset } from "@/components/report/ReportCharts";
 
-export function ValidationReport({ report, scorecard, publicMode = false, runId }: { report: ReportType; scorecard?: ReportType["opportunity"]["scorecard"]; publicMode?: boolean; runId?: string }) {
+export function ValidationReport({ report, scorecard, publicMode = false, runId, chartDatasets }: { report: ReportType; scorecard?: ReportType["opportunity"]["scorecard"]; publicMode?: boolean; runId?: string; chartDatasets?: ReportChartDataset[] }) {
   const [tab, setTab] = useState<ReportTab>("Conclusion");
   const [toast, setToast] = useState("");
+  const [sourcePreview, setSourcePreview] = useState<EvidenceItem | null>(null);
   const o = useMemo(() => ({ ...report.opportunity, scorecard: scorecard ?? report.opportunity.scorecard }), [report, scorecard]);
   const config = getReportModeConfig(report.reportMode);
   const tabs = REPORT_TABS[report.reportMode] as readonly ReportTab[];
   const strongestPositive = o.evidence.find((item) => item.id === report.strongestPositiveEvidenceId) ?? o.evidence.find((item) => !item.disconfirming && !item.excluded);
   const strongestNegative = o.evidence.find((item) => item.id === report.strongestNegativeEvidenceId) ?? o.evidence.find((item) => item.disconfirming && !item.excluded) ?? o.evidence.find((item) => item.signal === "Risk");
   const canonicalSourceCount = countEvidenceSources(o.evidence);
+  const independentDomainCount = new Set(o.evidence.map((item) => {
+    try { return new URL(item.url).hostname.replace(/^www\./, ""); } catch { return item.source; }
+  }).filter(Boolean)).size;
+  const primarySourceCount = o.evidence.filter((item) => !item.excluded && (item.sourceTier ?? 4) <= 2).length;
+  const contradictoryEvidenceCount = o.evidence.filter((item) => !item.excluded && item.disconfirming).length;
 
   const exportFile = async (format: "md" | "json" | "csv" | "pdf") => {
     const payload = { ...report, opportunity: o };
@@ -82,11 +90,20 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId 
       <article><span>Official verdict</span><b>{o.scorecard.verdict}</b></article>
       <article><span>Evidence confidence</span><b>{o.scorecard.confidence}%</b></article>
       <article><span>Sources analyzed</span><b>{canonicalSourceCount}</b></article>
-      {report.reportMode === "full_validation" && <article><span>Evidence quality</span><b>{o.evidence.filter((item) => !item.excluded && (item.sourceTier ?? 4) <= 2).length} Tier 1/2 findings</b></article>}
+      <article><span>Independent domains</span><b>{independentDomainCount}</b></article>
+      {report.reportMode === "full_validation" && <><article><span>Primary / official sources</span><b>{primarySourceCount}</b></article><article><span>Contradictory evidence</span><b>{contradictoryEvidenceCount}</b></article></>}
       <article><span>{report.reportMode === "quick_scan" ? "Strongest positive signal" : "Most important opportunity"}</span><b>{strongestPositive?.title ?? "Not enough supporting evidence"}</b></article>
       <article><span>{report.reportMode === "quick_scan" ? "Strongest negative signal" : "Most important objection"}</span><b>{strongestNegative?.title ?? report.adversarialGate?.objection ?? "No independent negative signal resolved"}</b></article>
       <article className="report-recommendation"><span>Recommendation</span><b>{report.topRecommendation ?? o.launch.successMetric}</b></article>
     </section>
+
+    {sourcePreview && <aside className="source-preview" aria-label="Evidence source preview">
+      <button type="button" onClick={() => setSourcePreview(null)} aria-label="Close source preview">×</button>
+      <p className="eyebrow">Evidence source · Tier {sourcePreview.sourceTier ?? "unrated"}</p>
+      <h3>{sourcePreview.title}</h3><p>{sourcePreview.snippet}</p>
+      <dl><div><dt>Source</dt><dd>{sourcePreview.source}</dd></div><div><dt>Published</dt><dd>{sourcePreview.date ?? "Not available"}</dd></div><div><dt>Type</dt><dd>{sourcePreview.sourceType}</dd></div><div><dt>Why this matters</dt><dd>{sourcePreview.disconfirming ? "This contradictory source tests the opportunity against a credible objection." : "This source directly supports a decision-relevant signal."}</dd></div></dl>
+      <a className="button button-small" href={sourcePreview.url} target="_blank" rel="noreferrer">Open original source</a>
+    </aside>}
 
     <div className="report-layout">
       <aside className="verdict-sidebar">
@@ -119,13 +136,14 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId 
         </div>
       </aside>
 
-      <div className="report-main">
-        <nav className="report-tabs">
+        <div className="report-main">
+          <ReportCharts report={report} datasets={chartDatasets}/>
+          <nav className="report-tabs">
           {tabs.map(t => <button key={t} className={`${tab === t ? "active" : ""} ${motion.buttonTight}`} aria-pressed={tab === t} onClick={() => setTab(t)}>{t}</button>)}
         </nav>
         <div className="report-tab-content sf-content-enter" key={tab}>
           {tab === "Conclusion" && <Verdict report={report}/>}
-          {tab === "Evidence" && <EvidenceView report={report}/>}
+          {tab === "Evidence" && <EvidenceView report={report} onPreview={setSourcePreview}/>}
           {tab === "Demand" && <SpecialistView report={report} name="demand"/>}
           {tab === "Competition" && <CompetitorView report={report}/>}
           {tab === "Market" && <SpecialistView report={report} name="market"/>}
@@ -178,7 +196,7 @@ function Verdict({ report }: { report: ReportType }) {
   </>;
 }
 
-function EvidenceView({ report }: { report: ReportType }) {
+function EvidenceView({ report, onPreview }: { report: ReportType; onPreview: (evidence: EvidenceItem) => void }) {
   return <div className="evidence-card-grid">
     {report.opportunity.evidence.map((e, index) => <article tabIndex={0} className={`${motion.cardInteractive} ${revealUpClass}`} style={getStaggerDelay(index)} key={e.id}>
       <div>
@@ -195,6 +213,7 @@ function EvidenceView({ report }: { report: ReportType }) {
         {e.disconfirming && <span>Contradictory evidence</span>}
       </div>
       <footer>
+        <button type="button" onClick={() => onPreview(e)}>Inspect evidence</button>
         <a href={e.url} target="_blank" rel="noreferrer">Source URL ↗</a>
         <small>{e.url}</small>
       </footer>
