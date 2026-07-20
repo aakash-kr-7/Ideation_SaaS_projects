@@ -14,7 +14,7 @@ Last reconciled with migrations on 2026-07-17.
 - Identity/tenancy: users, teams, memberships, preferences, feature limits.
 - Research: projects, runs, stages, queries, and passes.
 - Findings: opportunities, sources, evidence, competitors, risks, pricing, MVP, and launch records.
-- Scoring/reasoning: scores, evidence references, weights, specialists, and integrity gates.
+- Scoring/reasoning: scores, evidence references, weights, adversarial gates, and citation integrity.
 - Reports: reports, immutable versions, and export metadata.
 - Operations: usage, errors, audit, jobs, notifications, analytics, and caches.
 - Billing foundations: customer and subscription tables. These are not a working billing system.
@@ -37,6 +37,6 @@ supabase db push
 supabase gen types typescript --linked > lib/database.types.ts
 ```
 
-The staged queue migrations add `research_jobs`, attempts, pipeline metrics, immutable chart datasets, source registry/cache records, and evidence graph records. `research_runs_staged_pipeline_only` is intentionally `NOT VALID` during upgrade so history is preserved while new writes are staged-only; validate it after legacy history is archived. Run `recover_orphaned_research_runs` as service role during upgrade to terminalize stale pre-queue runs with no pending/claimed job.
+The staged queue migrations add `research_jobs`, attempts, pipeline metrics, immutable chart datasets, Gemini cache records, and Evidence Graph records. The forward-only Gemini cleanup migration preserves migration history, terminalizes in-flight legacy jobs with credit restoration, rejects new legacy stages, removes retired registry/cache/query tables, and restricts internal queue/cache/usage tables to the service role. Run `recover_orphaned_research_runs` as service role to terminalize stale runs with no pending or claimed durable job.
 
 Required release checks include fresh/upgrade migrations, auth bootstrap, two-tenant CRUD/Realtime/Storage tests, grants review, immutable-version tests, backups, retention, and a restore drill. See [Security.md](./Security.md).

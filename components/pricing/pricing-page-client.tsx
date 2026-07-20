@@ -17,7 +17,7 @@ const reportProducts = [
     description: "Stress-test the idea before committing meaningful time or money.",
     credits: "Uses 3 report credits",
     free: false,
-    items: ["Multi-pass and adversarial research", "Competition, demand, market, pricing, risk, and GTM analysis", "Detailed 12-factor score and MVP scope", "PDF, Markdown, CSV, and JSON exports"],
+    items: ["Deeper grounded and adversarial research", "Competition, demand, market, pricing, risk, and GTM analysis", "Detailed 12-factor score and MVP scope", "PDF, Markdown, CSV, and JSON exports"],
   },
 ] as const;
 

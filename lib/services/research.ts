@@ -63,8 +63,9 @@ export const ResearchService = {
       await privilegedRpc(admin, "fail_queued_research_dispatch", { p_run_id: reservation.run_id, p_error_message: `Pipeline initialization failed: ${updateError.message}` });
       throw new ResearchLaunchError("PIPELINE_INITIALIZATION_FAILED", "Research processing could not start. Your reserved credit was restored.", requestId, 503);
     }
+    const initialStage = "plan";
     const enqueueError = await privilegedRpc(admin, "enqueue_research_job", {
-      p_run_id: reservation.run_id, p_stage: "plan_research", p_input_meta: { mode: validated.mode }, p_stage_iteration: 0,
+      p_run_id: reservation.run_id, p_stage: initialStage, p_input_meta: { mode: validated.mode }, p_stage_iteration: 0,
       p_batch_index: 0, p_batch_size: 0, p_job_purpose: "stage", p_parent_job_id: null, p_max_attempts: 3, p_visible_after: new Date().toISOString(),
     });
     if (enqueueError) {
@@ -76,7 +77,7 @@ export const ResearchService = {
       body: JSON.stringify({ trigger: "self", source: "service_enqueue" }),
     }).catch(() => undefined);
 
-    console.info(JSON.stringify({ event: "research_run_dispatched", requestId, runId: reservation.run_id, userId: user.id, reportMode: validated.mode, reportLabel: config.label, creditCost: reservation.credit_cost, creditSource: reservation.credit_source, duplicate: reservation.duplicate, pipelineVersion: "staged" }));
+    console.info(JSON.stringify({ event: "research_run_dispatched", requestId, runId: reservation.run_id, userId: user.id, reportMode: validated.mode, reportLabel: config.label, creditCost: reservation.credit_cost, creditSource: reservation.credit_source, duplicate: reservation.duplicate, pipelineVersion: "gemini-hybrid-v1" }));
     return { id: reservation.run_id, status: reservation.run_status, mode: reservation.report_mode, creditCost: reservation.credit_cost, requestId, duplicate: reservation.duplicate };
   },
 

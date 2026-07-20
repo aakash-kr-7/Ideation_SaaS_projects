@@ -89,7 +89,7 @@ export function LandingPage() {
         </div>
         <div className="bs-report-type-grid">
           <article><Gauge size={22}/><p className="eyebrow">1 credit · one free monthly</p><h3>Quick Scan</h3><p>A rapid evidence-backed screen to determine whether an idea deserves deeper research.</p><ul><li>Concise score, verdict, and evidence signals</li><li>Best for filtering ideas before investing more</li></ul></article>
-          <article className="featured"><Shield size={22}/><p className="eyebrow">3 credits · flagship report</p><h3>Full Validation</h3><p>Multi-pass adversarial research with complete specialist analysis, MVP scope, pricing logic, and launch direction.</p><ul><li>Broader evidence and explicit objections</li><li>Best before committing meaningful time or money</li></ul></article>
+          <article className="featured"><Shield size={22}/><p className="eyebrow">3 credits · flagship report</p><h3>Full Validation</h3><p>Deeper grounded research with attributable evidence, adversarial analysis, MVP scope, pricing logic, and launch direction.</p><ul><li>Broader evidence and explicit objections</li><li>Best before committing meaningful time or money</li></ul></article>
         </div>
       </section>
 
@@ -116,7 +116,7 @@ export function LandingPage() {
         <div className="bs-section-head">
           <p className="bs-kicker">What Full Validation adds</p>
           <h2>Go from evidence screen to a decision-ready build brief.</h2>
-          <p>Quick Scan covers the score, verdict, core evidence, risks, pricing direction, and next actions. Full Validation adds the detailed specialist sections below.</p>
+          <p>Quick Scan covers the score, verdict, core evidence, risks, pricing direction, and next actions. Full Validation adds deeper evidence-backed sections and all export formats.</p>
         </div>
         <div className="bs-value-grid">
           <Value icon={Users} title="Buyer pain analysis" text="Review public evidence about the problem and identify what still needs direct buyer confirmation."/>

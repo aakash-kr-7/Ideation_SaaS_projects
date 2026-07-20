@@ -22,7 +22,7 @@ export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }
       <b>Compare your ideas side by side</b>
       <span>Select up to 4 ideas. Canonical score factors are comparable; report depth and evidence coverage may differ.</span>
     </div>
-    {mixedDepth && <div className="comparison-depth-warning" role="note"><b>Different research depth</b><span>This comparison includes a Quick Scan and a Full Validation. Missing specialist detail in a Quick Scan is expected and does not mean the evidence was negative.</span></div>}
+    {mixedDepth && <div className="comparison-depth-warning" role="note"><b>Different research depth</b><span>This comparison includes a Quick Scan and a Full Validation. Missing detail in a Quick Scan reflects its narrower evidence scope, not negative evidence.</span></div>}
     
     <div className="compare-picker">
       {allReports.map(r => {

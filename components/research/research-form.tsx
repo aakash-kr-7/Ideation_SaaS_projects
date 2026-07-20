@@ -28,12 +28,12 @@ const modePresentation = {
     icon: SearchCheck,
     bestFor: "Best for filtering ideas before spending more.",
     included: ["12-factor score and verdict", "Concise evidence screen", "Risks, pricing direction, and next actions", "Clickable citations and branded PDF"],
-    excluded: ["No full specialist checker suite", "No detailed MVP or go-to-market report"],
+    excluded: ["No broad evidence-booster coverage", "No detailed MVP or go-to-market report"],
   },
   full_validation: {
     icon: Telescope,
     bestFor: "Best before committing meaningful time or money.",
-    included: ["All three research passes", "Six specialists and independent checkers", "MVP, pricing, GTM, and adversarial analysis", "PDF, Markdown, CSV, and JSON exports"],
+    included: ["Deeper grounded research packs", "Selective evidence boosters and adversarial analysis", "MVP, pricing, risk, and GTM artifacts", "PDF, Markdown, CSV, and JSON exports"],
     excluded: ["No guaranteed outcome", "Market sizing only when verifiably cited"],
   },
 } as const;

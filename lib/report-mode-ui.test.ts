@@ -31,20 +31,11 @@ Deno.test("source counts use distinct persisted citation URLs", () => {
   assert(countEvidenceSources([{ url: "https://example.test/a" }, { url: "https://example.test/a" }, { url: "https://example.test/b" }, { url: "" }]) === 2, "duplicate evidence rows must not inflate source counts");
 });
 
-Deno.test("progress derives one current step from persisted passes and logs", () => {
+Deno.test("progress derives one current step from persisted status and percentage", () => {
   const steps = deriveProgressSteps(getReportModeConfig("full_validation"), {
     stage: "Scoring",
-    stageDetails: ["Running Demand Agent with an isolated independent checker"],
-    passes: [1, 2, 3].map((passNumber) => ({ passNumber, status: "Complete" as const })),
-    checkerCount: 2,
+    progress: 75,
   });
-  assert(steps.filter((step) => step.state === "active").length === 2, "specialist and checker work should reflect simultaneous persisted work");
-  assert(steps.find((step) => step.key === "deterministic_scoring")?.state === "pending", "deterministic scoring must not start early");
-  const scoring = deriveProgressSteps(getReportModeConfig("full_validation"), {
-    stage: "Scoring",
-    stageDetails: ["Computing 12-factor score without provider access"],
-    passes: [1, 2, 3].map((passNumber) => ({ passNumber, status: "Complete" as const })),
-    checkerCount: 6,
-  });
-  assert(scoring.find((step) => step.key === "deterministic_scoring")?.state === "active", "persisted scoring log should activate deterministic scoring");
+  assert(steps.filter((step) => step.state === "active").length === 1, "multiple canonical stages were active");
+  assert(steps.find((step) => step.key === "analyze_score")?.state === "active", "deterministic analysis stage was not active");
 });

@@ -146,32 +146,6 @@ export const reasoningFlagSchema = z.object({
   message: z.string(),
   evidenceIds: z.array(z.string().uuid()),
 });
-export const specialistDisputeSchema = z.object({
-  specialist: z.enum([
-    "competition",
-    "market",
-    "pricing",
-    "risk",
-    "demand",
-    "gtm",
-  ]),
-  specialistDirection: z.enum([
-    "SupportsOpportunity",
-    "Mixed",
-    "ChallengesOpportunity",
-    "Insufficient",
-    "Unavailable",
-  ]),
-  checkerDirection: z.enum([
-    "SupportsOpportunity",
-    "Mixed",
-    "ChallengesOpportunity",
-    "Insufficient",
-    "Unavailable",
-  ]),
-  disputed: z.boolean(),
-  reason: z.string(),
-});
 export const adversarialGateReportSchema = z.object({
   outcome: z.enum([
     "StrongObjection",
@@ -219,7 +193,6 @@ export const validationReportSchema = z.object({
   marketSizing: marketSizingSchema.optional(),
   retrieval: z.record(z.string(), z.unknown()).optional(),
   reasoningFlags: z.array(reasoningFlagSchema).optional(),
-  specialistDisputes: z.array(specialistDisputeSchema).optional(),
   adversarialGate: adversarialGateReportSchema.optional(),
   citationValidation: citationValidationReportSchema.optional(),
   decisionIntegrity: decisionIntegritySchema.optional(),
@@ -232,7 +205,6 @@ export const validationReportSchema = z.object({
   topRecommendation: z.string().optional(),
   strongestPositiveEvidenceId: z.string().optional(),
   strongestNegativeEvidenceId: z.string().optional(),
-  specialistSections: z.record(z.string(), z.unknown()).optional(),
 });
 
 export interface ReportOpportunity {
@@ -272,7 +244,6 @@ export interface ValidationReport {
   marketSizing?: z.infer<typeof marketSizingSchema>;
   retrieval?: Record<string, unknown>;
   reasoningFlags?: z.infer<typeof reasoningFlagSchema>[];
-  specialistDisputes?: z.infer<typeof specialistDisputeSchema>[];
   adversarialGate?: z.infer<typeof adversarialGateReportSchema>;
   citationValidation?: z.infer<typeof citationValidationReportSchema>;
   decisionIntegrity?: z.infer<typeof decisionIntegritySchema>;
@@ -284,7 +255,6 @@ export interface ValidationReport {
   topRecommendation?: string;
   strongestPositiveEvidenceId?: string;
   strongestNegativeEvidenceId?: string;
-  specialistSections?: Record<string, unknown>;
 }
 
 // Database-specific schema constraints for Server Actions inputs

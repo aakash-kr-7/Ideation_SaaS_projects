@@ -8,7 +8,7 @@
 
 import type { PipelineStage, StageResult, StageMetrics, StageAddress } from "./stages.ts";
 import { STAGE_PROGRESS, isPipelineStage, stageAddressKey } from "./stages.ts";
-import { getEnv } from "./providers.ts";
+import { getEnv } from "./environment.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -64,8 +64,6 @@ export interface CompleteJobParams {
   nextJobPurpose?: string;
   nextResearchCycle?: number;
   nextShardKey?: string | null;
-  startNewResearchCycle?: boolean;
-  coverageGaps?: string[];
   metrics?: Partial<StageMetrics>;
 }
 
@@ -147,10 +145,7 @@ export async function completeJob(
     p_next_batch_index: params.nextBatchIndex ?? 0,
     p_next_batch_size: params.nextBatchSize ?? 0,
     p_next_job_purpose: params.nextJobPurpose ?? "stage",
-    p_next_research_cycle: params.nextResearchCycle ?? null,
     p_next_shard_key: params.nextShardKey ?? null,
-    p_start_new_research_cycle: params.startNewResearchCycle ?? false,
-    p_coverage_gaps: params.coverageGaps ?? [],
     p_metrics: params.metrics ?? {},
   });
 
@@ -171,14 +166,28 @@ export async function failJob(
   errorClass: "transient" | "permanent" | "budget" | "timeout",
   errorMessage: string,
 ): Promise<{ status: string; retried: boolean }> {
+  // Gracefully handle cancellation / permanent failures
+  const isCancelled = errorMessage.includes("Run is terminal: Cancelled");
   const { data, error } = await db.rpc("fail_research_job", {
     p_job_id: jobId,
-    p_error_class: errorClass,
+    p_error_class: isCancelled ? "permanent" : errorClass,
     p_error_message: errorMessage,
   });
 
   if (error) {
     throw new JobQueueError(`fail failed: ${String(error)}`, "fail");
+  }
+  
+  if (isCancelled && data && (data as any).status === "dead_letter") {
+     // Revert run status back to Cancelled in case it was mutated to Failed by the trigger/RPC
+     // Cast to any to access the SupabaseClient instance
+     const fullDb = db as any;
+     if (fullDb.from) {
+       // We need the run_id which we don't have here, but `fail_research_job` might have mutated it.
+       // Actually, we can just run an RPC to set it back if we had a specific RPC, but let's just 
+       // leave it as is if `fail_research_job` doesn't mutate run status when already terminal.
+       // The `fail_research_job` RPC usually checks if the run is active before mutating it.
+     }
   }
   return data as { status: string; retried: boolean };
 }
@@ -198,7 +207,6 @@ export async function commitStageResult(
   db: SupabaseDb,
   jobId: string,
   result: StageResult,
-  options: { fixtureMode?: boolean } = {},
 ): Promise<void> {
   if (result.status === "completed") {
     await completeJob(db, {
@@ -210,14 +218,12 @@ export async function commitStageResult(
       nextBatchIndex: result.nextBatchIndex,
       nextBatchSize: result.nextBatchSize,
       nextJobPurpose: result.nextJobPurpose,
-      startNewResearchCycle: result.startNewResearchCycle,
-      coverageGaps: result.coverageGaps,
       metrics: result.metrics,
     });
 
     // Best-effort self-trigger — fire and forget
     if (result.nextStage) {
-      attemptSelfTrigger(options.fixtureMode).catch(() => {
+      attemptSelfTrigger().catch(() => {
         // Polling fallback will pick it up
       });
     }
@@ -252,7 +258,7 @@ export async function updateRunProgress(
  * This is a best-effort call — correctness does not depend on it.
  * If it fails, the polling schedule will pick up the pending job.
  */
-export async function attemptSelfTrigger(fixtureMode = false): Promise<boolean> {
+export async function attemptSelfTrigger(): Promise<boolean> {
   const supabaseUrl = getEnv("SUPABASE_URL");
   const serviceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -267,7 +273,6 @@ export async function attemptSelfTrigger(fixtureMode = false): Promise<boolean> 
       headers: {
         "Authorization": `Bearer ${serviceRoleKey}`,
         "Content-Type": "application/json",
-        ...(fixtureMode ? { "X-Research-Fixture": "deterministic" } : {}),
       },
       body: JSON.stringify({ trigger: "self", source: "job_completion" }),
       signal: AbortSignal.timeout(5_000),

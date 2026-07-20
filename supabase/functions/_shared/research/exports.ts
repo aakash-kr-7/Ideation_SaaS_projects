@@ -33,13 +33,6 @@ type ReportIntegrityPayload = {
       evidenceIds?: string[];
     }
   >;
-  specialistDisputes?: Array<{
-    specialist?: string;
-    specialistDirection?: string;
-    checkerDirection?: string;
-    disputed?: boolean;
-    reason?: string;
-  }>;
   adversarialGate?: {
     outcome?: string;
     severity?: string;
@@ -75,15 +68,7 @@ function integrityMarkdown(payload: unknown) {
   const decision = integrity.decisionIntegrity;
   const gate = integrity.adversarialGate;
   const citation = integrity.citationValidation;
-  const disputes = integrity.specialistDisputes || [];
   const flags = integrity.reasoningFlags || [];
-  const disputeRows = disputes.length
-    ? disputes.map((item) =>
-      `- **${item.specialist || "Unknown specialist"}:** ${
-        item.disputed ? "Disputed" : "Reproduced"
-      } - ${item.reason || "No explanation recorded."}`
-    ).join("\n")
-    : "- None recorded.";
   const flagRows = flags.length
     ? flags.map((flag) =>
       `- **${flag.severity || "Info"} / ${flag.type || "IntegrityFlag"}:** ${
@@ -115,10 +100,6 @@ ${decision?.reason ? `- Decision reason: ${decision.reason}\n` : ""}
 - Unresolved: ${gate?.unresolved ? "Yes" : "No"}
 - Objection/certification: ${gate?.objection || "Not recorded"}
 - Evidence: ${gate?.evidence_ids?.join(", ") || "None"}
-
-## Independent specialist checks
-
-${disputeRows}
 
 ## Citation validation
 
@@ -158,7 +139,6 @@ export function renderCsv(input: ExportBundleInput) {
     "evidence_ids",
     "note",
     "reasoning_flags_json",
-    "specialist_disputes_json",
     "adversarial_gate_json",
     "citation_validation_json",
     "decision_integrity_json",
@@ -185,7 +165,6 @@ export function renderCsv(input: ExportBundleInput) {
         b.evidenceIds.join("|"),
         b.note,
         JSON.stringify(integrity.reasoningFlags || []),
-        JSON.stringify(integrity.specialistDisputes || []),
         JSON.stringify(integrity.adversarialGate || null),
         JSON.stringify(integrity.citationValidation || null),
         JSON.stringify(integrity.decisionIntegrity || null),

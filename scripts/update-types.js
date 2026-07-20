@@ -1,38 +1,34 @@
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const { execSync } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
-const destPath = path.join(__dirname, '../lib/types.ts');
+const destination = path.join(
+  __dirname,
+  "../supabase/functions/_shared/types.ts",
+);
+const marker = "// Application domain types";
+const existing = fs.readFileSync(destination, "utf8");
+const markerIndex = existing.indexOf(marker);
 
-console.log('Generating database schema types...');
-const generatedSchema = execSync('npx supabase gen types typescript --local', { encoding: 'utf8' });
+if (markerIndex < 0) {
+  throw new Error(`Missing preserved domain-type marker in ${destination}`);
+}
 
-const helperTypes = `
-// Helper Types
+console.log("Generating canonical database schema types...");
+const generated = execSync("npx supabase gen types typescript --local", {
+  encoding: "utf8",
+});
+const domainTypes = existing.slice(markerIndex);
+const preamble = [
+  "// Shared, runtime-neutral database and report domain types.",
+  'import type { ResearchStatus } from "./research/status.ts";',
+  'import type { ReportMode } from "./research/mode-config.ts";',
+  "",
+].join("\n");
 
-// --- Legacy UI / Frontend Helper Types ---
-
-export type ValidationVerdict = "Build now" | "Validate first" | "Avoid for now";
-export type EngineVerdict = "Build Now" | "Validate First" | "Niche Down" | "Weak Signal" | "Avoid";
-export type ScoringCriterion = "painSeverity" | "purchaseUrgency" | "willingnessToPay" | "buyerReachability" | "mvpSpeed" | "competitionGap" | "retentionPotential" | "platformDependencyRisk" | "regulatoryRisk" | "founderFit" | "distributionClarity" | "speedToFirstRevenue";
-export type ScoringWeights = Record<ScoringCriterion, number>;
-export type CriterionScores = Record<ScoringCriterion, number>;
-export type CriterionNotes = Record<ScoringCriterion, string>;
-export type CriterionEvidence = Partial<Record<ScoringCriterion, string[]>>;
-export interface OpportunityScorecard { scores: CriterionScores; notes: CriterionNotes; evidenceRefs: CriterionEvidence; weights: ScoringWeights; total: number; confidence: number; verdict: EngineVerdict; }
-export type MarketType = "B2B" | "D2C" | "Creator" | "Developer Tool" | "Local Business" | "Agency Tool" | "Student/Career" | "Other";
-export type ResearchMode = "quick_scan" | "full_validation";
-
-export interface EvidenceItem { id: string; source: string; sourceType: string; title: string; snippet: string; url: string; signal: "Pain" | "Demand" | "Pricing" | "Risk"; strength: "High" | "Medium" | "Low"; date: string; }
-export interface Competitor { id: string; name: string; positioning: string; pricing: string; target: string; strength: string; gap: string; }
-export interface ScoreBreakdown { pain: number; urgency: number; willingnessToPay: number; reachability: number; competition: number; complexity: number; platformRisk: number; founderFit: number; total: number; }
-export interface PricingModel { model: string; pricePoint: string; rationale: string; firstOffer: string; targetCustomers: number; }
-export interface MVPPlan { outcome: string; scope: string[]; exclusions: string[]; buildEstimate: string; }
-export interface LaunchPlan { firstCustomerChannel: string; weekOne: string[]; outreachMessage: string; successMetric: string; }
-export interface RiskItem { id: string; category: "Market" | "Execution" | "Platform" | "Regulatory"; severity: "High" | "Medium" | "Low"; description: string; mitigation: string; }
-export interface Opportunity { id: string; name: string; one_liner: string; target_customer: string; market: MarketType; score: ScoreBreakdown; verdict: ValidationVerdict; confidence: number; evidence: EvidenceItem[]; competitors: Competitor[]; pricing: PricingModel; mvp: MVPPlan; launch: LaunchPlan; risks: RiskItem[]; }
-export interface ResearchRun { id: string; ideaName: string; ideaDescription: string; targetCustomer: string; marketType: MarketType; targetRegion: string; mode: ResearchMode; status: "Queued" | "Searching" | "Extracting" | "Normalizing" | "Scoring" | "Generating" | "Completed" | "Failed" | "Cancelled"; createdAt: string; progress: number; opportunity?: Opportunity; }
-`;
-
-fs.writeFileSync(destPath, generatedSchema + '\n' + helperTypes, 'utf8');
-console.log('Successfully updated lib/types.ts with database schema and helper types.');
+fs.writeFileSync(
+  destination,
+  `${preamble}${generated.trimEnd()}\n\n${domainTypes}`,
+  "utf8",
+);
+console.log(`Updated ${destination}`);

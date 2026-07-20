@@ -80,7 +80,7 @@ export async function POST(request: Request) {
 
   // Repair older environments where the auth.users provisioning trigger was
   // missing or had not created the user's profile/team records.
-  const { error: bootstrapError } = await supabase.rpc("ensure_user_bootstrap", {});
+  const { error: bootstrapError } = await supabase.rpc("ensure_user_bootstrap");
   if (bootstrapError) {
     return NextResponse.json({ error: bootstrapError.message }, { status: 500 });
   }

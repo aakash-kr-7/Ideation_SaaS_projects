@@ -144,9 +144,9 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
         <div className="report-tab-content sf-content-enter" key={tab}>
           {tab === "Conclusion" && <Verdict report={report}/>}
           {tab === "Evidence" && <EvidenceView report={report} onPreview={setSourcePreview}/>}
-          {tab === "Demand" && <SpecialistView report={report} name="demand"/>}
+          {tab === "Demand" && <EvidenceSignalView report={report} signals={["Pain", "Demand"]}/>}
           {tab === "Competition" && <CompetitorView report={report}/>}
-          {tab === "Market" && <SpecialistView report={report} name="market"/>}
+          {tab === "Market" && <EvidenceSignalView report={report} signals={["Demand", "Pricing"]}/>}
           {tab === "Score breakdown" && <ScoringView scorecard={o.scorecard}/>}
           {tab === "MVP scope" && <MvpView report={report}/>}
           {tab === "Pricing" && <PricingView report={report}/>}
@@ -226,7 +226,7 @@ function categoryFor(signal: string) {
 }
 
 function CompetitorView({ report }: { report: ReportType }) {
-  return <><SpecialistClaims report={report} name="competition"/><div className="competitor-table-wrap">
+  return <div className="competitor-table-wrap">
     <table className="competitor-table">
       <thead>
         <tr>
@@ -249,7 +249,7 @@ function CompetitorView({ report }: { report: ReportType }) {
         </tr>)}
       </tbody>
     </table>
-  </div></>;
+  </div>;
 }
 
 function ScoringView({ scorecard }: { scorecard: ReportType["opportunity"]["scorecard"] }) {
@@ -321,7 +321,6 @@ function PricingView({ report }: { report: ReportType }) {
     ...(p.targetCustomers > 0 ? [["Initial target", `${p.targetCustomers} customers`, "Persisted customer target", p.rationale]] : [])
   ];
   return <>
-    <SpecialistClaims report={report} name="pricing"/>
     <div className="pricing-strategy-cards">
       {cards.map(([name, price, limits, reason], index) => <article tabIndex={0} className={`${motion.cardInteractive} ${revealUpClass}`} style={getStaggerDelay(index)} key={name}>
         <span>{name}</span>
@@ -337,7 +336,6 @@ function PricingView({ report }: { report: ReportType }) {
 function LaunchView({ report }: { report: ReportType }) {
   const l = report.opportunity.launch;
   return <div className="launch-plan">
-    <SpecialistClaims report={report} name="gtm"/>
     <div className="launch-columns">
       <article>
         <p className="eyebrow">First 10 customers</p>
@@ -433,7 +431,7 @@ function ChecklistView({ report }: { report: ReportType }) {
 }
 
 function RiskView({ report }: { report: ReportType }) {
-  return <><SpecialistClaims report={report} name="risk"/><div className="risk-heatmap detailed-risk">
+  return <div className="risk-heatmap detailed-risk">
     {report.opportunity.risks.map(existing => {
       return <article tabIndex={0} key={existing.id} className={`${existing.severity.toLowerCase()} ${motion.cardInteractive}`}>
         <div>
@@ -444,23 +442,14 @@ function RiskView({ report }: { report: ReportType }) {
         <p><strong>Mitigation: </strong>{existing.mitigation}</p>
       </article>;
     })}
-  </div></>;
+  </div>;
 }
 
-type SpecialistName = "competition" | "market" | "pricing" | "risk" | "demand" | "gtm";
-
-function SpecialistClaims({ report, name }: { report: ReportType; name: SpecialistName }) {
-  const section = report.specialistSections?.[name] as { status?: string; output?: { claims?: Array<{ claim?: string; evidence_ids?: string[] }>; limitations?: string[] } } | undefined;
-  const claims = section?.output?.claims ?? [];
-  return <section className="specialist-report-section">
-    <header><p className="eyebrow">{name} specialist</p><h3>{section?.status === "Complete" ? `${name[0].toUpperCase() + name.slice(1)} analysis` : "Incomplete specialist section"}</h3></header>
-    {claims.length ? <div>{claims.map((claim, index) => <article key={`${claim.claim}-${index}`}><b>{claim.claim}</b><EvidenceCitations report={report} evidenceIds={claim.evidence_ids ?? []}/></article>)}</div> : <p className="report-empty-section">This section could not be completed from the persisted evidence. No substitute narrative was generated.</p>}
-    {!!section?.output?.limitations?.length && <ul>{section.output.limitations.map((item) => <li key={item}>{item}</li>)}</ul>}
+function EvidenceSignalView({ report, signals }: { report: ReportType; signals: Array<"Pain" | "Demand" | "Pricing" | "Risk"> }) {
+  const evidence = report.opportunity.evidence.filter((item) => signals.includes(item.signal));
+  return <section className="evidence-findings-section"><header><p className="eyebrow">Validated evidence</p><h3>Evidence-backed findings</h3></header>
+    {evidence.length ? <div>{evidence.map((item) => <article key={item.id}><b>{item.title}</b><p>{item.snippet}</p><EvidenceCitations report={report} evidenceIds={[item.id]}/></article>)}</div> : <p className="report-empty-section">No attributable evidence is available for this section.</p>}
   </section>;
-}
-
-function SpecialistView({ report, name }: { report: ReportType; name: "demand" | "market" }) {
-  return <SpecialistClaims report={report} name={name}/>;
 }
 
 function EvidenceCitations({ report, evidenceIds }: { report: ReportType; evidenceIds: readonly string[] }) {
@@ -473,7 +462,6 @@ function EvidenceCitations({ report, evidenceIds }: { report: ReportType; eviden
 function AdversarialView({ report }: { report: ReportType }) {
   return <div className="adversarial-report-view">
     <section><p className="eyebrow">Adversarial verdict gate</p><h3>{report.adversarialGate?.outcome ?? "Gate incomplete"}</h3><p>{report.adversarialGate?.objection ?? "No adversarial conclusion was persisted."}</p><EvidenceCitations report={report} evidenceIds={report.adversarialGate?.evidence_ids ?? []}/></section>
-    <section><p className="eyebrow">Independent checker disagreements</p>{report.specialistDisputes?.length ? report.specialistDisputes.map((item) => <article key={item.specialist} className={item.disputed ? "disputed" : "aligned"}><b>{item.specialist}</b><span>{item.reason}</span></article>) : <p className="report-empty-section">No independent checker results are available for this report.</p>}</section>
   </div>;
 }
 

@@ -1,6 +1,4 @@
 import {
-  checkVerdictConsistency,
-  compareSpecialistAndChecker,
   gateVerdict,
   narrativeSupportsVerdict,
   validateNarrativeCitations,
@@ -9,25 +7,6 @@ import {
 function assert(condition: unknown, message: string) {
   if (!condition) throw new Error(message);
 }
-
-Deno.test("isolated checker disagreement is surfaced, never silently resolved", () => {
-  const comparison = compareSpecialistAndChecker(
-    "pricing",
-    {
-      status: "Complete",
-      output: { verdict_direction: "SupportsOpportunity" },
-    },
-    {
-      status: "Complete",
-      output: { verdict_direction: "ChallengesOpportunity" },
-    },
-  );
-  assert(comparison.disputed, "opposing directions were not disputed");
-  assert(
-    comparison.reason.includes("Disputed interpretation"),
-    "dispute was not explicit",
-  );
-});
 
 Deno.test("a partially stripped minimal narrative cannot support a verdict", () => {
   assert(
@@ -45,19 +24,6 @@ Deno.test("a partially stripped minimal narrative cannot support a verdict", () 
       methodology: [{}],
     }),
     "a thinned narrative was allowed to publish",
-  );
-});
-
-Deno.test("Final Judge cannot override the code-owned verdict tier", () => {
-  const consistency = checkVerdictConsistency(
-    "Weak Signal",
-    "Weak Signal",
-    "Build Now",
-  );
-  assert(consistency.finalJudgeScoreMismatch, "mismatch was not flagged");
-  assert(
-    consistency.officialVerdict === "Weak Signal",
-    "narrative overrode deterministic code",
   );
 });
 

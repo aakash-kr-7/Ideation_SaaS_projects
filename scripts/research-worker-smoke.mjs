@@ -48,7 +48,7 @@ const { data: reservationRows, error: reserveError } = await user.rpc("create_re
 if (reserveError) throw reserveError;
 const reservation = Array.isArray(reservationRows) ? reservationRows[0] : reservationRows;
 const runId = reservation.run_id;
-const { error: enqueueError } = await admin.rpc("enqueue_research_job", { p_run_id: runId, p_stage: "plan_research", p_input_meta: { smoke: true }, p_stage_iteration: 0, p_batch_index: 0, p_batch_size: 0, p_job_purpose: "stage", p_parent_job_id: null, p_max_attempts: 1, p_visible_after: new Date().toISOString() });
+const { error: enqueueError } = await admin.rpc("enqueue_research_job", { p_run_id: runId, p_stage: "plan", p_input_meta: { mode }, p_stage_iteration: 0, p_batch_index: 0, p_batch_size: 0, p_job_purpose: "stage", p_parent_job_id: null, p_max_attempts: 1, p_visible_after: new Date().toISOString() });
 if (enqueueError) throw enqueueError;
 
 const workerUrl = `${url}/functions/v1/research-worker`;
@@ -57,10 +57,10 @@ if (rejected.status !== 401) throw new Error(`Worker secret validation failed: e
 const workerToken = process.env.WEBHOOK_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
 const response = await fetch(workerUrl, { method: "POST", headers: { authorization: `Bearer ${workerToken}`, "content-type": "application/json" }, body: JSON.stringify({ trigger: "smoke" }) });
 const worker = await response.json();
-if (!response.ok || worker.stage !== "plan_research") throw new Error(`Worker did not claim plan_research: ${JSON.stringify(worker)}`);
+if (!response.ok || worker.stage !== "plan") throw new Error(`Worker did not claim canonical plan stage: ${JSON.stringify(worker)}`);
 const { data: job, error: jobError } = await admin.from("research_jobs").select("status,stage,attempt_count,error_class,error_message").eq("id", worker.job_id).single();
 if (jobError) throw jobError;
-if (job.stage !== "plan_research" || job.attempt_count !== 1 || job.status !== "completed") throw new Error(`First stage did not execute: ${JSON.stringify(job)}`);
+if (job.stage !== "plan" || job.attempt_count !== 1 || job.status !== "completed") throw new Error(`First stage did not execute: ${JSON.stringify(job)}`);
 const { data: cancelResult, error: cancelError } = await user.rpc("cancel_research_run", { p_run_id: runId, p_reason: "Worker smoke cleanup" });
 if (cancelError || cancelResult !== "Cancelled") throw cancelError ?? new Error(`Unexpected cancellation result: ${cancelResult}`);
 const { data: repeatedCancel, error: repeatedCancelError } = await user.rpc("cancel_research_run", { p_run_id: runId, p_reason: "Worker smoke cleanup retry" });

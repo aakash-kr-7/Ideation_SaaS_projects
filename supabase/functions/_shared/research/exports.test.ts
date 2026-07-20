@@ -29,13 +29,6 @@ const input = {
       message: "A dominant incumbent invalidates the optimistic tier.",
       evidenceIds: ["00000000-0000-4000-8000-000000000002"],
     }],
-    specialistDisputes: [{
-      specialist: "pricing",
-      specialistDirection: "SupportsOpportunity",
-      checkerDirection: "ChallengesOpportunity",
-      disputed: true,
-      reason: "Pricing evidence was interpreted differently.",
-    }],
     adversarialGate: {
       outcome: "StrongObjection",
       severity: "High",
@@ -77,7 +70,6 @@ Deno.test("all export formats carry consistent run facts", () => {
       output.includes("A dominant incumbent invalidates the optimistic tier."),
       "adversarial objection missing",
     );
-    assert(output.includes("pricing"), "specialist dispute missing");
     assert(
       output.includes("claimsChecked") || output.includes("Claims checked"),
       "citation audit missing",

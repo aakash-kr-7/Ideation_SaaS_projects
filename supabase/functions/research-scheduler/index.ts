@@ -41,9 +41,8 @@ Deno.serve(async (req: Request) => {
     );
 
     // --- 1. Recover stale jobs ---
-    const recovered = await recoverStaleJobs(db as never, 120_000); // 2 minutes stale threshold
-    const orphanRecovery = db.rpc as unknown as (name: string, params: Record<string, unknown>) => Promise<{ data: number | null; error: { message: string } | null }>;
-    const { data: orphaned, error: orphanError } = await orphanRecovery("recover_orphaned_research_runs", { p_stale_after: "15 minutes" });
+    const recovered = await recoverStaleJobs(db as never, 180_000);
+    const { data: orphaned, error: orphanError } = await (db.rpc as any)("recover_orphaned_research_runs", { p_stale_after: "15 minutes" });
     if (orphanError) throw orphanError;
     if (recovered > 0) {
       console.log(`[scheduler] Recovered ${recovered} stale job(s)`);

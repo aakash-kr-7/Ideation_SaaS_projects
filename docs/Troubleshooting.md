@@ -22,7 +22,7 @@ Confirm matching `WEBHOOK_SECRET`, worker deployment, and Supabase URL. Inspect 
 
 If the worker returns `name resolution failed`, confirm the Edge runtime can resolve and reach `SUPABASE_URL`, and that `SUPABASE_SERVICE_ROLE_KEY` is configured for both `research-worker` and `research-scheduler`. This is an environment networking fault: fix it, then invoke the scheduler rather than manually claiming or completing a run.
 
-For local Supabase, do not set the Edge Function's `SUPABASE_URL` to a Docker-only hostname from the host shell. Let `supabase functions serve` provide its local runtime variables (where its API hostname is resolvable from the function container), and configure the application host with the CLI's public local URL. Confirm the worker and scheduler both have `SUPABASE_SERVICE_ROLE_KEY` and `WEBHOOK_SECRET`; then run `npm run smoke:worker` with the required `SMOKE_*` user/project variables. It creates a real reservation and queue job, invokes the local worker, and verifies that `plan_research` was claimed and completed.
+For local Supabase, do not set the Edge Function's `SUPABASE_URL` to a Docker-only hostname from the host shell. Let the Supabase runtime provide its container-resolvable URL, and configure host scripts with the CLI's public local URL. Confirm the worker and scheduler have `SUPABASE_SERVICE_ROLE_KEY`, `WEBHOOK_SECRET`, and `GEMINI_API_KEY`; then run `npm run smoke:worker` and `npm run smoke:scheduler`. The worker smoke creates a real reservation, claims canonical `plan`, verifies cancellation, and asserts exactly-once credit restoration.
 
 ## Normalized output fails validation
 

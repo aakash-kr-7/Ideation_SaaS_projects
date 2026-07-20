@@ -7,7 +7,7 @@ export const productCopy = {
     secondaryCta: "See a Full Validation",
   },
   problem: { title: "Important product assumptions deserve evidence.", body: "ShouldBuild checks buyer pain, pricing, competition, and distribution assumptions against public-source evidence and labels limitations when support is weak." },
-  mechanism: { title: "Two report depths for two decisions.", body: "Quick Scan is a useful screening report. Full Validation adds targeted, specialist, and adversarial research when the decision warrants deeper work." },
+  mechanism: { title: "Two report depths for two decisions.", body: "Quick Scan is a useful screening report. Full Validation adds broader evidence boosters and adversarial research when the decision warrants deeper work." },
   trust: { title: "Citations and deterministic scoring stay inspectable.", body: "Report findings retain source links. The official 12-factor score and verdict come from code-owned scoring; generated narrative cannot override them." },
   urgency: ["Evidence can reveal costly assumptions before implementation.", "A report reduces uncertainty but does not guarantee demand, accuracy, or business success."],
   features: [

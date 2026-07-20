@@ -908,7 +908,9 @@
     "packageJson": {
       "dependencies": [
         "npm:@eslint/eslintrc@^3.3.6",
+        "npm:@google/genai@~0.1.2",
         "npm:@google/generative-ai@~0.24.1",
+        "npm:@playwright/test@^1.61.1",
         "npm:@supabase/ssr@0.12",
         "npm:@supabase/supabase-js@^2.110.2",
         "npm:@types/node@^22.10.2",

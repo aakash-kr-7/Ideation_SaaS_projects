@@ -13,6 +13,7 @@ import { motion, getStaggerDelay, revealUpClass } from "@/lib/motion";
 import { ReportHistory } from "@/components/dashboard/report-history";
 import { countEvidenceSources } from "@/lib/report-mode-ui";
 import { firstRelation, relationArray } from "@/lib/supabase/relations";
+import { isResearchStatus } from "@/supabase/functions/_shared/research/status";
 
 export const dynamic = "force-dynamic";
 
@@ -75,7 +76,7 @@ export default async function DashboardPage() {
       marketType: isMarketType(run.market_type) ? run.market_type : "Other",
       targetRegion: run.target_region,
       mode: run.mode,
-      status: run.status,
+      status: isResearchStatus(run.status) ? run.status : "Failed",
       createdAt: run.created_at.slice(0, 10),
       progress: run.progress,
       opportunity

@@ -83,7 +83,7 @@ export async function cancelResearchRun(runId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const { error } = await supabase.rpc("cancel_research_run" as any, { p_run_id: runId });
+  const { error } = await supabase.rpc("cancel_research_run", { p_run_id: runId });
   if (error) {
     throw new Error(error.message);
   }

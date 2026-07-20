@@ -86,13 +86,6 @@ type PdfPayload = {
     message?: string;
     evidenceIds?: string[];
   }>;
-  specialistDisputes?: Array<{
-    specialist?: string;
-    specialistDirection?: string;
-    checkerDirection?: string;
-    disputed?: boolean;
-    reason?: string;
-  }>;
   adversarialGate?: {
     outcome?: string;
     severity?: string;
@@ -951,57 +944,15 @@ function buildIntegrity(payload: PdfPayload) {
     COLORS.slate,
   );
 
-  const checks = payload.specialistDisputes || [];
-  page.text("ISOLATED SPECIALIST CHECKS", MARGIN, 459, 7, "F2", COLORS.teal);
-  checks.slice(0, 6).forEach((check, index) => {
-    const column = index % 2;
-    const row = Math.floor(index / 2);
-    const x = MARGIN + column * 270;
-    const y = 486 + row * 57;
-    page.rect(
-      x,
-      y,
-      254,
-      44,
-      check.disputed ? COLORS.amberPale : COLORS.white,
-      check.disputed ? COLORS.amber : COLORS.mist,
-      7,
-    );
-    page.text(
-      label(check.specialist || "Specialist"),
-      x + 12,
-      y + 10,
-      8,
-      "F2",
-      COLORS.navy,
-    );
-    page.text(
-      check.disputed ? "DISPUTED" : "REPRODUCED",
-      x + 171,
-      y + 10,
-      6,
-      "F2",
-      check.disputed ? COLORS.amber : COLORS.teal,
-    );
-    page.text(
-      truncate(check.reason || check.checkerDirection || "", 54),
-      x + 12,
-      y + 27,
-      6.5,
-      "F1",
-      COLORS.slate,
-    );
-  });
-
   const flags = payload.reasoningFlags || [];
-  page.text("PERSISTED INTEGRITY FLAGS", MARGIN, 674, 7, "F2", COLORS.teal);
+  page.text("PERSISTED INTEGRITY FLAGS", MARGIN, 459, 7, "F2", COLORS.teal);
   if (flags.length) {
     page.wrappedText(
       flags.map((flag) =>
         `${label(flag.severity)} / ${label(flag.type)}: ${flag.message}`
       ).join(" | "),
       MARGIN,
-      697,
+      482,
       PAGE_WIDTH - MARGIN * 2,
       7.2,
       10.5,
@@ -1013,7 +964,7 @@ function buildIntegrity(payload: PdfPayload) {
     page.text(
       "No integrity flags were persisted for this report version.",
       MARGIN,
-      697,
+      482,
       8,
       "F1",
       COLORS.slate,

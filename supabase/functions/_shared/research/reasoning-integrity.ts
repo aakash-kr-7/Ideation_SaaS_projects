@@ -1,67 +1,5 @@
 import type { EngineVerdict } from "../types.ts";
 
-export type VerdictDirection =
-  | "SupportsOpportunity"
-  | "Mixed"
-  | "ChallengesOpportunity"
-  | "Insufficient";
-
-export interface SpecialistComparison {
-  specialist: string;
-  specialistDirection: VerdictDirection | "Unavailable";
-  checkerDirection: VerdictDirection | "Unavailable";
-  disputed: boolean;
-  reason: string;
-}
-
-interface DirectionResult {
-  status?: string;
-  output?: { verdict_direction?: VerdictDirection };
-}
-
-export function compareSpecialistAndChecker(
-  specialist: string,
-  specialistResult: DirectionResult | null | undefined,
-  checkerResult: DirectionResult | null | undefined,
-): SpecialistComparison {
-  const specialistDirection = specialistResult?.status === "Complete"
-    ? specialistResult.output?.verdict_direction || "Unavailable"
-    : "Unavailable";
-  const checkerDirection = checkerResult?.status === "Complete"
-    ? checkerResult.output?.verdict_direction || "Unavailable"
-    : "Unavailable";
-  if (
-    specialistDirection === "Unavailable" || checkerDirection === "Unavailable"
-  ) {
-    return {
-      specialist,
-      specialistDirection,
-      checkerDirection,
-      disputed: true,
-      reason:
-        "The independent interpretation could not be completed, so this specialist conclusion is not independently reproduced.",
-    };
-  }
-  if (specialistDirection !== checkerDirection) {
-    return {
-      specialist,
-      specialistDirection,
-      checkerDirection,
-      disputed: true,
-      reason:
-        `Disputed interpretation: specialist concluded ${specialistDirection}, while the isolated checker concluded ${checkerDirection}.`,
-    };
-  }
-  return {
-    specialist,
-    specialistDirection,
-    checkerDirection,
-    disputed: false,
-    reason:
-      `Independent checker reproduced the ${specialistDirection} direction.`,
-  };
-}
-
 const VERDICT_ORDER: EngineVerdict[] = [
   "Avoid",
   "Weak Signal",
@@ -97,22 +35,6 @@ export function gateVerdict(
     adversarialDowngrade: true,
     reason:
       `The deterministic ${deterministicVerdict} tier is blocked by an unresolved evidence-cited adversarial objection.`,
-  };
-}
-
-export function checkVerdictConsistency(
-  deterministicVerdict: EngineVerdict,
-  effectiveVerdict: EngineVerdict,
-  finalJudgeWrittenVerdict: EngineVerdict,
-) {
-  return {
-    deterministicVerdict,
-    effectiveVerdict,
-    finalJudgeWrittenVerdict,
-    finalJudgeScoreMismatch: finalJudgeWrittenVerdict !== deterministicVerdict,
-    finalJudgeEffectiveMismatch: finalJudgeWrittenVerdict !== effectiveVerdict,
-    // The provider's written tier is diagnostic only; code owns the report tier.
-    officialVerdict: effectiveVerdict,
   };
 }
 
