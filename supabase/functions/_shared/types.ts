@@ -124,63 +124,102 @@ export type Database = {
       }
       api_usage_logs: {
         Row: {
+          cache_status: string
           completion_tokens: number | null
           cost: number | null
           created_at: string
+          duration_ms: number
           end_time: string | null
           error_class: string | null
           error_message: string | null
+          estimated_cost_usd: number
+          external_search: boolean
           fallback_state: string | null
+          grounded_search_requested: boolean
           grounded_search_usage: number | null
+          grounding_degraded: boolean
+          grounding_metadata_present: boolean
           id: string
           interaction_id: string | null
           model: string | null
           operation: string
+          page_fetch: boolean
+          pipeline_stage: string | null
+          pricing_version: string | null
           prompt_tokens: number | null
           provider: string
+          quota_limit: number | null
+          quota_metric: string | null
           retry_count: number | null
+          retry_delay_ms: number | null
           run_id: string
           start_time: string | null
           status: string
           task_type: string | null
         }
         Insert: {
+          cache_status?: string
           completion_tokens?: number | null
           cost?: number | null
           created_at?: string
+          duration_ms?: number
           end_time?: string | null
           error_class?: string | null
           error_message?: string | null
+          estimated_cost_usd?: number
+          external_search?: boolean
           fallback_state?: string | null
+          grounded_search_requested?: boolean
           grounded_search_usage?: number | null
+          grounding_degraded?: boolean
+          grounding_metadata_present?: boolean
           id?: string
           interaction_id?: string | null
           model?: string | null
           operation: string
+          page_fetch?: boolean
+          pipeline_stage?: string | null
+          pricing_version?: string | null
           prompt_tokens?: number | null
           provider: string
+          quota_limit?: number | null
+          quota_metric?: string | null
           retry_count?: number | null
+          retry_delay_ms?: number | null
           run_id: string
           start_time?: string | null
           status: string
           task_type?: string | null
         }
         Update: {
+          cache_status?: string
           completion_tokens?: number | null
           cost?: number | null
           created_at?: string
+          duration_ms?: number
           end_time?: string | null
           error_class?: string | null
           error_message?: string | null
+          estimated_cost_usd?: number
+          external_search?: boolean
           fallback_state?: string | null
+          grounded_search_requested?: boolean
           grounded_search_usage?: number | null
+          grounding_degraded?: boolean
+          grounding_metadata_present?: boolean
           id?: string
           interaction_id?: string | null
           model?: string | null
           operation?: string
+          page_fetch?: boolean
+          pipeline_stage?: string | null
+          pricing_version?: string | null
           prompt_tokens?: number | null
           provider?: string
+          quota_limit?: number | null
+          quota_metric?: string | null
           retry_count?: number | null
+          retry_delay_ms?: number | null
           run_id?: string
           start_time?: string | null
           status?: string
@@ -364,6 +403,7 @@ export type Database = {
       competitors: {
         Row: {
           created_at: string
+          evidence_ids: string[]
           gap: string
           id: string
           name: string
@@ -376,6 +416,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          evidence_ids?: string[]
           gap: string
           id?: string
           name: string
@@ -388,6 +429,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          evidence_ids?: string[]
           gap?: string
           id?: string
           name?: string
@@ -1242,6 +1284,7 @@ export type Database = {
       pricing_models: {
         Row: {
           created_at: string
+          evidence_ids: string[]
           first_offer: string
           id: string
           model: string
@@ -1253,6 +1296,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          evidence_ids?: string[]
           first_offer: string
           id?: string
           model: string
@@ -1264,6 +1308,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          evidence_ids?: string[]
           first_offer?: string
           id?: string
           model?: string
@@ -1327,6 +1372,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      public_retrieval_cache: {
+        Row: {
+          canonical_url: string
+          content_hash: string
+          content_type: string | null
+          etag: string | null
+          expires_at: string
+          extraction_version: string
+          fetch_status: number
+          fetched_at: string
+          last_modified: string | null
+          structured_parser_version: string | null
+          text_content: string
+        }
+        Insert: {
+          canonical_url: string
+          content_hash: string
+          content_type?: string | null
+          etag?: string | null
+          expires_at: string
+          extraction_version?: string
+          fetch_status?: number
+          fetched_at?: string
+          last_modified?: string | null
+          structured_parser_version?: string | null
+          text_content: string
+        }
+        Update: {
+          canonical_url?: string
+          content_hash?: string
+          content_type?: string | null
+          etag?: string | null
+          expires_at?: string
+          extraction_version?: string
+          fetch_status?: number
+          fetched_at?: string
+          last_modified?: string | null
+          structured_parser_version?: string | null
+          text_content?: string
+        }
+        Relationships: []
       }
       reasoning_agent_outputs: {
         Row: {
@@ -1800,18 +1887,30 @@ export type Database = {
         Row: {
           cache_hit_rate: number | null
           cache_hits: number
+          cache_misses: number
           candidates_discovered: number
           cost_per_accepted_evidence: number | null
           cost_per_accepted_source: number | null
           cost_per_stage: Json
           created_at: string
+          degraded_providers: Json
           evidence_items_extracted: number
+          external_search_calls: number
           fallback_calls: number | null
           grounded_calls: number | null
+          grounded_calls_attempted: number
+          grounded_calls_completed: number
+          grounded_calls_quota_blocked: number
+          grounding_degraded: boolean
+          grounding_mode: string
           id: string
           independent_domains: number
+          input_tokens: number
+          model_call_counts: Json
+          output_tokens: number
           pages_attempted: number
           pages_fetched: number
+          pricing_version: string | null
           provider_calls: number | null
           provider_fallback_count: number
           retry_count: number
@@ -1819,6 +1918,7 @@ export type Database = {
           sources_accepted: number
           sources_rejected_by_reason: Json
           stage_timings: Json
+          synthesis_calls: number
           terminal_failure_reason: string | null
           total_duration_ms: number
           total_jobs_created: number
@@ -1828,18 +1928,30 @@ export type Database = {
         Insert: {
           cache_hit_rate?: number | null
           cache_hits?: number
+          cache_misses?: number
           candidates_discovered?: number
           cost_per_accepted_evidence?: number | null
           cost_per_accepted_source?: number | null
           cost_per_stage?: Json
           created_at?: string
+          degraded_providers?: Json
           evidence_items_extracted?: number
+          external_search_calls?: number
           fallback_calls?: number | null
           grounded_calls?: number | null
+          grounded_calls_attempted?: number
+          grounded_calls_completed?: number
+          grounded_calls_quota_blocked?: number
+          grounding_degraded?: boolean
+          grounding_mode?: string
           id?: string
           independent_domains?: number
+          input_tokens?: number
+          model_call_counts?: Json
+          output_tokens?: number
           pages_attempted?: number
           pages_fetched?: number
+          pricing_version?: string | null
           provider_calls?: number | null
           provider_fallback_count?: number
           retry_count?: number
@@ -1847,6 +1959,7 @@ export type Database = {
           sources_accepted?: number
           sources_rejected_by_reason?: Json
           stage_timings?: Json
+          synthesis_calls?: number
           terminal_failure_reason?: string | null
           total_duration_ms?: number
           total_jobs_created?: number
@@ -1856,18 +1969,30 @@ export type Database = {
         Update: {
           cache_hit_rate?: number | null
           cache_hits?: number
+          cache_misses?: number
           candidates_discovered?: number
           cost_per_accepted_evidence?: number | null
           cost_per_accepted_source?: number | null
           cost_per_stage?: Json
           created_at?: string
+          degraded_providers?: Json
           evidence_items_extracted?: number
+          external_search_calls?: number
           fallback_calls?: number | null
           grounded_calls?: number | null
+          grounded_calls_attempted?: number
+          grounded_calls_completed?: number
+          grounded_calls_quota_blocked?: number
+          grounding_degraded?: boolean
+          grounding_mode?: string
           id?: string
           independent_domains?: number
+          input_tokens?: number
+          model_call_counts?: Json
+          output_tokens?: number
           pages_attempted?: number
           pages_fetched?: number
+          pricing_version?: string | null
           provider_calls?: number | null
           provider_fallback_count?: number
           retry_count?: number
@@ -1875,6 +2000,7 @@ export type Database = {
           sources_accepted?: number
           sources_rejected_by_reason?: Json
           stage_timings?: Json
+          synthesis_calls?: number
           terminal_failure_reason?: string | null
           total_duration_ms?: number
           total_jobs_created?: number
@@ -2072,6 +2198,7 @@ export type Database = {
           category: string
           created_at: string
           description: string
+          evidence_ids: string[]
           id: string
           mitigation: string
           opportunity_id: string
@@ -2082,6 +2209,7 @@ export type Database = {
           category: string
           created_at?: string
           description: string
+          evidence_ids?: string[]
           id?: string
           mitigation: string
           opportunity_id: string
@@ -2092,6 +2220,7 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string
+          evidence_ids?: string[]
           id?: string
           mitigation?: string
           opportunity_id?: string
@@ -2253,6 +2382,122 @@ export type Database = {
           weight?: number
         }
         Relationships: []
+      }
+      source_registry: {
+        Row: {
+          access_method: string
+          adapter: string | null
+          auth_required: boolean
+          average_extraction_cost: number | null
+          average_relevance: number | null
+          cache_ttl_seconds: number
+          commercial_restrictions: string | null
+          domain: string
+          enabled: boolean
+          evidence_families: string[]
+          extraction_strategy: string
+          geographies: string[]
+          historical_success_rate: number | null
+          industries: string[]
+          quality_tier: number | null
+          rate_limit_per_minute: number | null
+          robots_restricted: boolean
+          source_class: string
+          updated_at: string
+        }
+        Insert: {
+          access_method?: string
+          adapter?: string | null
+          auth_required?: boolean
+          average_extraction_cost?: number | null
+          average_relevance?: number | null
+          cache_ttl_seconds?: number
+          commercial_restrictions?: string | null
+          domain: string
+          enabled?: boolean
+          evidence_families?: string[]
+          extraction_strategy?: string
+          geographies?: string[]
+          historical_success_rate?: number | null
+          industries?: string[]
+          quality_tier?: number | null
+          rate_limit_per_minute?: number | null
+          robots_restricted?: boolean
+          source_class?: string
+          updated_at?: string
+        }
+        Update: {
+          access_method?: string
+          adapter?: string | null
+          auth_required?: boolean
+          average_extraction_cost?: number | null
+          average_relevance?: number | null
+          cache_ttl_seconds?: number
+          commercial_restrictions?: string | null
+          domain?: string
+          enabled?: boolean
+          evidence_families?: string[]
+          extraction_strategy?: string
+          geographies?: string[]
+          historical_success_rate?: number | null
+          industries?: string[]
+          quality_tier?: number | null
+          rate_limit_per_minute?: number | null
+          robots_restricted?: boolean
+          source_class?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      source_retrieval_audit: {
+        Row: {
+          candidate_url: string | null
+          canonical_url: string | null
+          created_at: string
+          disposition: string
+          id: string
+          provider: string
+          query_family: string
+          rejection_reason: string | null
+          relevance_score: number | null
+          run_id: string
+          source_domain: string | null
+        }
+        Insert: {
+          candidate_url?: string | null
+          canonical_url?: string | null
+          created_at?: string
+          disposition: string
+          id?: string
+          provider: string
+          query_family: string
+          rejection_reason?: string | null
+          relevance_score?: number | null
+          run_id: string
+          source_domain?: string | null
+        }
+        Update: {
+          candidate_url?: string | null
+          canonical_url?: string | null
+          created_at?: string
+          disposition?: string
+          id?: string
+          provider?: string
+          query_family?: string
+          rejection_reason?: string | null
+          relevance_score?: number | null
+          run_id?: string
+          source_domain?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_retrieval_audit_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "research_runs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sources: {
         Row: {

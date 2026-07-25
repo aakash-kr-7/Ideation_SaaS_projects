@@ -1,0 +1,660 @@
+{
+  "jobs": [
+    {
+      "id": "e0917ba8-1fb6-4872-a942-94f6e05fb939",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage": "plan",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": null,
+      "claimed_by": "worker-001cf93a",
+      "claimed_at": "2026-07-25T12:23:13.934764+00:00",
+      "visible_after": "2026-07-25T12:25:43.934764+00:00",
+      "input_meta": {
+        "mode": "quick_scan"
+      },
+      "output_meta": {
+        "planned": true,
+        "groundingMode": "disabled",
+        "opportunityId": "88b0ddd2-0c2e-4905-b2f6-9cb37af876f1",
+        "configuredModels": {
+          "research": "gemini-2.5-flash",
+          "synthesis": "gemini-3.1-flash-lite"
+        },
+        "geminiConfigurationVerified": true
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:23:13.387951+00:00",
+      "updated_at": "2026-07-25T12:23:14.917325+00:00",
+      "completed_at": "2026-07-25T12:23:14.917325+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "c131798c-e4dc-4647-b607-7e450c68442a|0|plan|0|0|"
+    },
+    {
+      "id": "e86d9397-fce6-49b1-b28d-8d7bbff01f25",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage": "grounded_research",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": "e0917ba8-1fb6-4872-a942-94f6e05fb939",
+      "claimed_by": "worker-1741c9ac",
+      "claimed_at": "2026-07-25T12:23:14.929293+00:00",
+      "visible_after": "2026-07-25T12:25:44.929293+00:00",
+      "input_meta": {
+        "mode": "quick_scan",
+        "groundingMode": "disabled",
+        "opportunityId": "88b0ddd2-0c2e-4905-b2f6-9cb37af876f1"
+      },
+      "output_meta": {
+        "groundedPacks": [],
+        "groundingMode": "disabled",
+        "sources_count": 0,
+        "registryRowsRead": 8,
+        "research_summary": "",
+        "groundingDegraded": false,
+        "registryDomainsUsed": [
+          "bls.gov",
+          "census.gov",
+          "sec.gov",
+          "data.gov",
+          "europa.eu",
+          "github.com",
+          "news.ycombinator.com",
+          "g2.com"
+        ]
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:23:14.917325+00:00",
+      "updated_at": "2026-07-25T12:23:14.974226+00:00",
+      "completed_at": "2026-07-25T12:23:14.974226+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "c131798c-e4dc-4647-b607-7e450c68442a|0|grounded_research|0|0|"
+    },
+    {
+      "id": "6c5e189a-4585-4453-a4f7-4594609c8aa8",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage": "evidence_boosters",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": "e86d9397-fce6-49b1-b28d-8d7bbff01f25",
+      "claimed_by": "worker-e9079e74",
+      "claimed_at": "2026-07-25T12:23:14.984278+00:00",
+      "visible_after": "2026-07-25T12:25:44.984278+00:00",
+      "input_meta": {
+        "mode": "quick_scan",
+        "ideaName": "Cited RFP Answer Library for Cybersecurity Vendors",
+        "runInput": {
+          "idea_name": "Cited RFP Answer Library for Cybersecurity Vendors",
+          "assumptions": {
+            "monetization": "Subscription",
+            "revenueTarget": "$10k MRR",
+            "platformTolerance": "Medium",
+            "complexityTolerance": "Medium",
+            "regulatoryTolerance": "Medium"
+          },
+          "market_type": "B2B",
+          "target_region": "United States and United Kingdom",
+          "target_customer": "Revenue operations, proposal, and security teams at mid-market B2B cybersecurity vendors",
+          "idea_description": "A collaborative SaaS assistant that ingests prior RFP and security questionnaire responses, links each answer to approved product and security evidence, flags stale claims, and helps proposal teams at mid-market cybersecurity vendors produce auditable responses faster."
+        },
+        "marketType": "B2B",
+        "groundingMode": "disabled",
+        "opportunityId": "88b0ddd2-0c2e-4905-b2f6-9cb37af876f1",
+        "researchPacks": [
+          {
+            "key": "quick_scan",
+            "focus": "problem demand, alternatives, pricing and disconfirming evidence",
+            "query": "cited rfp answer library for cybersecurity vendors revenue operations proposal and security alternatives pricing demand complaints"
+          }
+        ],
+        "targetCustomer": "Revenue operations, proposal, and security teams at mid-market B2B cybersecurity vendors",
+        "groundingSources": [],
+        "rawGroundingText": "",
+        "groundingDegraded": false
+      },
+      "output_meta": {
+        "groundingMode": "disabled",
+        "candidateCount": 10,
+        "rejectedByReason": {
+          "empty_or_unextractable": 1
+        },
+        "groundingDegraded": false,
+        "independentDomains": 8,
+        "acceptedSourceCount": 9,
+        "externalSearchCalls": 4
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:23:14.974226+00:00",
+      "updated_at": "2026-07-25T12:23:21.1255+00:00",
+      "completed_at": "2026-07-25T12:23:21.1255+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "c131798c-e4dc-4647-b607-7e450c68442a|0|evidence_boosters|0|0|"
+    },
+    {
+      "id": "c1b5dd93-ed9c-4cb8-b3c1-2c54eeb7c7ae",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage": "validate_normalize",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": "6c5e189a-4585-4453-a4f7-4594609c8aa8",
+      "claimed_by": "worker-21f47592",
+      "claimed_at": "2026-07-25T12:23:21.134204+00:00",
+      "visible_after": "2026-07-25T12:25:51.134204+00:00",
+      "input_meta": {
+        "mode": "quick_scan",
+        "combinedText": "RETRIEVED_EVIDENCE_DOSSIER:\nSOURCE_ID: 8e9db9ff-f573-4042-99ee-3bb6982314ab\nTITLE: Cybersecurity RFP Software | Bid Responder\nCANONICAL_URL: https://bidresponder.com/industries/cybersecurity\nDOMAIN: bidresponder.com\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nCybersecurity RFP Software | Bid Responder Features How It Works Pricing Log In Get Started Free Industries Cybersecurity Cybersecurity Cybersecurity RFP Response Software Respond to enterprise, public-sector, and CMMC-driven RFPs with control narratives and incident-response playbooks. Cybersecurity RFPs require precise control language across NIST, CMMC, and ISO frameworks. Bid Responder reuses your control library and incident-response playbooks across every solicitation. Why Cybersecurity RFPs are different • NIST CSF, NIST 800-171, CMMC 2.0 • Incident-response playbooks and SLAs • Penetration testing methodology • Threat-intelligence sourcing • Insurance and breach notification commitments How Bid Responder helps Control library mapped across NIST, CMMC, ISO 27001, PCI DSS IR playbook generator with stakeholder roles Pen-test methodology library by ROE Threat-intel source documentation Cyber insurance summary generator Example questions we answer Provide your CMMC Level 2 readiness status. Describe your incident-response process and SLA. Provide your penetration testing methodology and ROE. Describe your threat-intelligence sources and feeds. Provide your cyber liability insurance summary. Buyers we support — Department of Defense and primes — State and local agencies — Healthcare and financial services — Critical infrastructure operators — Federal civilian agencies FAQ Does it support CMMC C3PAO assessments? Yes. The control library mirrors the CMMC 2.0 assessment guide and supports SPRS scoring narratives. Can it generate ROE for pen tests? Yes. The pen-test ROE generator scopes targets, methods, and reporting cadence. Win more Cybersecurity RFPs Try Bid Responder free — no credit card required. Start Free Cybersecurity RFPs by city Top metros where Cybersecurity buyers are most active. Each page combines the Cybersecurity library with local agencies and portals. San Antonio , TX 1.43 million · Bexar County San Diego , CA 1.39 million · San Diego County San Jose , CA 1.01 million · Santa Clara County Colorado Springs , CO 478,961 · El Paso County Irvine , CA 307,670 · Orange County Arlington , VA 238,643 · Arlington County Augusta , GA 202,081 · Richmond County Alexandria , VA 159,467 · Alexandria City County Bellevue , WA 151,854 · King County Silver Spring , MD 81,015 · Montgomery County Gaithersburg , MD 69,657 · Montgomery County Rockville , MD 67,117 · Montgomery County Related industries IT Services & Managed Service Providers Respond to enterprise, public-sector, and education IT RFPs with SOC 2, ITIL, and SLA narratives ready to go. Government & Defense Contracting Win federal, state, and local RFPs faster with AI that understands FAR, DFARS, and Section 508 requirements. Healthcare & Healthcare IT Respond to hospital, GPO, and Medicaid RFPs with HIPAA, HITRUST, and clinical workflow expertise built in. The AI-powered platform that helps procurement and sales teams respond to RFPs and RFQs with speed, accuracy, and confidence. Product Features How It Works Knowledge Base Pricing Integrations Solutions Industries Government EV Charging Healthcare IT Services Alternatives Resources Articles Glossary Free Tools Case Studies Locations About Privacy Terms © 2026 Bid Responder. All rights reserved. Privacy Terms Part of the Charge Rigs family of software products\n\n---\n\nSOURCE_ID: 8d826557-b8c2-46c5-9939-6d72fc8a8bee\nTITLE: Best RFP Software for Cybersecurity in 2026 | Buyer's Guide\nCANONICAL_URL: https://www.steerlab.ai/blog/best-rfp-software-for-cybersecurity-companies-in-2026\nDOMAIN: www.steerlab.ai\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nBest RFP Software for Cybersecurity in 2026 | Buyer's Guide Product Features Integrations Security Solutions PreSales Teams Proposal Teams Security Teams Company About Careers ↗ Blog Contact us Book a demo Try for free MENU Best RFP Software for Cybersecurity Companies in 2026: A Practical Buyer's Guide February 25, 2026 Rami Iguerwane ‍ TL;DR — Best RFP software for Cybersecurity companies at a glance: Steerlab – Best for Cybersecurity teams handling RFPs and compliance questionnaires, vendor risk assessments, and security due diligence forms. It uses an AI-first RFP automation approach with human-in-the-loop review. Its main limitation is that it is a younger company still scaling its customer base. Loopio – Best for teams with dedicated content managers. It relies on a structured content library combined with keyword-based AI. The limitation is that it requires significant manual maintenance of the content library. Responsive – Best suited for large enterprises with complex approval workflows. It combines workflow automation with robust content management capabilities. However, it comes with a steep learning curve and complex pricing structure. AutogenAI – Ideal for budget-conscious teams that want unlimited seats. It focuses on AI-driven drafting with project-based pricing. Its limitation is less depth in Cybersecurity-specific content. DeepRFP – Best for teams that prioritize AI transparency and citation-backed answers. It connects live to knowledge sources for response generation. Its limitation is relatively lightweight workflow and project management. Best fit for Cybersecurity: Steerlab — the only AI-powered RFP automation platform built specifically for cybersecurity to handle both RFPs and compliance questionnaires in a single workflow. ‍ If you sell cybersecurity products or services, you spend a disproportionate amount of your week responding to RFPs, security questionnaires, and vendor risk assessments. It comes with the territory. Your prospects aren't just evaluating your product — they're stress-testing your security posture, your compliance credentials, and your ability to articulate both under pressure and tight deadlines. The irony isn't lost on anyone: cybersecurity companies, the ones best equipped to understand security controls, are often the most burdened by the sheer volume of security-related procurement documents. Between SIG questionnaires, CAIQ assessments, SOC 2 evidence requests, ISO 27001 compliance checks, and the actual RFP sitting underneath all of it, a single deal can generate hundreds of questions that need accurate, verifiable, and consistent answers. Most teams still manage this with a combination of Google Docs, outdated spreadsheets, and tribal knowledge. That approach breaks down fast — especially as you scale, enter new markets, or start fielding enterprise deals where a single inconsistent answer about your encryption protocols can stall a procurement cycle for weeks. This is exactly the problem that RFP automation solves: using AI to generate, review, and manage proposal and questionnaire responses at scale, so your team spends less time on repetitive busywork and more time winning deals. This guide breaks down what cybersecurity companies should actually look for in RFP software, reviews the major platforms (legacy and new), and gives you a practical framework for choosing the right RFP automation tool for your team. Why Cybersecurity Companies Have a Uniquely Difficult RFP Problem Every i\n\n---\n\nSOURCE_ID: 629b02a8-1864-4dfb-87fb-2f295cdccf0d\nTITLE: Cyber Security RFP - GovSignals\nCANONICAL_URL: https://www.govsignals.ai/works/cyber-security-rfp\nDOMAIN: www.govsignals.ai\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nCyber Security RFP | GovSignals custom element used by a few marketing pages --> Announcement &nbsp;- GovSignals has Acquired Turingon → GovSignals Platform ▼ The platform · pre-award to post-award Market Intelligence SIGNAL · 5K+ SOURCES Capture & Strategy WIN STRATEGY · BLACK-HAT Proposals & Packages FULL VOLUMES, ONE CLICK Post-Award & Oversight CDRLS · MODS · AUDIT TRAIL Contract Lifecycle Management CLM · OBLIGATIONS · CLOSEOUT Consortium Management OTA · CMO · MEMBER PORTAL See the full platform → Government Contractors Customers Security Resources ▼ Read & watch Blog FIELD NOTES & ANALYSIS Product Tour RUN A LIVE PURSUIT Pricing PLANS & ENGAGEMENT Trust Center FEDRAMP · SOC 2 · ITAR Company About WHY WE BUILT THIS Contact SALES · PARTNERS · SECURITY Careers OPEN ROLES WE'RE HIRING Read the blog → Sign in Book a Demo → Cyber Security RFP A practical operating page for teams searching for cyber security rfp and trying to move faster without losing compliance discipline. Run this workflow in GovSignals -> Review trust posture Why Cyber Security RFP matters now Cyber Security RFP matters because government teams and contractors need earlier signals, clearer evidence, and faster decisions without creating audit risk. The teams that win do not wait for a clean RFP and then start from zero. They monitor government movement, connect it to their past performance, qualify the work, and carry the same evidence into capture, proposal, and post-award execution. How GovSignals helps GovSignals turns source data, documents, and team knowledge into cited work products across capture, proposal, pricing evidence, acquisition, and oversight. GovSignals combines public and private government data, cited AI agents, and CUI-ready workflows so teams searching for government rfp and proposal support can find the right work, decide faster, draft stronger responses, and keep an audit-ready record. What you can run in a working session A working session should use a real pursuit, recompete, RFP, contract file, or agency target so the output can be judged against actual work. Bring a live pursuit, agency target, recompete, or compliance problem. GovSignals can produce a cited market brief, bid/no-bid rationale, compliance matrix, first-draft response plan, and next actions your team can review immediately. What GovSignals brings Source-cited intelligence across federal, SLED, budget, award, forecast, and agency signals. Capture and proposal workflows tied to your past performance and knowledge base. FedRAMP High posture for sensitive proposal and CUI-adjacent work. Reusable outputs your BD, capture, proposal, contracts, and delivery teams can defend. FedRAMP High, IL5-ready workflows, source-cited outputs, and 100k+ government data signals. Cited market brief Bid/no-bid memo Compliance matrix Proposal outline Audit-ready action log Questions teams ask before they switch Is GovSignals useful for cyber security rfp? Yes. GovSignals is built to connect cyber security rfp to real government data, capture decisions, proposal execution, and defensible audit trails. Does GovSignals cite sources? Yes. The product is designed around source-cited outputs so teams can trace claims back to the notices, awards, budgets, documents, or internal records that support them. Can we test this on our own pursuit? Yes. The fastest evaluation is a working session on a live pursuit, recompete, RFP, or agency target your team already cares about. Bring a live pursuit. We will run t\n\n---\n\nSOURCE_ID: af638efe-dca7-4714-9b0a-8fe4485af6fe\nTITLE: Cybersecurity RFP Guide: Smarter Vendor Selection [2026]\nCANONICAL_URL: https://www.inventive.ai/blog-posts/cybersecurity-rfps-a-complete-guide-for-smarter-vendor-selection\nDOMAIN: www.inventive.ai\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nCybersecurity RFP Guide: Smarter Vendor Selection [2026] Home Features Solutions RFPs RFIs Security Questionnaires DDQs ROI Calculator Resources Blog Ebooks Podcasts Case Studies Home Features Solutions RFPs RFIs Security Questionnaires Security Resources Blogs Ebook Customer Login Book a Demo Blog April 16, 2026 min read Cybersecurity RFP Guide: Smarter Vendor Selection [2026] Choosing a cybersecurity vendor is high-stakes. This guide shows how to structure your RFP, what criteria to include, and how to evaluate responses. In the high-stakes world of digital security, selecting the right vendor isn't just a purchasing decision—it's a critical component of your defense strategy. A poorly chosen security partner or tool can leave you more vulnerable than when you started. This is where a well-crafted Cybersecurity Request for Proposal (RFP) becomes your most powerful tool. But creating an RFP that attracts top-tier vendors and delivers clear, comparable proposals is a science. This guide will walk you through every step of the process, from initial planning to final selection, ensuring you procure the security solutions that truly fit your organization's needs. I. Introduction What is a Cybersecurity RFP? A Cybersecurity Request for Proposal (RFP) is a formal document an organization creates to solicit proposals from potential vendors for a specific cybersecurity product or service. It goes beyond a simple price query, detailing the organization's security challenges, objectives, technical requirements, and evaluation criteria. In essence, it’s the blueprint for your security procurement project. Why Structured Procurement Matters in Today’s Threat Landscape The modern threat landscape is relentless and sophisticated. A reactive, unstructured approach to buying security services is a recipe for disaster. Structured procurement via an RFP process: Minimizes Risk: It ensures all vendors are evaluated against the same comprehensive set of security, technical, and compliance requirements. Maximizes Value: It forces a detailed comparison of features, service levels, and pricing models, helping you find the best long-term value, not just the lowest initial cost. Ensures Alignment: It brings together stakeholders from IT, security, legal, and procurement to create a unified vision for the security solution. Creates a Defensible Audit Trail: A formal RFP process documents your due diligence, which is crucial for compliance and regulatory audits. Common Use Cases for Cybersecurity RFPs Cybersecurity RFPs can be used for a wide range of needs, including: Managed Security Service Providers (MSSPs): Outsourcing your Security Operations Center (SOC), threat monitoring, and incident response. Penetration Testing (Pentesting): Procuring ethical hacking services to test your defenses. Virtual CISO (vCISO): Engaging a third-party expert for strategic security leadership and guidance. Governance, Risk, and Compliance (GRC) Tools: Selecting software platforms to manage risk and automate compliance reporting. Endpoint Detection & Response (EDR) or Security Information & Event Management (SIEM) solutions. (Image Alt Text: A flowchart showing the steps of a cybersecurity RFP process, starting with internal alignment and ending with vendor contract.) II. RFP vs. RFI: Knowing When to Use What Understanding the difference between a Request for Information (RFI) and a Request for Proposal (RFP) is key to an efficient procurement cycle. RFI: The Exploratory Phase \n\n---\n\nSOURCE_ID: 5e1ed3ff-0d37-4e7b-9526-e7a96c160d94\nTITLE: A Practical Guide for High-Quality Cybersecurity RFP Responses\nCANONICAL_URL: https://www.inventive.ai/blog-posts/cybersecurity-rfps\nDOMAIN: www.inventive.ai\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nA Practical Guide for High-Quality Cybersecurity RFP Responses Home Features Solutions RFPs RFIs Security Questionnaires DDQs ROI Calculator Resources Blog Ebooks Podcasts Case Studies Home Features Solutions RFPs RFIs Security Questionnaires Security Resources Blogs Ebook Customer Login Book a Demo Blog February 3, 2026 min read A Practical Guide for High-Quality Cybersecurity RFP Responses This guide explains how these RFPs are evaluated and how to produce accurate, compliant responses that stand up to legal and procurement reviews. Cybersecurity is now one of the most scrutinized decisions in procurement. With global spending projected to reach $302 billion by 2029 , RFPs are becoming longer, more technical, and more risk-driven. Generic boilerplate language no longer works. If your response mentions \"encryption\" without specifying standards, or \"incident response\" without clear timelines, you lose credibility. Buyers are trained to find the gaps that could lead to post-breach liability. To win, your responses must be precise and internally consistent. You need to prove technical maturity under tight deadlines without exhausting your security and compliance experts. This guide explains how these RFPs are evaluated and how to produce accurate, compliant responses that stand up to legal and procurement reviews. Key Takeaways Cybersecurity RFPs function as risk and accountability documents, where every response can influence contracts, audits, and post-incident scrutiny. Manual response processes break down under the weight of long questionnaires, cross-functional dependencies, and constant security and compliance changes. Response quality plays a direct role in win rates, as buyers favor clear, accurate, and internally consistent answers over generic or reused content. Inconsistencies across technical, compliance, and legal sections are one of the fastest ways to lose credibility and trigger extended review cycles. AI-powered RFP workflows and Inventive AI are becoming a competitive necessity for teams that need to respond faster, reduce risk, and scale high-quality cybersecurity proposals without adding headcount. What Is a Cybersecurity RFP? A cybersecurity RFP is a formal procurement document used to evaluate vendors that will handle, protect, or have access to sensitive systems and data. It defines technical security requirements, compliance expectations, incident response obligations, and required evidence such as policies, audits, and certifications. Responses are treated as formal representations and are frequently incorporated into contracts, SOWs, and security assessments. Why Cybersecurity RFPs Are More Complex Than Standard RFPs? Cybersecurity RFPs go deeper than feature lists or pricing tables. They test how a vendor operates, governs risk, and proves security posture across technical, legal, and organizational layers. Security requirements span multiple frameworks, including CIS Controls, ISO 27001, and industry regulations. Questions overlap across sections like access control, logging, monitoring, and incident response. Responses must align across RFP sections, security questionnaires, and legal language. Multiple internal stakeholders contribute answers under tight deadlines. Buyers expect evidence, not descriptions, including audits, policies, and operational details. Together, these factors turn cybersecurity RFPs into high-effort, high-risk responses where consistency, proof, and coordination directly affect buyer co\n\n---\n\nSOURCE_ID: 80349ced-5a99-4991-bd51-ec8ba5a58b45\nTITLE: Cybersecurity RFP: Template & Expert Guide [2026] - DesignRush\nCANONICAL_URL: https://www.designrush.com/agency/cybersecurity/trends/cybersecurity-rfp\nDOMAIN: www.designrush.com\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nCybersecurity RFP: Template & Expert Guide [2026] Trending Brand News Latest News Brand News AI News Creative News Marketing News eCommerce News Technology News Agency Directory Featured Branding & Creative Website & Interface Marketing Software & App IT Services US Agencies Global Agencies Featured Web Design Companies Web Design Companies Digital Marketing Agencies Digital Marketing Agencies Software Development Companies Software Development Companies Mobile App Development Companies Mobile App Development Companies Web Development Companies Web Development Companies SEO Agencies SEO Agencies AI Companies AI Companies UI/UX Design Agencies UI/UX Design Agencies PPC Agencies PPC Agencies Branding Agencies Branding Agencies IT Services Companies IT Services Companies Cybersecurity Companies Cybersecurity Companies Branding & Creative Digital Agencies Digital Agencies Branding Agencies Branding Agencies Creative Agencies Creative Agencies Product Design Companies Product Design Companies Logo Design Companies Logo Design Companies Graphic Design Companies Graphic Design Companies Packaging Design Companies Packaging Design Companies Video Production Companies Video Production Companies Public Relations Firms Public Relations Firms Design Agencies Design Agencies Reputation Management Companies Reputation Management Companies Website & Interface Web Design Companies Web Design Companies eCommerce Development Companies eCommerce Development Companies Web Development Companies Web Development Companies WordPress Web Design Companies WordPress Web Design Companies WordPress Development Companies WordPress Development Companies Magento Development Companies Magento Development Companies Shopify Development Companies Shopify Development Companies UI/UX Design Agencies UI/UX Design Agencies Small Business Website Design Companies Small Business Website Design Companies Marketing Digital Marketing Agencies Digital Marketing Agencies SEO Agencies SEO Agencies PPC Agencies PPC Agencies Social Media Marketing Companies Social Media Marketing Companies Search Engine Marketing Agencies Search Engine Marketing Agencies Email Marketing Agencies Email Marketing Agencies Small Business SEO Companies Small Business SEO Companies Local SEO Companies Local SEO Companies Google Ads Agencies Google Ads Agencies Advertising Agencies Advertising Agencies eCommerce SEO Agencies eCommerce SEO Agencies Media Buying Agencies Media Buying Agencies Content Marketing Agencies Content Marketing Agencies Lead Generation Companies Lead Generation Companies Video Marketing Services Video Marketing Services Software & App Software Development Companies Software Development Companies Offshore Software Development Companies Offshore Software Development Companies Outsourcing Software Development Companies Outsourcing Software Development Companies Mobile App Development Companies Mobile App Development Companies VR & Augmented Reality Companies VR & Augmented Reality Companies AI Companies AI Companies Android App Development Companies Android App Development Companies iPhone App Development Companies iPhone App Development Companies Blockchain Development Companies Blockchain Development Companies Software Testing Companies Software Testing Companies IT Services IT Services Companies IT Services Companies IT Outsourcing Companies IT Outsourcing Companies Managed Service Providers Managed Service Providers Cybersecurity Companies Cybersecurity Companies Big Data Analytics C\n\n---\n\nSOURCE_ID: aed7ae4a-afd4-4cf2-bcb0-2386e7cc4bda\nTITLE: From Chaos to Clarity — How to Build a Reusable Answer Library for RFPs ...\nCANONICAL_URL: https://www.proposalvault.cloud/blog/build-reusable-answer-library\nDOMAIN: www.proposalvault.cloud\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nFrom Chaos to Clarity — How to Build a Reusable Answer Library for RFPs and Security Reviews - ProposalVault Blog ProposalVault Features Pricing Blog Login Get Started Back to Blog Workflow Optimization From Chaos to Clarity — How to Build a Reusable Answer Library for RFPs and Security Reviews Stop starting from scratch. Learn how to organize, search, and reuse your best answers across all questionnaires. ProposalVault Team January 25, 2026 5 min read If you've ever scrambled to answer a 200-question RFP on a Friday afternoon, you know the pain of starting from scratch. But what if your best answers were already organized, searchable, and ready to go? What Makes an Answer Reusable? Reusable answers aren't just copy-paste snippets. They're: Structured : Clear, concise, and scoped to the question Contextualized : Include relevant citations or policy references Flexible : Can be adapted across questionnaires and formats The Anti-Pattern: The Messy Spreadsheet Many teams start with a spreadsheet of Q&A pairs. This works for the first 20 questions, then becomes a nightmare: No version control Duplicate entries Outdated answers mixed with current ones No way to search by topic or context How to Organize Your Answer Library Start by tagging answers by: 1. Compliance Domain SOC 2 Type II ISO 27001 GDPR HIPAA etc. 2. Topic Area Encryption (at rest, in transit) Access control (MFA, RBAC) Incident response Data retention Vendor management 3. Format Type Short-form (1-2 sentences) Long-form (paragraph) Table-based (process steps) List-based (technologies used) Why This Matters When a new questionnaire comes in, you can instantly find answers that match the domain, topic, and format. No more hunting through old documents or reinventing the wheel. ProposalVault's Approach ProposalVault auto-tags and indexes your uploaded documents, making it easy to: Search by keyword or topic : Find answers across all your documentation Reuse answers across projects : Copy proven responses to new questionnaires Export responses in PDF or CSV : Share with stakeholders in their preferred format Smart Indexing Instead of basic keyword search, ProposalVault uses semantic search to understand the intent behind questions. This means: \"Do you encrypt data?\" and \"What encryption methods do you use?\" both pull the same base answer Answers are automatically tagged by detected compliance frameworks Source citations are preserved and linked Real-World Example: Saving 6+ Hours Per Questionnaire A 5-person startup using ProposalVault reduced their average questionnaire time from 8 hours to 45 minutes. By uploading their SOC 2 report and security policies once, they: Reused answers across 12 questionnaires : Same base content, customized per client Maintained consistency with version history : Every edit is tracked Exported responses with one click : No more formatting in Word The ROI Breakdown Before ProposalVault : 8 hours per questionnaire × 3 questionnaires/month = 24 hours/month At $75/hour blended rate = $1,800/month in labor costs After ProposalVault : 45 minutes per questionnaire × 3 questionnaires/month = 2.25 hours/month At $75/hour = $169/month Savings : $1,631/month or $19,572/year Building Your Library: Step-by-Step Step 1: Audit Existing Answers Collect all your previous questionnaire responses and identify patterns. Which questions appear repeatedly? Which answers are your strongest? Step 2: Upload Source Documentation Add your: Security policies SOC 2 / ISO 27001 \n\n---\n\nSOURCE_ID: 7c6599e5-06ff-46dd-920c-7e41a41d8ea9\nTITLE: Cybersecurity RFP Template - RFPhub.com\nCANONICAL_URL: https://www.rfphub.com/templates/cyber-security\nDOMAIN: www.rfphub.com\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nCybersecurity RFP Template - RFPhub.com RFP Blog RFP Template Categories Cybersecurity Business Intelligence (BI) Construction Management Education Healthcare Marketing Project Management Sales About Home Cybersecurity Cybersecurity Cloud Security, System Security, SIEM, XDR, SOAR, Malware Tools & More Select Subcategory API Security Solutions Application Security Posture Management (ASPM) Automation Breach and Attack Simulation (BAS) Cloud Access Security Broker (CASB) Cloud Compliance Cloud Data Security Cloud Detection and Response (CDR) Cloud Edge Security Cloud File Security Cloud Infrastructure Entitlement Management (CIEM) Cloud Security Monitoring and Analytics Cloud Security Posture Management (CSPM) Cloud Workload Protection Platform Cloud-Native Application Protection Platform (CNAPP) Deception Technology Digital Forensics Digital Risk Protection (DRP) Platform Extended Detection and Response (XDR EDR) Platform Incident Response IoT Security Solutions Malware Analysis Tools Managed Detection and Response (MDR) OT Secure Remote Access SaaS Security Posture Management (SSPM) Solutions Secure Access Service Edge (SASE) Platform Security Information and Event Management (SIEM) Security Orchestration Security Orchestration & Response (SOAR) Service Desk Service Mesh Tools Threat Intelligence Digital Forensics Software RFP Template Requirements for a comprehensive digital forensics software solution capable of identifying, extracting, analyzing, and documenting digital evidence across multiple platforms and data sources. View Template Most Downloaded Service Mesh Tools RFP Template Provides a structured framework for evaluating vendors and solutions that can manage service-to-service communication in microservices architectures, with specific focus on security, observability, traffic management, and AI-enhanced capabilities. View Template Extended Detection and Response (XDR EDR) Platform RFP Template Seeks to procure a comprehensive XDR platform that unifies security data collection, analysis, and response across the enterprise technology stack. View Template Cloud Workload Protection Platform RFP Template Seeks proposals for a comprehensive Cloud Workload Protection Platform to secure applications, databases, and services across public, private, and hybrid cloud environments. View Template Most Downloaded Threat Intelligence Software RFP Template Details specific technical and functional requirements for organizations seeking to implement threat intelligence platforms with integrated SOC workflows and automated response capabilities. View Template Cloud File Security Software Solution RFP Template Identifies and selects a comprehensive cloud file security software solution that implements robust security measures for protecting sensitive data in cloud environments. View Template OT Secure Remote Access Software RFP Template Outlines requirements for an OT Secure Remote Access Software solution enabling authorized users to safely manage industrial control systems remotely. View Template Digital Risk Protection (DRP) Platform RFP Template Specifies technical requirements, evaluation criteria, and implementation guidelines for enterprises seeking advanced digital risk protection capabilities. View Template Most Downloaded Security Information and Event Management (SIEM) Software Solution RFP Template Outlines technical specifications, functional requirements, and evaluation criteria for selecting a SIEM platform that centralizes sec\n\n---\n\nSOURCE_ID: 79769dc6-78ce-4b79-8e20-4c74207b2136\nTITLE: RFPs for Cybersecurity Companies - Arphie\nCANONICAL_URL: https://www.arphie.ai/industry-guides/rfps-for-cybersecurity-companies\nDOMAIN: www.arphie.ai\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nRFPs for Cybersecurity Companies | Arphie Features Solutions Sales Teams Sales Engineering Teams Proposal Teams IR Teams Integrations Resources Blog Case Studies Security About Careers Contact Log in Log In Contact RFPs for Cybersecurity Companies March 5, 2025 RFPs for Cybersecurity Companies: A Comprehensive Guide In an increasingly digital world where cyber threats are ever-present, the demand for robust cybersecurity solutions grows significantly. Given the complexity of the cybersecurity landscape, Request for Proposals (RFPs) play a pivotal role in how organizations select vendors for their security needs. This article delves into the unique aspects of RFPs specifically tailored for cybersecurity companies, highlighting the industry's specific needs, challenges, and best practices. We will also explore how Arphie can facilitate the RFP process. Understanding RFPs in Cybersecurity RFPs are structured documents that organizations use to solicit proposals from potential vendors. They are particularly critical in the cybersecurity field due to the technical nature of the solutions offered and the critical importance of security in protecting sensitive information and systems. A well-structured RFP helps stakeholders evaluate vendors effectively, ensuring that the selected solution aligns with their organizational requirements and compliance needs. Key Differences: Cybersecurity RFPs vs. General RFPs While the basic structure of RFPs may be similar across industries, cybersecurity RFPs have distinct features and considerations that set them apart: Technical Expertise: Cybersecurity solutions require specialized knowledge. RFPs must solicit detailed technical specifications, compliance documentation, and experience with relevant scenarios. Regulatory Compliance: Cybersecurity companies must adhere to various regulations such as GDPR, HIPAA, or PCI-DSS. RFPs should include specific compliance clauses to evaluate vendors' ability to meet these requirements. Risk Assessment and Management: Cybersecurity RFPs often focus on risk management strategies, requiring vendors to outline their approach to identifying, assessing, and mitigating risks. Incident Response Plans: A unique aspect crucial to cybersecurity RFPs is the vendor’s incident response capability. Proposals should detail how a vendor plans to respond to security breaches. Crafting a Compelling Cybersecurity RFP Creating an effective RFP for cybersecurity solutions requires careful planning and consideration. Here are the essential components to include: 1. Introduction and Background Provide context about your organization and why you are seeking cybersecurity solutions. Highlight existing challenges or incidents that prompted this action. 2. Project Scope Clearly define the scope of work. Will you be looking for a managed security service provider, cybersecurity software solutions, or consulting services? Having a clearly defined scope aids potential vendors in understanding your needs. 3. Technical Requirements List the specific technological requirements. Consider the following: Types of solutions (e.g., firewalls, intrusion detection systems) Required integrations with current systems Scalability of proposed solutions 4. Evaluation Criteria Be transparent about how you will evaluate proposals. Clearly define criteria such as: Technical expertise and experience Cost-effectiveness and budget alignment Compliance with relevant regulations Believability of incident response capabi",
+        "groundingMode": "disabled",
+        "opportunityId": "88b0ddd2-0c2e-4905-b2f6-9cb37af876f1",
+        "sourceCatalog": [
+          {
+            "url": "https://bidresponder.com/industries/cybersecurity",
+            "title": "Cybersecurity RFP Software | Bid Responder",
+            "domain": "bidresponder.com",
+            "excerpt": "Cybersecurity RFP Software | Bid Responder Features How It Works Pricing Log In Get Started Free Industries Cybersecurity Cybersecurity Cybersecurity RFP Response Software Respond to enterprise, public-sector, and CMMC-driven RFPs with control narratives and incident-response playbooks. Cybersecurity RFPs require precise control language across NIST, CMMC, and ISO frameworks. Bid Responder reuses your control library and incident-response playbooks across every solicitation. Why Cybersecurity RF",
+            "provider": "duckduckgo",
+            "sourceId": "8e9db9ff-f573-4042-99ee-3bb6982314ab",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan"
+          },
+          {
+            "url": "https://www.steerlab.ai/blog/best-rfp-software-for-cybersecurity-companies-in-2026",
+            "title": "Best RFP Software for Cybersecurity in 2026 | Buyer's Guide",
+            "domain": "www.steerlab.ai",
+            "excerpt": "Best RFP Software for Cybersecurity in 2026 | Buyer's Guide Product Features Integrations Security Solutions PreSales Teams Proposal Teams Security Teams Company About Careers ↗ Blog Contact us Book a demo Try for free MENU Best RFP Software for Cybersecurity Companies in 2026: A Practical Buyer's Guide February 25, 2026 Rami Iguerwane ‍ TL;DR — Best RFP software for Cybersecurity companies at a glance: Steerlab – Best for Cybersecurity teams handling RFPs and compliance questionnaires, vendor r",
+            "provider": "duckduckgo",
+            "sourceId": "8d826557-b8c2-46c5-9939-6d72fc8a8bee",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan"
+          },
+          {
+            "url": "https://www.govsignals.ai/works/cyber-security-rfp",
+            "title": "Cyber Security RFP - GovSignals",
+            "domain": "www.govsignals.ai",
+            "excerpt": "Cyber Security RFP | GovSignals custom element used by a few marketing pages --> Announcement &nbsp;- GovSignals has Acquired Turingon → GovSignals Platform ▼ The platform · pre-award to post-award Market Intelligence SIGNAL · 5K+ SOURCES Capture & Strategy WIN STRATEGY · BLACK-HAT Proposals & Packages FULL VOLUMES, ONE CLICK Post-Award & Oversight CDRLS · MODS · AUDIT TRAIL Contract Lifecycle Management CLM · OBLIGATIONS · CLOSEOUT Consortium Management OTA · CMO · MEMBER PORTAL See the full pl",
+            "provider": "duckduckgo",
+            "sourceId": "629b02a8-1864-4dfb-87fb-2f295cdccf0d",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan"
+          },
+          {
+            "url": "https://www.inventive.ai/blog-posts/cybersecurity-rfps-a-complete-guide-for-smarter-vendor-selection",
+            "title": "Cybersecurity RFP Guide: Smarter Vendor Selection [2026]",
+            "domain": "www.inventive.ai",
+            "excerpt": "Cybersecurity RFP Guide: Smarter Vendor Selection [2026] Home Features Solutions RFPs RFIs Security Questionnaires DDQs ROI Calculator Resources Blog Ebooks Podcasts Case Studies Home Features Solutions RFPs RFIs Security Questionnaires Security Resources Blogs Ebook Customer Login Book a Demo Blog April 16, 2026 min read Cybersecurity RFP Guide: Smarter Vendor Selection [2026] Choosing a cybersecurity vendor is high-stakes. This guide shows how to structure your RFP, what criteria to include, a",
+            "provider": "duckduckgo",
+            "sourceId": "af638efe-dca7-4714-9b0a-8fe4485af6fe",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan"
+          },
+          {
+            "url": "https://www.inventive.ai/blog-posts/cybersecurity-rfps",
+            "title": "A Practical Guide for High-Quality Cybersecurity RFP Responses",
+            "domain": "www.inventive.ai",
+            "excerpt": "A Practical Guide for High-Quality Cybersecurity RFP Responses Home Features Solutions RFPs RFIs Security Questionnaires DDQs ROI Calculator Resources Blog Ebooks Podcasts Case Studies Home Features Solutions RFPs RFIs Security Questionnaires Security Resources Blogs Ebook Customer Login Book a Demo Blog February 3, 2026 min read A Practical Guide for High-Quality Cybersecurity RFP Responses This guide explains how these RFPs are evaluated and how to produce accurate, compliant responses that st",
+            "provider": "duckduckgo",
+            "sourceId": "5e1ed3ff-0d37-4e7b-9526-e7a96c160d94",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan"
+          },
+          {
+            "url": "https://www.designrush.com/agency/cybersecurity/trends/cybersecurity-rfp",
+            "title": "Cybersecurity RFP: Template & Expert Guide [2026] - DesignRush",
+            "domain": "www.designrush.com",
+            "excerpt": "Cybersecurity RFP: Template & Expert Guide [2026] Trending Brand News Latest News Brand News AI News Creative News Marketing News eCommerce News Technology News Agency Directory Featured Branding & Creative Website & Interface Marketing Software & App IT Services US Agencies Global Agencies Featured Web Design Companies Web Design Companies Digital Marketing Agencies Digital Marketing Agencies Software Development Companies Software Development Companies Mobile App Development Companies Mobile A",
+            "provider": "duckduckgo",
+            "sourceId": "80349ced-5a99-4991-bd51-ec8ba5a58b45",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan"
+          },
+          {
+            "url": "https://www.proposalvault.cloud/blog/build-reusable-answer-library",
+            "title": "From Chaos to Clarity — How to Build a Reusable Answer Library for RFPs ...",
+            "domain": "www.proposalvault.cloud",
+            "excerpt": "From Chaos to Clarity — How to Build a Reusable Answer Library for RFPs and Security Reviews - ProposalVault Blog ProposalVault Features Pricing Blog Login Get Started Back to Blog Workflow Optimization From Chaos to Clarity — How to Build a Reusable Answer Library for RFPs and Security Reviews Stop starting from scratch. Learn how to organize, search, and reuse your best answers across all questionnaires. ProposalVault Team January 25, 2026 5 min read If you've ever scrambled to answer a 200-qu",
+            "provider": "duckduckgo",
+            "sourceId": "aed7ae4a-afd4-4cf2-bcb0-2386e7cc4bda",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan"
+          },
+          {
+            "url": "https://www.rfphub.com/templates/cyber-security",
+            "title": "Cybersecurity RFP Template - RFPhub.com",
+            "domain": "www.rfphub.com",
+            "excerpt": "Cybersecurity RFP Template - RFPhub.com RFP Blog RFP Template Categories Cybersecurity Business Intelligence (BI) Construction Management Education Healthcare Marketing Project Management Sales About Home Cybersecurity Cybersecurity Cloud Security, System Security, SIEM, XDR, SOAR, Malware Tools & More Select Subcategory API Security Solutions Application Security Posture Management (ASPM) Automation Breach and Attack Simulation (BAS) Cloud Access Security Broker (CASB) Cloud Compliance Cloud Da",
+            "provider": "duckduckgo",
+            "sourceId": "7c6599e5-06ff-46dd-920c-7e41a41d8ea9",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan"
+          },
+          {
+            "url": "https://www.arphie.ai/industry-guides/rfps-for-cybersecurity-companies",
+            "title": "RFPs for Cybersecurity Companies - Arphie",
+            "domain": "www.arphie.ai",
+            "excerpt": "RFPs for Cybersecurity Companies | Arphie Features Solutions Sales Teams Sales Engineering Teams Proposal Teams IR Teams Integrations Resources Blog Case Studies Security About Careers Contact Log in Log In Contact RFPs for Cybersecurity Companies March 5, 2025 RFPs for Cybersecurity Companies: A Comprehensive Guide In an increasingly digital world where cyber threats are ever-present, the demand for robust cybersecurity solutions grows significantly. Given the complexity of the cybersecurity la",
+            "provider": "duckduckgo",
+            "sourceId": "79769dc6-78ce-4b79-8e20-4c74207b2136",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan"
+          }
+        ],
+        "groundingDegraded": false
+      },
+      "output_meta": {
+        "coverageGaps": [
+          "Tier 1/2 evidence missing"
+        ],
+        "extractedClaims": 5,
+        "specialistAssessments": 0
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:23:21.1255+00:00",
+      "updated_at": "2026-07-25T12:23:27.962118+00:00",
+      "completed_at": "2026-07-25T12:23:27.962118+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "c131798c-e4dc-4647-b607-7e450c68442a|0|validate_normalize|0|0|"
+    },
+    {
+      "id": "54da6442-2bce-4c89-9969-9b07697c9130",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage": "analyze_score",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": "c1b5dd93-ed9c-4cb8-b3c1-2c54eeb7c7ae",
+      "claimed_by": "worker-f4d43636",
+      "claimed_at": "2026-07-25T12:23:27.971246+00:00",
+      "visible_after": "2026-07-25T12:25:57.971246+00:00",
+      "input_meta": {
+        "mode": "quick_scan",
+        "opportunityId": "88b0ddd2-0c2e-4905-b2f6-9cb37af876f1",
+        "adversarialResult": {
+          "outcome": "NoStrongDisproof",
+          "severity": "None",
+          "objection": "Some legacy tools require significant manual maintenance, which may lead to skepticism regarding AI-only solutions.",
+          "sourceIds": [
+            "8d826557-b8c2-46c5-9939-6d72fc8a8bee"
+          ],
+          "evidence_ids": [
+            "653c760b-19ff-4c77-947b-ab6c4d129ab9"
+          ]
+        },
+        "allowedEvidenceIds": [
+          "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+          "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+          "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+          "5fee63fe-ef95-4f1a-ba03-1b5ae21db158",
+          "653c760b-19ff-4c77-947b-ab6c4d129ab9"
+        ]
+      },
+      "output_meta": {
+        "total": 40.8,
+        "scoreId": "4e8e36d3-64c5-4cfc-b2c6-817c1cada29e",
+        "verdict": "Weak Signal",
+        "gateReason": null,
+        "adversarialDowngrade": false
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:23:27.962118+00:00",
+      "updated_at": "2026-07-25T12:23:28.147197+00:00",
+      "completed_at": "2026-07-25T12:23:28.147197+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "c131798c-e4dc-4647-b607-7e450c68442a|0|analyze_score|0|0|"
+    },
+    {
+      "id": "6c36776c-3860-413c-8f82-aa1b047a1356",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage": "generate_report",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": "54da6442-2bce-4c89-9969-9b07697c9130",
+      "claimed_by": "worker-08a3eed7",
+      "claimed_at": "2026-07-25T12:23:28.16182+00:00",
+      "visible_after": "2026-07-25T12:25:58.16182+00:00",
+      "input_meta": {
+        "mode": "quick_scan",
+        "total": 40.8,
+        "scoreId": "4e8e36d3-64c5-4cfc-b2c6-817c1cada29e",
+        "verdict": "Weak Signal",
+        "confidence": 76,
+        "chartDatasets": [
+          {
+            "chart_key": "opportunity-factor-breakdown",
+            "chart_type": "radar",
+            "source_data": {
+              "values": {
+                "mvpSpeed": 57,
+                "founderFit": 25,
+                "painSeverity": 30.4,
+                "competitionGap": 74.3,
+                "regulatoryRisk": 10,
+                "purchaseUrgency": 24.3,
+                "willingnessToPay": 10,
+                "buyerReachability": 32,
+                "retentionPotential": 20,
+                "distributionClarity": 59.5,
+                "speedToFirstRevenue": 21.1,
+                "platformDependencyRisk": 10
+              }
+            },
+            "supporting_evidence_ids": [
+              "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+              "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+              "5fee63fe-ef95-4f1a-ba03-1b5ae21db158",
+              "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+              "5fee63fe-ef95-4f1a-ba03-1b5ae21db158",
+              "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+              "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+              "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+              "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+              "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+              "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+              "5fee63fe-ef95-4f1a-ba03-1b5ae21db158",
+              "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+              "5fee63fe-ef95-4f1a-ba03-1b5ae21db158",
+              "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+            ]
+          },
+          {
+            "chart_key": "evidence-balance",
+            "chart_type": "pie",
+            "source_data": {
+              "negative": 1,
+              "positive": 4
+            },
+            "supporting_evidence_ids": [
+              "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+              "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+              "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+              "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+              "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+            ]
+          },
+          {
+            "chart_key": "source-quality-distribution",
+            "chart_type": "bar",
+            "source_data": {
+              "byTier": {
+                "t1": 0,
+                "t2": 0,
+                "t3": 5,
+                "t4": 0
+              }
+            },
+            "supporting_evidence_ids": [
+              "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+              "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+              "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+              "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+              "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+            ]
+          },
+          {
+            "chart_key": "evidence_coverage",
+            "chart_type": "bar",
+            "source_data": {
+              "byFamily": {
+                "problem": 2,
+                "solution": 3
+              },
+              "bySignal": {
+                "Pain": 2,
+                "Risk": 1,
+                "Demand": 2
+              }
+            },
+            "supporting_evidence_ids": [
+              "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+              "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+              "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+              "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+              "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+            ]
+          }
+        ],
+        "opportunityId": "88b0ddd2-0c2e-4905-b2f6-9cb37af876f1",
+        "adversarialDowngrade": false,
+        "deterministicVerdict": "Weak Signal"
+      },
+      "output_meta": {
+        "total": 40.8,
+        "verdict": "Weak Signal",
+        "reportId": "fc670456-4e24-4a59-8bb0-2a3dbfbe9a97",
+        "reportVersionId": "1807b9e6-3481-4d70-9e6a-ee8c4705a02d"
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:23:28.147197+00:00",
+      "updated_at": "2026-07-25T12:23:30.691273+00:00",
+      "completed_at": "2026-07-25T12:23:30.691273+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "c131798c-e4dc-4647-b607-7e450c68442a|0|generate_report|0|0|"
+    },
+    {
+      "id": "08796ef2-e5c9-40bc-9c79-718e6d3f0f27",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage": "generate_exports",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": "6c36776c-3860-413c-8f82-aa1b047a1356",
+      "claimed_by": "worker-a1e69553",
+      "claimed_at": "2026-07-25T12:23:30.698295+00:00",
+      "visible_after": "2026-07-25T12:26:00.698295+00:00",
+      "input_meta": {
+        "total": 40.8,
+        "scoreId": "4e8e36d3-64c5-4cfc-b2c6-817c1cada29e",
+        "verdict": "Weak Signal",
+        "reportId": "fc670456-4e24-4a59-8bb0-2a3dbfbe9a97",
+        "opportunityId": "88b0ddd2-0c2e-4905-b2f6-9cb37af876f1",
+        "reportVersionId": "1807b9e6-3481-4d70-9e6a-ee8c4705a02d"
+      },
+      "output_meta": {
+        "formats": [
+          "pdf",
+          "markdown",
+          "csv",
+          "json"
+        ],
+        "exportCount": 4
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:23:30.691273+00:00",
+      "updated_at": "2026-07-25T12:23:30.851769+00:00",
+      "completed_at": "2026-07-25T12:23:30.851769+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "c131798c-e4dc-4647-b607-7e450c68442a|0|generate_exports|0|0|"
+    },
+    {
+      "id": "be05e659-930d-487b-9cd5-458d896d2cd2",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage": "complete",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": "08796ef2-e5c9-40bc-9c79-718e6d3f0f27",
+      "claimed_by": "worker-64ccaf7f",
+      "claimed_at": "2026-07-25T12:23:30.860942+00:00",
+      "visible_after": "2026-07-25T12:26:00.860942+00:00",
+      "input_meta": {},
+      "output_meta": {
+        "totalCost": 0.0012540000000000001,
+        "evidenceCount": 5,
+        "providerCalls": 8,
+        "synthesisCalls": 3,
+        "sourcesAccepted": 9,
+        "externalSearchCalls": 4,
+        "groundedCallsAttempted": 0,
+        "groundedCallsCompleted": 0,
+        "groundedCallsQuotaBlocked": 0
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:23:30.851769+00:00",
+      "updated_at": "2026-07-25T12:23:30.906569+00:00",
+      "completed_at": "2026-07-25T12:23:30.906569+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "c131798c-e4dc-4647-b607-7e450c68442a|0|complete|0|0|"
+    }
+  ],
+  "stages": [
+    {
+      "id": "463f1dcc-1060-4342-b83a-c5767f9e0bee",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage_name": "Queued",
+      "status": "Queued",
+      "error_message": null,
+      "started_at": "2026-07-25T12:23:13.371312+00:00",
+      "completed_at": "2026-07-25T12:23:13.371312+00:00",
+      "created_at": "2026-07-25T12:23:13.371312+00:00",
+      "updated_at": "2026-07-25T12:23:13.371312+00:00",
+      "progress_detail": "Preparing research"
+    },
+    {
+      "id": "ecd83ddb-29ab-4730-b017-da2fddacaea6",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage_name": "Searching",
+      "status": "Searching",
+      "error_message": null,
+      "started_at": "2026-07-25T12:23:14.896+00:00",
+      "completed_at": "2026-07-25T12:23:14.896+00:00",
+      "created_at": "2026-07-25T12:23:14.897699+00:00",
+      "updated_at": "2026-07-25T12:23:14.897699+00:00",
+      "progress_detail": "Initializing hybrid Gemini pipeline..."
+    },
+    {
+      "id": "92fa77b6-1306-486b-b268-aa1c4b2e7261",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage_name": "Searching",
+      "status": "Searching",
+      "error_message": null,
+      "started_at": "2026-07-25T12:23:14.942+00:00",
+      "completed_at": "2026-07-25T12:23:14.942+00:00",
+      "created_at": "2026-07-25T12:23:14.942837+00:00",
+      "updated_at": "2026-07-25T12:23:14.942837+00:00",
+      "progress_detail": "Preparing external source discovery"
+    },
+    {
+      "id": "2fd93308-89cb-4f81-a92b-c172e6023df4",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage_name": "Searching",
+      "status": "Searching",
+      "error_message": null,
+      "started_at": "2026-07-25T12:23:14.997+00:00",
+      "completed_at": "2026-07-25T12:23:14.997+00:00",
+      "created_at": "2026-07-25T12:23:14.998182+00:00",
+      "updated_at": "2026-07-25T12:23:14.998182+00:00",
+      "progress_detail": "Discovering and directly retrieving public evidence"
+    },
+    {
+      "id": "6e649c34-e5e4-4fff-8189-2082e1df2266",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage_name": "Normalizing",
+      "status": "Normalizing",
+      "error_message": null,
+      "started_at": "2026-07-25T12:23:21.147+00:00",
+      "completed_at": "2026-07-25T12:23:21.147+00:00",
+      "created_at": "2026-07-25T12:23:21.148037+00:00",
+      "updated_at": "2026-07-25T12:23:21.148037+00:00",
+      "progress_detail": "Validating and normalizing attributable evidence"
+    },
+    {
+      "id": "ddf3e3a6-1b78-497b-9e0a-5b948d5f38fa",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage_name": "Scoring",
+      "status": "Scoring",
+      "error_message": null,
+      "started_at": "2026-07-25T12:23:27.981+00:00",
+      "completed_at": "2026-07-25T12:23:27.981+00:00",
+      "created_at": "2026-07-25T12:23:27.982439+00:00",
+      "updated_at": "2026-07-25T12:23:27.982439+00:00",
+      "progress_detail": "Computing deterministic score and building charts..."
+    },
+    {
+      "id": "b10af593-fbdc-4d73-8326-0271348b9693",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage_name": "Generating",
+      "status": "Generating",
+      "error_message": null,
+      "started_at": "2026-07-25T12:23:28.18+00:00",
+      "completed_at": "2026-07-25T12:23:28.18+00:00",
+      "created_at": "2026-07-25T12:23:28.181541+00:00",
+      "updated_at": "2026-07-25T12:23:28.181541+00:00",
+      "progress_detail": "Generating Quick Scan"
+    },
+    {
+      "id": "f2f1ea2a-7724-461b-8a1b-2228b3c22dcf",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage_name": "Generating",
+      "status": "Generating",
+      "error_message": null,
+      "started_at": "2026-07-25T12:23:30.715+00:00",
+      "completed_at": "2026-07-25T12:23:30.715+00:00",
+      "created_at": "2026-07-25T12:23:30.716458+00:00",
+      "updated_at": "2026-07-25T12:23:30.716458+00:00",
+      "progress_detail": "Creating pdf, markdown, csv, json exports"
+    },
+    {
+      "id": "6bdd7395-c1a3-4d05-9c55-16678eab3306",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "stage_name": "Completed",
+      "status": "Completed",
+      "error_message": null,
+      "started_at": "2026-07-25T12:23:30.906569+00:00",
+      "completed_at": "2026-07-25T12:23:30.906569+00:00",
+      "created_at": "2026-07-25T12:23:30.906569+00:00",
+      "updated_at": "2026-07-25T12:23:30.906569+00:00",
+      "progress_detail": "Research complete"
+    }
+  ]
+}

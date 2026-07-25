@@ -29,7 +29,7 @@ export const evidenceSchema = z.object({
   sourceTierReason: z.string().nullable().optional(),
   excluded: z.boolean().optional(),
   disconfirming: z.boolean().optional(),
-  painPoint: z.string().optional(),
+  painPoint: z.string().nullish().transform((value) => value ?? undefined),
   independentSourceCount: z.number().int().nonnegative().optional(),
   independentDomainCount: z.number().int().nonnegative().optional(),
 });
@@ -182,6 +182,39 @@ export const narrativeCitationsSchema = z.object({
   executive_summary: z.array(narrativeClaimSchema).min(1),
   methodology: z.array(narrativeClaimSchema).min(1),
 });
+export const specialistAssessmentSchema = z.object({
+  name: z.enum(["competition", "market", "pricing", "risk", "demand", "gtm"]),
+  status: z.enum(["Complete", "Incomplete"]),
+  direction: z.enum(["SupportsOpportunity", "Mixed", "ChallengesOpportunity", "Insufficient"]),
+  assessment: z.string().min(1),
+  findings: z.array(z.string()),
+  evidenceIds: z.array(z.string().uuid()).min(1),
+});
+export const fullValidationInsightsSchema = z.object({
+  targetSegments: z.array(z.object({
+    name: z.string().min(1),
+    jobsToBeDone: z.array(z.string()).min(1),
+    evidenceSourceUrls: z.array(z.string().url()).default([]),
+    evidenceIds: z.array(z.string().uuid()).min(1),
+  })).default([]),
+  willingnessToPay: z.object({
+    finding: z.string().default("Insufficient public willingness-to-pay evidence."),
+    strength: z.enum(["Strong", "Moderate", "Weak", "Insufficient"]).default("Insufficient"),
+    evidenceSourceUrls: z.array(z.string().url()).default([]),
+    evidenceIds: z.array(z.string().uuid()).default([]),
+  }),
+  marketContext: z.object({
+    summary: z.string(),
+    metrics: z.array(z.object({
+      label: z.string(), value: z.string(), sourceUrl: z.string().url(), evidenceId: z.string().uuid(),
+    })).default([]),
+  }),
+  gtmFindings: z.array(z.object({
+    finding: z.string(),
+    evidenceSourceUrls: z.array(z.string().url()).default([]),
+    evidenceIds: z.array(z.string().uuid()).min(1),
+  })).default([]),
+});
 export const validationReportSchema = z.object({
   id: z.string(),
   version: z.literal("1.0"),
@@ -197,6 +230,8 @@ export const validationReportSchema = z.object({
   citationValidation: citationValidationReportSchema.optional(),
   decisionIntegrity: decisionIntegritySchema.optional(),
   narrativeCitations: narrativeCitationsSchema.optional(),
+  specialistAssessments: z.array(specialistAssessmentSchema).length(6).optional(),
+  fullValidationInsights: fullValidationInsightsSchema.optional(),
   evidenceGaps: z.array(z.string()).default([]),
   limitations: z.array(z.string()).default([]),
   reportSections: z.array(z.string()).default([]),
@@ -248,6 +283,8 @@ export interface ValidationReport {
   citationValidation?: z.infer<typeof citationValidationReportSchema>;
   decisionIntegrity?: z.infer<typeof decisionIntegritySchema>;
   narrativeCitations?: z.infer<typeof narrativeCitationsSchema>;
+  specialistAssessments?: z.infer<typeof specialistAssessmentSchema>[];
+  fullValidationInsights?: z.infer<typeof fullValidationInsightsSchema>;
   evidenceGaps: string[];
   limitations: string[];
   reportSections: string[];

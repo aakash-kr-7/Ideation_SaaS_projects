@@ -44,7 +44,10 @@ export const ResearchService = {
     });
     if (error) throw databaseError(error, requestId);
     const reservation = reservationResultSchema.parse(firstRow(data));
-    const workerSecret = process.env.WEBHOOK_SECRET;
+    // The worker accepts the service-role credential in local and hosted
+    // environments. Using the same credential avoids a split-brain wake-up
+    // when an optional webhook secret is configured only in the web process.
+    const workerSecret = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.WEBHOOK_SECRET;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     let admin: ReturnType<typeof createServiceRoleClient>;
     if (!workerSecret || !supabaseUrl) {
@@ -94,7 +97,7 @@ export const ResearchService = {
 };
 
 async function privilegedRpc(client: ReturnType<typeof createServiceRoleClient>, name: string, params: Record<string, unknown>) {
-  const rpc = client.rpc as unknown as (rpcName: string, rpcParams: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+  const rpc = client.rpc.bind(client) as unknown as (rpcName: string, rpcParams: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
   const { error } = await rpc(name, params);
   return error;
 }

@@ -3,7 +3,7 @@ import type { ResearchStatus } from "../supabase/functions/_shared/research/stat
 
 export const REPORT_TABS = {
   quick_scan: ["Conclusion", "Evidence", "Competition", "Score breakdown", "Pricing", "Next actions", "Risks", "Exports"],
-  full_validation: ["Conclusion", "Evidence", "Demand", "Competition", "Market", "Pricing", "MVP scope", "Go-to-market", "Risks", "Adversarial", "Score breakdown", "Sources", "Exports"],
+  full_validation: ["Conclusion", "Evidence", "Demand", "Competition", "Market", "Pricing", "MVP scope", "Go-to-market", "Risks", "Specialists", "Adversarial", "Score breakdown", "Sources", "Exports"],
 } as const;
 export type ReportTab = (typeof REPORT_TABS)[ReportMode][number];
 export type HistoryFilter = "all" | "quick" | "full" | "completed" | "failed" | "progress";

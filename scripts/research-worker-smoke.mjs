@@ -28,8 +28,13 @@ if (!process.env.SMOKE_USER_EMAIL) {
   if (error || !created.user) throw error ?? new Error("Unable to create smoke user");
   const { data: membership, error: membershipError } = await admin.from("team_members").select("team_id").eq("user_id", created.user.id).single();
   if (membershipError || !membership) throw membershipError ?? new Error("Smoke user was not provisioned with a team");
-  const { error: creditError } = await admin.from("team_credit_accounts").upsert({ team_id: membership.team_id, paid_credits: 10, reserved_paid_credits: 0, free_quick_scans_remaining: 1 });
-  if (creditError) throw creditError;
+  const { error: creditError } = await admin.rpc("grant_paid_credits", {
+    p_team_id: membership.team_id,
+    p_credits: 10,
+    p_external_reference: `worker-smoke-${suffix}`,
+    p_metadata: { purpose: "local-worker-smoke" },
+  });
+  if (creditError) throw new Error(`Unable to grant smoke credits: ${creditError.message}`);
   const { data: project, error: projectError } = await admin.from("projects").insert({ team_id: membership.team_id, name: `Worker smoke ${suffix}`, created_by: created.user.id }).select("id").single();
   if (projectError || !project) throw projectError ?? new Error("Unable to create smoke project");
   projectId = project.id;
@@ -45,7 +50,7 @@ const { data: reservationRows, error: reserveError } = await user.rpc("create_re
   p_project_id: projectId, p_idea_name: "Worker smoke test", p_idea_description: "A real local staged queue smoke test that verifies claiming and the planning stage.",
   p_target_customer: "Local test operators", p_market_type: "B2B", p_target_region: "Local", p_assumptions: {}, p_mode: mode, p_idempotency_key: idempotencyKey, p_request_id: requestId,
 });
-if (reserveError) throw reserveError;
+if (reserveError) throw new Error(`Unable to reserve smoke credit: ${reserveError.message}`);
 const reservation = Array.isArray(reservationRows) ? reservationRows[0] : reservationRows;
 const runId = reservation.run_id;
 const { error: enqueueError } = await admin.rpc("enqueue_research_job", { p_run_id: runId, p_stage: "plan", p_input_meta: { mode }, p_stage_iteration: 0, p_batch_index: 0, p_batch_size: 0, p_job_purpose: "stage", p_parent_job_id: null, p_max_attempts: 1, p_visible_after: new Date().toISOString() });
@@ -62,9 +67,16 @@ const { data: job, error: jobError } = await admin.from("research_jobs").select(
 if (jobError) throw jobError;
 if (job.stage !== "plan" || job.attempt_count !== 1 || job.status !== "completed") throw new Error(`First stage did not execute: ${JSON.stringify(job)}`);
 const { data: cancelResult, error: cancelError } = await user.rpc("cancel_research_run", { p_run_id: runId, p_reason: "Worker smoke cleanup" });
-if (cancelError || cancelResult !== "Cancelled") throw cancelError ?? new Error(`Unexpected cancellation result: ${cancelResult}`);
-const { data: repeatedCancel, error: repeatedCancelError } = await user.rpc("cancel_research_run", { p_run_id: runId, p_reason: "Worker smoke cleanup retry" });
-if (repeatedCancelError || repeatedCancel !== "Cancelled") throw repeatedCancelError ?? new Error(`Cancellation was not idempotent: ${repeatedCancel}`);
+if (cancelError || cancelResult !== "Cancelled") throw cancelError
+  ? new Error(`Unable to cancel smoke run: ${cancelError.message}`)
+  : new Error(`Unexpected cancellation result: ${cancelResult}`);
+const { data: repeatedCancel, error: repeatedCancelError } = await user.rpc("cancel_research_run", {
+  p_run_id: runId,
+  p_reason: "Worker smoke cleanup retry",
+});
+if (repeatedCancelError || repeatedCancel !== "Cancelled") throw repeatedCancelError
+  ? new Error(`Unable to retry smoke cancellation: ${repeatedCancelError.message}`)
+  : new Error(`Cancellation was not idempotent: ${repeatedCancel}`);
 const [{ data: cancelledRun, error: cancelledRunError }, { data: creditReservation, error: reservationError }, { count: pendingJobs, error: pendingJobsError }, { count: claimedJobs, error: claimedJobsError }] = await Promise.all([
   admin.from("research_runs").select("status,credit_state").eq("id", runId).single(),
   admin.from("credit_reservations").select("status").eq("run_id", runId).single(),

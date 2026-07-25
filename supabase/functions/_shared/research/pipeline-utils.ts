@@ -64,6 +64,10 @@ const METRIC_COLUMNS: Record<string, string> = {
   grounded_calls: "grounded_calls",
   fallback_calls: "fallback_calls",
   cache_hits: "cache_hits",
+  cache_misses: "cache_misses",
+  input_tokens: "input_tokens",
+  output_tokens: "output_tokens",
+  retry_count: "retry_count",
   duration_ms: "total_duration_ms",
 };
 
@@ -80,4 +84,86 @@ export async function incrementMetrics(runId: string, db: any, increments: Recor
   }
   const { error } = await db.from("research_pipeline_metrics").update(updates).eq("run_id", runId);
   if (error) throw new Error(`Failed to increment pipeline metrics: ${error.message}`);
+}
+
+export async function recordModelCall(runId: string, db: any, model: string) {
+  await ensureMetrics(runId, db);
+  const { data, error } = await db.from("research_pipeline_metrics").select("model_call_counts").eq("run_id", runId).single();
+  if (error) throw new Error(`Failed to read model metrics: ${error.message}`);
+  const counts = data?.model_call_counts && typeof data.model_call_counts === "object" ? data.model_call_counts : {};
+  const { error: updateError } = await db.from("research_pipeline_metrics").update({
+    model_call_counts: { ...counts, [model]: Number(counts[model] || 0) + 1 },
+    updated_at: new Date().toISOString(),
+  }).eq("run_id", runId);
+  if (updateError) throw new Error(`Failed to record model metrics: ${updateError.message}`);
+}
+
+export async function reconcileUsageMetrics(runId: string, db: any) {
+  const { data, error } = await db.from("api_usage_logs")
+    .select("provider,model,status,error_class,prompt_tokens,completion_tokens,cost,retry_count,grounded_search_requested,grounding_metadata_present,grounding_degraded,quota_metric,external_search,page_fetch,duration_ms,cache_status")
+    .eq("run_id", runId);
+  if (error) throw new Error(`Failed to reconcile provider usage: ${error.message}`);
+  const rows = data || [];
+  const { data: currentMetrics } = await db.from("research_pipeline_metrics")
+    .select("cache_hits").eq("run_id", runId).maybeSingle();
+  const modelCallCounts: Record<string, number> = {};
+  for (const row of rows) {
+    if (row.provider === "gemini" && row.model) {
+      const model = String(row.model);
+      modelCallCounts[model] = (modelCallCounts[model] || 0) + 1;
+    }
+  }
+  const totals = rows.reduce((sum: any, row: any) => ({
+    providerCalls: sum.providerCalls + (row.provider === "retrieval_cache" ? 0 : 1),
+    groundedCallsAttempted: sum.groundedCallsAttempted + (row.grounded_search_requested ? 1 : 0),
+    groundedCallsCompleted: sum.groundedCallsCompleted + (row.grounded_search_requested && row.status === "success" && row.grounding_metadata_present ? 1 : 0),
+    groundedCallsQuotaBlocked: sum.groundedCallsQuotaBlocked + (row.grounded_search_requested && row.quota_metric ? 1 : 0),
+    externalSearchCalls: sum.externalSearchCalls + (row.external_search ? 1 : 0),
+    synthesisCalls: sum.synthesisCalls + (row.provider === "gemini" && !row.grounded_search_requested ? 1 : 0),
+    pageFetches: sum.pageFetches + (row.page_fetch && row.status === "success" ? 1 : 0),
+    inputTokens: sum.inputTokens + Number(row.prompt_tokens || 0),
+    outputTokens: sum.outputTokens + Number(row.completion_tokens || 0),
+    retries: sum.retries + Number(row.retry_count || 0)
+      + (row.status === "failed" && ["transient", "timeout"].includes(String(row.error_class || "")) ? 1 : 0),
+    durationMs: sum.durationMs + Number(row.duration_ms || 0),
+    cost: sum.cost + Number(row.cost || 0),
+    cacheHits: sum.cacheHits + (row.cache_status === "hit" ? 1 : 0),
+    cacheMisses: sum.cacheMisses + (row.cache_status === "miss" ? 1 : 0),
+  }), {
+    providerCalls: 0, groundedCallsAttempted: 0, groundedCallsCompleted: 0,
+    groundedCallsQuotaBlocked: 0, externalSearchCalls: 0, synthesisCalls: 0,
+    pageFetches: 0, inputTokens: 0, outputTokens: 0, retries: 0,
+    durationMs: 0, cost: 0, cacheHits: 0, cacheMisses: 0,
+  });
+  const degradedProviders = [...new Set(rows.filter((row: any) => row.grounding_degraded || row.quota_metric).map((row: any) => row.provider))];
+  await ensureMetrics(runId, db);
+  const { error: metricsError } = await db.from("research_pipeline_metrics").update({
+    provider_calls: totals.providerCalls,
+    grounded_calls: totals.groundedCallsAttempted,
+    grounded_calls_attempted: totals.groundedCallsAttempted,
+    grounded_calls_completed: totals.groundedCallsCompleted,
+    grounded_calls_quota_blocked: totals.groundedCallsQuotaBlocked,
+    external_search_calls: totals.externalSearchCalls,
+    synthesis_calls: totals.synthesisCalls,
+    input_tokens: totals.inputTokens,
+    output_tokens: totals.outputTokens,
+    retry_count: totals.retries,
+    cache_hits: Math.max(Number(currentMetrics?.cache_hits || 0), totals.cacheHits),
+    cache_misses: totals.cacheMisses,
+    pages_fetched: totals.pageFetches,
+    grounding_degraded: degradedProviders.length > 0,
+    degraded_providers: degradedProviders,
+    total_duration_ms: totals.durationMs,
+    total_provider_cost_usd: totals.cost,
+    model_call_counts: modelCallCounts,
+    pricing_version: "gemini-estimate-v1-2026-07-25",
+    updated_at: new Date().toISOString(),
+  }).eq("run_id", runId);
+  if (metricsError) throw new Error(`Failed to persist reconciled Gemini usage: ${metricsError.message}`);
+  const { error: runError } = await db.from("research_runs").update({
+    total_provider_cost_usd: totals.cost,
+    total_tokens_used: { input: totals.inputTokens, output: totals.outputTokens, total: totals.inputTokens + totals.outputTokens },
+  }).eq("id", runId);
+  if (runError) throw new Error(`Failed to persist reconciled run usage: ${runError.message}`);
+  return totals;
 }

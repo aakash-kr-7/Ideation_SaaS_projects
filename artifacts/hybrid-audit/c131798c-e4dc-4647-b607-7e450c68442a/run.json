@@ -1,0 +1,49 @@
+{
+  "id": "c131798c-e4dc-4647-b607-7e450c68442a",
+  "project_id": "9225b79c-9dba-4b47-9967-fa968c2c9312",
+  "created_by": "1be615bb-5780-4727-8120-75163cd73563",
+  "idea_name": "Cited RFP Answer Library for Cybersecurity Vendors",
+  "idea_description": "A collaborative SaaS assistant that ingests prior RFP and security questionnaire responses, links each answer to approved product and security evidence, flags stale claims, and helps proposal teams at mid-market cybersecurity vendors produce auditable responses faster.",
+  "target_customer": "Revenue operations, proposal, and security teams at mid-market B2B cybersecurity vendors",
+  "market_type": "B2B",
+  "target_region": "United States and United Kingdom",
+  "mode": "quick_scan",
+  "status": "Completed",
+  "progress": 100,
+  "error_message": null,
+  "created_at": "2026-07-25T12:23:13.371312+00:00",
+  "updated_at": "2026-07-25T12:23:30.906569+00:00",
+  "progress_detail": "Research complete",
+  "retrieval_sufficient": false,
+  "retrieval_coverage": null,
+  "retrieval_coverage_gaps": [
+    "Tier 1/2 evidence missing"
+  ],
+  "retrieval_budget_limited": false,
+  "idempotency_key": "96488aca-83e4-41db-8cb9-eafdb741a548",
+  "request_id": "4e67faf8-583a-4b77-a6cd-9a6591954ca6",
+  "assumptions": {
+    "monetization": "Subscription",
+    "revenueTarget": "$10k MRR",
+    "platformTolerance": "Medium",
+    "complexityTolerance": "Medium",
+    "regulatoryTolerance": "Medium"
+  },
+  "credit_cost": 1,
+  "credit_state": "consumed",
+  "current_stage": "complete",
+  "current_stage_started_at": "2026-07-25T12:23:30.860942+00:00",
+  "last_progress_at": "2026-07-25T12:23:30.906569+00:00",
+  "terminal_at": "2026-07-25T12:23:30.906569+00:00",
+  "total_provider_cost_usd": 0.0012540000000000001,
+  "total_tokens_used": {
+    "input": 7116,
+    "total": 9517,
+    "output": 2401
+  },
+  "time_budget_exhausted": false,
+  "cost_budget_exhausted": false,
+  "pipeline_version": "staged",
+  "max_jobs_per_run": 12,
+  "max_research_cycles": 3
+}

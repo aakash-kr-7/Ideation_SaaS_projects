@@ -1,6 +1,7 @@
 import type { StageContext, StageResult } from "../../stages.ts";
 import { stageCompleted, stageFailed } from "../../stages.ts";
-import { updateState, ensureMetrics } from "../../pipeline-utils.ts";
+import { updateState, ensureMetrics, costBudgetForRun } from "../../pipeline-utils.ts";
+import { GeminiRequestError, getGeminiGroundingMode } from "../../gemini.ts";
 
 export async function executeHybridPlan(ctx: StageContext): Promise<StageResult> {
   const { runId, db, startedAt, inputMeta } = ctx;
@@ -51,17 +52,43 @@ export async function executeHybridPlan(ctx: StageContext): Promise<StageResult>
 
     // --- Initialize pipeline metrics ---
     await ensureMetrics(runId, db);
+    const groundingMode = getGeminiGroundingMode();
+    await db.from("research_pipeline_metrics").update({
+      grounding_mode: groundingMode,
+      grounding_degraded: false,
+      degraded_providers: [],
+      updated_at: new Date().toISOString(),
+    }).eq("run_id", runId);
+
+    // Optional and disabled grounding verify only the synthesis dependency.
+    // Required mode additionally verifies Google Search grounding.
+    const gemini = ctx.dependencies.createGemini();
+    const budget = await costBudgetForRun(runId, db, ctx.config);
+    const configuredModels = groundingMode === "required"
+      ? (await gemini.verifyConfiguration({
+        runId,
+        budget,
+        db,
+      })).configuredModels
+      : await gemini.verifySynthesisConfiguration({
+      runId,
+      budget,
+      db,
+    });
 
     // --- Update run state ---
     await updateState(runId, "Searching", 5, "Initializing hybrid Gemini pipeline...", db);
 
     return stageCompleted(
       "grounded_research",
-      { opportunityId, planned: true },
+      { opportunityId, planned: true, geminiConfigurationVerified: true, configuredModels, groundingMode },
       { duration_ms: Date.now() - startedAt },
-      { nextInputMeta: { opportunityId, mode } }
+      { nextInputMeta: { opportunityId, mode, groundingMode } }
     );
   } catch (error: any) {
-    return stageFailed("permanent", `Failed to plan: ${error.message}`);
+    const message = error instanceof Error ? error.message : String(error);
+    const dailyQuota = error instanceof GeminiRequestError && error.quota?.dailyExhausted;
+    const transient = !dailyQuota && /429|quota|resource_exhausted|timeout|temporar|unavailable|5\d\d/i.test(message);
+    return stageFailed(transient ? "transient" : "permanent", `Failed to plan: ${message}`);
   }
 }

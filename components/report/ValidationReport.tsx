@@ -88,7 +88,7 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
 
     <section className="report-decision-strip" aria-label={`${config.label} decision summary`}>
       <article><span>Official verdict</span><b>{o.scorecard.verdict}</b></article>
-      <article><span>Evidence confidence</span><b>{o.scorecard.confidence}%</b></article>
+      <article><span>Score confidence</span><b>{o.scorecard.confidence}%</b></article>
       <article><span>Sources analyzed</span><b>{canonicalSourceCount}</b></article>
       <article><span>Independent domains</span><b>{independentDomainCount}</b></article>
       {report.reportMode === "full_validation" && <><article><span>Primary / official sources</span><b>{primarySourceCount}</b></article><article><span>Contradictory evidence</span><b>{contradictoryEvidenceCount}</b></article></>}
@@ -115,7 +115,7 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
           <ScoreBadge score={o.scorecard.total} size="lg" />
           <div>
             <b style={{ fontSize: 16 }}>{o.scorecard.total}<small style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>/100</small></b>
-            <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)' }}>{o.scorecard.confidence}% confidence</p>
+            <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)' }}>{o.scorecard.confidence}% score confidence</p>
           </div>
         </div>
         <div className="sidebar-metrics">
@@ -153,6 +153,7 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
           {tab === "Go-to-market" && <LaunchView report={report}/>}
           {tab === "Next actions" && <ChecklistView report={report}/>}
           {tab === "Risks" && <RiskView report={report}/>}
+          {tab === "Specialists" && <SpecialistView report={report}/>}
           {tab === "Adversarial" && <AdversarialView report={report}/>}
           {tab === "Sources" && <SourcesView report={report}/>}
           {tab === "Exports" && <ExportView onExport={exportFile} formats={report.availableExports}/>}
@@ -450,6 +451,34 @@ function EvidenceSignalView({ report, signals }: { report: ReportType; signals: 
   return <section className="evidence-findings-section"><header><p className="eyebrow">Validated evidence</p><h3>Evidence-backed findings</h3></header>
     {evidence.length ? <div>{evidence.map((item) => <article key={item.id}><b>{item.title}</b><p>{item.snippet}</p><EvidenceCitations report={report} evidenceIds={[item.id]}/></article>)}</div> : <p className="report-empty-section">No attributable evidence is available for this section.</p>}
   </section>;
+}
+
+function SpecialistView({ report }: { report: ReportType }) {
+  const specialists = report.specialistAssessments ?? [];
+  const insights = report.fullValidationInsights;
+  return <div className="specialist-assessments">
+    <section className="report-callout">
+      <div>
+        <p className="eyebrow">Evidence-bound specialist desk</p>
+        <h3>{specialists.length} of 6 assessments completed</h3>
+        <p>Each assessment is linked to evidence records from this run. Negative and insufficient findings remain valid decision inputs.</p>
+      </div>
+    </section>
+    <div className="evidence-card-grid">
+      {specialists.map((specialist) => <article key={specialist.name}>
+        <div><b>{pretty(specialist.name)}</b><span>{specialist.direction}</span></div>
+        <h3>{specialist.assessment}</h3>
+        <ul>{specialist.findings.map((finding) => <li key={finding}>{finding}</li>)}</ul>
+        <small>{specialist.evidenceIds.length} linked evidence item{specialist.evidenceIds.length === 1 ? "" : "s"}</small>
+      </article>)}
+    </div>
+    {insights && <div className="scope-groups">
+      <article><b>Target segments and jobs to be done</b>{insights.targetSegments.map((segment) => <p key={segment.name}><strong>{segment.name}:</strong> {segment.jobsToBeDone.join(" · ")}</p>)}</article>
+      <article><b>Willingness to pay · {insights.willingnessToPay.strength}</b><p>{insights.willingnessToPay.finding}</p></article>
+      <article><b>Market context</b><p>{insights.marketContext.summary}</p>{insights.marketContext.metrics.map((metric) => <p key={`${metric.label}-${metric.value}`}><strong>{metric.label}:</strong> {metric.value}</p>)}</article>
+      <article><b>Go-to-market findings</b>{insights.gtmFindings.map((item) => <p key={item.finding}>{item.finding}</p>)}</article>
+    </div>}
+  </div>;
 }
 
 function EvidenceCitations({ report, evidenceIds }: { report: ReportType; evidenceIds: readonly string[] }) {

@@ -1,0 +1,675 @@
+{
+  "id": "fc670456-4e24-4a59-8bb0-2a3dbfbe9a97",
+  "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+  "opportunity_id": "88b0ddd2-0c2e-4905-b2f6-9cb37af876f1",
+  "status": "Published",
+  "executive_summary": "While there is clear evidence of operational friction in managing cybersecurity RFPs via manual tools, the current market signal lacks proof of willingness to pay for new solutions. Efficiency gains from reusable libraries demonstrate potential value, yet skepticism remains regarding AI-only solutions due to the high precision required for framework-specific compliance.",
+  "methodology": "The validation score was derived by cross-referencing identified pain points in RFP management against the lack of verified purchase intent and the technical complexity of framework-specific compliance.",
+  "generated_at": "2026-07-25T12:23:30.646861+00:00",
+  "updated_at": "2026-07-25T12:23:30.646861+00:00",
+  "created_at": "2026-07-25T12:23:30.646861+00:00",
+  "report_versions": [
+    {
+      "id": "1807b9e6-3481-4d70-9e6a-ee8c4705a02d",
+      "payload": {
+        "id": "c131798c-e4dc-4647-b607-7e450c68442a",
+        "version": "1.0",
+        "reportMode": "quick_scan",
+        "generatedAt": "2026-07-25T12:23:30.645Z",
+        "limitations": [],
+        "methodology": "The validation score was derived by cross-referencing identified pain points in RFP management against the lack of verified purchase intent and the technical complexity of framework-specific compliance.",
+        "opportunity": {
+          "id": "88b0ddd2-0c2e-4905-b2f6-9cb37af876f1",
+          "mvp": {
+            "scope": [
+              "Control library mapping",
+              "Incident-response playbook generation",
+              "Source-cited AI drafting"
+            ],
+            "outcome": "Automated, consistent, and audit-ready RFP responses.",
+            "exclusions": [
+              "Manual spreadsheet-based management",
+              "Generic boilerplate content"
+            ],
+            "buildEstimate": "Not specified",
+            "buildComplexity": "High"
+          },
+          "name": "Cited RFP Answer Library for Cybersecurity Vendors",
+          "risks": [
+            {
+              "id": "0aa742fb-8202-4681-bbe7-0b0e8ad584b2",
+              "category": "Execution",
+              "severity": "High",
+              "mitigation": "Use AI-powered RFP workflows to ensure internal consistency and evidence-backed responses.",
+              "description": "Inconsistent answers across technical, compliance, and legal sections can trigger extended review cycles or loss of credibility.",
+              "evidenceIds": [
+                "9bbafdd4-c77c-47b4-851b-4fc9311d8615"
+              ]
+            },
+            {
+              "id": "baa8a9d8-20df-49cf-82c4-ceafaf3f70c9",
+              "category": "Market",
+              "severity": "Medium",
+              "mitigation": "Implement a centralized, tagged, and searchable answer library.",
+              "description": "Manual response processes break down under the weight of long questionnaires and cross-functional dependencies.",
+              "evidenceIds": [
+                "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+              ]
+            }
+          ],
+          "launch": {
+            "weekOne": [
+              "Identify target cybersecurity firms",
+              "Conduct working session on live pursuit",
+              "Map initial control library"
+            ],
+            "successMetric": "Reduction in time-per-questionnaire and increase in win rate.",
+            "outreachMessage": "Stop starting from scratch. Use AI to generate, review, and manage your security proposal responses with verifiable, cited evidence.",
+            "firstTenStrategy": [
+              "Establish referenceable case studies",
+              "Refine AI citation accuracy",
+              "Validate workflow against SOC 2/CMMC requirements"
+            ],
+            "firstCustomerChannel": "Direct outreach to cybersecurity teams managing high volumes of security questionnaires."
+          },
+          "market": "B2B",
+          "pricing": {
+            "model": "Not specified",
+            "rationale": "Pricing models vary by vendor, ranging from project-based (AutogenAI) to enterprise-focused structures (Responsive).",
+            "firstOffer": "Free trials or demos are standard industry practice.",
+            "pricePoint": "Not specified",
+            "evidenceIds": [
+              "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+              "26476f6c-ddb6-47ba-bbe9-155c1500f9c8"
+            ],
+            "targetCustomers": 1
+          },
+          "corePain": "A collaborative SaaS assistant that ingests prior RFP and security questionnaire responses, links each answer to approved product and security evidence, flags stale claims, and helps proposal teams at mid-market cybersecurity vendors produc",
+          "evidence": [
+            {
+              "id": "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+              "url": "https://www.steerlab.ai/blog/best-rfp-software-for-cybersecurity-companies-in-2026",
+              "date": "2026-07-25T12:23:27.811322+00:00",
+              "title": "RFP Automation Necessity",
+              "signal": "Pain",
+              "source": "www.steerlab.ai",
+              "snippet": "Most teams manage security questionnaires with Google Docs and spreadsheets, which breaks down as they scale or enter enterprise markets.",
+              "excluded": false,
+              "strength": "High",
+              "painPoint": null,
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "problem"
+            },
+            {
+              "id": "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+              "url": "https://www.steerlab.ai/blog/best-rfp-software-for-cybersecurity-companies-in-2026",
+              "date": "2026-07-25T12:23:27.823595+00:00",
+              "title": "Adversarial assessment",
+              "signal": "Risk",
+              "source": "www.steerlab.ai",
+              "snippet": "Some legacy tools require significant manual maintenance, which may lead to skepticism regarding AI-only solutions.",
+              "excluded": false,
+              "strength": "Low",
+              "painPoint": null,
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": true,
+              "evidenceFamily": "solution"
+            },
+            {
+              "id": "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+              "url": "https://www.inventive.ai/blog-posts/cybersecurity-rfps",
+              "date": "2026-07-25T12:23:27.805665+00:00",
+              "title": "Cybersecurity RFP Complexity",
+              "signal": "Pain",
+              "source": "www.inventive.ai",
+              "snippet": "Cybersecurity RFPs go deeper than feature lists or pricing tables, testing how a vendor governs risk and proves security posture across technical, legal, and organizational layers.",
+              "excluded": false,
+              "strength": "High",
+              "painPoint": null,
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "problem"
+            },
+            {
+              "id": "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+              "url": "https://bidresponder.com/industries/cybersecurity",
+              "date": "2026-07-25T12:23:27.815341+00:00",
+              "title": "Framework-Specific Response Needs",
+              "signal": "Demand",
+              "source": "bidresponder.com",
+              "snippet": "Cybersecurity RFPs require precise control language across NIST, CMMC, and ISO frameworks.",
+              "excluded": false,
+              "strength": "High",
+              "painPoint": null,
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "solution"
+            },
+            {
+              "id": "5fee63fe-ef95-4f1a-ba03-1b5ae21db158",
+              "url": "https://www.proposalvault.cloud/blog/build-reusable-answer-library",
+              "date": "2026-07-25T12:23:27.818772+00:00",
+              "title": "Efficiency Gains from Reusable Libraries",
+              "signal": "Demand",
+              "source": "www.proposalvault.cloud",
+              "snippet": "A 5-person startup reduced their average questionnaire time from 8 hours to 45 minutes using a reusable answer library.",
+              "excluded": false,
+              "strength": "Medium",
+              "painPoint": null,
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "solution"
+            }
+          ],
+          "oneLiner": "A collaborative SaaS assistant that ingests prior RFP and security questionnaire responses, links each answer to approved product and security evidence, flags stale claims, and helps proposal teams at mid-market cybersecurity vendors produc",
+          "createdAt": "2026-07-25T12:23:13.950937+00:00",
+          "scorecard": {
+            "notes": {
+              "mvpSpeed": "Execution-risk burden; fewer material risks increase feasibility.",
+              "founderFit": "Run-specific evidence access and domain signal coverage; no unsupported founder biography is inferred.",
+              "painSeverity": "Weighted verified pain strength, confidence, and contradiction ratio.",
+              "competitionGap": "Competitive density adjusted by explicit normalized gaps and gap-language evidence.",
+              "regulatoryRisk": "Regulatory and compliance risk evidence; this factor is inverted in the weighted total.",
+              "purchaseUrgency": "Urgency language in pain and demand evidence.",
+              "willingnessToPay": "No Tier 1 willingness-to-pay evidence; recommendations do not substitute for paid-demand proof.",
+              "buyerReachability": "Demand volume and independently sourced communities.",
+              "retentionPotential": "Recurring-workflow language in verified evidence.",
+              "distributionClarity": "Demand evidence plus persisted launch-channel specificity.",
+              "speedToFirstRevenue": "Pricing proof and purchase urgency combined deterministically.",
+              "platformDependencyRisk": "Platform dependency risk evidence; this factor is inverted in the weighted total."
+            },
+            "total": 40.8,
+            "scores": {
+              "mvpSpeed": 57,
+              "founderFit": 25,
+              "painSeverity": 30.4,
+              "competitionGap": 74.3,
+              "regulatoryRisk": 10,
+              "purchaseUrgency": 24.3,
+              "willingnessToPay": 10,
+              "buyerReachability": 32,
+              "retentionPotential": 20,
+              "distributionClarity": 59.5,
+              "speedToFirstRevenue": 21.1,
+              "platformDependencyRisk": 10
+            },
+            "verdict": "Weak Signal",
+            "weights": {
+              "mvpSpeed": 8,
+              "founderFit": 7,
+              "painSeverity": 12,
+              "competitionGap": 8,
+              "regulatoryRisk": 5,
+              "purchaseUrgency": 10,
+              "willingnessToPay": 11,
+              "buyerReachability": 8,
+              "retentionPotential": 9,
+              "distributionClarity": 8,
+              "speedToFirstRevenue": 7,
+              "platformDependencyRisk": 7
+            },
+            "confidence": 76,
+            "evidenceRefs": {
+              "mvpSpeed": [
+                "653c760b-19ff-4c77-947b-ab6c4d129ab9"
+              ],
+              "founderFit": [
+                "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+                "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+                "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+                "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+                "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+              ],
+              "painSeverity": [
+                "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+                "9bbafdd4-c77c-47b4-851b-4fc9311d8615"
+              ],
+              "competitionGap": [
+                "9bbafdd4-c77c-47b4-851b-4fc9311d8615"
+              ],
+              "regulatoryRisk": [],
+              "purchaseUrgency": [
+                "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+              ],
+              "willingnessToPay": [],
+              "buyerReachability": [
+                "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+                "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+              ],
+              "retentionPotential": [],
+              "distributionClarity": [
+                "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+                "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+              ],
+              "speedToFirstRevenue": [
+                "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+              ],
+              "platformDependencyRisk": []
+            }
+          },
+          "competitors": [
+            {
+              "id": "dc0c11d2-ec62-42c3-aa54-9f6ae5b5f150",
+              "gap": "Focused primarily on government/public sector.",
+              "name": "GovSignals",
+              "target": "Government contractors and federal/SLED teams.",
+              "pricing": "Not specified",
+              "strength": "FedRAMP High posture and deep government data integration.",
+              "evidenceIds": [],
+              "positioning": "Source-cited intelligence and proposal workflows for government contractors."
+            },
+            {
+              "id": "b00390df-43f3-4ed6-a87a-0eadbd84f3ad",
+              "gap": "Requires significant manual maintenance of the content library.",
+              "name": "Loopio",
+              "target": "Teams with dedicated content managers.",
+              "pricing": "Not specified",
+              "strength": "Robust content management.",
+              "evidenceIds": [
+                "653c760b-19ff-4c77-947b-ab6c4d129ab9"
+              ],
+              "positioning": "Structured content library with keyword-based AI."
+            },
+            {
+              "id": "bd272ed6-4839-4e86-8a91-9142b634e405",
+              "gap": "Steep learning curve.",
+              "name": "Responsive",
+              "target": "Large enterprises with complex approval workflows.",
+              "pricing": "Complex pricing structure.",
+              "strength": "Robust content management and workflow automation.",
+              "evidenceIds": [
+                "653c760b-19ff-4c77-947b-ab6c4d129ab9"
+              ],
+              "positioning": "Workflow automation for large enterprises."
+            },
+            {
+              "id": "ff574ca8-9726-45c5-ba70-f47cf8e41372",
+              "gap": "Younger company still scaling its customer base.",
+              "name": "Steerlab",
+              "target": "Cybersecurity teams",
+              "pricing": "Not specified",
+              "strength": "Built specifically for cybersecurity workflows.",
+              "evidenceIds": [
+                "653c760b-19ff-4c77-947b-ab6c4d129ab9"
+              ],
+              "positioning": "AI-first RFP automation for cybersecurity compliance and vendor risk assessments."
+            }
+          ],
+          "targetCustomer": "Revenue operations, proposal, and security teams at mid-market B2B cybersecurity vendors"
+        },
+        "evidenceGaps": [
+          "Tier 1/2 evidence missing"
+        ],
+        "reportSections": [
+          "Conclusion",
+          "Evidence",
+          "Competition",
+          "Score breakdown",
+          "Pricing",
+          "Next actions",
+          "Risks",
+          "Exports"
+        ],
+        "adversarialGate": {
+          "outcome": "NoStrongDisproof",
+          "severity": "None",
+          "objection": "Some legacy tools require significant manual maintenance, which may lead to skepticism regarding AI-only solutions.",
+          "unresolved": false,
+          "evidence_ids": [
+            "653c760b-19ff-4c77-947b-ab6c4d129ab9"
+          ]
+        },
+        "availableExports": [
+          "pdf",
+          "markdown",
+          "csv",
+          "json"
+        ],
+        "executiveSummary": "While there is clear evidence of operational friction in managing cybersecurity RFPs via manual tools, the current market signal lacks proof of willingness to pay for new solutions. Efficiency gains from reusable libraries demonstrate potential value, yet skepticism remains regarding AI-only solutions due to the high precision required for framework-specific compliance.",
+        "topRecommendation": "Reduction in time-per-questionnaire and increase in win rate.",
+        "citationValidation": {
+          "valid": true,
+          "methodology": [
+            {
+              "text": "The validation score was derived by cross-referencing identified pain points in RFP management against the lack of verified purchase intent and the technical complexity of framework-specific compliance.",
+              "evidence_ids": [
+                "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+                "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+                "653c760b-19ff-4c77-947b-ab6c4d129ab9"
+              ],
+              "score_criteria": [
+                "purchaseUrgency",
+                "speedToFirstRevenue"
+              ]
+            }
+          ],
+          "claimsChecked": 3,
+          "claimsRemoved": 0,
+          "invalidClaims": [],
+          "executiveSummary": [
+            {
+              "text": "While there is clear evidence of operational friction in managing cybersecurity RFPs via manual tools, the current market signal lacks proof of willingness to pay for new solutions.",
+              "evidence_ids": [
+                "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+                "9bbafdd4-c77c-47b4-851b-4fc9311d8615"
+              ],
+              "score_criteria": [
+                "painSeverity",
+                "willingnessToPay"
+              ]
+            },
+            {
+              "text": "Efficiency gains from reusable libraries demonstrate potential value, yet skepticism remains regarding AI-only solutions due to the high precision required for framework-specific compliance.",
+              "evidence_ids": [
+                "5fee63fe-ef95-4f1a-ba03-1b5ae21db158",
+                "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+                "26476f6c-ddb6-47ba-bbe9-155c1500f9c8"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "retentionPotential"
+              ]
+            }
+          ]
+        },
+        "narrativeCitations": {
+          "methodology": [
+            {
+              "text": "The validation score was derived by cross-referencing identified pain points in RFP management against the lack of verified purchase intent and the technical complexity of framework-specific compliance.",
+              "evidence_ids": [
+                "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+                "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+                "653c760b-19ff-4c77-947b-ab6c4d129ab9"
+              ],
+              "score_criteria": [
+                "purchaseUrgency",
+                "speedToFirstRevenue"
+              ]
+            }
+          ],
+          "written_verdict": "Weak Signal",
+          "executive_summary": [
+            {
+              "text": "While there is clear evidence of operational friction in managing cybersecurity RFPs via manual tools, the current market signal lacks proof of willingness to pay for new solutions.",
+              "evidence_ids": [
+                "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+                "9bbafdd4-c77c-47b4-851b-4fc9311d8615"
+              ],
+              "score_criteria": [
+                "painSeverity",
+                "willingnessToPay"
+              ]
+            },
+            {
+              "text": "Efficiency gains from reusable libraries demonstrate potential value, yet skepticism remains regarding AI-only solutions due to the high precision required for framework-specific compliance.",
+              "evidence_ids": [
+                "5fee63fe-ef95-4f1a-ba03-1b5ae21db158",
+                "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+                "26476f6c-ddb6-47ba-bbe9-155c1500f9c8"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "retentionPotential"
+              ]
+            }
+          ]
+        },
+        "strongestNegativeEvidenceId": "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+        "strongestPositiveEvidenceId": "b89fe05f-cb75-4041-9ed3-51604ddd0d5f"
+      },
+      "report_id": "fc670456-4e24-4a59-8bb0-2a3dbfbe9a97",
+      "created_at": "2026-07-25T12:23:30.651613+00:00",
+      "updated_at": "2026-07-25T12:23:30.651613+00:00",
+      "report_mode": "quick_scan",
+      "market_sizing": {
+        "reason": "Market sizing deferred to evidence phase"
+      },
+      "report_exports": [
+        {
+          "id": "4f0fd5e1-bc73-4f8e-af7d-f525bc31097e",
+          "format": "pdf",
+          "sha256": "38655a045852097039e664f7078ef64fdb7c2f59568c9aa3be5000d95d7d2d6b",
+          "byte_size": 39329,
+          "created_at": "2026-07-25T12:23:30.768418+00:00",
+          "storage_path": "71277eaa-bf98-4806-8d33-fe257435fca2/c131798c-e4dc-4647-b607-7e450c68442a/v1/report.pdf",
+          "report_version_id": "1807b9e6-3481-4d70-9e6a-ee8c4705a02d"
+        },
+        {
+          "id": "5783e94a-e28e-403a-b0a0-074a839e3c8a",
+          "format": "markdown",
+          "sha256": "54821cdca5ac7bb167a4ac73de65f7fd14170d9135f4569e2e6716192e09c751",
+          "byte_size": 2480,
+          "created_at": "2026-07-25T12:23:30.788317+00:00",
+          "storage_path": "71277eaa-bf98-4806-8d33-fe257435fca2/c131798c-e4dc-4647-b607-7e450c68442a/v1/report.markdown",
+          "report_version_id": "1807b9e6-3481-4d70-9e6a-ee8c4705a02d"
+        },
+        {
+          "id": "39fad98f-4b81-4488-9fa7-411480d9ca4e",
+          "format": "csv",
+          "sha256": "218f59874b81340ce88cc75db83e87e4134f1ea1cb2e948a2b598b92792e4e03",
+          "byte_size": 22648,
+          "created_at": "2026-07-25T12:23:30.806864+00:00",
+          "storage_path": "71277eaa-bf98-4806-8d33-fe257435fca2/c131798c-e4dc-4647-b607-7e450c68442a/v1/report.csv",
+          "report_version_id": "1807b9e6-3481-4d70-9e6a-ee8c4705a02d"
+        },
+        {
+          "id": "78c1871b-9cae-4bbe-a3d2-941d81553e1f",
+          "format": "json",
+          "sha256": "f487dcedee8cd1e9b57dfea081a2a499d1749ca780a8e4f3a93466355d68c83a",
+          "byte_size": 17179,
+          "created_at": "2026-07-25T12:23:30.83119+00:00",
+          "storage_path": "71277eaa-bf98-4806-8d33-fe257435fca2/c131798c-e4dc-4647-b607-7e450c68442a/v1/report.json",
+          "report_version_id": "1807b9e6-3481-4d70-9e6a-ee8c4705a02d"
+        }
+      ],
+      "version_number": 1,
+      "reasoning_flags": [],
+      "adversarial_gate": {
+        "id": "a24870e4-b34c-4966-88b4-d3b464ef475f",
+        "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+        "status": "Complete",
+        "outcome": "NoStrongDisproof",
+        "payload": {
+          "outcome": "NoStrongDisproof",
+          "severity": "None",
+          "objection": "Some legacy tools require significant manual maintenance, which may lead to skepticism regarding AI-only solutions.",
+          "sourceIds": [
+            "8d826557-b8c2-46c5-9939-6d72fc8a8bee"
+          ],
+          "evidence_ids": [
+            "653c760b-19ff-4c77-947b-ab6c4d129ab9"
+          ]
+        },
+        "severity": "None",
+        "objection": "Some legacy tools require significant manual maintenance, which may lead to skepticism regarding AI-only solutions.",
+        "created_at": "2026-07-25T12:23:27.946158+00:00",
+        "unresolved": false,
+        "evidence_ids": [
+          "653c760b-19ff-4c77-947b-ab6c4d129ab9"
+        ],
+        "emerging_verdict": "Validate First"
+      },
+      "decision_integrity": null,
+      "citation_validation": {
+        "valid": true,
+        "methodology": [
+          {
+            "text": "The validation score was derived by cross-referencing identified pain points in RFP management against the lack of verified purchase intent and the technical complexity of framework-specific compliance.",
+            "evidence_ids": [
+              "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+              "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+              "653c760b-19ff-4c77-947b-ab6c4d129ab9"
+            ],
+            "score_criteria": [
+              "purchaseUrgency",
+              "speedToFirstRevenue"
+            ]
+          }
+        ],
+        "claimsChecked": 3,
+        "claimsRemoved": 0,
+        "invalidClaims": [],
+        "executiveSummary": [
+          {
+            "text": "While there is clear evidence of operational friction in managing cybersecurity RFPs via manual tools, the current market signal lacks proof of willingness to pay for new solutions.",
+            "evidence_ids": [
+              "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+              "9bbafdd4-c77c-47b4-851b-4fc9311d8615"
+            ],
+            "score_criteria": [
+              "painSeverity",
+              "willingnessToPay"
+            ]
+          },
+          {
+            "text": "Efficiency gains from reusable libraries demonstrate potential value, yet skepticism remains regarding AI-only solutions due to the high precision required for framework-specific compliance.",
+            "evidence_ids": [
+              "5fee63fe-ef95-4f1a-ba03-1b5ae21db158",
+              "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+              "26476f6c-ddb6-47ba-bbe9-155c1500f9c8"
+            ],
+            "score_criteria": [
+              "competitionGap",
+              "retentionPotential"
+            ]
+          }
+        ]
+      },
+      "adversarial_downgrade": false,
+      "report_chart_datasets": [
+        {
+          "id": "a431733f-143c-4df8-8f24-e85d5f13346e",
+          "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+          "sha256": "2474345b92a4272590a23546febcece214129672a30151a8f01760d3b060864a",
+          "chart_key": "evidence_coverage",
+          "chart_type": "bar",
+          "created_at": "2026-07-25T12:23:30.670172+00:00",
+          "source_data": {
+            "byFamily": {
+              "problem": 2,
+              "solution": 3
+            },
+            "bySignal": {
+              "Pain": 2,
+              "Risk": 1,
+              "Demand": 2
+            }
+          },
+          "chart_config": {},
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "1807b9e6-3481-4d70-9e6a-ee8c4705a02d",
+          "supporting_evidence_ids": [
+            "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+            "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+            "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+            "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+            "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+          ]
+        },
+        {
+          "id": "d1572159-a234-4dc0-98d7-2fc0fb21e7b9",
+          "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+          "sha256": "b0c80bcb65501098087a3a48fb5d48690fa54de5186c0c08451541db41f938e0",
+          "chart_key": "evidence-balance",
+          "chart_type": "pie",
+          "created_at": "2026-07-25T12:23:30.661855+00:00",
+          "source_data": {
+            "negative": 1,
+            "positive": 4
+          },
+          "chart_config": {},
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "1807b9e6-3481-4d70-9e6a-ee8c4705a02d",
+          "supporting_evidence_ids": [
+            "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+            "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+            "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+            "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+            "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+          ]
+        },
+        {
+          "id": "2a918c0c-c648-4d76-ae05-d887490c5684",
+          "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+          "sha256": "9082d0cb67fde4c43ea635aff65638f41d8875ef3177b0d8820b16835a8c6a05",
+          "chart_key": "opportunity-factor-breakdown",
+          "chart_type": "radar",
+          "created_at": "2026-07-25T12:23:30.657357+00:00",
+          "source_data": {
+            "values": {
+              "mvpSpeed": 57,
+              "founderFit": 25,
+              "painSeverity": 30.4,
+              "competitionGap": 74.3,
+              "regulatoryRisk": 10,
+              "purchaseUrgency": 24.3,
+              "willingnessToPay": 10,
+              "buyerReachability": 32,
+              "retentionPotential": 20,
+              "distributionClarity": 59.5,
+              "speedToFirstRevenue": 21.1,
+              "platformDependencyRisk": 10
+            }
+          },
+          "chart_config": {},
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "1807b9e6-3481-4d70-9e6a-ee8c4705a02d",
+          "supporting_evidence_ids": [
+            "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+            "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+            "5fee63fe-ef95-4f1a-ba03-1b5ae21db158",
+            "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+            "5fee63fe-ef95-4f1a-ba03-1b5ae21db158",
+            "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+            "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+            "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+            "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+            "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+            "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+            "5fee63fe-ef95-4f1a-ba03-1b5ae21db158",
+            "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+            "5fee63fe-ef95-4f1a-ba03-1b5ae21db158",
+            "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+          ]
+        },
+        {
+          "id": "402714c2-3571-4842-8438-371fe5e575d8",
+          "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+          "sha256": "f049a5b59327577089a49e82eebeae000a2ef699ff8f5d9ff3d681d9bcecadab",
+          "chart_key": "source-quality-distribution",
+          "chart_type": "bar",
+          "created_at": "2026-07-25T12:23:30.665946+00:00",
+          "source_data": {
+            "byTier": {
+              "t1": 0,
+              "t2": 0,
+              "t3": 5,
+              "t4": 0
+            }
+          },
+          "chart_config": {},
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "1807b9e6-3481-4d70-9e6a-ee8c4705a02d",
+          "supporting_evidence_ids": [
+            "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+            "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+            "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+            "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+            "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+          ]
+        }
+      ],
+      "verdict_score_mismatch": false
+    }
+  ]
+}

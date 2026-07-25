@@ -8,6 +8,7 @@
 
 import type { StageContext, StageResult } from "../stages.ts";
 import { stageCompleted, stageFailed } from "../stages.ts";
+import { reconcileUsageMetrics } from "../pipeline-utils.ts";
 
 export async function executeComplete(
   ctx: StageContext,
@@ -31,17 +32,12 @@ export async function executeComplete(
     return stageFailed("permanent", `Run is already terminal: ${run.status}`);
   }
 
-  // --- Finalize the run via the DB function (idempotent) ---
-  const { error: finalizeError } = await db.rpc(
-    "finalize_research_run",
-    { p_run_id: runId },
-  );
+  // Rebuild run-level observability from immutable provider usage rows before
+  // the terminal job and credit finalization commit atomically.
+  const reconciled = await reconcileUsageMetrics(runId, db);
 
-  if (finalizeError) {
-    return stageFailed("permanent", `Run finalization failed: ${finalizeError.message}`);
-  }
-
-  // --- Update pipeline metrics with final totals ---
+  // The complete_research_job transaction atomically commits this final job and
+  // calls finalize_research_run. Compute terminal totals before that transaction.
   const { data: usageTotals } = await db
     .from("api_usage_logs")
     .select("cost")
@@ -90,6 +86,12 @@ export async function executeComplete(
       totalCost,
       sourcesAccepted: sourcesAccepted ?? 0,
       evidenceCount: evidenceCount ?? 0,
+      providerCalls: reconciled.providerCalls,
+      groundedCallsAttempted: reconciled.groundedCallsAttempted,
+      groundedCallsCompleted: reconciled.groundedCallsCompleted,
+      groundedCallsQuotaBlocked: reconciled.groundedCallsQuotaBlocked,
+      externalSearchCalls: reconciled.externalSearchCalls,
+      synthesisCalls: reconciled.synthesisCalls,
     },
     { duration_ms: Date.now() - startedAt },
   );

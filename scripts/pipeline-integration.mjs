@@ -90,7 +90,7 @@ async function runPipeline(user, projectId, mode) {
   if (JSON.stringify(jobs?.map((job) => job.stage)) !== JSON.stringify(expected) || jobs.some((job) => job.status !== "completed")) throw new Error(`${mode} queue path was not canonical: ${JSON.stringify(jobs)}`);
   const { data: report } = await admin.from("reports").select("id,report_versions(id,report_exports(format),report_chart_datasets(chart_key))").eq("run_id", runId).single();
   const version = report?.report_versions?.[0];
-  const expectedExports = mode === "quick_scan" ? 1 : 4;
+  const expectedExports = 4;
   if (!version || version.report_exports?.length !== expectedExports || !version.report_chart_datasets?.length) throw new Error(`${mode} report artifacts are incomplete`);
   return { mode, runId, stages: expected.length, exports: version.report_exports.length, charts: version.report_chart_datasets.length, status: "PASS" };
 }

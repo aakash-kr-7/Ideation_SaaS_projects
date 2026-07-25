@@ -4,6 +4,8 @@ import { claimJob, commitStageResult, validateJobStage } from "../_shared/resear
 import { executeStage } from "../_shared/research/executor-registry.ts";
 import type { StageContext } from "../_shared/research/stages.ts";
 import { createProductionDependencies } from "../_shared/research/dependencies.ts";
+import { costBudgetForRun, reconcileUsageMetrics } from "../_shared/research/pipeline-utils.ts";
+import { getGeminiModelConfig } from "../_shared/research/gemini.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,6 +22,27 @@ Deno.serve(async (req: Request) => {
     if (!authorized) return jsonResponse({ error: "Unauthorized" }, 401);
 
     const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", serviceRoleKey ?? "");
+    const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+    if (body?.action === "gemini-diagnostic") {
+      const runId = typeof body.runId === "string" ? body.runId : "";
+      const { data: run, error } = await db.from("research_runs").select("mode").eq("id", runId).single();
+      if (error || !run) return jsonResponse({ error: "A valid diagnostic run is required." }, 400);
+      if (!Deno.env.get("GEMINI_API_KEY")) {
+        const configuredModels = getGeminiModelConfig();
+        return jsonResponse({
+          geminiKeyPresent: false,
+          configuredModels,
+          modelChecks: [...new Set(Object.values(configuredModels))].map((model) => ({ model, success: false })),
+          googleSearchGroundingMetadata: false,
+        }, 503);
+      }
+      const dependencies = createProductionDependencies(db);
+      const diagnostic = await dependencies.createGemini().diagnose({
+        runId, db, budget: await costBudgetForRun(runId, db, getReportModeConfig(run.mode)),
+      });
+      await reconcileUsageMetrics(runId, db);
+      return jsonResponse(diagnostic);
+    }
     // Requests only wake a durable queue consumer. They can never execute a run payload directly.
     return await handleStagedClaim(db);
   } catch (error) {
@@ -51,6 +74,7 @@ async function handleStagedClaim(db: any): Promise<Response> {
   };
   const stage = validateJobStage(job.stage);
   const stageResult = await executeStage(stage, ctx);
+  await reconcileUsageMetrics(job.run_id, db);
   await commitStageResult(db, job.id, stageResult);
   return jsonResponse({ message: "Stage processed", job_id: job.id, stage, status: stageResult.status, next_stage: stageResult.nextStage, worker: workerId }, 202);
 }

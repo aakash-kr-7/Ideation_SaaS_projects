@@ -34,8 +34,8 @@ export interface ReportModeConfig {
 
 const commonProgress = (reportLabel: string, exportLabel: string): readonly ModeProgressStep[] => [
   { key: "queued", status: "Queued", label: "Preparing research" },
-  { key: "grounded_research", status: "Searching", label: "Gemini grounded research" },
-  { key: "evidence_boosters", status: "Searching", label: "Selective evidence boosters" },
+  { key: "grounded_research", status: "Searching", label: "Planning hybrid source discovery" },
+  { key: "evidence_boosters", status: "Searching", label: "Discovering and retrieving public evidence" },
   { key: "validate_normalize", status: "Normalizing", label: "Validating attributable evidence" },
   { key: "analyze_score", status: "Scoring", label: "Computing the 12-factor score and charts" },
   { key: "generate_report", status: "Generating", label: `Generating ${reportLabel}` },
@@ -48,7 +48,7 @@ export const REPORT_MODE_CONFIG = {
     mode: "quick_scan", label: "Quick Scan",
     customerDescription: "A rapid evidence-backed screen to decide whether an idea deserves deeper validation.",
     purpose: "Does this idea show enough evidence to deserve deeper validation?", creditCost: 1,
-    exports: ["pdf"], progress: commonProgress("Quick Scan", "Creating PDF export"),
+    exports: ["pdf", "markdown", "csv", "json"], progress: commonProgress("Quick Scan", "Creating PDF, Markdown, CSV, and JSON exports"),
     evidenceSufficiency: { minimumUsableEvidence: 2, minimumProblemSources: 1, minimumSolutionSources: 1, minimumDisconfirmingEvidence: 0, requireTierOneEvidence: false, requireTierOneOrTwoEvidence: true },
     costLimits: { totalUsd: 0.50 }, maxJobsPerRun: 12,
   },

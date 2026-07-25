@@ -16,7 +16,7 @@ export async function executeHybridAnalyzeScore(ctx: StageContext): Promise<Stag
     // --- Load evidence and artifacts ---
     const { data: evidence } = await db
       .from("evidence_items")
-      .select("id, signal_type, strength, title, snippet, source_tier, source_id, source_domain, excluded, disconfirming, independent_source_count, created_at")
+      .select("id, signal_type, strength, title, snippet, evidence_family, source_tier, source_id, source_domain, excluded, disconfirming, independent_source_count, created_at")
       .eq("run_id", runId);
 
     const { data: competitors } = await db.from("competitors").select("*").eq("opportunity_id", opportunityId);
@@ -126,7 +126,7 @@ export async function executeHybridAnalyzeScore(ctx: StageContext): Promise<Stag
     chartDatasets.push({
       chart_key: "opportunity-factor-breakdown",
       chart_type: "radar",
-      source_data: factors.map(f => ({ criterion: f.criterion, score: f.score })),
+      source_data: { values: Object.fromEntries(factors.map(f => [f.criterion, f.score])) },
       supporting_evidence_ids: factors.flatMap(f => f.evidenceIds)
     });
 
@@ -151,8 +151,24 @@ export async function executeHybridAnalyzeScore(ctx: StageContext): Promise<Stag
     chartDatasets.push({
       chart_key: "source-quality-distribution",
       chart_type: "bar",
-      source_data: tiers,
+      source_data: { byTier: tiers },
       supporting_evidence_ids: (evidence || []).map((e: any) => e.id)
+    });
+
+    const bySignal = (evidence || []).reduce((all: Record<string, number>, item: any) => {
+      all[item.signal_type] = (all[item.signal_type] || 0) + 1;
+      return all;
+    }, {});
+    const byFamily = (evidence || []).reduce((all: Record<string, number>, item: any) => {
+      const family = item.evidence_family || "unclassified";
+      all[family] = (all[family] || 0) + 1;
+      return all;
+    }, {});
+    chartDatasets.push({
+      chart_key: "evidence_coverage",
+      chart_type: "bar",
+      source_data: { bySignal, byFamily },
+      supporting_evidence_ids: (evidence || []).map((e: any) => e.id),
     });
 
     if (mode === "full_validation") {
@@ -161,7 +177,7 @@ export async function executeHybridAnalyzeScore(ctx: StageContext): Promise<Stag
         chartDatasets.push({
           chart_key: "pain-clusters",
           chart_type: "scatter",
-          source_data: evidenceClusters.filter((c: any) => c.signal_type === "Pain").map((c: any) => ({ name: c.cluster_key, size: c.supporting_evidence_ids?.length || 1 })),
+          source_data: { values: Object.fromEntries(evidenceClusters.filter((c: any) => c.signal_type === "Pain").map((c: any) => [c.cluster_key, c.supporting_evidence_ids?.length || 1])) },
           supporting_evidence_ids: evidenceClusters.filter((c: any) => c.signal_type === "Pain").flatMap((c: any) => c.supporting_evidence_ids || [])
         });
       }
@@ -171,8 +187,8 @@ export async function executeHybridAnalyzeScore(ctx: StageContext): Promise<Stag
         chartDatasets.push({
           chart_key: "competitor-comparison",
           chart_type: "bar",
-          source_data: competitors.map((c: any) => ({ name: c.name, diff: c.differentiation })),
-          supporting_evidence_ids: []
+          source_data: { values: Object.fromEntries(competitors.map((c: any) => [c.name, 1])) },
+          supporting_evidence_ids: (evidence || []).filter((e: any) => ["Demand", "Pricing"].includes(e.signal_type)).map((e: any) => e.id)
         });
       }
 
@@ -181,24 +197,20 @@ export async function executeHybridAnalyzeScore(ctx: StageContext): Promise<Stag
         chartDatasets.push({
           chart_key: "pricing-landscape",
           chart_type: "line",
-          source_data: { floor: pricing.price_floor, average: pricing.average_acv, ceiling: pricing.price_ceiling },
-          supporting_evidence_ids: []
+          source_data: {
+            pricingEvidence: (evidence || []).filter((e: any) => e.signal_type === "Pricing").length,
+            competitorsWithPublicPricing: (competitors || []).filter((c: any) => c.pricing && !/unavailable|unknown|not public/i.test(c.pricing)).length,
+          },
+          supporting_evidence_ids: (evidence || []).filter((e: any) => e.signal_type === "Pricing").map((e: any) => e.id)
         });
       }
 
-      // 7. Evidence Timeline
-      chartDatasets.push({
-        chart_key: "evidence-timeline",
-        chart_type: "line",
-        source_data: (evidence || []).map((e: any) => ({ title: e.title, date: e.created_at })),
-        supporting_evidence_ids: (evidence || []).map((e: any) => e.id)
-      });
-      // 8. Score Contribution
+      // 7. Score Contribution
       chartDatasets.push({
         chart_key: "score-contribution",
         chart_type: "waterfall",
-        source_data: factors.map(f => ({ name: f.criterion, contribution: f.score * (weights.find(w => w.criterion === f.criterion)?.weight || 1) })),
-        supporting_evidence_ids: []
+        source_data: { values: Object.fromEntries(factors.map(f => [f.criterion, f.score * (weights.find(w => w.criterion === f.criterion)?.weight || 1)])) },
+        supporting_evidence_ids: factors.flatMap(f => f.evidenceIds)
       });
     }
 
@@ -220,7 +232,8 @@ export async function executeHybridAnalyzeScore(ctx: StageContext): Promise<Stag
         deterministicVerdict,
         adversarialDowngrade,
         confidence: Math.round(confidence * 100),
-        chartDatasets
+        chartDatasets,
+        fullValidationInsights: inputMeta.fullValidationInsights,
       }
     });
   } catch (error: any) {

@@ -1,0 +1,256 @@
+{
+  "nodes": [
+    {
+      "id": "0f631a57-a7d6-4b19-a66b-470b0f38a344",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "node_type": "opportunity",
+      "node_key": "88b0ddd2-0c2e-4905-b2f6-9cb37af876f1",
+      "label": "Validated opportunity",
+      "attributes": {
+        "mode": "quick_scan"
+      },
+      "created_at": "2026-07-25T12:23:27.887019+00:00"
+    },
+    {
+      "id": "2d2b51a3-a64d-4668-9d49-59f2f99eb6d7",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "node_type": "source",
+      "node_key": "5e1ed3ff-0d37-4e7b-9526-e7a96c160d94",
+      "label": "Cybersecurity RFP Complexity",
+      "attributes": {
+        "url": "https://www.inventive.ai/blog-posts/cybersecurity-rfps",
+        "tier": 3,
+        "domain": "www.inventive.ai"
+      },
+      "created_at": "2026-07-25T12:23:27.89096+00:00"
+    },
+    {
+      "id": "3017b444-b246-4716-ae3a-55ca1c1bc615",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "node_type": "claim",
+      "node_key": "9bbafdd4-c77c-47b4-851b-4fc9311d8615",
+      "label": "Cybersecurity RFP Complexity",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Pain",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-25T12:23:27.894473+00:00"
+    },
+    {
+      "id": "6131fa0e-5354-448e-ad59-3761164e65c4",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "node_type": "source",
+      "node_key": "8d826557-b8c2-46c5-9939-6d72fc8a8bee",
+      "label": "Best RFP Software for Cybersecurity in 2026 | Buyer's Guide",
+      "attributes": {
+        "url": "https://www.steerlab.ai/blog/best-rfp-software-for-cybersecurity-companies-in-2026",
+        "tier": 3,
+        "domain": "www.steerlab.ai"
+      },
+      "created_at": "2026-07-25T12:23:27.900963+00:00"
+    },
+    {
+      "id": "e600367c-789c-4d96-9442-779e90ee2fb1",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "node_type": "claim",
+      "node_key": "b89fe05f-cb75-4041-9ed3-51604ddd0d5f",
+      "label": "RFP Automation Necessity",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Pain",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-25T12:23:27.903814+00:00"
+    },
+    {
+      "id": "4184eda3-ea5a-43ed-a57d-75a8d1d5dc62",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "node_type": "source",
+      "node_key": "8e9db9ff-f573-4042-99ee-3bb6982314ab",
+      "label": "Framework-Specific Response Needs",
+      "attributes": {
+        "url": "https://bidresponder.com/industries/cybersecurity",
+        "tier": 3,
+        "domain": "bidresponder.com"
+      },
+      "created_at": "2026-07-25T12:23:27.911023+00:00"
+    },
+    {
+      "id": "0796ad8a-3644-4666-acf3-5ba21e127de0",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "node_type": "claim",
+      "node_key": "26476f6c-ddb6-47ba-bbe9-155c1500f9c8",
+      "label": "Framework-Specific Response Needs",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Demand",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-25T12:23:27.914602+00:00"
+    },
+    {
+      "id": "33633bff-1866-49e5-b637-a9b3f73fde05",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "node_type": "source",
+      "node_key": "aed7ae4a-afd4-4cf2-bcb0-2386e7cc4bda",
+      "label": "Efficiency Gains from Reusable Libraries",
+      "attributes": {
+        "url": "https://www.proposalvault.cloud/blog/build-reusable-answer-library",
+        "tier": 3,
+        "domain": "www.proposalvault.cloud"
+      },
+      "created_at": "2026-07-25T12:23:27.921896+00:00"
+    },
+    {
+      "id": "5a9a5423-76f5-4c87-b292-3539f3f70559",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "node_type": "claim",
+      "node_key": "5fee63fe-ef95-4f1a-ba03-1b5ae21db158",
+      "label": "Efficiency Gains from Reusable Libraries",
+      "attributes": {
+        "strength": "Medium",
+        "signalType": "Demand",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-25T12:23:27.925783+00:00"
+    },
+    {
+      "id": "a0139c5d-3f4c-4ce3-aa16-72b9bd093eef",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "node_type": "claim",
+      "node_key": "653c760b-19ff-4c77-947b-ab6c4d129ab9",
+      "label": "Adversarial assessment",
+      "attributes": {
+        "strength": "Low",
+        "signalType": "Risk",
+        "disconfirming": true
+      },
+      "created_at": "2026-07-25T12:23:27.935095+00:00"
+    }
+  ],
+  "edges": [
+    {
+      "id": "5d34c2bd-301c-4f36-ae4f-76b549c41c7d",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "from_node_id": "2d2b51a3-a64d-4668-9d49-59f2f99eb6d7",
+      "to_node_id": "3017b444-b246-4716-ae3a-55ca1c1bc615",
+      "relation": "supports",
+      "evidence_ids": [
+        "9bbafdd4-c77c-47b4-851b-4fc9311d8615"
+      ],
+      "created_at": "2026-07-25T12:23:27.897433+00:00"
+    },
+    {
+      "id": "432068c3-0f07-4c61-a7b5-975a7df25215",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "from_node_id": "3017b444-b246-4716-ae3a-55ca1c1bc615",
+      "to_node_id": "0f631a57-a7d6-4b19-a66b-470b0f38a344",
+      "relation": "informs",
+      "evidence_ids": [
+        "9bbafdd4-c77c-47b4-851b-4fc9311d8615"
+      ],
+      "created_at": "2026-07-25T12:23:27.897433+00:00"
+    },
+    {
+      "id": "426951c4-95a4-4f31-98f7-c22509db9b30",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "from_node_id": "6131fa0e-5354-448e-ad59-3761164e65c4",
+      "to_node_id": "e600367c-789c-4d96-9442-779e90ee2fb1",
+      "relation": "supports",
+      "evidence_ids": [
+        "b89fe05f-cb75-4041-9ed3-51604ddd0d5f"
+      ],
+      "created_at": "2026-07-25T12:23:27.907563+00:00"
+    },
+    {
+      "id": "25aab2a3-407d-4949-a3e8-0d022359d15a",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "from_node_id": "e600367c-789c-4d96-9442-779e90ee2fb1",
+      "to_node_id": "0f631a57-a7d6-4b19-a66b-470b0f38a344",
+      "relation": "informs",
+      "evidence_ids": [
+        "b89fe05f-cb75-4041-9ed3-51604ddd0d5f"
+      ],
+      "created_at": "2026-07-25T12:23:27.907563+00:00"
+    },
+    {
+      "id": "9f2dd96c-8c98-4b1d-8014-e260b35200fc",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "from_node_id": "4184eda3-ea5a-43ed-a57d-75a8d1d5dc62",
+      "to_node_id": "0796ad8a-3644-4666-acf3-5ba21e127de0",
+      "relation": "supports",
+      "evidence_ids": [
+        "26476f6c-ddb6-47ba-bbe9-155c1500f9c8"
+      ],
+      "created_at": "2026-07-25T12:23:27.917876+00:00"
+    },
+    {
+      "id": "9050c59c-3851-4e09-86fd-0e069f066cbb",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "from_node_id": "0796ad8a-3644-4666-acf3-5ba21e127de0",
+      "to_node_id": "0f631a57-a7d6-4b19-a66b-470b0f38a344",
+      "relation": "informs",
+      "evidence_ids": [
+        "26476f6c-ddb6-47ba-bbe9-155c1500f9c8"
+      ],
+      "created_at": "2026-07-25T12:23:27.917876+00:00"
+    },
+    {
+      "id": "f783f78a-602e-443d-b6b5-cfd47b87bd20",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "from_node_id": "33633bff-1866-49e5-b637-a9b3f73fde05",
+      "to_node_id": "5a9a5423-76f5-4c87-b292-3539f3f70559",
+      "relation": "supports",
+      "evidence_ids": [
+        "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+      ],
+      "created_at": "2026-07-25T12:23:27.928952+00:00"
+    },
+    {
+      "id": "495e82eb-1fba-4a7b-93b5-242e801bdc7a",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "from_node_id": "5a9a5423-76f5-4c87-b292-3539f3f70559",
+      "to_node_id": "0f631a57-a7d6-4b19-a66b-470b0f38a344",
+      "relation": "informs",
+      "evidence_ids": [
+        "5fee63fe-ef95-4f1a-ba03-1b5ae21db158"
+      ],
+      "created_at": "2026-07-25T12:23:27.928952+00:00"
+    },
+    {
+      "id": "c98edd76-8b7e-4901-a542-a13d773bb89a",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "from_node_id": "6131fa0e-5354-448e-ad59-3761164e65c4",
+      "to_node_id": "a0139c5d-3f4c-4ce3-aa16-72b9bd093eef",
+      "relation": "contradicts",
+      "evidence_ids": [
+        "653c760b-19ff-4c77-947b-ab6c4d129ab9"
+      ],
+      "created_at": "2026-07-25T12:23:27.938626+00:00"
+    },
+    {
+      "id": "afab77e4-182e-41cb-bbb7-86e64c995a58",
+      "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+      "from_node_id": "a0139c5d-3f4c-4ce3-aa16-72b9bd093eef",
+      "to_node_id": "0f631a57-a7d6-4b19-a66b-470b0f38a344",
+      "relation": "informs",
+      "evidence_ids": [
+        "653c760b-19ff-4c77-947b-ab6c4d129ab9"
+      ],
+      "created_at": "2026-07-25T12:23:27.938626+00:00"
+    }
+  ],
+  "confidence": {
+    "run_id": "c131798c-e4dc-4647-b607-7e450c68442a",
+    "band": "Moderate",
+    "score": 0.53,
+    "reasons": [
+      "4 independent domains",
+      "0 unresolved evidence disagreements",
+      "average source authority 50%"
+    ],
+    "created_at": "2026-07-25T12:23:27.880643+00:00",
+    "updated_at": "2026-07-25T12:23:27.88+00:00"
+  }
+}

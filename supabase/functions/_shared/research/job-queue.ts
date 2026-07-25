@@ -150,7 +150,7 @@ export async function completeJob(
   });
 
   if (error) {
-    throw new JobQueueError(`complete failed: ${String(error)}`, "complete");
+    throw new JobQueueError(`complete failed: ${JSON.stringify(error)}`, "complete");
   }
   return data as { status: string; nextJobId?: string };
 }
@@ -175,7 +175,7 @@ export async function failJob(
   });
 
   if (error) {
-    throw new JobQueueError(`fail failed: ${String(error)}`, "fail");
+    throw new JobQueueError(`fail failed: ${JSON.stringify(error)}`, "fail");
   }
   
   if (isCancelled && data && (data as any).status === "dead_letter") {

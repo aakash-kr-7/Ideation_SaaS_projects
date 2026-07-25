@@ -32,7 +32,7 @@ try {
   const crossInsert = await attacker.from("projects").insert({ team_id: victimMembership.team_id, name: "Forbidden", created_by: attackerId });
   if (!crossInsert.error) throw new Error("Cross-tenant project insert was allowed");
 
-  const internalTables = ["gemini_cache", "api_usage_logs", "research_jobs", "research_job_attempts", "research_pipeline_metrics", "research_pipeline_cursors"];
+  const internalTables = ["source_registry", "public_retrieval_cache", "gemini_cache", "api_usage_logs", "research_jobs", "research_job_attempts", "research_pipeline_metrics", "research_pipeline_cursors"];
   for (const table of internalTables) {
     const authenticated = await attacker.from(table).select("*").limit(1);
     if (!authenticated.error) throw new Error(`Authenticated client retained Data API access to internal table ${table}`);
@@ -41,8 +41,55 @@ try {
     const backend = await service.from(table).select("*").limit(1);
     if (backend.error) throw new Error(`Service role cannot access internal table ${table}: ${backend.error.message}`);
   }
-  console.log(JSON.stringify({ tenantOwnerRead: "PASS", crossTenantRead: "PASS", crossTenantWrite: "PASS", internalTablesServiceOnly: "PASS", internalTableCount: internalTables.length }, null, 2));
+
+  const cacheFixtures = [
+    {
+      table: "source_registry",
+      key: { domain: `rls-${crypto.randomUUID()}.test` },
+      row: { domain: `rls-insert-${crypto.randomUUID()}.test`, evidence_families: ["test"], enabled: true },
+      update: { enabled: false },
+    },
+    {
+      table: "public_retrieval_cache",
+      key: { canonical_url: `https://rls-${crypto.randomUUID()}.test/cache` },
+      row: { canonical_url: `https://rls-insert-${crypto.randomUUID()}.test/cache`, content_hash: "rls", text_content: "rls", expires_at: new Date(Date.now() + 60_000).toISOString() },
+      update: { text_content: "forbidden" },
+    },
+    {
+      table: "gemini_cache",
+      key: { run_id: run.id, prompt_hash: `rls-${crypto.randomUUID()}`, model: "rls-test" },
+      row: { run_id: run.id, prompt_hash: `rls-insert-${crypto.randomUUID()}`, model: "rls-test", response_text: "forbidden" },
+      update: { response_text: "forbidden" },
+    },
+  ];
+  for (const fixture of cacheFixtures) {
+    await must(service.from(fixture.table).insert({ ...fixture.key, ...(fixture.table === "source_registry" ? { evidence_families: ["test"] } : {}), ...(fixture.table === "public_retrieval_cache" ? { content_hash: "rls", text_content: "rls", expires_at: new Date(Date.now() + 60_000).toISOString() } : {}), ...(fixture.table === "gemini_cache" ? { response_text: "rls" } : {}) }), `seed ${fixture.table}`);
+    for (const [role, client] of [["anonymous", createClient(url, anonKey, { auth: { persistSession: false } })], ["authenticated", attacker]]) {
+      const filters = Object.entries(fixture.key);
+      let read = client.from(fixture.table).select("*");
+      let update = client.from(fixture.table).update(fixture.update);
+      let remove = client.from(fixture.table).delete();
+      for (const [column, value] of filters) {
+        read = read.eq(column, value);
+        update = update.eq(column, value);
+        remove = remove.eq(column, value);
+      }
+      if (!(await read).error) throw new Error(`${role} read was allowed on ${fixture.table}`);
+      if (!(await client.from(fixture.table).insert(fixture.row)).error) throw new Error(`${role} insert was allowed on ${fixture.table}`);
+      if (!(await update).error) throw new Error(`${role} update was allowed on ${fixture.table}`);
+      if (!(await remove).error) throw new Error(`${role} delete was allowed on ${fixture.table}`);
+    }
+    let cleanup = service.from(fixture.table).delete();
+    for (const [column, value] of Object.entries(fixture.key)) cleanup = cleanup.eq(column, value);
+    await must(cleanup, `clean up ${fixture.table}`);
+  }
+  console.log(JSON.stringify({ tenantOwnerRead: "PASS", crossTenantRead: "PASS", crossTenantWrite: "PASS", internalTablesServiceOnly: "PASS", internalCacheCrudDeniedForAnonAndAuthenticated: "PASS", internalTableCount: internalTables.length }, null, 2));
 } finally {
   await service.auth.admin.deleteUser(attackerId);
   await service.auth.admin.deleteUser(victimId);
+}
+
+async function must(query, operation) {
+  const { error } = await query;
+  if (error) throw new Error(`${operation}: ${error.message}`);
 }

@@ -79,6 +79,7 @@ export async function executeGenerateReport(
 
   let judgeOutput: any;
   try {
+    const allowedEvidenceIdSchema = { type: "string", enum: [...allowed] };
     const result = await dependencies.createGemini().generate({
       runId, taskType: "final_judge", db, budget,
       systemInstruction:
@@ -93,8 +94,8 @@ export async function executeGenerateReport(
         type: "object",
         properties: {
           written_verdict: { type: "string", enum: ["Build Now", "Validate First", "Niche Down", "Weak Signal", "Avoid"] },
-          executive_summary: { type: "array", minItems: 2, maxItems: 2, items: { type: "object", properties: { text: { type: "string" }, evidence_ids: { type: "array", items: { type: "string" } }, score_criteria: { type: "array", items: { type: "string" } } }, required: ["text", "evidence_ids", "score_criteria"] } },
-          methodology: { type: "array", minItems: 1, maxItems: 1, items: { type: "object", properties: { text: { type: "string" }, evidence_ids: { type: "array", items: { type: "string" } }, score_criteria: { type: "array", items: { type: "string" } } }, required: ["text", "evidence_ids", "score_criteria"] } },
+          executive_summary: { type: "array", minItems: 2, maxItems: 2, items: { type: "object", properties: { text: { type: "string" }, evidence_ids: { type: "array", items: allowedEvidenceIdSchema }, score_criteria: { type: "array", items: { type: "string" } } }, required: ["text", "evidence_ids", "score_criteria"] } },
+          methodology: { type: "array", minItems: 1, maxItems: 1, items: { type: "object", properties: { text: { type: "string" }, evidence_ids: { type: "array", items: allowedEvidenceIdSchema }, score_criteria: { type: "array", items: { type: "string" } } }, required: ["text", "evidence_ids", "score_criteria"] } },
         },
         required: ["written_verdict", "executive_summary", "methodology"],
       },
@@ -114,17 +115,15 @@ export async function executeGenerateReport(
     confidenceBand: confidence.band,
     hasPositive: (evidence || []).some((e: any) => !e.excluded && !e.disconfirming),
     hasNegative: (evidence || []).some((e: any) => !e.excluded && e.disconfirming),
-    hasPricing: (evidence || []).some((e: any) => !e.excluded && /pricing|price|\$/i.test(e.sources?.url || "")),
+    hasPricing: (evidence || []).some((e: any) => !e.excluded && (e.signal_type === "Pricing" || /pricing|price|\$/i.test(e.snippet || ""))),
     hasCompetitor: (evidence || []).some((e: any) => !e.excluded && e.source_tier <= 3),
     citationsValid: narrativeValid,
   });
-  // A Published report is a normal Completed deliverable. It requires both the
-  // mode-specific retrieval gate and the report-level citation/completeness gate.
-  // Exhaustion therefore fails (and restores) the run rather than publishing a
-  // normal report with insufficient coverage.
-  if (!runCoverage?.retrieval_sufficient || !completeness.complete || !narrativeValid || !allowed.size) {
-    const gaps = Array.isArray(runCoverage?.retrieval_coverage_gaps) ? runCoverage.retrieval_coverage_gaps.join(", ") : "retrieval sufficiency was not reached";
-    return stageFailed("permanent", `Publication blocked by ${config.label} evidence policy: ${[...completeness.missing, gaps].filter(Boolean).join("; ")}`);
+  // Weak or negative evidence is a publishable decision result. Only the
+  // technical inability to produce an attributable, citation-valid report blocks
+  // publication; evidence gaps remain visible as limitations.
+  if (!narrativeValid || !allowed.size) {
+    return stageFailed("permanent", `Publication blocked by technical citation integrity: ${[...completeness.missing].filter(Boolean).join("; ")}`);
   }
 
   // --- Persist citation validation ---
@@ -187,7 +186,23 @@ export async function executeGenerateReport(
     weights: Object.fromEntries(criteria.map((key) => [key, Number(criterionMap.get(key)?.weight || 1)])),
     total: Number(scoreRow.total), confidence: Number(scoreRow.confidence), verdict: scoreRow.verdict,
   };
-  const { data: adversarialGate } = await db.from("adversarial_verdict_gates").select("*").eq("run_id", runId).maybeSingle();
+  const [{ data: adversarialGate }, { data: specialistRows }] = await Promise.all([
+    db.from("adversarial_verdict_gates").select("*").eq("run_id", runId).maybeSingle(),
+    db.from("reasoning_agent_outputs").select("agent_name,status,payload").eq("run_id", runId).in("agent_name", ["competition", "market", "pricing", "risk", "demand", "gtm"]),
+  ]);
+  const specialistAssessments = (specialistRows || []).map((row: any) => ({
+    name: row.agent_name,
+    status: row.status,
+    direction: row.payload?.direction || "Insufficient",
+    assessment: row.payload?.assessment || "No assessment was produced.",
+    findings: Array.isArray(row.payload?.findings) ? row.payload.findings : [],
+    evidenceIds: Array.isArray(row.payload?.evidence_ids) ? row.payload.evidence_ids : [],
+  }));
+  if (config.mode === "full_validation" && specialistAssessments.length !== 6) {
+    return stageFailed("permanent", `Full Validation requires six persisted specialist assessments; found ${specialistAssessments.length}.`);
+  }
+  const strongestPositive = (evidence || []).find((item: any) => !item.excluded && !item.disconfirming);
+  const strongestNegative = (evidence || []).find((item: any) => !item.excluded && item.disconfirming);
   const reportPayload = {
     id: runId, version: "1.0", reportMode: config.mode, generatedAt: new Date().toISOString(),
     executiveSummary, methodology,
@@ -196,24 +211,29 @@ export async function executeGenerateReport(
       targetCustomer: opportunity.target_customer, corePain: opportunity.core_pain, market: opportunity.market,
       scorecard,
       evidence: (evidence || []).map((item: any) => ({
-        id: item.id, source: item.source_domain || item.sources?.url || "Web", sourceType: "GeminiGroundedWeb",
+        id: item.id, source: item.source_domain || item.sources?.url || "Web", sourceType: "RetrievedWeb",
         title: item.title, snippet: item.snippet, url: item.sources?.url,
         signal: item.signal_type, strength: item.strength, date: item.created_at,
         evidenceFamily: item.evidence_family, sourceTier: item.source_tier, excluded: item.excluded,
-        disconfirming: item.disconfirming, painPoint: item.pain_point,
+        disconfirming: item.disconfirming, painPoint: item.pain_point || undefined,
       })),
-      competitors: (competitors || []).map((item: any) => ({ id: item.id, name: item.name, positioning: item.positioning, pricing: item.pricing, target: item.target, strength: item.strength, gap: item.gap })),
-      pricing: { model: pricing.model, pricePoint: pricing.price_point, rationale: pricing.rationale, firstOffer: pricing.first_offer, targetCustomers: pricing.target_customers },
+      competitors: (competitors || []).map((item: any) => ({ id: item.id, name: item.name, positioning: item.positioning, pricing: item.pricing, target: item.target, strength: item.strength, gap: item.gap, evidenceIds: item.evidence_ids || [] })),
+      pricing: { model: pricing.model, pricePoint: pricing.price_point, rationale: pricing.rationale, firstOffer: pricing.first_offer, targetCustomers: pricing.target_customers, evidenceIds: pricing.evidence_ids || [] },
       mvp: { outcome: mvp.outcome, buildEstimate: mvp.build_estimate, buildComplexity: mvp.build_complexity, scope: (mvp.mvp_scope_items || []).filter((item: any) => item.item_type === "Scope").map((item: any) => item.description), exclusions: (mvp.mvp_scope_items || []).filter((item: any) => item.item_type === "Exclusion").map((item: any) => item.description) },
       launch: { firstCustomerChannel: launch.first_customer_channel, outreachMessage: launch.outreach_message, successMetric: launch.success_metric, weekOne: (launch.launch_strategies || []).filter((item: any) => item.strategy_type === "WeekOne").map((item: any) => item.description), firstTenStrategy: (launch.launch_strategies || []).filter((item: any) => item.strategy_type === "FirstTen").map((item: any) => item.description) },
-      risks: (risks || []).map((item: any) => ({ id: item.id, category: item.category, severity: item.severity, description: item.description, mitigation: item.mitigation })),
+      risks: (risks || []).map((item: any) => ({ id: item.id, category: item.category, severity: item.severity, description: item.description, mitigation: item.mitigation, evidenceIds: item.evidence_ids || [] })),
       createdAt: opportunity.created_at,
     },
     adversarialGate: adversarialGate ? { outcome: adversarialGate.outcome, severity: adversarialGate.severity, objection: adversarialGate.objection, evidence_ids: adversarialGate.evidence_ids || [], unresolved: adversarialGate.unresolved } : undefined,
+    specialistAssessments: config.mode === "full_validation" ? specialistAssessments : undefined,
+    fullValidationInsights: config.mode === "full_validation" ? inputMeta.fullValidationInsights : undefined,
     citationValidation, narrativeCitations: judgeOutput,
     evidenceGaps: runCoverage?.retrieval_coverage_gaps || [], limitations: completeness.missing,
     reportSections: config.mode === "full_validation" ? ["Conclusion", "Evidence", "Demand", "Competition", "Market", "Pricing", "MVP scope", "Go-to-market", "Risks", "Adversarial", "Score breakdown", "Sources", "Exports"] : ["Conclusion", "Evidence", "Competition", "Score breakdown", "Pricing", "Next actions", "Risks", "Exports"],
     availableExports: [...config.exports],
+    topRecommendation: launch.success_metric,
+    strongestPositiveEvidenceId: strongestPositive?.id,
+    strongestNegativeEvidenceId: strongestNegative?.id,
   };
 
   // --- Persist report ---
