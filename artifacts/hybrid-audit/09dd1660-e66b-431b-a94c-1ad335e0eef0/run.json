@@ -1,0 +1,51 @@
+{
+  "id": "09dd1660-e66b-431b-a94c-1ad335e0eef0",
+  "project_id": "2a8b6567-8994-4df6-ba53-2f54efbac164",
+  "created_by": "a9e3a026-1146-4cf2-936d-04aabfb64a92",
+  "idea_name": "Approval evidence workspace — Quick Scan",
+  "idea_description": "A lightweight approval and audit-trail workspace for service teams that need to collect customer sign-off, preserve attributable approval history and reduce disputes.",
+  "target_customer": "Client-service agencies and service operations leaders",
+  "market_type": "B2B",
+  "target_region": "United States and United Kingdom",
+  "mode": "quick_scan",
+  "status": "Completed",
+  "progress": 100,
+  "error_message": null,
+  "created_at": "2026-07-26T07:24:35.946023+00:00",
+  "updated_at": "2026-07-26T07:25:07.642706+00:00",
+  "progress_detail": "Research complete",
+  "retrieval_sufficient": false,
+  "retrieval_coverage": null,
+  "retrieval_coverage_gaps": [
+    "insufficient problem evidence",
+    "insufficient disconfirming evidence"
+  ],
+  "retrieval_budget_limited": false,
+  "idempotency_key": "6741787c-7ad2-483e-a8bc-0fe11e46c5c3",
+  "request_id": "f3fc287c-b7a1-4035-a5da-5fb6473c0ded",
+  "assumptions": {
+    "industry": "Professional services software",
+    "monetization": "Subscription",
+    "revenueTarget": "$5k MRR",
+    "platformTolerance": "Low",
+    "complexityTolerance": "Low",
+    "regulatoryTolerance": "Low"
+  },
+  "credit_cost": 1,
+  "credit_state": "consumed",
+  "current_stage": "complete",
+  "current_stage_started_at": "2026-07-26T07:25:07.56685+00:00",
+  "last_progress_at": "2026-07-26T07:25:07.642706+00:00",
+  "terminal_at": "2026-07-26T07:25:07.642706+00:00",
+  "total_provider_cost_usd": 0.0013584,
+  "total_tokens_used": {
+    "input": 7952,
+    "total": 10492,
+    "output": 2540
+  },
+  "time_budget_exhausted": false,
+  "cost_budget_exhausted": false,
+  "pipeline_version": "staged",
+  "max_jobs_per_run": 12,
+  "max_research_cycles": 3
+}

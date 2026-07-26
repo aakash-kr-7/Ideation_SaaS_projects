@@ -1,4 +1,5 @@
 import { buildResearchPacks, discoverCandidates, retrieveCandidates } from "./external-retrieval.ts";
+import { buildCanonicalResearchBrief } from "./research-brief.ts";
 
 function assert(value: unknown, message: string) {
   if (!value) throw new Error(message);
@@ -42,7 +43,7 @@ const mockedFetch: typeof fetch = async (input) => {
   if (url.includes("api.github.com")) {
     return Response.json({ items: [{ full_name: "open/rfp-tool", html_url: "https://github.com/open/rfp-tool", description: "Questionnaire automation", stargazers_count: 42 }] });
   }
-  return new Response(`<html><body>Public product evidence from ${url} describing workflow pain, pricing options, adoption limits, customer alternatives, measurable outcomes, and contradictory adoption signals in sufficient detail for attributable extraction.</body></html>`, {
+  return new Response(`<html><body>Public product evidence from ${url} describing cybersecurity proposal teams using a security questionnaire evidence workflow with stale claim detection, pricing options, adoption limits, customer alternatives, measurable outcomes, and contradictory adoption signals in sufficient detail for attributable extraction.</body></html>`, {
     status: 200,
     headers: { "content-type": "text/html" },
   });
@@ -50,20 +51,23 @@ const mockedFetch: typeof fetch = async (input) => {
 
 Deno.test("provider-mocked hybrid discovery retrieves and audits real-shaped source dossiers", async () => {
   const db = new FakeDb();
-  const packs = buildResearchPacks({
+  const run = {
     idea_name: "Auditable RFP assistant",
     idea_description: "Security questionnaire evidence and stale claim detection",
     target_customer: "Cybersecurity proposal teams",
     target_region: "Global",
-  }, "quick_scan");
+  };
+  const brief = buildCanonicalResearchBrief(run);
+  const packs = buildResearchPacks(run, "quick_scan", brief);
   const discovery = await discoverCandidates({ runId: crypto.randomUUID(), packs, db, technical: true, fetcher: mockedFetch });
-  assert(discovery.externalSearchCalls === 4, `unexpected provider count ${discovery.externalSearchCalls}`);
+  assert(discovery.externalSearchCalls === 20, `unexpected provider count ${discovery.externalSearchCalls}`);
   assert(discovery.candidates.length >= 3, "candidate discovery was empty");
   const retrieval = await retrieveCandidates({
     runId: crypto.randomUUID(),
     candidates: discovery.candidates,
     db,
     limit: 6,
+    brief,
     fetcher: mockedFetch,
   });
   assert(retrieval.accepted.length >= 3, "direct retrieval did not accept sources");

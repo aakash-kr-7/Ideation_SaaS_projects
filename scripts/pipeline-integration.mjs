@@ -4,15 +4,16 @@ import { createClient } from "@supabase/supabase-js";
 const url = process.env.SUPABASE_URL?.replace(/\/$/, "");
 const anonKey = process.env.SUPABASE_ANON_KEY;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const workerToken = process.env.WEBHOOK_SECRET || serviceKey;
+const workerToken = serviceKey;
 if (!url || !anonKey || !serviceKey || !workerToken) throw new Error("SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, and worker authentication are required.");
 const requested = process.argv[2] || "all";
 const modes = requested === "all" ? ["quick_scan", "full_validation"] : [requested];
 if (modes.some((mode) => !["quick_scan", "full_validation"].includes(mode))) throw new Error("Usage: pipeline-integration.mjs [quick_scan|full_validation|all]");
 
 const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
-const email = `pipeline-${crypto.randomUUID()}@example.test`;
-const password = `Pipeline!${crypto.randomUUID()}`;
+const email = process.env.PIPELINE_USER_EMAIL || `pipeline-${crypto.randomUUID()}@example.test`;
+const password = process.env.PIPELINE_USER_PASSWORD || `Pipeline!${crypto.randomUUID()}`;
+const preserveFixture = process.env.PIPELINE_PRESERVE === "1";
 const { data: created, error: createError } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { full_name: "Pipeline integration" } });
 if (createError || !created.user) throw createError || new Error("Unable to create integration user");
 const userId = created.user.id;
@@ -32,7 +33,7 @@ try {
   for (const mode of modes) results.push(await runPipeline(user, project.id, mode));
   console.log(JSON.stringify({ staleRecovery: "PASS", pipelines: results }, null, 2));
 } finally {
-  await admin.auth.admin.deleteUser(userId);
+  if (!preserveFixture) await admin.auth.admin.deleteUser(userId);
 }
 
 async function reserve(user, projectId, mode, label) {

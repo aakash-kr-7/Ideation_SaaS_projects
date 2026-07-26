@@ -1,0 +1,334 @@
+{
+  "id": "a675b767-5ef2-4684-83aa-048227945cfb",
+  "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+  "name": "ApprovalFlow evidence proof (full_validation)",
+  "one_liner": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records.",
+  "target_customer": "Small GitHub-based software agencies and software consultancies",
+  "core_pain": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records.",
+  "market": "B2B SaaS",
+  "created_at": "2026-07-25T12:54:31.665482+00:00",
+  "updated_at": "2026-07-25T12:54:31.665482+00:00",
+  "opportunity_scores": {
+    "id": "693227a3-7e3f-4e0e-b442-996ec19807f0",
+    "total": 38.1,
+    "verdict": "Avoid",
+    "confidence": 64,
+    "created_at": "2026-07-25T12:54:58.154802+00:00",
+    "updated_at": "2026-07-25T12:54:58.154802+00:00",
+    "opportunity_id": "a675b767-5ef2-4684-83aa-048227945cfb",
+    "score_breakdowns": [
+      {
+        "id": "d443d406-a3e1-4ffe-b5e4-3894c73bb6cd",
+        "notes": "Weighted verified pain strength, confidence, and contradiction ratio.",
+        "score": 25.2,
+        "weight": 12,
+        "score_id": "693227a3-7e3f-4e0e-b442-996ec19807f0",
+        "criterion": "painSeverity",
+        "created_at": "2026-07-25T12:54:58.159562+00:00",
+        "updated_at": "2026-07-25T12:54:58.159562+00:00",
+        "score_evidence_refs": [
+          {
+            "id": "308711b7-405a-48e7-8dd9-e5ce750986ae",
+            "created_at": "2026-07-25T12:54:58.164743+00:00",
+            "updated_at": "2026-07-25T12:54:58.164743+00:00",
+            "evidence_id": "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "score_breakdown_id": "d443d406-a3e1-4ffe-b5e4-3894c73bb6cd"
+          }
+        ]
+      },
+      {
+        "id": "d5700a9e-4cd0-41e5-a119-360f443ca072",
+        "notes": "Urgency language in pain and demand evidence.",
+        "score": 15,
+        "weight": 10,
+        "score_id": "693227a3-7e3f-4e0e-b442-996ec19807f0",
+        "criterion": "purchaseUrgency",
+        "created_at": "2026-07-25T12:54:58.170546+00:00",
+        "updated_at": "2026-07-25T12:54:58.170546+00:00",
+        "score_evidence_refs": []
+      },
+      {
+        "id": "de52e89a-739b-473f-8bd5-4bef101d3fa5",
+        "notes": "No Tier 1 willingness-to-pay evidence; recommendations do not substitute for paid-demand proof.",
+        "score": 10,
+        "weight": 11,
+        "score_id": "693227a3-7e3f-4e0e-b442-996ec19807f0",
+        "criterion": "willingnessToPay",
+        "created_at": "2026-07-25T12:54:58.175483+00:00",
+        "updated_at": "2026-07-25T12:54:58.175483+00:00",
+        "score_evidence_refs": []
+      },
+      {
+        "id": "52a48db5-dae4-4e56-88e9-8d8a5306090a",
+        "notes": "Demand volume and independently sourced communities.",
+        "score": 32,
+        "weight": 8,
+        "score_id": "693227a3-7e3f-4e0e-b442-996ec19807f0",
+        "criterion": "buyerReachability",
+        "created_at": "2026-07-25T12:54:58.180184+00:00",
+        "updated_at": "2026-07-25T12:54:58.180184+00:00",
+        "score_evidence_refs": [
+          {
+            "id": "4aa15fff-c96d-42c9-9536-e11c90f38367",
+            "created_at": "2026-07-25T12:54:58.185512+00:00",
+            "updated_at": "2026-07-25T12:54:58.185512+00:00",
+            "evidence_id": "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "score_breakdown_id": "52a48db5-dae4-4e56-88e9-8d8a5306090a"
+          },
+          {
+            "id": "08928f13-6190-410b-905d-cb0bf6c44b4c",
+            "created_at": "2026-07-25T12:54:58.190897+00:00",
+            "updated_at": "2026-07-25T12:54:58.190897+00:00",
+            "evidence_id": "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+            "score_breakdown_id": "52a48db5-dae4-4e56-88e9-8d8a5306090a"
+          }
+        ]
+      },
+      {
+        "id": "2be14e11-ef7f-473b-b038-4e655f935740",
+        "notes": "Execution-risk burden; fewer material risks increase feasibility.",
+        "score": 57,
+        "weight": 8,
+        "score_id": "693227a3-7e3f-4e0e-b442-996ec19807f0",
+        "criterion": "mvpSpeed",
+        "created_at": "2026-07-25T12:54:58.195586+00:00",
+        "updated_at": "2026-07-25T12:54:58.195586+00:00",
+        "score_evidence_refs": [
+          {
+            "id": "2cd003bf-3b2b-428b-95a1-3d3a514087e7",
+            "created_at": "2026-07-25T12:54:58.200788+00:00",
+            "updated_at": "2026-07-25T12:54:58.200788+00:00",
+            "evidence_id": "373ee827-0984-42f2-bb8b-1a53343f02f7",
+            "score_breakdown_id": "2be14e11-ef7f-473b-b038-4e655f935740"
+          }
+        ]
+      },
+      {
+        "id": "73215504-c6cf-48cf-9fd8-a410031bedcb",
+        "notes": "Competitive density adjusted by explicit normalized gaps and gap-language evidence.",
+        "score": 71,
+        "weight": 8,
+        "score_id": "693227a3-7e3f-4e0e-b442-996ec19807f0",
+        "criterion": "competitionGap",
+        "created_at": "2026-07-25T12:54:58.205502+00:00",
+        "updated_at": "2026-07-25T12:54:58.205502+00:00",
+        "score_evidence_refs": []
+      },
+      {
+        "id": "08bf8528-22c1-4cd7-916d-b758cbba7479",
+        "notes": "Recurring-workflow language in verified evidence.",
+        "score": 30.4,
+        "weight": 9,
+        "score_id": "693227a3-7e3f-4e0e-b442-996ec19807f0",
+        "criterion": "retentionPotential",
+        "created_at": "2026-07-25T12:54:58.20964+00:00",
+        "updated_at": "2026-07-25T12:54:58.20964+00:00",
+        "score_evidence_refs": [
+          {
+            "id": "d02f03d9-f870-4378-9e1e-a2c61a15e0c8",
+            "created_at": "2026-07-25T12:54:58.214079+00:00",
+            "updated_at": "2026-07-25T12:54:58.214079+00:00",
+            "evidence_id": "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "score_breakdown_id": "08bf8528-22c1-4cd7-916d-b758cbba7479"
+          },
+          {
+            "id": "807d7445-8f5d-46be-9aba-ba4ac3a123fd",
+            "created_at": "2026-07-25T12:54:58.219131+00:00",
+            "updated_at": "2026-07-25T12:54:58.219131+00:00",
+            "evidence_id": "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "score_breakdown_id": "08bf8528-22c1-4cd7-916d-b758cbba7479"
+          }
+        ]
+      },
+      {
+        "id": "b1c5e96d-87b7-4c05-aabc-68ffb464b7b8",
+        "notes": "Platform dependency risk evidence; this factor is inverted in the weighted total.",
+        "score": 23.4,
+        "weight": 7,
+        "score_id": "693227a3-7e3f-4e0e-b442-996ec19807f0",
+        "criterion": "platformDependencyRisk",
+        "created_at": "2026-07-25T12:54:58.223485+00:00",
+        "updated_at": "2026-07-25T12:54:58.223485+00:00",
+        "score_evidence_refs": [
+          {
+            "id": "11dd083c-5b3c-4a96-a725-e33eb6fe56a2",
+            "created_at": "2026-07-25T12:54:58.227142+00:00",
+            "updated_at": "2026-07-25T12:54:58.227142+00:00",
+            "evidence_id": "373ee827-0984-42f2-bb8b-1a53343f02f7",
+            "score_breakdown_id": "b1c5e96d-87b7-4c05-aabc-68ffb464b7b8"
+          }
+        ]
+      },
+      {
+        "id": "9f4f1b11-428f-4b43-80b2-4aae5e594b3c",
+        "notes": "Regulatory and compliance risk evidence; this factor is inverted in the weighted total.",
+        "score": 10,
+        "weight": 5,
+        "score_id": "693227a3-7e3f-4e0e-b442-996ec19807f0",
+        "criterion": "regulatoryRisk",
+        "created_at": "2026-07-25T12:54:58.231184+00:00",
+        "updated_at": "2026-07-25T12:54:58.231184+00:00",
+        "score_evidence_refs": []
+      },
+      {
+        "id": "d5383241-70bf-445f-948a-ccccb7e44df3",
+        "notes": "Run-specific evidence access and domain signal coverage; no unsupported founder biography is inferred.",
+        "score": 25,
+        "weight": 7,
+        "score_id": "693227a3-7e3f-4e0e-b442-996ec19807f0",
+        "criterion": "founderFit",
+        "created_at": "2026-07-25T12:54:58.23602+00:00",
+        "updated_at": "2026-07-25T12:54:58.23602+00:00",
+        "score_evidence_refs": [
+          {
+            "id": "88bd3f37-899c-4b4a-8697-af6507899711",
+            "created_at": "2026-07-25T12:54:58.240175+00:00",
+            "updated_at": "2026-07-25T12:54:58.240175+00:00",
+            "evidence_id": "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "score_breakdown_id": "d5383241-70bf-445f-948a-ccccb7e44df3"
+          },
+          {
+            "id": "90d8a210-a061-43a5-be26-87bb06cb9880",
+            "created_at": "2026-07-25T12:54:58.244232+00:00",
+            "updated_at": "2026-07-25T12:54:58.244232+00:00",
+            "evidence_id": "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "score_breakdown_id": "d5383241-70bf-445f-948a-ccccb7e44df3"
+          },
+          {
+            "id": "2213bf4b-ea96-44b4-93df-2bd77d99a99a",
+            "created_at": "2026-07-25T12:54:58.248517+00:00",
+            "updated_at": "2026-07-25T12:54:58.248517+00:00",
+            "evidence_id": "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+            "score_breakdown_id": "d5383241-70bf-445f-948a-ccccb7e44df3"
+          },
+          {
+            "id": "e5501ed1-6daa-4048-a7f8-faea9cee351a",
+            "created_at": "2026-07-25T12:54:58.253173+00:00",
+            "updated_at": "2026-07-25T12:54:58.253173+00:00",
+            "evidence_id": "373ee827-0984-42f2-bb8b-1a53343f02f7",
+            "score_breakdown_id": "d5383241-70bf-445f-948a-ccccb7e44df3"
+          }
+        ]
+      },
+      {
+        "id": "f267b361-02d7-4a60-8d25-a84f3d3273de",
+        "notes": "Demand evidence plus persisted launch-channel specificity.",
+        "score": 59.5,
+        "weight": 8,
+        "score_id": "693227a3-7e3f-4e0e-b442-996ec19807f0",
+        "criterion": "distributionClarity",
+        "created_at": "2026-07-25T12:54:58.257538+00:00",
+        "updated_at": "2026-07-25T12:54:58.257538+00:00",
+        "score_evidence_refs": [
+          {
+            "id": "ad2fcf63-4403-4f92-ad3a-f915beb3816c",
+            "created_at": "2026-07-25T12:54:58.26183+00:00",
+            "updated_at": "2026-07-25T12:54:58.26183+00:00",
+            "evidence_id": "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "score_breakdown_id": "f267b361-02d7-4a60-8d25-a84f3d3273de"
+          },
+          {
+            "id": "a873fdc4-4dae-4266-9deb-81fb68db1f24",
+            "created_at": "2026-07-25T12:54:58.269448+00:00",
+            "updated_at": "2026-07-25T12:54:58.269448+00:00",
+            "evidence_id": "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+            "score_breakdown_id": "f267b361-02d7-4a60-8d25-a84f3d3273de"
+          }
+        ]
+      },
+      {
+        "id": "8cebfe38-eefd-4fa1-955e-d6aac3a6fc2f",
+        "notes": "Pricing proof and purchase urgency combined deterministically.",
+        "score": 8.7,
+        "weight": 7,
+        "score_id": "693227a3-7e3f-4e0e-b442-996ec19807f0",
+        "criterion": "speedToFirstRevenue",
+        "created_at": "2026-07-25T12:54:58.273364+00:00",
+        "updated_at": "2026-07-25T12:54:58.273364+00:00",
+        "score_evidence_refs": []
+      }
+    ]
+  },
+  "competitors": [
+    {
+      "id": "5f101dff-b697-412d-abb5-76d271ea7adf",
+      "gap": "Limited outside M365 ecosystem",
+      "name": "Microsoft Approvals",
+      "target": "Microsoft-first teams",
+      "pricing": "Included in M365",
+      "strength": "High integration",
+      "created_at": "2026-07-25T12:54:57.915805+00:00",
+      "updated_at": "2026-07-25T12:54:57.915805+00:00",
+      "positioning": "Microsoft 365 native approval workflow",
+      "evidence_ids": [],
+      "opportunity_id": "a675b767-5ef2-4684-83aa-048227945cfb"
+    },
+    {
+      "id": "8a65603e-3daf-43a3-9fd2-545b5a76f08a",
+      "gap": "Lacks enterprise-grade compliance depth",
+      "name": "Zite",
+      "target": "Non-technical teams",
+      "pricing": "$19/month",
+      "strength": "Ease of use",
+      "created_at": "2026-07-25T12:54:57.921456+00:00",
+      "updated_at": "2026-07-25T12:54:57.921456+00:00",
+      "positioning": "AI-generated custom approval apps",
+      "evidence_ids": [],
+      "opportunity_id": "a675b767-5ef2-4684-83aa-048227945cfb"
+    },
+    {
+      "id": "05bc2776-1725-49f0-b4a4-04484aa0ec64",
+      "gap": "Heavy manual setup",
+      "name": "Process Street",
+      "target": "Operations teams",
+      "pricing": "Not specified",
+      "strength": "Conditional logic",
+      "created_at": "2026-07-25T12:54:57.926096+00:00",
+      "updated_at": "2026-07-25T12:54:57.926096+00:00",
+      "positioning": "Checklist-based process templates",
+      "evidence_ids": [],
+      "opportunity_id": "a675b767-5ef2-4684-83aa-048227945cfb"
+    }
+  ],
+  "pricing_models": {
+    "id": "0413149d-0630-4800-bb04-261f95000670",
+    "model": "Subscription-based",
+    "rationale": "Pricing varies significantly based on whether the tool is a simple app builder or a complex enterprise BPMN platform.",
+    "created_at": "2026-07-25T12:54:57.942357+00:00",
+    "updated_at": "2026-07-25T12:54:57.942357+00:00",
+    "first_offer": "Free trial or demo",
+    "price_point": "$19 - $3,000/month",
+    "evidence_ids": [],
+    "opportunity_id": "a675b767-5ef2-4684-83aa-048227945cfb",
+    "target_customers": 1000
+  },
+  "risks": [
+    {
+      "id": "f6f20c16-2759-4006-926d-adebc549abfa",
+      "category": "Regulatory",
+      "severity": "High",
+      "created_at": "2026-07-25T12:54:57.931305+00:00",
+      "mitigation": "Implement rigorous validation testing frameworks and granular access controls.",
+      "updated_at": "2026-07-25T12:54:57.931305+00:00",
+      "description": "Pharmaceutical and life sciences require strict 21 CFR Part 11 compliance and audit trails.",
+      "evidence_ids": [
+        "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+      ],
+      "opportunity_id": "a675b767-5ef2-4684-83aa-048227945cfb"
+    },
+    {
+      "id": "e929b40b-a98d-47bb-b77b-fac30eeaed9d",
+      "category": "Execution",
+      "severity": "Medium",
+      "created_at": "2026-07-25T12:54:57.937205+00:00",
+      "mitigation": "Automate approval gates within CI/CD pipelines and PR threads.",
+      "updated_at": "2026-07-25T12:54:57.937205+00:00",
+      "description": "Approval workflows can become bottlenecks if not integrated into existing developer tools.",
+      "evidence_ids": [
+        "373ee827-0984-42f2-bb8b-1a53343f02f7",
+        "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+      ],
+      "opportunity_id": "a675b767-5ef2-4684-83aa-048227945cfb"
+    }
+  ]
+}

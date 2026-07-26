@@ -108,7 +108,29 @@ type PdfPayload = {
     adversarialDowngrade?: boolean;
     reason?: string | null;
   };
+  decisionProduct?: {
+    headline?: string;
+    evidenceConfidence?: { band?: string; score?: number; explanation?: string };
+    sections?: Array<{ title?: string; summary?: string; statements?: Array<{ kind?: string; text?: string; evidenceIds?: string[]; sourceUrls?: string[] }> }>;
+    experiments?: Array<{ name?: string; hypothesis?: string; targetParticipant?: string; recruitmentMethod?: string; sampleSize?: string; method?: string; successCriterion?: string; failureCriterion?: string; duration?: string; decisionUnlocked?: string }>;
+    specialistOutputs?: Array<{ name?: string; keyFindings?: string[]; evidenceIds?: string[]; opposingEvidenceIds?: string[]; confidence?: string; relevantBriefDimensions?: string[]; unresolvedGaps?: string[]; decisionImplication?: string }>;
+    charts?: Array<{ title?: string; sourceData?: unknown; evidenceIds?: string[]; sourceExplanation?: string; unavailable?: boolean }>;
+  };
 };
+
+type CitationLabels = Map<string, string>;
+
+function citationLabels(evidence: PdfEvidence[]): CitationLabels {
+  return new Map(evidence.map((item, index) => [
+    item.id || `missing-${index}`,
+    `[S${index + 1}] ${truncate(item.source || item.title || "Persisted source", 42)}`,
+  ]));
+}
+
+function readableCitations(ids: string[] | undefined, labels: CitationLabels) {
+  if (!ids?.length) return "Insufficient evidence";
+  return ids.map((id) => labels.get(id) || "[Unresolved citation]").join("; ");
+}
 
 function payloadFor(value: unknown): PdfPayload {
   return value && typeof value === "object" ? value as PdfPayload : {};
@@ -385,7 +407,7 @@ function buildCover(
     0.39,
   ], 10);
   page.text(String(input.total), MARGIN + 28, 294, 38, "F2", COLORS.white);
-  page.text("/ 100", MARGIN + 82, 313, 10, "F1", [0.57, 0.68, 0.74]);
+  page.text("/ 100", MARGIN + 116, 313, 10, "F1", [0.57, 0.68, 0.74]);
   page.text("DETERMINISTIC SCORE", MARGIN + 28, 349, 6.5, "F2", [
     0.49,
     0.77,
@@ -394,7 +416,7 @@ function buildCover(
   page.line(MARGIN + 152, 294, MARGIN + 152, 369, [0.12, 0.29, 0.36]);
   page.text(input.verdict, MARGIN + 174, 300, 19, "F2", COLORS.white);
   page.text(
-    `${input.confidence}% evidence confidence`,
+    `${input.confidence}% scoring confidence`,
     MARGIN + 174,
     334,
     9,
@@ -440,7 +462,7 @@ function buildCover(
     page.wrappedText(caption, x, 647, 104, 6.8, 9, "F1", [0.55, 0.66, 0.72], 2);
   });
   page.line(MARGIN + 8, 697, PAGE_WIDTH - MARGIN, 697, [0.12, 0.29, 0.36]);
-  page.text(`Run ${input.runId}`, MARGIN + 8, 715, 7, "F1", [0.49, 0.61, 0.68]);
+  page.text(`Report reference ${input.runId.slice(0, 8).toUpperCase()}`, MARGIN + 8, 715, 7, "F1", [0.49, 0.61, 0.68]);
   page.text(
     clean(payload.generatedAt || new Date().toISOString()).slice(0, 10),
     PAGE_WIDTH - MARGIN - 64,
@@ -458,9 +480,9 @@ function buildScorecard(input: ExportBundleInput, evidence: PdfEvidence[]) {
 
   page.rect(MARGIN, 125, 154, 116, COLORS.navy, undefined, 10);
   page.text(String(input.total), MARGIN + 18, 142, 39, "F2", COLORS.white);
-  page.text("/ 100", MARGIN + 77, 164, 9, "F1", [0.7, 0.77, 0.81]);
+  page.text("/ 100", MARGIN + 111, 164, 9, "F1", [0.7, 0.77, 0.81]);
   page.text(input.verdict, MARGIN + 18, 195, 12, "F2", [0.55, 0.84, 0.8]);
-  page.text(`${input.confidence}% confidence`, MARGIN + 18, 217, 7.5, "F1", [
+  page.text(`${input.confidence}% scoring confidence`, MARGIN + 18, 217, 7.5, "F1", [
     0.67,
     0.75,
     0.79,
@@ -554,7 +576,7 @@ function evidenceMeta(item: PdfEvidence) {
   return parts.join(" / ");
 }
 
-function buildEvidencePages(evidence: PdfEvidence[]) {
+function buildEvidencePages(evidence: PdfEvidence[], labels: CitationLabels) {
   const usable = evidence.filter((item) => !item.excluded).sort((a, b) =>
     Number(a.sourceTier || 4) - Number(b.sourceTier || 4) ||
     Number(b.independentSourceCount || 0) -
@@ -651,7 +673,7 @@ function buildEvidencePages(evidence: PdfEvidence[]) {
         COLORS.blue,
       );
       page.text(
-        `ID ${item.id || "not recorded"}`,
+        labels.get(item.id || "") || "Citation unresolved",
         PAGE_WIDTH - MARGIN - 158,
         top + 84,
         5.8,
@@ -973,21 +995,126 @@ function buildIntegrity(payload: PdfPayload) {
   return page;
 }
 
-function buildAppendixPages(input: ExportBundleInput, evidence: PdfEvidence[]) {
+function buildDecisionDossierPages(payload: PdfPayload, labels: CitationLabels) {
+  const sections = payload.decisionProduct?.sections || [];
+  const pages: PdfPage[] = [];
+  for (let offset = 0; offset < sections.length; offset += 2) {
+    const page = new PdfPage();
+    addRunningHeader(page, "Dossier", offset ? "Decision dossier, continued" : "Decision dossier");
+    let top = 122;
+    sections.slice(offset, offset + 2).forEach((section, localIndex) => {
+      const index = offset + localIndex + 1;
+      page.rect(MARGIN, top, PAGE_WIDTH - MARGIN * 2, 246, COLORS.white, COLORS.mist, 8);
+      page.text(String(index).padStart(2, "0"), MARGIN + 15, top + 15, 8, "F2", COLORS.teal);
+      page.text(truncate(section.title || "Decision section", 72), MARGIN + 48, top + 14, 11, "F2", COLORS.navy);
+      page.wrappedText(section.summary || "", MARGIN + 48, top + 34, 455, 7.5, 11, "F3", COLORS.slate, 2);
+      let statementTop = top + 64;
+      (section.statements || []).slice(0, 4).forEach((statement) => {
+        page.badge(statement.kind || "Finding", MARGIN + 48, statementTop, statement.kind === "MissingEvidence" ? COLORS.amber : COLORS.teal);
+        page.wrappedText(statement.text || "", MARGIN + 132, statementTop + 1, 370, 7.2, 10, "F1", COLORS.carbon, 2);
+        const refs = statement.evidenceIds?.length ? `Citations: ${readableCitations(statement.evidenceIds, labels)}` : statement.sourceUrls?.length ? `Source: ${statement.sourceUrls.join(", ")}` : "";
+        if (refs) page.text(truncate(refs, 92), MARGIN + 132, statementTop + 24, 5.5, "F1", COLORS.blue);
+        statementTop += 43;
+      });
+      top += 260;
+    });
+    pages.push(page);
+  }
+  return pages;
+}
+
+function buildSpecialistPages(payload: PdfPayload, labels: CitationLabels) {
+  const specialists = payload.decisionProduct?.specialistOutputs || [];
+  const pages: PdfPage[] = [];
+  for (let offset = 0; offset < specialists.length; offset += 3) {
+    const page = new PdfPage();
+    addRunningHeader(page, "Specialists", offset ? "Specialist desk, continued" : "Six evidence-bound specialist views");
+    let top = 122;
+    specialists.slice(offset, offset + 3).forEach((item) => {
+      page.rect(MARGIN, top, PAGE_WIDTH - MARGIN * 2, 184, COLORS.white, COLORS.mist, 8);
+      page.text(label(item.name || "Specialist"), MARGIN + 16, top + 15, 12, "F2", COLORS.navy);
+      page.badge(item.confidence || "Insufficient", PAGE_WIDTH - MARGIN - 95, top + 12);
+      page.wrappedText((item.keyFindings || []).join(" | "), MARGIN + 16, top + 42, 492, 7.5, 11, "F1", COLORS.carbon, 3);
+      page.text(truncate(`Citations: ${readableCitations(item.evidenceIds, labels)}`, 108), MARGIN + 16, top + 82, 5.8, "F1", COLORS.blue);
+      page.text(truncate(`Opposing: ${readableCitations(item.opposingEvidenceIds, labels)}`, 108), MARGIN + 16, top + 99, 5.8, "F1", COLORS.amber);
+      page.wrappedText(`Gaps: ${(item.unresolvedGaps || []).join("; ") || "None recorded"}`, MARGIN + 16, top + 118, 492, 6.8, 10, "F1", COLORS.slate, 2);
+      page.wrappedText(`Decision implication: ${item.decisionImplication || "Not recorded"}`, MARGIN + 16, top + 147, 492, 7.2, 10, "F2", COLORS.tealDark, 2);
+      top += 198;
+    });
+    pages.push(page);
+  }
+  return pages;
+}
+
+function buildExperimentPages(payload: PdfPayload) {
+  const experiments = payload.decisionProduct?.experiments || [];
+  if (!experiments.length) return [];
+  const page = new PdfPage();
+  addRunningHeader(page, "Experiments", "Founder actions with explicit decision thresholds");
+  let top = 122;
+  experiments.slice(0, 3).forEach((item, index) => {
+    page.rect(MARGIN, top, PAGE_WIDTH - MARGIN * 2, 188, COLORS.white, COLORS.mist, 8);
+    page.text(String(index + 1).padStart(2, "0"), MARGIN + 15, top + 15, 8, "F2", COLORS.teal);
+    page.text(truncate(item.name || "Validation experiment", 70), MARGIN + 48, top + 14, 11, "F2", COLORS.navy);
+    page.badge(item.duration || "Not set", PAGE_WIDTH - MARGIN - 92, top + 12);
+    page.wrappedText(`Hypothesis: ${item.hypothesis || ""}`, MARGIN + 48, top + 38, 455, 7.1, 10, "F1", COLORS.carbon, 2);
+    page.wrappedText(`Participant/sample: ${item.targetParticipant || ""}; ${item.sampleSize || ""}`, MARGIN + 48, top + 64, 455, 6.8, 10, "F1", COLORS.slate, 2);
+    page.wrappedText(`Recruitment: ${item.recruitmentMethod || ""}`, MARGIN + 48, top + 89, 455, 6.8, 10, "F1", COLORS.slate, 2);
+    page.wrappedText(`Method: ${item.method || ""}`, MARGIN + 48, top + 114, 455, 6.8, 10, "F1", COLORS.carbon, 2);
+    page.wrappedText(`Pass: ${item.successCriterion || ""} | Fail: ${item.failureCriterion || ""}`, MARGIN + 48, top + 139, 455, 6.5, 9.5, "F1", COLORS.amber, 2);
+    page.wrappedText(`Decision unlocked: ${item.decisionUnlocked || ""}`, MARGIN + 48, top + 165, 455, 6.5, 9.5, "F2", COLORS.tealDark, 1);
+    top += 200;
+  });
+  return [page];
+}
+
+function buildChartProvenancePages(payload: PdfPayload, labels: CitationLabels) {
+  const charts = (payload.decisionProduct?.charts || []).slice(0, 8);
+  const pages: PdfPage[] = [];
+  for (let offset = 0; offset < charts.length; offset += 7) {
+    const page = new PdfPage();
+    addRunningHeader(
+      page,
+      "Charts",
+      offset ? "Structured-data provenance, continued" : "Structured-data provenance",
+    );
+    let top = 122;
+    charts.slice(offset, offset + 7).forEach((chart) => {
+      page.rect(MARGIN, top, PAGE_WIDTH - MARGIN * 2, 75, COLORS.white, COLORS.mist, 7);
+      page.text(truncate(chart.title || "Chart", 58), MARGIN + 14, top + 12, 8.5, "F2", COLORS.navy);
+      if (chart.unavailable) page.badge("Unavailable", PAGE_WIDTH - MARGIN - 83, top + 9, COLORS.amber, COLORS.amberPale);
+      page.wrappedText(chart.sourceExplanation || "No provenance explanation.", MARGIN + 14, top + 29, 485, 6.5, 9, "F1", COLORS.slate, 2);
+      page.wrappedText(
+        `Citations: ${chart.evidenceIds?.length ? readableCitations(chart.evidenceIds, labels) : "see source-data explanation"}`,
+        MARGIN + 14,
+        top + 53,
+        485,
+        5.5,
+        7,
+        "F1",
+        COLORS.blue,
+        2,
+      );
+      top += 84;
+    });
+    pages.push(page);
+  }
+  return pages;
+}
+
+function buildAppendixPages(input: ExportBundleInput, evidence: PdfEvidence[], labels: CitationLabels) {
   const entries: Array<{ heading: string; body: string; accent?: Color }> = [];
   input.breakdowns.forEach((factor) => {
     entries.push({
       heading: `${
         label(factor.criterion)
       } / score ${factor.score} / weight ${factor.weight}`,
-      body: `Evidence IDs: ${
-        factor.evidenceIds.join(", ") || "None"
-      }. ${factor.note}`,
+      body: `Citations: ${readableCitations(factor.evidenceIds, labels)}. ${factor.note}`,
     });
   });
   evidence.forEach((item) => {
     entries.push({
-      heading: `${item.id || "Evidence"} / ${
+      heading: `${labels.get(item.id || "") || "Citation unresolved"} / ${
         item.source || item.sourceType || "Persisted source"
       }`,
       body: item.url || item.snippet ||
@@ -1009,7 +1136,7 @@ function buildAppendixPages(input: ExportBundleInput, evidence: PdfEvidence[]) {
       top = 124;
     }
     page.text(
-      entry.heading,
+      truncate(entry.heading, 92),
       MARGIN,
       top,
       7.3,
@@ -1119,14 +1246,19 @@ function serialize(pages: PdfPage[]) {
 export function renderPremiumPdf(input: ExportBundleInput): Uint8Array {
   const payload = payloadFor(input.payload);
   const evidence = payload.opportunity?.evidence || [];
+  const labels = citationLabels(evidence);
   const passes = payload.retrieval?.passes || [];
   const pages = [
     buildCover(input, payload, evidence, passes),
     buildScorecard(input, evidence),
-    ...buildEvidencePages(evidence),
+    ...buildDecisionDossierPages(payload, labels),
+    ...buildExperimentPages(payload),
+    ...buildSpecialistPages(payload, labels),
+    ...buildChartProvenancePages(payload, labels),
+    ...buildEvidencePages(evidence, labels),
     buildMethodology(input, payload, evidence, passes),
     buildIntegrity(payload),
-    ...buildAppendixPages(input, evidence),
+    ...buildAppendixPages(input, evidence, labels),
   ];
   return serialize(pages);
 }

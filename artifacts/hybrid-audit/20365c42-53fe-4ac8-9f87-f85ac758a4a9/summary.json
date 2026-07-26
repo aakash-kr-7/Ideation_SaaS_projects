@@ -1,0 +1,800 @@
+{
+  "runId": "20365c42-53fe-4ac8-9f87-f85ac758a4a9",
+  "status": "Completed",
+  "mode": "full_validation",
+  "groundingMode": "disabled",
+  "groundingDegraded": false,
+  "groundedCallsAttempted": 0,
+  "groundedCallsCompleted": 0,
+  "groundedCallsQuotaBlocked": 0,
+  "externalSearchCalls": 36,
+  "pagesFetched": 34,
+  "sourcesAccepted": 34,
+  "independentDomains": 32,
+  "evidenceCount": 17,
+  "evidenceFamilyCoverage": {
+    "alternatives": 1,
+    "behavior_demand": 4,
+    "competitors": 1,
+    "customer_pain": 6,
+    "market_context": 2,
+    "pricing": 2,
+    "risks": 1
+  },
+  "sourceTierDistribution": {
+    "tier_1": 2,
+    "tier_2": 11,
+    "tier_3": 4,
+    "tier_4": 0
+  },
+  "relevanceDistribution": {
+    "directly_relevant": 34,
+    "contextually_relevant": 0,
+    "adjacent": 0,
+    "out_of_scope": 0
+  },
+  "rejectedEvidence": [
+    {
+      "url": "https://www.myshyft.com/blog/client-approval-workflows",
+      "reason": "empty_or_unextractable",
+      "relevanceClass": null,
+      "relevanceScore": null,
+      "matchedBriefDimensions": [],
+      "mismatchReasons": []
+    },
+    {
+      "url": "https://immutio.com/blog/client-approval-workflow-guide",
+      "reason": "empty_or_unextractable",
+      "relevanceClass": null,
+      "relevanceScore": null,
+      "matchedBriefDimensions": [],
+      "mismatchReasons": []
+    }
+  ],
+  "providerCalls": 46,
+  "synthesisCalls": 8,
+  "tokens": {
+    "input": 47419,
+    "output": 10241,
+    "total": 57660
+  },
+  "estimatedCostUsd": 0.006628725,
+  "pricingVersion": "gemini-estimate-v1-2026-07-25",
+  "degradedProviders": [],
+  "cacheHits": 34,
+  "cacheMisses": 46,
+  "durationMs": 71009,
+  "retryCount": 0,
+  "score": 58.9,
+  "verdict": "Niche Down",
+  "scoreConfidence": 85,
+  "evidenceConfidence": {
+    "run_id": "20365c42-53fe-4ac8-9f87-f85ac758a4a9",
+    "band": "High",
+    "score": 0.88,
+    "reasons": [
+      "13 independent domains",
+      "17 semantically accepted evidence items",
+      "0 unresolved evidence disagreements",
+      "average source authority 72%",
+      "average semantic relevance 94%",
+      "buyer-specific evidence 88%",
+      "tier distribution {\"1\":2,\"2\":11,\"3\":4}"
+    ],
+    "created_at": "2026-07-26T06:02:30.256011+00:00",
+    "updated_at": "2026-07-26T06:02:34.244+00:00",
+    "deductions": [],
+    "scoring_confidence": 85,
+    "report_completeness": 76,
+    "completeness_reasons": [
+      "7/11 required evidence families covered",
+      "6/6 structural report checks passed"
+    ]
+  },
+  "canonicalResearchBrief": {
+    "endUser": "Client-service agencies and service operations leaders",
+    "industry": "Professional services software",
+    "geography": "United States and United Kingdom",
+    "targetBuyer": "Client-service agencies and service operations leaders",
+    "terminology": [
+      "lightweight",
+      "approval",
+      "and",
+      "audit-trail",
+      "workspace",
+      "for",
+      "teams",
+      "collect",
+      "customer",
+      "sign-off",
+      "preserve",
+      "attributable",
+      "history",
+      "reduce",
+      "disputes",
+      "client-service agencies and service operations leaders",
+      "client-service",
+      "agencies",
+      "operations",
+      "leaders",
+      "approvals",
+      "approve",
+      "signoff",
+      "customer sign-off",
+      "client sign-off",
+      "customer approval",
+      "client approval",
+      "acceptance",
+      "proofing",
+      "review and approval",
+      "audit trail",
+      "approval history",
+      "approver identity",
+      "timestamped approval",
+      "approval record",
+      "record of approval",
+      "who approved",
+      "signed acceptance",
+      "service team",
+      "agency",
+      "professional services",
+      "consultancy",
+      "client",
+      "deliverable",
+      "project manager",
+      "account manager",
+      "operations lead",
+      "customer success"
+    ],
+    "businessModel": "B2B",
+    "problemSolved": "Customer approvals are scattered or ambiguous, leaving service teams without attributable proof and exposed to disputes",
+    "expectedOutcome": "Faster customer sign-off, preserved attributable approval history, and fewer delivery or billing disputes",
+    "workflowChanged": "Requesting, collecting, recording, and retrieving customer approval or sign-off on service deliverables",
+    "dimensionKeywords": {
+      "problem": [
+        "customer",
+        "approvals",
+        "are",
+        "scattered",
+        "ambiguous",
+        "leaving",
+        "teams",
+        "without",
+        "attributable",
+        "proof",
+        "and",
+        "exposed",
+        "disputes",
+        "scattered approval",
+        "ambiguous approval",
+        "dispute",
+        "lost approval",
+        "approval delay"
+      ],
+      "target_buyer": [
+        "client-service agencies and service operations leaders",
+        "client-service",
+        "agencies",
+        "and",
+        "operations",
+        "leaders",
+        "service team",
+        "agency",
+        "professional services",
+        "consultancy",
+        "client",
+        "customer",
+        "deliverable",
+        "project manager",
+        "account manager",
+        "operations lead",
+        "customer success"
+      ],
+      "user_workflow": [
+        "requesting",
+        "collecting",
+        "recording",
+        "and",
+        "retrieving",
+        "customer",
+        "approval",
+        "sign-off",
+        "deliverables",
+        "approvals",
+        "approve",
+        "signoff",
+        "customer sign-off",
+        "client sign-off",
+        "customer approval",
+        "client approval",
+        "acceptance",
+        "proofing",
+        "review and approval",
+        "audit trail",
+        "approval history",
+        "attributable",
+        "approver identity",
+        "timestamped approval",
+        "approval record",
+        "record of approval",
+        "who approved",
+        "signed acceptance"
+      ],
+      "market_category": [
+        "client approval online proofing and customer sign-off audit-trail software",
+        "client",
+        "approval",
+        "online",
+        "proofing",
+        "and",
+        "customer",
+        "sign-off",
+        "audit-trail",
+        "online proofing",
+        "client approval",
+        "customer sign-off",
+        "approval workflow"
+      ],
+      "expected_outcome": [
+        "faster",
+        "customer",
+        "sign-off",
+        "preserved",
+        "attributable",
+        "approval",
+        "history",
+        "and",
+        "fewer",
+        "delivery",
+        "billing",
+        "disputes",
+        "reduce disputes",
+        "avoid disputes",
+        "proof",
+        "accountability",
+        "faster approval",
+        "preserve history"
+      ],
+      "proposed_solution": [
+        "lightweight",
+        "approval",
+        "and",
+        "audit-trail",
+        "workspace",
+        "for",
+        "teams",
+        "collect",
+        "customer",
+        "sign-off",
+        "preserve",
+        "attributable",
+        "history",
+        "reduce",
+        "disputes",
+        "approvals",
+        "approve",
+        "signoff",
+        "customer sign-off",
+        "client sign-off",
+        "customer approval",
+        "client approval",
+        "acceptance",
+        "proofing",
+        "review and approval",
+        "audit trail",
+        "approval history",
+        "approver identity",
+        "timestamped approval",
+        "approval record",
+        "record of approval",
+        "who approved",
+        "signed acceptance"
+      ]
+    },
+    "exactProductProposition": "A lightweight approval and audit-trail workspace for service teams that need to collect customer sign-off, preserve attributable approval history and reduce disputes.",
+    "directCompetitorCategory": "Client approval, online proofing, and customer sign-off audit-trail software",
+    "adjacentOutOfScopeCategories": [
+      "CI/CD pipelines",
+      "deployment automation",
+      "YAML pipelines",
+      "generic DevOps workflows",
+      "internal code-review approvals without customer sign-off",
+      "general e-signature without the specified service-delivery approval workflow"
+    ]
+  },
+  "positiveEvidence": 16,
+  "negativeEvidence": 1,
+  "domains": [
+    "agencypro.app",
+    "aibrify.com",
+    "aligno.io",
+    "approval.studio",
+    "approvalwhisper.com",
+    "approvewell.com",
+    "campaignswift.com",
+    "clientproof.app",
+    "filestage.io",
+    "gitnux.org",
+    "productive.io",
+    "quantumbyte.ai",
+    "techdailyshot.com",
+    "tiebox.dev",
+    "unoiatech.com",
+    "wifitalents.com",
+    "workspace.pm",
+    "worldmetrics.org",
+    "www.agency-os.tech",
+    "www.awork.com",
+    "www.blinkapproval.com",
+    "www.emino.io",
+    "www.flowgenius.ai",
+    "www.jotform.com",
+    "www.moxo.com",
+    "www.redfalconhq.com",
+    "www.revo.ai",
+    "www.snyho.com",
+    "www.tryapprove.com",
+    "ybug.io",
+    "zenphi.com",
+    "zipdo.co"
+  ],
+  "claimMappings": [
+    {
+      "evidenceId": "a2811189-33f1-4619-84d2-852b7520c79c",
+      "claim": "A survey of 200 creative agencies found that 73% had experienced a scope dispute in the past 12 months. Of those, 89% had no formal approval system that could prove client sign-off.",
+      "signal": "Pain",
+      "disconfirming": false,
+      "sourceId": "fc0dba48-f5df-43e7-9c3a-4e4d1855d590",
+      "sourceUrl": "https://www.agency-os.tech/blog/client-portal/client-approval-workflow",
+      "sourceDomain": "www.agency-os.tech"
+    },
+    {
+      "evidenceId": "78a13a36-24e4-4696-9456-8f9748ff99d8",
+      "claim": "Courts and arbitration panels categorically dismiss verbal or informal sign-offs in scope dispute cases.",
+      "signal": "Risk",
+      "disconfirming": false,
+      "sourceId": "fc0dba48-f5df-43e7-9c3a-4e4d1855d590",
+      "sourceUrl": "https://www.agency-os.tech/blog/client-portal/client-approval-workflow",
+      "sourceDomain": "www.agency-os.tech"
+    },
+    {
+      "evidenceId": "d61d541c-5c4f-4576-a634-a1f11935249f",
+      "claim": "Each outcome is written to an immutable ledger: who decided, when, from where, and why.",
+      "signal": "Demand",
+      "disconfirming": false,
+      "sourceId": "2235f2e4-0321-4bfe-807b-941ac86043c2",
+      "sourceUrl": "https://approvalwhisper.com/approval-audit-trail-software",
+      "sourceDomain": "approvalwhisper.com"
+    },
+    {
+      "evidenceId": "78fb3b17-0d4d-43fb-98dc-2b0a4138d996",
+      "claim": "The most effective workflows use visual proofing tools that let clients annotate directly on designs, documents, or videos rather than writing abstract feedback in emails.",
+      "signal": "Demand",
+      "disconfirming": false,
+      "sourceId": "56fc6c02-9d19-4009-add9-354ff1c4206a",
+      "sourceUrl": "https://agencypro.app/glossary/client-approval-workflow",
+      "sourceDomain": "agencypro.app"
+    },
+    {
+      "evidenceId": "d3bbfdc3-9d84-4788-a23c-a82581b32ba8",
+      "claim": "Waiting for client sign-off is a common frustration. Each delayed case study becomes a lost sales opportunity.",
+      "signal": "Pain",
+      "disconfirming": false,
+      "sourceId": "16c416ac-6f61-46ed-aeac-c4631b7cbacf",
+      "sourceUrl": "https://www.revo.ai/blog/agency/ai-for-client-case-study-approval-faster-sign-offs",
+      "sourceDomain": "www.revo.ai"
+    }
+  ],
+  "contradictionPair": null,
+  "specialistEvidenceCoverage": [
+    {
+      "specialist": "competition",
+      "evidenceIds": [
+        "3e33f5a5-4d80-441c-aaf9-430e05b803c3",
+        "b1953685-30d1-4de3-9dbe-767fe302b19c",
+        "ea436de6-3d8b-466e-99b2-76198fef31fa"
+      ],
+      "opposingEvidenceIds": [],
+      "confidence": "Moderate",
+      "relevantBriefDimensions": [
+        "market_category",
+        "proposed_solution"
+      ],
+      "unresolvedGaps": [
+        "Market share distribution between lightweight vs. enterprise-grade tools."
+      ]
+    },
+    {
+      "specialist": "market",
+      "evidenceIds": [
+        "a2811189-33f1-4619-84d2-852b7520c79c"
+      ],
+      "opposingEvidenceIds": [],
+      "confidence": "Low",
+      "relevantBriefDimensions": [
+        "problem",
+        "expected_outcome"
+      ],
+      "unresolvedGaps": [
+        "Quantification of total addressable market size specifically for lightweight approval tools."
+      ]
+    },
+    {
+      "specialist": "pricing",
+      "evidenceIds": [
+        "c5a61e37-4f84-47e7-9593-9147e5e7db2d"
+      ],
+      "opposingEvidenceIds": [],
+      "confidence": "Low",
+      "relevantBriefDimensions": [
+        "proposed_solution",
+        "expected_outcome"
+      ],
+      "unresolvedGaps": [
+        "Sensitivity of agency buyers to price increases as they scale client volume."
+      ]
+    },
+    {
+      "specialist": "risk",
+      "evidenceIds": [
+        "a2811189-33f1-4619-84d2-852b7520c79c",
+        "d61d541c-5c4f-4576-a634-a1f11935249f"
+      ],
+      "opposingEvidenceIds": [],
+      "confidence": "Low",
+      "relevantBriefDimensions": [
+        "problem",
+        "expected_outcome"
+      ],
+      "unresolvedGaps": [
+        "Long-term retention rates for agencies that implement these tools."
+      ]
+    },
+    {
+      "specialist": "demand",
+      "evidenceIds": [
+        "b1953685-30d1-4de3-9dbe-767fe302b19c",
+        "78fb3b17-0d4d-43fb-98dc-2b0a4138d996",
+        "d3bbfdc3-9d84-4788-a23c-a82581b32ba8"
+      ],
+      "opposingEvidenceIds": [],
+      "confidence": "Moderate",
+      "relevantBriefDimensions": [
+        "user_workflow",
+        "target_buyer"
+      ],
+      "unresolvedGaps": [
+        "Specific adoption rates in non-creative professional services sectors."
+      ]
+    },
+    {
+      "specialist": "gtm",
+      "evidenceIds": [
+        "ca02ee55-cf54-4e07-900e-02d1ea531227",
+        "3e33f5a5-4d80-441c-aaf9-430e05b803c3"
+      ],
+      "opposingEvidenceIds": [],
+      "confidence": "Low",
+      "relevantBriefDimensions": [
+        "proposed_solution",
+        "target_buyer"
+      ],
+      "unresolvedGaps": [
+        "Effectiveness of specific paid acquisition channels versus organic search."
+      ]
+    }
+  ],
+  "factorMapping": {
+    "factor": "painSeverity",
+    "score": 69.8,
+    "evidence": [
+      {
+        "evidenceId": "a2811189-33f1-4619-84d2-852b7520c79c",
+        "claim": "A survey of 200 creative agencies found that 73% had experienced a scope dispute in the past 12 months. Of those, 89% had no formal approval system that could prove client sign-off.",
+        "sourceUrl": "https://www.agency-os.tech/blog/client-portal/client-approval-workflow"
+      },
+      {
+        "evidenceId": "ea436de6-3d8b-466e-99b2-76198fef31fa",
+        "claim": "Client feedback is easy to collect. Final approval is harder to control. Without a structure, agencies lose track of which version the client reviewed.",
+        "sourceUrl": "https://quantumbyte.ai/articles/best-client-review-and-approval-software-for-agencies-2026"
+      },
+      {
+        "evidenceId": "d3bbfdc3-9d84-4788-a23c-a82581b32ba8",
+        "claim": "Waiting for client sign-off is a common frustration. Each delayed case study becomes a lost sales opportunity.",
+        "sourceUrl": "https://www.revo.ai/blog/agency/ai-for-client-case-study-approval-faster-sign-offs"
+      },
+      {
+        "evidenceId": "c4691c77-3914-4536-b502-d800a01d00e9",
+        "claim": "Courts and arbitration panels categorically dismiss verbal or informal sign-offs in scope dispute cases. Agencies lose thousands of dollars in rework costs every year because they have no documented proof that a client approved a deliverable before they moved on.",
+        "sourceUrl": "https://www.agency-os.tech/blog/client-portal/client-approval-workflow"
+      },
+      {
+        "evidenceId": "3e33f5a5-4d80-441c-aaf9-430e05b803c3",
+        "claim": "Email threads, Figma comments, and generic feedback apps are not built for client sign-off. Aligno is.",
+        "sourceUrl": "https://aligno.io"
+      }
+    ]
+  },
+  "marketMetricMapping": {
+    "label": "Agencies experiencing scope disputes in 12 months",
+    "value": "73%",
+    "sourceUrl": "https://www.agency-os.tech/blog/client-portal/client-approval-workflow",
+    "evidenceId": "a2811189-33f1-4619-84d2-852b7520c79c"
+  },
+  "chartMappings": [
+    {
+      "chartKey": "alternatives-comparison",
+      "supportingEvidenceIds": [
+        "3e33f5a5-4d80-441c-aaf9-430e05b803c3",
+        "c5a61e37-4f84-47e7-9593-9147e5e7db2d",
+        "b1953685-30d1-4de3-9dbe-767fe302b19c"
+      ],
+      "sourceData": {
+        "values": {
+          "Emino": 1,
+          "Aligno": 1,
+          "Blink Approval": 1
+        }
+      }
+    },
+    {
+      "chartKey": "evidence_coverage",
+      "supportingEvidenceIds": [
+        "478fb908-1096-49ff-a666-19f6d0d0a184",
+        "b1953685-30d1-4de3-9dbe-767fe302b19c",
+        "78fb3b17-0d4d-43fb-98dc-2b0a4138d996",
+        "ca02ee55-cf54-4e07-900e-02d1ea531227",
+        "c15d526a-446f-463f-8d33-ef79142ed97e",
+        "935cb36a-c36a-4541-9e97-a1dde7edcb0e",
+        "a2811189-33f1-4619-84d2-852b7520c79c",
+        "ea436de6-3d8b-466e-99b2-76198fef31fa",
+        "d3bbfdc3-9d84-4788-a23c-a82581b32ba8",
+        "c4691c77-3914-4536-b502-d800a01d00e9",
+        "3e33f5a5-4d80-441c-aaf9-430e05b803c3",
+        "d61d541c-5c4f-4576-a634-a1f11935249f",
+        "93dc5fe8-b41c-4e31-986e-14bb8e6d11a6",
+        "303ac850-d1a2-4fd1-ba61-adc36bc2cf2b",
+        "a36dbd98-331d-4ca3-b542-6d022d021fc2",
+        "c5a61e37-4f84-47e7-9593-9147e5e7db2d",
+        "78a13a36-24e4-4696-9456-8f9748ff99d8"
+      ],
+      "sourceData": {
+        "byFamily": {
+          "problem": 6,
+          "solution": 11
+        },
+        "bySignal": {
+          "Pain": 5,
+          "Risk": 2,
+          "Demand": 8,
+          "Pricing": 2
+        }
+      }
+    },
+    {
+      "chartKey": "evidence-balance",
+      "supportingEvidenceIds": [
+        "478fb908-1096-49ff-a666-19f6d0d0a184",
+        "b1953685-30d1-4de3-9dbe-767fe302b19c",
+        "78fb3b17-0d4d-43fb-98dc-2b0a4138d996",
+        "ca02ee55-cf54-4e07-900e-02d1ea531227",
+        "c15d526a-446f-463f-8d33-ef79142ed97e",
+        "935cb36a-c36a-4541-9e97-a1dde7edcb0e",
+        "a2811189-33f1-4619-84d2-852b7520c79c",
+        "ea436de6-3d8b-466e-99b2-76198fef31fa",
+        "d3bbfdc3-9d84-4788-a23c-a82581b32ba8",
+        "c4691c77-3914-4536-b502-d800a01d00e9",
+        "3e33f5a5-4d80-441c-aaf9-430e05b803c3",
+        "d61d541c-5c4f-4576-a634-a1f11935249f",
+        "93dc5fe8-b41c-4e31-986e-14bb8e6d11a6",
+        "303ac850-d1a2-4fd1-ba61-adc36bc2cf2b",
+        "a36dbd98-331d-4ca3-b542-6d022d021fc2",
+        "c5a61e37-4f84-47e7-9593-9147e5e7db2d",
+        "78a13a36-24e4-4696-9456-8f9748ff99d8"
+      ],
+      "sourceData": {
+        "supporting": 16,
+        "contradictory": 1
+      }
+    },
+    {
+      "chartKey": "factor-breakdown",
+      "supportingEvidenceIds": [
+        "a2811189-33f1-4619-84d2-852b7520c79c",
+        "ea436de6-3d8b-466e-99b2-76198fef31fa",
+        "d3bbfdc3-9d84-4788-a23c-a82581b32ba8",
+        "c4691c77-3914-4536-b502-d800a01d00e9",
+        "3e33f5a5-4d80-441c-aaf9-430e05b803c3",
+        "c15d526a-446f-463f-8d33-ef79142ed97e",
+        "478fb908-1096-49ff-a666-19f6d0d0a184",
+        "b1953685-30d1-4de3-9dbe-767fe302b19c",
+        "78fb3b17-0d4d-43fb-98dc-2b0a4138d996",
+        "ca02ee55-cf54-4e07-900e-02d1ea531227",
+        "935cb36a-c36a-4541-9e97-a1dde7edcb0e",
+        "d61d541c-5c4f-4576-a634-a1f11935249f",
+        "93dc5fe8-b41c-4e31-986e-14bb8e6d11a6",
+        "303ac850-d1a2-4fd1-ba61-adc36bc2cf2b",
+        "78a13a36-24e4-4696-9456-8f9748ff99d8",
+        "a36dbd98-331d-4ca3-b542-6d022d021fc2",
+        "c5a61e37-4f84-47e7-9593-9147e5e7db2d"
+      ],
+      "sourceData": {
+        "values": {
+          "mvpSpeed": 69,
+          "founderFit": 70,
+          "painSeverity": 69.8,
+          "competitionGap": 75,
+          "regulatoryRisk": 28.1,
+          "purchaseUrgency": 42.3,
+          "willingnessToPay": 10,
+          "buyerReachability": 54.2,
+          "retentionPotential": 46.6,
+          "distributionClarity": 85,
+          "speedToFirstRevenue": 68.7,
+          "platformDependencyRisk": 28.1
+        }
+      }
+    },
+    {
+      "chartKey": "pricing-landscape",
+      "supportingEvidenceIds": [
+        "a36dbd98-331d-4ca3-b542-6d022d021fc2",
+        "c5a61e37-4f84-47e7-9593-9147e5e7db2d",
+        "3e33f5a5-4d80-441c-aaf9-430e05b803c3",
+        "b1953685-30d1-4de3-9dbe-767fe302b19c"
+      ],
+      "sourceData": {
+        "pricingEvidence": 2,
+        "competitorsWithPublicPricing": 3
+      }
+    },
+    {
+      "chartKey": "score-contribution",
+      "supportingEvidenceIds": [
+        "a2811189-33f1-4619-84d2-852b7520c79c",
+        "ea436de6-3d8b-466e-99b2-76198fef31fa",
+        "d3bbfdc3-9d84-4788-a23c-a82581b32ba8",
+        "c4691c77-3914-4536-b502-d800a01d00e9",
+        "3e33f5a5-4d80-441c-aaf9-430e05b803c3",
+        "c4691c77-3914-4536-b502-d800a01d00e9",
+        "c15d526a-446f-463f-8d33-ef79142ed97e",
+        "478fb908-1096-49ff-a666-19f6d0d0a184",
+        "b1953685-30d1-4de3-9dbe-767fe302b19c",
+        "78fb3b17-0d4d-43fb-98dc-2b0a4138d996",
+        "ca02ee55-cf54-4e07-900e-02d1ea531227",
+        "c15d526a-446f-463f-8d33-ef79142ed97e",
+        "935cb36a-c36a-4541-9e97-a1dde7edcb0e",
+        "d61d541c-5c4f-4576-a634-a1f11935249f",
+        "93dc5fe8-b41c-4e31-986e-14bb8e6d11a6",
+        "303ac850-d1a2-4fd1-ba61-adc36bc2cf2b",
+        "78a13a36-24e4-4696-9456-8f9748ff99d8",
+        "d3bbfdc3-9d84-4788-a23c-a82581b32ba8",
+        "a2811189-33f1-4619-84d2-852b7520c79c",
+        "78fb3b17-0d4d-43fb-98dc-2b0a4138d996",
+        "c15d526a-446f-463f-8d33-ef79142ed97e",
+        "303ac850-d1a2-4fd1-ba61-adc36bc2cf2b",
+        "303ac850-d1a2-4fd1-ba61-adc36bc2cf2b",
+        "478fb908-1096-49ff-a666-19f6d0d0a184",
+        "b1953685-30d1-4de3-9dbe-767fe302b19c",
+        "78fb3b17-0d4d-43fb-98dc-2b0a4138d996",
+        "ca02ee55-cf54-4e07-900e-02d1ea531227",
+        "c15d526a-446f-463f-8d33-ef79142ed97e",
+        "935cb36a-c36a-4541-9e97-a1dde7edcb0e",
+        "a2811189-33f1-4619-84d2-852b7520c79c",
+        "ea436de6-3d8b-466e-99b2-76198fef31fa",
+        "d3bbfdc3-9d84-4788-a23c-a82581b32ba8",
+        "c4691c77-3914-4536-b502-d800a01d00e9",
+        "3e33f5a5-4d80-441c-aaf9-430e05b803c3",
+        "d61d541c-5c4f-4576-a634-a1f11935249f",
+        "93dc5fe8-b41c-4e31-986e-14bb8e6d11a6",
+        "303ac850-d1a2-4fd1-ba61-adc36bc2cf2b",
+        "a36dbd98-331d-4ca3-b542-6d022d021fc2",
+        "c5a61e37-4f84-47e7-9593-9147e5e7db2d",
+        "78a13a36-24e4-4696-9456-8f9748ff99d8",
+        "478fb908-1096-49ff-a666-19f6d0d0a184",
+        "b1953685-30d1-4de3-9dbe-767fe302b19c",
+        "78fb3b17-0d4d-43fb-98dc-2b0a4138d996",
+        "ca02ee55-cf54-4e07-900e-02d1ea531227",
+        "c15d526a-446f-463f-8d33-ef79142ed97e",
+        "935cb36a-c36a-4541-9e97-a1dde7edcb0e",
+        "d61d541c-5c4f-4576-a634-a1f11935249f",
+        "93dc5fe8-b41c-4e31-986e-14bb8e6d11a6",
+        "a36dbd98-331d-4ca3-b542-6d022d021fc2",
+        "c5a61e37-4f84-47e7-9593-9147e5e7db2d",
+        "c4691c77-3914-4536-b502-d800a01d00e9",
+        "c15d526a-446f-463f-8d33-ef79142ed97e"
+      ],
+      "sourceData": {
+        "values": {
+          "mvpSpeed": 552,
+          "founderFit": 490,
+          "painSeverity": 837.5999999999999,
+          "competitionGap": 600,
+          "regulatoryRisk": 140.5,
+          "purchaseUrgency": 423,
+          "willingnessToPay": 110,
+          "buyerReachability": 433.6,
+          "retentionPotential": 419.40000000000003,
+          "distributionClarity": 680,
+          "speedToFirstRevenue": 480.90000000000003,
+          "platformDependencyRisk": 196.70000000000002
+        }
+      }
+    },
+    {
+      "chartKey": "source-quality-distribution",
+      "supportingEvidenceIds": [
+        "478fb908-1096-49ff-a666-19f6d0d0a184",
+        "b1953685-30d1-4de3-9dbe-767fe302b19c",
+        "78fb3b17-0d4d-43fb-98dc-2b0a4138d996",
+        "ca02ee55-cf54-4e07-900e-02d1ea531227",
+        "c15d526a-446f-463f-8d33-ef79142ed97e",
+        "935cb36a-c36a-4541-9e97-a1dde7edcb0e",
+        "a2811189-33f1-4619-84d2-852b7520c79c",
+        "ea436de6-3d8b-466e-99b2-76198fef31fa",
+        "d3bbfdc3-9d84-4788-a23c-a82581b32ba8",
+        "c4691c77-3914-4536-b502-d800a01d00e9",
+        "3e33f5a5-4d80-441c-aaf9-430e05b803c3",
+        "d61d541c-5c4f-4576-a634-a1f11935249f",
+        "93dc5fe8-b41c-4e31-986e-14bb8e6d11a6",
+        "303ac850-d1a2-4fd1-ba61-adc36bc2cf2b",
+        "a36dbd98-331d-4ca3-b542-6d022d021fc2",
+        "c5a61e37-4f84-47e7-9593-9147e5e7db2d",
+        "78a13a36-24e4-4696-9456-8f9748ff99d8"
+      ],
+      "sourceData": {
+        "byTier": {
+          "tier_1": 2,
+          "tier_2": 11,
+          "tier_3": 4,
+          "tier_4": 0
+        }
+      }
+    }
+  ],
+  "exportChecks": [
+    {
+      "format": "pdf",
+      "storagePath": "4f19ab5e-228b-4dee-af7f-975486903a74/20365c42-53fe-4ac8-9f87-f85ac758a4a9/v1/report.pdf",
+      "sha256": "dbbc390b8e7b0081d67a590411445088e29fd32007f1fc9a2053117cc771315f",
+      "bytes": 151107,
+      "opened": true
+    },
+    {
+      "format": "markdown",
+      "storagePath": "4f19ab5e-228b-4dee-af7f-975486903a74/20365c42-53fe-4ac8-9f87-f85ac758a4a9/v1/report.markdown",
+      "sha256": "091015494a937037cbca6526cf4f22632c125a7f6078d95bc9a68f395350056d",
+      "bytes": 41014,
+      "opened": true
+    },
+    {
+      "format": "csv",
+      "storagePath": "4f19ab5e-228b-4dee-af7f-975486903a74/20365c42-53fe-4ac8-9f87-f85ac758a4a9/v1/report.csv",
+      "sha256": "aeae73640d7a6e72a0f5f042e1f312b291e0693d565749d0131cddf1a2b36137",
+      "bytes": 884767,
+      "opened": true
+    },
+    {
+      "format": "json",
+      "storagePath": "4f19ab5e-228b-4dee-af7f-975486903a74/20365c42-53fe-4ac8-9f87-f85ac758a4a9/v1/report.json",
+      "sha256": "735a391c8408740f0cc78e084c5a570fe23450371b1aad599bd35bfd9d4c4352",
+      "bytes": 115993,
+      "opened": true
+    }
+  ],
+  "usageReconciliation": {
+    "externalSearchCalls": true,
+    "groundedAttempted": true,
+    "groundedCompleted": true,
+    "synthesisCalls": true,
+    "pagesFetched": true,
+    "inputTokens": true,
+    "outputTokens": true,
+    "estimatedCost": true
+  },
+  "credit": {
+    "reservationStatus": "consumed",
+    "reserveEvents": 1,
+    "consumeEvents": 1
+  }
+}

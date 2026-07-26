@@ -2,6 +2,7 @@ import type { StageContext, StageResult } from "../../stages.ts";
 import { stageCompleted, stageFailed } from "../../stages.ts";
 import { updateState, ensureMetrics, costBudgetForRun } from "../../pipeline-utils.ts";
 import { GeminiRequestError, getGeminiGroundingMode } from "../../gemini.ts";
+import { buildCanonicalResearchBrief } from "../../research-brief.ts";
 
 export async function executeHybridPlan(ctx: StageContext): Promise<StageResult> {
   const { runId, db, startedAt, inputMeta } = ctx;
@@ -11,13 +12,34 @@ export async function executeHybridPlan(ctx: StageContext): Promise<StageResult>
     // --- Load the research run input ---
     const { data: run, error: runError } = await db
       .from("research_runs")
-      .select("idea_name, idea_description, target_customer, market_type")
+      .select("idea_name, idea_description, target_customer, market_type, target_region, assumptions")
       .eq("id", runId)
       .single();
 
     if (runError || !run) {
       return stageFailed("permanent", `Run not found: ${runError?.message ?? "missing"}`);
     }
+
+    const researchBrief = buildCanonicalResearchBrief(run);
+    const { error: briefError } = await db.from("research_briefs").upsert({
+      run_id: runId,
+      exact_product_proposition: researchBrief.exactProductProposition,
+      target_buyer: researchBrief.targetBuyer,
+      end_user: researchBrief.endUser,
+      workflow_changed: researchBrief.workflowChanged,
+      problem_solved: researchBrief.problemSolved,
+      expected_outcome: researchBrief.expectedOutcome,
+      industry: researchBrief.industry,
+      geography: researchBrief.geography,
+      business_model: researchBrief.businessModel,
+      direct_competitor_category: researchBrief.directCompetitorCategory,
+      adjacent_out_of_scope_categories: researchBrief.adjacentOutOfScopeCategories,
+      terminology: researchBrief.terminology,
+      dimension_keywords: researchBrief.dimensionKeywords,
+      brief: researchBrief,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "run_id" });
+    if (briefError) return stageFailed("permanent", `Canonical research brief persistence failed: ${briefError.message}`);
 
     // --- Idempotency: check if opportunity already exists ---
     const { data: existingOpp } = await db
@@ -81,9 +103,9 @@ export async function executeHybridPlan(ctx: StageContext): Promise<StageResult>
 
     return stageCompleted(
       "grounded_research",
-      { opportunityId, planned: true, geminiConfigurationVerified: true, configuredModels, groundingMode },
+      { opportunityId, planned: true, geminiConfigurationVerified: true, configuredModels, groundingMode, researchBriefPersisted: true },
       { duration_ms: Date.now() - startedAt },
-      { nextInputMeta: { opportunityId, mode, groundingMode } }
+      { nextInputMeta: { opportunityId, mode, groundingMode, researchBrief } }
     );
   } catch (error: any) {
     const message = error instanceof Error ? error.message : String(error);

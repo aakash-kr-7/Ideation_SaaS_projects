@@ -1,0 +1,12 @@
+{
+  "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+  "band": "Low",
+  "score": 0.39,
+  "reasons": [
+    "3 independent domains",
+    "0 unresolved evidence disagreements",
+    "average source authority 50%"
+  ],
+  "created_at": "2026-07-25T12:54:57.987023+00:00",
+  "updated_at": "2026-07-25T12:54:57.986+00:00"
+}

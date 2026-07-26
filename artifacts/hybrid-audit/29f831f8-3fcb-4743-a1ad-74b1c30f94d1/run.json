@@ -1,0 +1,52 @@
+{
+  "id": "29f831f8-3fcb-4743-a1ad-74b1c30f94d1",
+  "project_id": "db66d22a-0226-4e6f-84bb-8d36b0255928",
+  "created_by": "d80aaac6-ffc1-48a2-a026-3916502a80d0",
+  "idea_name": "Approval evidence workspace — Full Validation",
+  "idea_description": "A lightweight approval and audit-trail workspace for service teams that need to collect customer sign-off, preserve attributable approval history and reduce disputes.",
+  "target_customer": "Client-service agencies and service operations leaders",
+  "market_type": "B2B",
+  "target_region": "United States and United Kingdom",
+  "mode": "full_validation",
+  "status": "Completed",
+  "progress": 100,
+  "error_message": null,
+  "created_at": "2026-07-26T08:05:47.392037+00:00",
+  "updated_at": "2026-07-26T08:07:40.348174+00:00",
+  "progress_detail": "Research complete",
+  "retrieval_sufficient": false,
+  "retrieval_coverage": null,
+  "retrieval_coverage_gaps": [
+    "insufficient disconfirming evidence",
+    "evidence-family gap: willingness to pay",
+    "evidence-family gap: contradiction"
+  ],
+  "retrieval_budget_limited": false,
+  "idempotency_key": "8e7a4a70-4045-4dd7-baf9-76ebdb8b5485",
+  "request_id": "c323c6db-a524-4170-8dd9-b030c86f04da",
+  "assumptions": {
+    "industry": "Professional services software",
+    "monetization": "Subscription",
+    "revenueTarget": "$5k MRR",
+    "platformTolerance": "Low",
+    "complexityTolerance": "Low",
+    "regulatoryTolerance": "Low"
+  },
+  "credit_cost": 3,
+  "credit_state": "consumed",
+  "current_stage": "complete",
+  "current_stage_started_at": "2026-07-26T08:07:40.289099+00:00",
+  "last_progress_at": "2026-07-26T08:07:40.348174+00:00",
+  "terminal_at": "2026-07-26T08:07:40.348174+00:00",
+  "total_provider_cost_usd": 0.006015599999999999,
+  "total_tokens_used": {
+    "input": 40828,
+    "total": 50673,
+    "output": 9845
+  },
+  "time_budget_exhausted": false,
+  "cost_budget_exhausted": false,
+  "pipeline_version": "staged",
+  "max_jobs_per_run": 12,
+  "max_research_cycles": 3
+}

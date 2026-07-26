@@ -1,0 +1,302 @@
+[
+  {
+    "id": "c4131085-753a-4573-9bd1-ab92e6a25f44",
+    "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+    "agent_name": "competition",
+    "status": "Complete",
+    "attempt_count": 1,
+    "payload": {
+      "findings": [
+        "High competition from established platforms like Microsoft Approvals",
+        "Niche opportunities exist in AI-driven PR automation"
+      ],
+      "direction": "Mixed",
+      "assessment": "The market is fragmented between general business process tools and specialized developer workflow tools.",
+      "evidence_ids": [],
+      "evidence_urls": [
+        "https://worldmetrics.org/best/approval-process-software",
+        "https://worldmetrics.org/best/approval-system-software"
+      ],
+      "source_citations": [
+        {
+          "url": "https://worldmetrics.org/best/approval-process-software",
+          "sourceId": "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+        },
+        {
+          "url": "https://worldmetrics.org/best/approval-system-software",
+          "sourceId": "d91f4180-89e5-4df8-9b0d-e55d6d35caa3"
+        }
+      ]
+    },
+    "created_at": "2026-07-25T12:54:58.06135+00:00"
+  },
+  {
+    "id": "7d44d33e-0649-4b7d-a12d-cb702576cfcc",
+    "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+    "agent_name": "market",
+    "status": "Complete",
+    "attempt_count": 1,
+    "payload": {
+      "findings": [
+        "Pharma industry requires strict compliance",
+        "DevOps teams need to reduce PR latency"
+      ],
+      "direction": "SupportsOpportunity",
+      "assessment": "Strong demand for automated, audit-ready approval workflows in both regulated and software development sectors.",
+      "evidence_ids": [
+        "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+        "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+      ],
+      "evidence_urls": [
+        "https://approvalflow.net",
+        "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c"
+      ],
+      "marketContext": {
+        "metrics": [
+          {
+            "label": "Number of tools compared in top reviews",
+            "value": "17",
+            "sourceId": "e902cc71-8c62-4007-afaa-1a85dd3cfaec"
+          },
+          {
+            "label": "Typical enterprise pricing",
+            "value": "$2,500+/month",
+            "sourceId": "0c1ded80-6a85-4ccc-a083-8bb45da19515"
+          }
+        ],
+        "summary": "The approval software market is bifurcated between general business process automation and specialized, high-compliance or developer-centric tools."
+      },
+      "source_citations": [
+        {
+          "url": "https://approvalflow.net",
+          "sourceId": "d38e9b29-aaa3-4a96-9bbb-586ef910fa41"
+        },
+        {
+          "url": "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+          "sourceId": "8555ca13-2d58-4731-8ab9-e1e63badf6d4"
+        }
+      ]
+    },
+    "created_at": "2026-07-25T12:54:58.06625+00:00"
+  },
+  {
+    "id": "1bc0d553-5bc6-41fc-b563-54cb4d5d36c3",
+    "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+    "agent_name": "pricing",
+    "status": "Complete",
+    "attempt_count": 1,
+    "payload": {
+      "findings": [
+        "Entry-level pricing starts around $19/month",
+        "Enterprise solutions can exceed $3,000/month"
+      ],
+      "direction": "SupportsOpportunity",
+      "assessment": "Pricing models are flexible, ranging from low-cost self-service tools to high-end enterprise solutions.",
+      "evidence_ids": [],
+      "evidence_urls": [
+        "https://www.zite.com/blog/approval-workflow-software",
+        "https://worldmetrics.org/best/approval-process-software"
+      ],
+      "source_citations": [
+        {
+          "url": "https://www.zite.com/blog/approval-workflow-software",
+          "sourceId": "0c1ded80-6a85-4ccc-a083-8bb45da19515"
+        },
+        {
+          "url": "https://worldmetrics.org/best/approval-process-software",
+          "sourceId": "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+        }
+      ]
+    },
+    "created_at": "2026-07-25T12:54:58.071488+00:00"
+  },
+  {
+    "id": "773965be-9f5b-4479-b0cd-71ee0af313bc",
+    "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+    "agent_name": "risk",
+    "status": "Complete",
+    "attempt_count": 1,
+    "payload": {
+      "findings": [
+        "21 CFR Part 11 compliance is mandatory",
+        "Data integrity and audit trails are critical"
+      ],
+      "direction": "ChallengesOpportunity",
+      "assessment": "Regulatory compliance and security are significant barriers to entry in the pharmaceutical sector.",
+      "evidence_ids": [],
+      "evidence_urls": [
+        "https://approvalflow.net/validationframework.html"
+      ],
+      "source_citations": [
+        {
+          "url": "https://approvalflow.net/validationframework.html",
+          "sourceId": "3bda67aa-8c95-4f4b-907e-2a9b48f1773d"
+        }
+      ]
+    },
+    "created_at": "2026-07-25T12:54:58.075744+00:00"
+  },
+  {
+    "id": "f6eda12e-0f39-44d0-82d2-c261b4168b4c",
+    "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+    "agent_name": "demand",
+    "status": "Complete",
+    "attempt_count": 1,
+    "payload": {
+      "findings": [
+        "PR queues are a major bottleneck for release velocity",
+        "Manual email chains for approvals are prone to error"
+      ],
+      "direction": "SupportsOpportunity",
+      "assessment": "Clear pain points identified in both manual document approvals and slow PR review cycles.",
+      "evidence_ids": [
+        "373ee827-0984-42f2-bb8b-1a53343f02f7",
+        "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+      ],
+      "evidence_urls": [
+        "https://hoop.dev/blog/designing-efficient-git-workflow-approvals",
+        "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c"
+      ],
+      "targetSegments": [
+        {
+          "name": "Pharmaceutical/Life Sciences",
+          "jobsToBeDone": [
+            "Ensure regulatory compliance",
+            "Maintain audit trails",
+            "Manage document lifecycles"
+          ],
+          "evidenceSourceIds": [
+            "d38e9b29-aaa3-4a96-9bbb-586ef910fa41",
+            "3bda67aa-8c95-4f4b-907e-2a9b48f1773d"
+          ]
+        },
+        {
+          "name": "Software Development Teams",
+          "jobsToBeDone": [
+            "Reduce PR review latency",
+            "Automate quality gates",
+            "Ensure code compliance"
+          ],
+          "evidenceSourceIds": [
+            "8555ca13-2d58-4731-8ab9-e1e63badf6d4",
+            "76559098-6c07-46bf-a96d-1b5295ac78b4"
+          ]
+        }
+      ],
+      "source_citations": [
+        {
+          "url": "https://hoop.dev/blog/designing-efficient-git-workflow-approvals",
+          "sourceId": "76559098-6c07-46bf-a96d-1b5295ac78b4"
+        },
+        {
+          "url": "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+          "sourceId": "8555ca13-2d58-4731-8ab9-e1e63badf6d4"
+        }
+      ],
+      "willingnessToPay": {
+        "finding": "High willingness to pay for enterprise-grade compliance and efficiency gains, with lower tolerance for simple workflow tools.",
+        "strength": "Moderate",
+        "evidenceSourceIds": [
+          "0c1ded80-6a85-4ccc-a083-8bb45da19515",
+          "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+        ]
+      }
+    },
+    "created_at": "2026-07-25T12:54:58.080385+00:00"
+  },
+  {
+    "id": "a42e968b-ca7e-4e82-b339-414616bd2f3d",
+    "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+    "agent_name": "gtm",
+    "status": "Complete",
+    "attempt_count": 1,
+    "payload": {
+      "findings": [
+        "GitHub Apps provide a direct path to the user workflow",
+        "Outsourced software projects benefit from standardized PR models"
+      ],
+      "direction": "SupportsOpportunity",
+      "assessment": "Leveraging existing developer platforms like GitHub is a viable GTM strategy.",
+      "gtmFindings": [
+        {
+          "finding": "Integration with existing platforms (GitHub, M365) is a key driver for adoption.",
+          "evidenceSourceIds": [
+            "d91f4180-89e5-4df8-9b0d-e55d6d35caa3",
+            "8555ca13-2d58-4731-8ab9-e1e63badf6d4"
+          ]
+        },
+        {
+          "finding": "Positioning as a 'workflow engine' rather than just a 'tool' increases perceived value.",
+          "evidenceSourceIds": [
+            "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+          ]
+        }
+      ],
+      "evidence_ids": [],
+      "evidence_urls": [
+        "https://github.com/Hadassah-lerner/ApprovalFlow",
+        "https://waldo.jaquith.org/blog/2025/09/github-pr-model"
+      ],
+      "source_citations": [
+        {
+          "url": "https://github.com/Hadassah-lerner/ApprovalFlow",
+          "sourceId": "42f1e4dd-b099-44a2-acb6-0b9e9ccd604a"
+        },
+        {
+          "url": "https://waldo.jaquith.org/blog/2025/09/github-pr-model",
+          "sourceId": "4a294484-be67-4662-b444-43b4bd853021"
+        }
+      ]
+    },
+    "created_at": "2026-07-25T12:54:58.085296+00:00"
+  },
+  {
+    "id": "6f84b03c-2e0d-44da-a8ae-b070014b0133",
+    "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+    "agent_name": "final_judge",
+    "status": "Complete",
+    "attempt_count": 1,
+    "payload": {
+      "methodology": [
+        {
+          "text": "The validation score was derived by cross-referencing identified pain points in Git workflows against existing platform capabilities and assessing the absence of clear, paid-demand signals in the target market.",
+          "evidence_ids": [
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7",
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+          ],
+          "score_criteria": [
+            "competitionGap",
+            "speedToFirstRevenue"
+          ]
+        }
+      ],
+      "written_verdict": "Avoid",
+      "executive_summary": [
+        {
+          "text": "The proposed solution faces significant market headwinds due to existing Git platform features that already address branch protection and approval rules, rendering the value proposition redundant.",
+          "evidence_ids": [
+            "373ee827-0984-42f2-bb8b-1a53343f02f7",
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c"
+          ],
+          "score_criteria": [
+            "competitionGap",
+            "painSeverity"
+          ]
+        },
+        {
+          "text": "There is a lack of verified willingness-to-pay signals and insufficient urgency in the current workflow, making it difficult to justify the development of a standalone tool for PR validation.",
+          "evidence_ids": [
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+          ],
+          "score_criteria": [
+            "willingnessToPay",
+            "purchaseUrgency"
+          ]
+        }
+      ]
+    },
+    "created_at": "2026-07-25T12:55:00.687106+00:00"
+  }
+]

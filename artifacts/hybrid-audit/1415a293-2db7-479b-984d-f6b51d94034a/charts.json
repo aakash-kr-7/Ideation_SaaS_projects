@@ -1,0 +1,105 @@
+[
+  {
+    "id": "d86f6fbf-1927-4004-86b2-3c45bef36ccd",
+    "run_id": "1415a293-2db7-479b-984d-f6b51d94034a",
+    "sha256": "3d7fc0f59667b175260c266a2e8686716a4b33e9f63d2d982852151e1753dbe4",
+    "chart_key": "factor-breakdown",
+    "chart_type": "bar",
+    "created_at": "2026-07-26T08:05:40.912173+00:00",
+    "source_data": {
+      "values": {
+        "mvpSpeed": 75,
+        "founderFit": 32,
+        "painSeverity": 20,
+        "competitionGap": 65,
+        "regulatoryRisk": 10,
+        "purchaseUrgency": 15,
+        "willingnessToPay": 10,
+        "buyerReachability": 33.8,
+        "retentionPotential": 31.2,
+        "distributionClarity": 61.6,
+        "speedToFirstRevenue": 8.7,
+        "platformDependencyRisk": 10
+      }
+    },
+    "chart_config": {
+      "title": "Factor Breakdown",
+      "sourceExplanation": "The 12 factor values are copied from the deterministic scorecard in this report version."
+    },
+    "schema_version": 1,
+    "svg_storage_path": null,
+    "report_version_id": "3a41fea7-455d-4e12-91ba-1e5e0a00bc34",
+    "supporting_evidence_ids": [
+      "d38c91c4-b605-4c85-ab76-e23f224775b7"
+    ]
+  },
+  {
+    "id": "901a42d1-c50e-4bd1-ba5e-5f6728df4cf3",
+    "run_id": "1415a293-2db7-479b-984d-f6b51d94034a",
+    "sha256": "10410a0cc082499c772c70e408f44daa72dd6e5630919d4cc0857a14fdff548c",
+    "chart_key": "evidence-balance",
+    "chart_type": "bar",
+    "created_at": "2026-07-26T08:05:40.919358+00:00",
+    "source_data": {
+      "supporting": 1,
+      "contradictory": 0
+    },
+    "chart_config": {
+      "title": "Evidence Balance",
+      "sourceExplanation": "Counts of accepted supporting and contradictory evidence rows in this report version."
+    },
+    "schema_version": 1,
+    "svg_storage_path": null,
+    "report_version_id": "3a41fea7-455d-4e12-91ba-1e5e0a00bc34",
+    "supporting_evidence_ids": [
+      "d38c91c4-b605-4c85-ab76-e23f224775b7"
+    ]
+  },
+  {
+    "id": "f44f7ca2-6f80-43c2-81dd-92a10d65df06",
+    "run_id": "1415a293-2db7-479b-984d-f6b51d94034a",
+    "sha256": "b5b2ce80caa496d90b6ec3de069b9b6480b20cf48af0de5195a91e819ed66966",
+    "chart_key": "source-quality-distribution",
+    "chart_type": "bar",
+    "created_at": "2026-07-26T08:05:40.925082+00:00",
+    "source_data": {
+      "byTier": {
+        "tier_1": 0,
+        "tier_2": 1,
+        "tier_3": 0,
+        "tier_4": 0
+      }
+    },
+    "chart_config": {
+      "title": "Source Quality Distribution",
+      "sourceExplanation": "Counts of accepted evidence rows grouped by persisted source tier."
+    },
+    "schema_version": 1,
+    "svg_storage_path": null,
+    "report_version_id": "3a41fea7-455d-4e12-91ba-1e5e0a00bc34",
+    "supporting_evidence_ids": [
+      "d38c91c4-b605-4c85-ab76-e23f224775b7"
+    ]
+  },
+  {
+    "id": "1eadcbe9-7b15-4239-b306-2370b33d766f",
+    "run_id": "1415a293-2db7-479b-984d-f6b51d94034a",
+    "sha256": "f84277b43a49d3eca335acd6d53b40f7cd642fc19f611f021586640457dbb4db",
+    "chart_key": "alternatives-comparison",
+    "chart_type": "bar",
+    "created_at": "2026-07-26T08:05:40.931432+00:00",
+    "source_data": {
+      "reason": "No competitor row had an accepted evidence-item reference.",
+      "values": {},
+      "unavailable": true
+    },
+    "chart_config": {
+      "title": "Alternatives Comparison",
+      "sourceExplanation": "Unavailable: competitor rows were not sufficiently linked to accepted evidence."
+    },
+    "schema_version": 1,
+    "svg_storage_path": null,
+    "report_version_id": "3a41fea7-455d-4e12-91ba-1e5e0a00bc34",
+    "supporting_evidence_ids": []
+  }
+]

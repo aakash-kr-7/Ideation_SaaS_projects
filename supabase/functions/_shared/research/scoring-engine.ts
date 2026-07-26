@@ -33,6 +33,7 @@ export interface ScoringEvidence {
   independent_source_count?: number;
   independent_domain_count?: number;
   disconfirming?: boolean;
+  evidence_topic?: string | null;
 }
 export interface ScoringRisk {
   id: string;
@@ -44,6 +45,7 @@ export interface ScoringCompetitor {
   gap: string;
   strength: string;
   pricing: string;
+  classification?: "direct" | "adjacent" | "substitute" | "workflow_workaround";
 }
 export interface ScoringContext {
   evidence: ScoringEvidence[];
@@ -69,6 +71,15 @@ const clamp = (n: number) =>
 const lexicon = (text: string, words: string[]) =>
   words.some((w) => text.toLowerCase().includes(w));
 const refs = (items: ScoringEvidence[]) => [...new Set(items.map((e) => e.id))];
+export function isDirectWillingnessToPayEvidence(evidence: Pick<ScoringEvidence, "title" | "snippet" | "evidence_topic">) {
+  if (evidence.evidence_topic !== "willingness_to_pay") return false;
+  const text = `${evidence.title} ${evidence.snippet}`.toLowerCase();
+  return [
+    /\b(?:customer|buyer|team|agency|participant)s?\b.{0,100}\b(?:paid|purchased|renewed|committed|signed a paid|allocated a budget)\b/,
+    /\b(?:paid|purchased|renewed|committed|signed a paid|allocated a budget)\b.{0,100}\b(?:customer|buyer|team|agency|participant)s?\b/,
+    /\b(?:paid pilot|purchase commitment|signed commitment|deposit paid|pre[- ]?order|conversion rate|renewal rate|price sensitivity|transaction data)\b/,
+  ].some((pattern) => pattern.test(text));
+}
 function evidenceScore(items: ScoringEvidence[], baseline = 20): number {
   const usable = items.filter((e) => !e.excluded && (e.source_tier ?? 3) < 4);
   if (!usable.length) return baseline;
@@ -150,7 +161,19 @@ export function computeFactors(ctx: ScoringContext): FactorResult[] {
       "license",
     ])
   );
-  const explicitGaps = ctx.competitors.filter((c) => c.gap.trim().length >= 12);
+  const directCompetitors = ctx.competitors.filter((c) => c.classification === "direct");
+  const explicitGaps = directCompetitors.filter((c) => c.gap.trim().length >= 12);
+  const competitiveDensity = ctx.competitors.reduce((sum, competitor) => {
+    const classification = competitor.classification || "adjacent";
+    const weight = classification === "direct"
+      ? 1
+      : classification === "adjacent"
+      ? 0.35
+      : classification === "substitute"
+      ? 0.25
+      : 0.15;
+    return sum + weight;
+  }, 0);
   const gapEvidence = [...pain, ...demand].filter((e) =>
     lexicon(`${e.title} ${e.snippet}`, [
       "alternative",
@@ -166,7 +189,10 @@ export function computeFactors(ctx: ScoringContext): FactorResult[] {
   );
   const weightedDemand = qualityWeightedCount(demand);
   const weightedGapEvidence = qualityWeightedCount(gapEvidence);
-  const tierOnePricing = pricing.filter((e) => e.source_tier === 1);
+  const tierOnePublishedPricing = pricing.filter((e) => e.source_tier === 1);
+  const directWillingnessToPay = pricing.filter((e) =>
+    e.source_tier === 1 && isDirectWillingnessToPayEvidence(e)
+  );
   const executionRisks = ctx.risks.filter((r) =>
     r.category === "Execution" && r.severity !== "Low"
   );
@@ -196,11 +222,11 @@ export function computeFactors(ctx: ScoringContext): FactorResult[] {
     ),
     mk(
       "willingnessToPay",
-      evidenceScore(tierOnePricing, tierOnePricing.length ? 25 : 10),
-      tierOnePricing,
-      tierOnePricing.length
-        ? "Tier 1 willingness-to-pay signals, weighted by independent corroboration."
-        : "No Tier 1 willingness-to-pay evidence; recommendations do not substitute for paid-demand proof.",
+      evidenceScore(directWillingnessToPay, directWillingnessToPay.length ? 25 : 10),
+      directWillingnessToPay,
+      directWillingnessToPay.length
+        ? "Tier 1 buyer payment or purchase-commitment evidence, weighted by independent corroboration."
+        : "No direct Tier 1 buyer payment or purchase-commitment evidence; competitor list prices do not prove willingness to pay.",
     ),
     mk(
       "buyerReachability",
@@ -216,10 +242,10 @@ export function computeFactors(ctx: ScoringContext): FactorResult[] {
     ),
     mk(
       "competitionGap",
-      65 - ctx.competitors.length * 8 + explicitGaps.length * 10 +
+      65 - competitiveDensity * 8 + explicitGaps.length * 10 +
         Math.min(15, weightedGapEvidence * 5),
       gapEvidence,
-      "Competitive density adjusted by explicit normalized gaps and gap-language evidence.",
+      "Classification-weighted competitive density; only justified direct competitors receive full incumbent pressure or gap credit.",
     ),
     mk(
       "retentionPotential",
@@ -257,9 +283,9 @@ export function computeFactors(ctx: ScoringContext): FactorResult[] {
     ),
     mk(
       "speedToFirstRevenue",
-      (evidenceScore([...tierOnePricing, ...urgent], 10) +
-        (tierOnePricing.length ? 10 : 0)) * 0.87,
-      [...tierOnePricing, ...urgent],
+      (evidenceScore([...tierOnePublishedPricing, ...urgent], 10) +
+        (tierOnePublishedPricing.length ? 10 : 0)) * 0.87,
+      [...tierOnePublishedPricing, ...urgent],
       "Pricing proof and purchase urgency combined deterministically.",
     ),
   ];

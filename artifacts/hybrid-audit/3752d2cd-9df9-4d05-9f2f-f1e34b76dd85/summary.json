@@ -1,0 +1,471 @@
+{
+  "runId": "3752d2cd-9df9-4d05-9f2f-f1e34b76dd85",
+  "status": "Completed",
+  "mode": "quick_scan",
+  "groundingMode": "disabled",
+  "groundingDegraded": false,
+  "groundedCallsAttempted": 0,
+  "groundedCallsCompleted": 0,
+  "groundedCallsQuotaBlocked": 0,
+  "externalSearchCalls": 20,
+  "pagesFetched": 6,
+  "sourcesAccepted": 6,
+  "independentDomains": 6,
+  "evidenceCount": 4,
+  "evidenceFamilyCoverage": {
+    "behavior_demand": 2,
+    "customer_pain": 2
+  },
+  "sourceTierDistribution": {
+    "tier_1": 0,
+    "tier_2": 3,
+    "tier_3": 1,
+    "tier_4": 0
+  },
+  "relevanceDistribution": {
+    "directly_relevant": 6,
+    "contextually_relevant": 0,
+    "adjacent": 0,
+    "out_of_scope": 0
+  },
+  "rejectedEvidence": [],
+  "providerCalls": 23,
+  "synthesisCalls": 3,
+  "tokens": {
+    "input": 8028,
+    "output": 2483,
+    "total": 10511
+  },
+  "estimatedCostUsd": 0.0013469999999999999,
+  "pricingVersion": "gemini-estimate-v1-2026-07-25",
+  "degradedProviders": [],
+  "cacheHits": 6,
+  "cacheMisses": 23,
+  "durationMs": 28182,
+  "retryCount": 0,
+  "score": 44,
+  "verdict": "Weak Signal",
+  "scoreConfidence": 52,
+  "evidenceConfidence": {
+    "run_id": "3752d2cd-9df9-4d05-9f2f-f1e34b76dd85",
+    "band": "Moderate",
+    "score": 0.62,
+    "reasons": [
+      "4 independent domains",
+      "4 semantically accepted evidence items",
+      "0 unresolved evidence disagreements",
+      "average source authority 69%",
+      "average semantic relevance 100%",
+      "buyer-specific evidence 100%",
+      "tier distribution {\"2\":3,\"3\":1}"
+    ],
+    "created_at": "2026-07-26T03:26:49.015849+00:00",
+    "updated_at": "2026-07-26T03:26:51.724+00:00",
+    "deductions": [
+      "No Tier 1/primary page supports the dossier."
+    ],
+    "scoring_confidence": 52,
+    "report_completeness": 55,
+    "completeness_reasons": [
+      "2/5 required evidence families covered",
+      "4/6 structural report checks passed"
+    ]
+  },
+  "canonicalResearchBrief": {
+    "endUser": "Project managers, account managers, and service-delivery staff who request and track customer approval",
+    "industry": "Professional services and client-service operations",
+    "geography": "United States and global English-speaking markets",
+    "targetBuyer": "Service operations leaders, agency owners, and client-delivery leaders",
+    "terminology": [
+      "lightweight",
+      "approval",
+      "and",
+      "audit-trail",
+      "workspace",
+      "for",
+      "teams",
+      "collect",
+      "customer",
+      "sign-off",
+      "preserve",
+      "attributable",
+      "history",
+      "reduce",
+      "disputes",
+      "service teams that deliver work to customers",
+      "deliver",
+      "work",
+      "customers",
+      "approvals",
+      "approve",
+      "signoff",
+      "customer sign-off",
+      "client sign-off",
+      "customer approval",
+      "client approval",
+      "acceptance",
+      "proofing",
+      "review and approval",
+      "audit trail",
+      "approval history",
+      "approver identity",
+      "timestamped approval",
+      "approval record",
+      "record of approval",
+      "who approved",
+      "signed acceptance",
+      "service team",
+      "agency",
+      "professional services",
+      "consultancy",
+      "client",
+      "deliverable",
+      "project manager",
+      "account manager",
+      "operations lead",
+      "customer success",
+      "reduce disputes"
+    ],
+    "businessModel": "Per-team monthly subscription",
+    "problemSolved": "Customer approvals are scattered or ambiguous, leaving service teams without attributable proof and exposed to disputes",
+    "expectedOutcome": "Faster customer sign-off, preserved attributable approval history, and fewer delivery or billing disputes",
+    "workflowChanged": "Requesting, collecting, recording, and retrieving customer approval or sign-off on service deliverables",
+    "dimensionKeywords": {
+      "problem": [
+        "customer",
+        "approvals",
+        "are",
+        "scattered",
+        "ambiguous",
+        "leaving",
+        "teams",
+        "without",
+        "attributable",
+        "proof",
+        "and",
+        "exposed",
+        "disputes",
+        "scattered approval",
+        "ambiguous approval",
+        "dispute",
+        "lost approval",
+        "approval delay"
+      ],
+      "target_buyer": [
+        "service operations leaders agency owners and client-delivery leaders",
+        "operations",
+        "leaders",
+        "agency",
+        "owners",
+        "and",
+        "client-delivery",
+        "project",
+        "managers",
+        "account",
+        "service-delivery",
+        "staff",
+        "who",
+        "request",
+        "track",
+        "customer",
+        "approval",
+        "service team",
+        "professional services",
+        "consultancy",
+        "client",
+        "deliverable",
+        "project manager",
+        "account manager",
+        "operations lead",
+        "customer success"
+      ],
+      "user_workflow": [
+        "requesting",
+        "collecting",
+        "recording",
+        "and",
+        "retrieving",
+        "customer",
+        "approval",
+        "sign-off",
+        "deliverables",
+        "approvals",
+        "approve",
+        "signoff",
+        "customer sign-off",
+        "client sign-off",
+        "customer approval",
+        "client approval",
+        "acceptance",
+        "proofing",
+        "review and approval",
+        "audit trail",
+        "approval history",
+        "attributable",
+        "approver identity",
+        "timestamped approval",
+        "approval record",
+        "record of approval",
+        "who approved",
+        "signed acceptance"
+      ],
+      "market_category": [
+        "client approval online proofing and customer sign-off audit-trail software",
+        "client",
+        "approval",
+        "online",
+        "proofing",
+        "and",
+        "customer",
+        "sign-off",
+        "audit-trail",
+        "online proofing",
+        "client approval",
+        "customer sign-off",
+        "approval workflow"
+      ],
+      "expected_outcome": [
+        "faster",
+        "customer",
+        "sign-off",
+        "preserved",
+        "attributable",
+        "approval",
+        "history",
+        "and",
+        "fewer",
+        "delivery",
+        "billing",
+        "disputes",
+        "reduce disputes",
+        "avoid disputes",
+        "proof",
+        "accountability",
+        "faster approval",
+        "preserve history"
+      ],
+      "proposed_solution": [
+        "lightweight",
+        "approval",
+        "and",
+        "audit-trail",
+        "workspace",
+        "for",
+        "teams",
+        "collect",
+        "customer",
+        "sign-off",
+        "preserve",
+        "attributable",
+        "history",
+        "reduce",
+        "disputes",
+        "approvals",
+        "approve",
+        "signoff",
+        "customer sign-off",
+        "client sign-off",
+        "customer approval",
+        "client approval",
+        "acceptance",
+        "proofing",
+        "review and approval",
+        "audit trail",
+        "approval history",
+        "approver identity",
+        "timestamped approval",
+        "approval record",
+        "record of approval",
+        "who approved",
+        "signed acceptance"
+      ]
+    },
+    "exactProductProposition": "A lightweight approval and audit-trail workspace for service teams that need to collect customer sign-off, preserve attributable approval history and reduce disputes.",
+    "directCompetitorCategory": "Client approval, online proofing, and customer sign-off audit-trail software",
+    "adjacentOutOfScopeCategories": [
+      "CI/CD pipelines",
+      "deployment automation",
+      "YAML pipelines",
+      "generic DevOps workflows",
+      "internal code-review approvals without customer sign-off",
+      "general e-signature without the specified service-delivery approval workflow"
+    ]
+  },
+  "positiveEvidence": 4,
+  "negativeEvidence": 0,
+  "domains": [
+    "approval.studio",
+    "campaignswift.com",
+    "noloco.io",
+    "quantumbyte.ai",
+    "wifitalents.com",
+    "www.redfalconhq.com"
+  ],
+  "claimMappings": [
+    {
+      "evidenceId": "d4dddaa2-2d22-4779-9457-0bb4d9e24cc6",
+      "claim": "Client approval software replaces vague email replies with one link, one clear yes or no, and a record of who approved what and when.",
+      "signal": "Demand",
+      "disconfirming": false,
+      "sourceId": "95f11a2d-65e5-4568-bb0e-bd0566b66377",
+      "sourceUrl": "https://approval.studio/blog/client-approval-software-guide",
+      "sourceDomain": "approval.studio"
+    },
+    {
+      "evidenceId": "00c15b6a-78a9-49f0-b153-1b2342b1dd68",
+      "claim": "This guide breaks down how structured multi-stage agency approval workflows can cut revision cycles roughly in half, eliminate bottlenecks, and get content live faster without sacrificing quality.",
+      "signal": "Demand",
+      "disconfirming": false,
+      "sourceId": "7560a7b2-a003-4e1c-99df-3ecc194ee022",
+      "sourceUrl": "https://campaignswift.com/blog/agency-approval-workflows",
+      "sourceDomain": "campaignswift.com"
+    },
+    {
+      "evidenceId": "475a4381-9f38-4388-9f01-6524bd526cc3",
+      "claim": "Without a structured approval system, agencies lose time to scattered comments, version confusion, and 'looks good' emails that never translate into billable sign-off.",
+      "signal": "Pain",
+      "disconfirming": false,
+      "sourceId": "54b29474-9084-4600-b826-01a41222bbf5",
+      "sourceUrl": "https://quantumbyte.ai/articles/best-client-review-and-approval-software-for-agencies-2026",
+      "sourceDomain": "quantumbyte.ai"
+    },
+    {
+      "evidenceId": "846a1656-8c0b-45b4-be07-86c5e1ee1451",
+      "claim": "A client approval audit trail records the content item, version, approver, decision, timestamp, requested changes, resolved changes, final approval note, and publishing handoff so the team can prove which version was approved.",
+      "signal": "Demand",
+      "disconfirming": false,
+      "sourceId": "9f4f6104-b46a-4088-a98e-086aaa1adfb2",
+      "sourceUrl": "https://www.redfalconhq.com/resources/client-approval-audit-trail-template",
+      "sourceDomain": "www.redfalconhq.com"
+    }
+  ],
+  "contradictionPair": null,
+  "specialistEvidenceCoverage": [],
+  "factorMapping": {
+    "factor": "painSeverity",
+    "score": 31.2,
+    "evidence": [
+      {
+        "evidenceId": "475a4381-9f38-4388-9f01-6524bd526cc3",
+        "claim": "Without a structured approval system, agencies lose time to scattered comments, version confusion, and 'looks good' emails that never translate into billable sign-off.",
+        "sourceUrl": "https://quantumbyte.ai/articles/best-client-review-and-approval-software-for-agencies-2026"
+      }
+    ]
+  },
+  "marketMetricMapping": null,
+  "chartMappings": [
+    {
+      "chartKey": "factor-breakdown",
+      "supportingEvidenceIds": [
+        "475a4381-9f38-4388-9f01-6524bd526cc3",
+        "d4dddaa2-2d22-4779-9457-0bb4d9e24cc6",
+        "00c15b6a-78a9-49f0-b153-1b2342b1dd68",
+        "846a1656-8c0b-45b4-be07-86c5e1ee1451"
+      ],
+      "sourceData": {
+        "values": {
+          "mvpSpeed": 75,
+          "founderFit": 46,
+          "painSeverity": 31.2,
+          "competitionGap": 69,
+          "regulatoryRisk": 10,
+          "purchaseUrgency": 15,
+          "willingnessToPay": 10,
+          "buyerReachability": 40.1,
+          "retentionPotential": 31.2,
+          "distributionClarity": 69,
+          "speedToFirstRevenue": 8.7,
+          "platformDependencyRisk": 10
+        }
+      }
+    },
+    {
+      "chartKey": "evidence-balance",
+      "supportingEvidenceIds": [
+        "d4dddaa2-2d22-4779-9457-0bb4d9e24cc6",
+        "00c15b6a-78a9-49f0-b153-1b2342b1dd68",
+        "475a4381-9f38-4388-9f01-6524bd526cc3",
+        "846a1656-8c0b-45b4-be07-86c5e1ee1451"
+      ],
+      "sourceData": {
+        "supporting": 4,
+        "contradictory": 0
+      }
+    },
+    {
+      "chartKey": "source-quality-distribution",
+      "supportingEvidenceIds": [
+        "d4dddaa2-2d22-4779-9457-0bb4d9e24cc6",
+        "00c15b6a-78a9-49f0-b153-1b2342b1dd68",
+        "475a4381-9f38-4388-9f01-6524bd526cc3",
+        "846a1656-8c0b-45b4-be07-86c5e1ee1451"
+      ],
+      "sourceData": {
+        "byTier": {
+          "tier_1": 0,
+          "tier_2": 3,
+          "tier_3": 1,
+          "tier_4": 0
+        }
+      }
+    },
+    {
+      "chartKey": "alternatives-comparison",
+      "supportingEvidenceIds": [
+        "d4dddaa2-2d22-4779-9457-0bb4d9e24cc6",
+        "475a4381-9f38-4388-9f01-6524bd526cc3"
+      ],
+      "sourceData": {
+        "values": {
+          "QuantumByte": 1,
+          "Approval Studio": 2
+        }
+      }
+    }
+  ],
+  "exportChecks": [
+    {
+      "format": "pdf",
+      "storagePath": "ffc9fd68-63aa-4937-ab78-3e13a8746c21/3752d2cd-9df9-4d05-9f2f-f1e34b76dd85/v1/report.pdf",
+      "sha256": "29740914062245788d062a967a4e6ac7be770a0ebbbb89d2d9b9f8a236fb2300",
+      "bytes": 82396,
+      "opened": true
+    },
+    {
+      "format": "markdown",
+      "storagePath": "ffc9fd68-63aa-4937-ab78-3e13a8746c21/3752d2cd-9df9-4d05-9f2f-f1e34b76dd85/v1/report.markdown",
+      "sha256": "42ae3be83b42fd09219c2b022c2ada324fc27cb66a36f5b00dc8b71dda09a929",
+      "bytes": 15716,
+      "opened": true
+    },
+    {
+      "format": "csv",
+      "storagePath": "ffc9fd68-63aa-4937-ab78-3e13a8746c21/3752d2cd-9df9-4d05-9f2f-f1e34b76dd85/v1/report.csv",
+      "sha256": "7e9758bd109072068de688e0e01d14c1cc1794f5e18f20b5f94366fe79bea788",
+      "bytes": 327602,
+      "opened": true
+    },
+    {
+      "format": "json",
+      "storagePath": "ffc9fd68-63aa-4937-ab78-3e13a8746c21/3752d2cd-9df9-4d05-9f2f-f1e34b76dd85/v1/report.json",
+      "sha256": "91cbcda6e9919eece66e3d224d593cfac825ca549e6fbebc4ad28fea697a4bc5",
+      "bytes": 48543,
+      "opened": true
+    }
+  ],
+  "usageReconciliation": {
+    "externalSearchCalls": true,
+    "groundedAttempted": true,
+    "groundedCompleted": true,
+    "synthesisCalls": true,
+    "pagesFetched": true,
+    "inputTokens": true,
+    "outputTokens": true,
+    "estimatedCost": true
+  },
+  "credit": {
+    "reservationStatus": "consumed",
+    "reserveEvents": 1,
+    "consumeEvents": 1
+  }
+}

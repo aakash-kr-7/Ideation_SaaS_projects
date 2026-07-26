@@ -3,6 +3,7 @@ import { stageCompleted, stageFailed } from "../../stages.ts";
 import { computeFactors, calculateDeterministicScore, verdictFor, type WeightRow } from "../../scoring-engine.ts";
 import { updateState } from "../../pipeline-utils.ts";
 import { gateVerdict } from "../../reasoning-integrity.ts";
+import { evidenceConfidence } from "../../evidence-intelligence.ts";
 
 export async function executeHybridAnalyzeScore(ctx: StageContext): Promise<StageResult> {
   const { runId, db, startedAt, inputMeta } = ctx;
@@ -16,7 +17,7 @@ export async function executeHybridAnalyzeScore(ctx: StageContext): Promise<Stag
     // --- Load evidence and artifacts ---
     const { data: evidence } = await db
       .from("evidence_items")
-      .select("id, signal_type, strength, title, snippet, evidence_family, source_tier, source_id, source_domain, excluded, disconfirming, independent_source_count, created_at")
+      .select("id, signal_type, strength, title, snippet, evidence_family, evidence_topic, source_tier, source_id, source_domain, source_class, excluded, disconfirming, independent_source_count, created_at, relevance_score, relevance_class, matched_brief_dimensions, acceptance_decision")
       .eq("run_id", runId);
 
     const { data: competitors } = await db.from("competitors").select("*").eq("opportunity_id", opportunityId);
@@ -25,6 +26,10 @@ export async function executeHybridAnalyzeScore(ctx: StageContext): Promise<Stag
     const { data: launch } = await db.from("launch_plans").select("*, launch_strategies(*)").eq("opportunity_id", opportunityId).maybeSingle();
     const { data: weightRows } = await db.from("scoring_weights").select("criterion, weight");
     const { data: evidenceClusters } = await db.from("evidence_clusters").select("*").eq("opportunity_id", opportunityId);
+    const { data: explicitContradictions } = await db.from("evidence_contradictions")
+      .select("id")
+      .eq("run_id", runId)
+      .eq("resolution_status", "unresolved");
 
     // --- Compute factors (deterministic, no provider calls) ---
     const factors = computeFactors({
@@ -49,41 +54,21 @@ export async function executeHybridAnalyzeScore(ctx: StageContext): Promise<Stag
       adversarialResult || { outcome: "InsufficientEvidence", severity: "None" },
     ) : { effectiveVerdict: deterministicVerdict, adversarialDowngrade: false, reason: null };
 
-    // --- Compute confidence ---
-    const usable = (evidence || []).filter((e: any) => !e.excluded);
-    
-    // 1. Source count with diminishing returns
-    const targetCount = mode === "full_validation" ? 15 : 8;
-    const baseVolumeScore = Math.min(1, usable.length / targetCount);
-    
-    // 2. Source independence
-    const totalIndependentDomains = new Set(usable.map((e: any) => e.source_domain).filter(Boolean)).size;
-    const independenceScore = usable.length > 0 ? Math.min(1, totalIndependentDomains / (usable.length * 0.5 + 1)) : 0;
-    
-    // 3. Source authority (tier distribution)
-    const tier1and2 = usable.filter((e: any) => e.source_tier === 1 || e.source_tier === 2).length;
-    const authorityScore = usable.length > 0 ? Math.min(1, (tier1and2 * 1.5 + (usable.length - tier1and2) * 0.5) / usable.length) : 0;
-    
-    // 4. Contradiction balance
-    const confirmingCount = usable.filter((e: any) => !e.disconfirming).length;
-    const contradictionScore = usable.length > 0 ? confirmingCount / usable.length : 0;
-
-    // 5. Evidence-family coverage
-    const hasProblem = usable.some((e: any) => e.signal_type === "Pain");
-    const hasSolution = usable.some((e: any) => e.signal_type === "Demand" || e.signal_type === "Pricing");
-    const coverageScore = (hasProblem ? 0.5 : 0) + (hasSolution ? 0.5 : 0);
-    
-    // Weighted confidence
-    const confidenceRaw = 
-      (baseVolumeScore * 0.30) + 
-      (independenceScore * 0.20) + 
-      (authorityScore * 0.20) + 
-      (contradictionScore * 0.15) + 
-      (coverageScore * 0.15);
-      
-    // Penalty for adversarial downgrade
-    const finalConfidenceRaw = adversarialDowngrade ? confidenceRaw * 0.7 : confidenceRaw;
-    const confidence = Math.min(1, Math.max(0, finalConfidenceRaw));
+    // Scoring confidence measures evidence-bound factor coverage and inherits a
+    // hard ceiling from evidence quality. Successful arithmetic alone cannot
+    // produce a high-confidence score.
+    const usable = (evidence || []).filter((e: any) => !e.excluded && e.acceptance_decision === "accepted_core");
+    const evidenceConfidenceResult = evidenceConfidence(usable as any, undefined, explicitContradictions?.length || 0);
+    const factorsWithEvidence = factors.filter((factor) => factor.evidenceIds.length > 0).length;
+    const factorCoverage = factorsWithEvidence / factors.length;
+    const evidenceCeiling = evidenceConfidenceResult.band === "High" ? 95
+      : evidenceConfidenceResult.band === "Moderate" ? 75
+      : evidenceConfidenceResult.band === "Low" ? 50
+      : 25;
+    const confidence = Math.max(0, Math.min(
+      evidenceCeiling,
+      Math.round(25 + factorCoverage * 65 - (adversarialDowngrade ? 10 : 0)),
+    ));
 
     // --- Persist score ---
     const { data: score, error: scoreError } = await db
@@ -91,13 +76,17 @@ export async function executeHybridAnalyzeScore(ctx: StageContext): Promise<Stag
       .upsert({
         opportunity_id: opportunityId,
         total,
-        confidence: Math.round(confidence * 100),
+        confidence,
         verdict: effectiveVerdict,
       }, { onConflict: "opportunity_id" })
       .select("id")
       .single();
 
     if (scoreError || !score) throw new Error(`Score insert failed: ${scoreError.message}`);
+    await db.from("evidence_confidence_results").update({
+      scoring_confidence: confidence,
+      updated_at: new Date().toISOString(),
+    }).eq("run_id", runId);
 
     // --- Persist breakdowns ---
     for (const factor of factors) {
@@ -183,25 +172,35 @@ export async function executeHybridAnalyzeScore(ctx: StageContext): Promise<Stag
       }
 
       // 5. Competitor Comparison
-      if (competitors && competitors.length > 0) {
+      const evidenceBoundCompetitors = (competitors || []).filter(
+        (competitor: any) => Array.isArray(competitor.evidence_ids) && competitor.evidence_ids.length > 0,
+      );
+      if (evidenceBoundCompetitors.length > 0) {
         chartDatasets.push({
           chart_key: "competitor-comparison",
           chart_type: "bar",
-          source_data: { values: Object.fromEntries(competitors.map((c: any) => [c.name, 1])) },
-          supporting_evidence_ids: (evidence || []).filter((e: any) => ["Demand", "Pricing"].includes(e.signal_type)).map((e: any) => e.id)
+          source_data: { values: Object.fromEntries(evidenceBoundCompetitors.map((competitor: any) => [competitor.name, 1])) },
+          supporting_evidence_ids: [...new Set(evidenceBoundCompetitors.flatMap((competitor: any) => competitor.evidence_ids))]
         });
       }
 
       // 6. Pricing Landscape
       if (pricing) {
+        const pricingEvidenceIds = (evidence || []).filter((item: any) => item.signal_type === "Pricing").map((item: any) => item.id);
+        const pricedCompetitors = evidenceBoundCompetitors.filter(
+          (competitor: any) => competitor.pricing && !/unavailable|unknown|not public/i.test(competitor.pricing),
+        );
         chartDatasets.push({
           chart_key: "pricing-landscape",
           chart_type: "line",
           source_data: {
-            pricingEvidence: (evidence || []).filter((e: any) => e.signal_type === "Pricing").length,
-            competitorsWithPublicPricing: (competitors || []).filter((c: any) => c.pricing && !/unavailable|unknown|not public/i.test(c.pricing)).length,
+            pricingEvidence: pricingEvidenceIds.length,
+            competitorsWithPublicPricing: pricedCompetitors.length,
           },
-          supporting_evidence_ids: (evidence || []).filter((e: any) => e.signal_type === "Pricing").map((e: any) => e.id)
+          supporting_evidence_ids: [...new Set([
+            ...pricingEvidenceIds,
+            ...pricedCompetitors.flatMap((competitor: any) => competitor.evidence_ids),
+          ])]
         });
       }
 
@@ -231,7 +230,7 @@ export async function executeHybridAnalyzeScore(ctx: StageContext): Promise<Stag
         verdict: effectiveVerdict,
         deterministicVerdict,
         adversarialDowngrade,
-        confidence: Math.round(confidence * 100),
+        confidence,
         chartDatasets,
         fullValidationInsights: inputMeta.fullValidationInsights,
       }

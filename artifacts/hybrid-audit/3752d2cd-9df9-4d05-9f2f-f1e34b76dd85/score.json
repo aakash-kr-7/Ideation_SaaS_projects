@@ -1,0 +1,304 @@
+{
+  "id": "23e0c49a-0e75-420c-871d-173160c01e6f",
+  "run_id": "3752d2cd-9df9-4d05-9f2f-f1e34b76dd85",
+  "name": "Customer sign-off and attributable approval workspace",
+  "one_liner": "A lightweight approval and audit-trail workspace for service teams that need to collect customer sign-off, preserve attributable approval history and reduce disputes.",
+  "target_customer": "Service teams that deliver work to customers",
+  "core_pain": "A lightweight approval and audit-trail workspace for service teams that need to collect customer sign-off, preserve attributable approval history and reduce disputes.",
+  "market": "B2B SaaS",
+  "created_at": "2026-07-26T03:26:22.799172+00:00",
+  "updated_at": "2026-07-26T03:26:22.799172+00:00",
+  "opportunity_scores": {
+    "id": "6449f4f4-3cca-4318-8ab0-3b541d9d2554",
+    "total": 44,
+    "verdict": "Weak Signal",
+    "confidence": 52,
+    "created_at": "2026-07-26T03:26:49.120252+00:00",
+    "updated_at": "2026-07-26T03:26:49.120252+00:00",
+    "opportunity_id": "23e0c49a-0e75-420c-871d-173160c01e6f",
+    "score_breakdowns": [
+      {
+        "id": "960b306b-22b6-4fc7-98a2-b0bd8240f8fd",
+        "notes": "Weighted verified pain strength, confidence, and contradiction ratio.",
+        "score": 31.2,
+        "weight": 12,
+        "score_id": "6449f4f4-3cca-4318-8ab0-3b541d9d2554",
+        "criterion": "painSeverity",
+        "created_at": "2026-07-26T03:26:49.12745+00:00",
+        "updated_at": "2026-07-26T03:26:49.12745+00:00",
+        "score_evidence_refs": [
+          {
+            "id": "4fbe346e-38d3-4522-8d03-f8bcd8eb118c",
+            "created_at": "2026-07-26T03:26:49.131095+00:00",
+            "updated_at": "2026-07-26T03:26:49.131095+00:00",
+            "evidence_id": "475a4381-9f38-4388-9f01-6524bd526cc3",
+            "score_breakdown_id": "960b306b-22b6-4fc7-98a2-b0bd8240f8fd"
+          }
+        ]
+      },
+      {
+        "id": "81052c06-680b-4c9c-9e40-73b889b42fe2",
+        "notes": "Urgency language in pain and demand evidence.",
+        "score": 15,
+        "weight": 10,
+        "score_id": "6449f4f4-3cca-4318-8ab0-3b541d9d2554",
+        "criterion": "purchaseUrgency",
+        "created_at": "2026-07-26T03:26:49.134737+00:00",
+        "updated_at": "2026-07-26T03:26:49.134737+00:00",
+        "score_evidence_refs": []
+      },
+      {
+        "id": "8c432fa6-ee4f-4712-b6a6-aeaf0a206ff1",
+        "notes": "No Tier 1 willingness-to-pay evidence; recommendations do not substitute for paid-demand proof.",
+        "score": 10,
+        "weight": 11,
+        "score_id": "6449f4f4-3cca-4318-8ab0-3b541d9d2554",
+        "criterion": "willingnessToPay",
+        "created_at": "2026-07-26T03:26:49.139326+00:00",
+        "updated_at": "2026-07-26T03:26:49.139326+00:00",
+        "score_evidence_refs": []
+      },
+      {
+        "id": "a72dabb4-df03-4547-a08a-43e746ad17c4",
+        "notes": "Demand volume and independently sourced communities.",
+        "score": 40.1,
+        "weight": 8,
+        "score_id": "6449f4f4-3cca-4318-8ab0-3b541d9d2554",
+        "criterion": "buyerReachability",
+        "created_at": "2026-07-26T03:26:49.143507+00:00",
+        "updated_at": "2026-07-26T03:26:49.143507+00:00",
+        "score_evidence_refs": [
+          {
+            "id": "1db8b1fc-6eac-413c-a633-cac5e2db75f6",
+            "created_at": "2026-07-26T03:26:49.147291+00:00",
+            "updated_at": "2026-07-26T03:26:49.147291+00:00",
+            "evidence_id": "d4dddaa2-2d22-4779-9457-0bb4d9e24cc6",
+            "score_breakdown_id": "a72dabb4-df03-4547-a08a-43e746ad17c4"
+          },
+          {
+            "id": "1e791eb7-730b-443a-b108-2c3251ebab75",
+            "created_at": "2026-07-26T03:26:49.150829+00:00",
+            "updated_at": "2026-07-26T03:26:49.150829+00:00",
+            "evidence_id": "00c15b6a-78a9-49f0-b153-1b2342b1dd68",
+            "score_breakdown_id": "a72dabb4-df03-4547-a08a-43e746ad17c4"
+          },
+          {
+            "id": "647ed65c-09ac-41d8-8c9c-7015e3dd4928",
+            "created_at": "2026-07-26T03:26:49.153869+00:00",
+            "updated_at": "2026-07-26T03:26:49.153869+00:00",
+            "evidence_id": "846a1656-8c0b-45b4-be07-86c5e1ee1451",
+            "score_breakdown_id": "a72dabb4-df03-4547-a08a-43e746ad17c4"
+          }
+        ]
+      },
+      {
+        "id": "36bec5de-8653-460f-aabd-f4b13ca83eb6",
+        "notes": "Execution-risk burden; fewer material risks increase feasibility.",
+        "score": 75,
+        "weight": 8,
+        "score_id": "6449f4f4-3cca-4318-8ab0-3b541d9d2554",
+        "criterion": "mvpSpeed",
+        "created_at": "2026-07-26T03:26:49.158105+00:00",
+        "updated_at": "2026-07-26T03:26:49.158105+00:00",
+        "score_evidence_refs": []
+      },
+      {
+        "id": "31e610b6-2c7c-40dc-b0ea-8972e8903fc8",
+        "notes": "Competitive density adjusted by explicit normalized gaps and gap-language evidence.",
+        "score": 69,
+        "weight": 8,
+        "score_id": "6449f4f4-3cca-4318-8ab0-3b541d9d2554",
+        "criterion": "competitionGap",
+        "created_at": "2026-07-26T03:26:49.161477+00:00",
+        "updated_at": "2026-07-26T03:26:49.161477+00:00",
+        "score_evidence_refs": []
+      },
+      {
+        "id": "73cdae32-fc12-4c53-9f34-ea3b03c6d835",
+        "notes": "Recurring-workflow language in verified evidence.",
+        "score": 31.2,
+        "weight": 9,
+        "score_id": "6449f4f4-3cca-4318-8ab0-3b541d9d2554",
+        "criterion": "retentionPotential",
+        "created_at": "2026-07-26T03:26:49.164922+00:00",
+        "updated_at": "2026-07-26T03:26:49.164922+00:00",
+        "score_evidence_refs": [
+          {
+            "id": "e2c44601-91f8-48f1-a179-71994f503246",
+            "created_at": "2026-07-26T03:26:49.167752+00:00",
+            "updated_at": "2026-07-26T03:26:49.167752+00:00",
+            "evidence_id": "00c15b6a-78a9-49f0-b153-1b2342b1dd68",
+            "score_breakdown_id": "73cdae32-fc12-4c53-9f34-ea3b03c6d835"
+          }
+        ]
+      },
+      {
+        "id": "3c4f7737-3cb2-4105-b7d6-3468a708b729",
+        "notes": "Platform dependency risk evidence; this factor is inverted in the weighted total.",
+        "score": 10,
+        "weight": 7,
+        "score_id": "6449f4f4-3cca-4318-8ab0-3b541d9d2554",
+        "criterion": "platformDependencyRisk",
+        "created_at": "2026-07-26T03:26:49.170877+00:00",
+        "updated_at": "2026-07-26T03:26:49.170877+00:00",
+        "score_evidence_refs": []
+      },
+      {
+        "id": "0c36906f-33e5-48b2-8a71-204974950f21",
+        "notes": "Regulatory and compliance risk evidence; this factor is inverted in the weighted total.",
+        "score": 10,
+        "weight": 5,
+        "score_id": "6449f4f4-3cca-4318-8ab0-3b541d9d2554",
+        "criterion": "regulatoryRisk",
+        "created_at": "2026-07-26T03:26:49.174985+00:00",
+        "updated_at": "2026-07-26T03:26:49.174985+00:00",
+        "score_evidence_refs": []
+      },
+      {
+        "id": "18b6c8ed-6026-4725-bb7e-969658795a17",
+        "notes": "Run-specific evidence access and domain signal coverage; no unsupported founder biography is inferred.",
+        "score": 46,
+        "weight": 7,
+        "score_id": "6449f4f4-3cca-4318-8ab0-3b541d9d2554",
+        "criterion": "founderFit",
+        "created_at": "2026-07-26T03:26:49.178267+00:00",
+        "updated_at": "2026-07-26T03:26:49.178267+00:00",
+        "score_evidence_refs": [
+          {
+            "id": "8bf31043-5b69-4ea8-8276-f5c073c6ce73",
+            "created_at": "2026-07-26T03:26:49.181459+00:00",
+            "updated_at": "2026-07-26T03:26:49.181459+00:00",
+            "evidence_id": "d4dddaa2-2d22-4779-9457-0bb4d9e24cc6",
+            "score_breakdown_id": "18b6c8ed-6026-4725-bb7e-969658795a17"
+          },
+          {
+            "id": "854e4868-e081-4e15-a144-d1977afc4f91",
+            "created_at": "2026-07-26T03:26:49.184523+00:00",
+            "updated_at": "2026-07-26T03:26:49.184523+00:00",
+            "evidence_id": "00c15b6a-78a9-49f0-b153-1b2342b1dd68",
+            "score_breakdown_id": "18b6c8ed-6026-4725-bb7e-969658795a17"
+          },
+          {
+            "id": "cc64faf1-c75e-4663-bd2f-5daf819923f2",
+            "created_at": "2026-07-26T03:26:49.187269+00:00",
+            "updated_at": "2026-07-26T03:26:49.187269+00:00",
+            "evidence_id": "475a4381-9f38-4388-9f01-6524bd526cc3",
+            "score_breakdown_id": "18b6c8ed-6026-4725-bb7e-969658795a17"
+          },
+          {
+            "id": "30866b0d-401a-4944-ab90-a69db00c5e20",
+            "created_at": "2026-07-26T03:26:49.190866+00:00",
+            "updated_at": "2026-07-26T03:26:49.190866+00:00",
+            "evidence_id": "846a1656-8c0b-45b4-be07-86c5e1ee1451",
+            "score_breakdown_id": "18b6c8ed-6026-4725-bb7e-969658795a17"
+          }
+        ]
+      },
+      {
+        "id": "0215c706-80b2-47cc-b6b8-6c576100f6cb",
+        "notes": "Demand evidence plus persisted launch-channel specificity.",
+        "score": 69,
+        "weight": 8,
+        "score_id": "6449f4f4-3cca-4318-8ab0-3b541d9d2554",
+        "criterion": "distributionClarity",
+        "created_at": "2026-07-26T03:26:49.194691+00:00",
+        "updated_at": "2026-07-26T03:26:49.194691+00:00",
+        "score_evidence_refs": [
+          {
+            "id": "e99f1dfa-096b-46a3-a790-8206dd73c7e1",
+            "created_at": "2026-07-26T03:26:49.197778+00:00",
+            "updated_at": "2026-07-26T03:26:49.197778+00:00",
+            "evidence_id": "d4dddaa2-2d22-4779-9457-0bb4d9e24cc6",
+            "score_breakdown_id": "0215c706-80b2-47cc-b6b8-6c576100f6cb"
+          },
+          {
+            "id": "c9154845-90fd-4d37-bc6b-7cbf41d309d0",
+            "created_at": "2026-07-26T03:26:49.201076+00:00",
+            "updated_at": "2026-07-26T03:26:49.201076+00:00",
+            "evidence_id": "00c15b6a-78a9-49f0-b153-1b2342b1dd68",
+            "score_breakdown_id": "0215c706-80b2-47cc-b6b8-6c576100f6cb"
+          },
+          {
+            "id": "30608169-9a2b-4d60-91c3-3a209543ff62",
+            "created_at": "2026-07-26T03:26:49.203923+00:00",
+            "updated_at": "2026-07-26T03:26:49.203923+00:00",
+            "evidence_id": "846a1656-8c0b-45b4-be07-86c5e1ee1451",
+            "score_breakdown_id": "0215c706-80b2-47cc-b6b8-6c576100f6cb"
+          }
+        ]
+      },
+      {
+        "id": "35f33b0e-223e-49fb-a9da-8420d27bcf69",
+        "notes": "Pricing proof and purchase urgency combined deterministically.",
+        "score": 8.7,
+        "weight": 7,
+        "score_id": "6449f4f4-3cca-4318-8ab0-3b541d9d2554",
+        "criterion": "speedToFirstRevenue",
+        "created_at": "2026-07-26T03:26:49.207331+00:00",
+        "updated_at": "2026-07-26T03:26:49.207331+00:00",
+        "score_evidence_refs": []
+      }
+    ]
+  },
+  "competitors": [
+    {
+      "id": "a4d45b84-e087-424e-a0b3-879e1419f596",
+      "gap": "Insufficient evidence",
+      "name": "Approval Studio",
+      "target": "Agencies",
+      "pricing": "Insufficient evidence",
+      "strength": "High",
+      "created_at": "2026-07-26T03:26:48.977778+00:00",
+      "updated_at": "2026-07-26T03:26:48.977778+00:00",
+      "positioning": "Dedicated proofing platform with annotations and version history",
+      "evidence_ids": [
+        "d4dddaa2-2d22-4779-9457-0bb4d9e24cc6",
+        "475a4381-9f38-4388-9f01-6524bd526cc3"
+      ],
+      "opportunity_id": "23e0c49a-0e75-420c-871d-173160c01e6f"
+    },
+    {
+      "id": "afa9dee1-d765-4381-817a-35d1848f2c5f",
+      "gap": "Insufficient evidence",
+      "name": "QuantumByte",
+      "target": "Agencies",
+      "pricing": "Insufficient evidence",
+      "strength": "High",
+      "created_at": "2026-07-26T03:26:48.973084+00:00",
+      "updated_at": "2026-07-26T03:26:48.973084+00:00",
+      "positioning": "Customizable and build-your-own options for agency approval workflows",
+      "evidence_ids": [
+        "475a4381-9f38-4388-9f01-6524bd526cc3"
+      ],
+      "opportunity_id": "23e0c49a-0e75-420c-871d-173160c01e6f"
+    }
+  ],
+  "pricing_models": {
+    "id": "25db6a0f-dc31-45a4-a230-129d53e0faff",
+    "model": "Insufficient evidence",
+    "rationale": "No accepted pricing or willingness-to-pay evidence supports a value.",
+    "created_at": "2026-07-26T03:26:48.985088+00:00",
+    "updated_at": "2026-07-26T03:26:48.985088+00:00",
+    "first_offer": "Insufficient evidence",
+    "price_point": "Insufficient evidence",
+    "evidence_ids": [],
+    "opportunity_id": "23e0c49a-0e75-420c-871d-173160c01e6f",
+    "target_customers": 1
+  },
+  "risks": [
+    {
+      "id": "e8084acc-9986-4de6-af46-b64a2608dbb9",
+      "category": "Market",
+      "severity": "Medium",
+      "created_at": "2026-07-26T03:26:48.981583+00:00",
+      "mitigation": "Focus on lightweight, no-login access for clients to reduce friction.",
+      "updated_at": "2026-07-26T03:26:48.981583+00:00",
+      "description": "Agencies may prefer generic tools or email-based workflows if the learning curve for new software is too high.",
+      "evidence_ids": [
+        "d4dddaa2-2d22-4779-9457-0bb4d9e24cc6",
+        "00c15b6a-78a9-49f0-b153-1b2342b1dd68"
+      ],
+      "opportunity_id": "23e0c49a-0e75-420c-871d-173160c01e6f"
+    }
+  ]
+}

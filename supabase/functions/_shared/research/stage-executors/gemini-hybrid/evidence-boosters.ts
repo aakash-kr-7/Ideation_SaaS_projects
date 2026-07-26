@@ -7,6 +7,7 @@ import {
   type ResearchPack,
   type SourceCandidate,
 } from "../../external-retrieval.ts";
+import type { CanonicalResearchBrief } from "../../research-brief.ts";
 
 export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<StageResult> {
   const { runId, db, inputMeta, startedAt } = ctx;
@@ -21,11 +22,12 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
     target_customer?: string;
     market_type?: string;
   };
+  const researchBrief = inputMeta.researchBrief as CanonicalResearchBrief | undefined;
   const packs = Array.isArray(inputMeta.researchPacks) ? inputMeta.researchPacks as ResearchPack[] : [];
   const groundingSources = Array.isArray(inputMeta.groundingSources)
     ? inputMeta.groundingSources as Array<{ url?: string; title?: string }>
     : [];
-  if (!opportunityId || !packs.length) return stageFailed("permanent", "External retrieval requires an opportunity and focused query families.");
+  if (!opportunityId || !packs.length || !researchBrief) return stageFailed("permanent", "External retrieval requires an opportunity, canonical research brief, and focused query families.");
 
   try {
     await updateState(runId, "Searching", 50, "Discovering and directly retrieving public evidence", db);
@@ -56,7 +58,8 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
       runId,
       candidates: allCandidates,
       db,
-      limit: mode === "full_validation" ? 18 : 10,
+      limit: mode === "full_validation" ? 36 : 16,
+      brief: researchBrief,
     });
     if (!retrieval.accepted.length) {
       return stageFailed("transient", "Direct retrieval produced no usable public source content.");
@@ -71,6 +74,21 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
       queryFamily: string;
       sourceTier: number;
       domain: string;
+      publisher: string;
+      sourceClass: string;
+      extractionMethod: string;
+      retrievalDate: string;
+      relevanceScore: number;
+      relevanceClass: string;
+      matchedBriefDimensions: string[];
+      mismatchReasons: string[];
+      acceptanceDecision: string;
+      pageType: string;
+      authorityScore: number;
+      directnessScore: number;
+      promotionalBias: string;
+      sourceTierReason: string;
+      retrievedText: string;
     }> = [];
     const dossierEntries: string[] = [];
     for (const source of retrieval.accepted) {
@@ -83,6 +101,21 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
         source_type: source.provider === "gemini_grounding" ? "GeminiGroundedRetrieved" : "ExternalRetrieved",
         text_content: source.text,
         source_tier: source.sourceTier,
+        publisher: source.publisher,
+        retrieval_date: source.retrievalDate,
+        source_class: source.sourceClass,
+        extraction_method: source.extractionMethod,
+        relevance_score: source.relevance.score,
+        relevance_class: source.relevance.classification,
+        matched_brief_dimensions: source.relevance.matchedDimensions,
+        mismatch_reasons: source.relevance.mismatchReasons,
+        acceptance_decision: source.relevance.acceptanceDecision,
+        page_type: source.authority.pageType,
+        authority_score: source.authority.authorityScore,
+        directness_score: source.authority.directnessScore,
+        promotional_bias: source.authority.promotionalBias,
+        source_tier_reason: source.authority.reason,
+        query_family: source.queryFamily,
         excluded: false,
       }, { onConflict: "run_id,url" }).select("id").single();
       if (error || !persisted) throw new Error(`Retrieved source persistence failed: ${error?.message || "missing row"}`);
@@ -95,6 +128,21 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
         queryFamily: source.queryFamily,
         sourceTier: source.sourceTier,
         domain: source.domain,
+        publisher: source.publisher,
+        sourceClass: source.sourceClass,
+        extractionMethod: source.extractionMethod,
+        retrievalDate: source.retrievalDate,
+        relevanceScore: source.relevance.score,
+        relevanceClass: source.relevance.classification,
+        matchedBriefDimensions: source.relevance.matchedDimensions,
+        mismatchReasons: source.relevance.mismatchReasons,
+        acceptanceDecision: source.relevance.acceptanceDecision,
+        pageType: source.authority.pageType,
+        authorityScore: source.authority.authorityScore,
+        directnessScore: source.authority.directnessScore,
+        promotionalBias: source.authority.promotionalBias,
+        sourceTierReason: source.authority.reason,
+        retrievedText: source.text,
       });
       dossierEntries.push(`SOURCE_ID: ${persisted.id}
 TITLE: ${source.title || source.domain}
@@ -102,8 +150,12 @@ CANONICAL_URL: ${source.canonicalUrl}
 DOMAIN: ${source.domain}
 QUERY_FAMILY: ${source.queryFamily}
 SOURCE_TIER: ${source.sourceTier}
+SOURCE_TIER_REASON: ${source.authority.reason}
+RELEVANCE_CLASS: ${source.relevance.classification}
+RELEVANCE_SCORE: ${source.relevance.score}
+MATCHED_BRIEF_DIMENSIONS: ${source.relevance.matchedDimensions.join(", ")}
 RETRIEVED_TEXT:
-${source.text.slice(0, 3_500)}`);
+${source.text.slice(0, mode === "full_validation" ? 1_400 : 3_000)}`);
     }
 
     const independentDomains = new Set(sourceCatalog.map((source) => source.domain)).size;
@@ -142,7 +194,10 @@ ${source.text.slice(0, 3_500)}`);
         groundingMode,
         groundingDegraded,
         sourceCatalog,
-        combinedText: `${rawGroundingText ? `OPTIONAL_GROUNDING_BOOSTER:\n${rawGroundingText}\n\n` : ""}RETRIEVED_EVIDENCE_DOSSIER:\n${dossier}`,
+        researchBrief,
+        targetCustomer: inputMeta.targetCustomer,
+        targetRegion: inputMeta.targetRegion,
+        combinedText: `${rawGroundingText ? `OPTIONAL_GROUNDING_BOOSTER:\n${rawGroundingText}\n\n` : ""}CANONICAL_RESEARCH_BRIEF:\n${JSON.stringify(researchBrief)}\n\nRETRIEVED_EVIDENCE_DOSSIER:\n${dossier}`,
       },
     });
   } catch (error) {

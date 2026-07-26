@@ -1,0 +1,30 @@
+[
+  {
+    "format": "pdf",
+    "storagePath": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v2/report.pdf",
+    "sha256": "5f632da00acbd87f411c109ddade34ca1e7e0218f3d0adba0c9e83c1ad36f102",
+    "bytes": 73560,
+    "opened": true
+  },
+  {
+    "format": "markdown",
+    "storagePath": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v2/report.markdown",
+    "sha256": "68ed070e14c57ea4be90334a819af5d5baa9d051c1990786921501160c7e2cc2",
+    "bytes": 14600,
+    "opened": true
+  },
+  {
+    "format": "csv",
+    "storagePath": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v2/report.csv",
+    "sha256": "d4224f878825de1d71e89573eed1700f698132ccd227cb16044f1018898e9f54",
+    "bytes": 274143,
+    "opened": true
+  },
+  {
+    "format": "json",
+    "storagePath": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v2/report.json",
+    "sha256": "77af19e6782dbe568d251c9211652180245c7bcc16071d29c8335cb6f85baa37",
+    "bytes": 36908,
+    "opened": true
+  }
+]

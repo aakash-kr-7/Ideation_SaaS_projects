@@ -127,7 +127,7 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
     } catch (e) {
       console.error("Could not sign out:", e);
     } finally {
-      window.location.href = "/";
+      window.location.href = "/sign-in";
     }
   };
 

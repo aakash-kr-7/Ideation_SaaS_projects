@@ -34,12 +34,14 @@ Deno.test("grounding call budgets are bounded by report mode", () => {
   assert(groundedCallLimit("required", "full_validation", 4) === 4, "required mode lost packs");
 });
 
-Deno.test("lean Full Validation creates exactly four external research packs", () => {
+Deno.test("Full Validation deliberately covers twelve distinct evidence families", () => {
   const packs = buildResearchPacks({
     idea_name: "Auditable RFP assistant",
     idea_description: "Security questionnaire evidence and stale claim detection",
     target_customer: "Cybersecurity proposal teams",
     target_region: "Global",
   }, "full_validation");
-  assert(packs.map((pack) => pack.key).join(",") === "problem_demand,competition_pricing,market_gtm,risk_disconfirmation", "research packs drifted");
+  assert(packs.length === 12, "Full Validation evidence-family depth drifted");
+  assert(new Set(packs.map((pack) => pack.key)).size === 12, "Full Validation query families are not distinct");
+  assert(packs.some((pack) => pack.key === "pricing_official") && packs.some((pack) => pack.key === "contradiction"), "authority or contradiction pack missing");
 });

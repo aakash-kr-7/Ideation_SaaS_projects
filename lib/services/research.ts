@@ -4,6 +4,7 @@ import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { startResearchRunSchema } from "@/lib/report-schema";
 import { getReportModeConfig } from "@/lib/report-modes";
 import { ResearchRepository } from "@/lib/repositories/research";
+import { publicErrorMessage } from "@/lib/public-errors";
 
 const reservationResultSchema = z.object({
   run_id: z.string().uuid(), run_status: z.string(), report_mode: z.enum(["quick_scan", "full_validation"]),
@@ -22,10 +23,10 @@ export class ResearchLaunchError extends Error {
 
 function firstRow(value: unknown) { return Array.isArray(value) ? value[0] : value; }
 function databaseError(error: { message?: string } | null, requestId: string) {
-  const message = error?.message || "Unable to reserve this report.";
+  const message = error?.message || "";
   if (message.includes("INSUFFICIENT_CREDITS")) return new ResearchLaunchError("INSUFFICIENT_CREDITS", "You do not have enough credits for this report.", requestId, 402);
   if (message.includes("PROJECT_ACCESS_DENIED")) return new ResearchLaunchError("PROJECT_ACCESS_DENIED", "This project is not available to your team.", requestId, 403);
-  return new ResearchLaunchError("RESERVATION_FAILED", message, requestId);
+  return new ResearchLaunchError("RESERVATION_FAILED", publicErrorMessage("RESERVATION_FAILED", "We could not reserve this report. Please try again."), requestId);
 }
 
 export const ResearchService = {
@@ -55,9 +56,9 @@ export const ResearchService = {
       await supabase.rpc("fail_queued_research_dispatch", { p_run_id: reservation.run_id, p_error_message: "Research worker dispatch is not configured." });
       throw new ResearchLaunchError("WORKER_NOT_CONFIGURED", "Research processing is temporarily unavailable. Your reserved credit was restored.", requestId, 503);
     }
-    try { admin = createServiceRoleClient(); } catch (error) {
+    try { admin = createServiceRoleClient(); } catch {
       await supabase.rpc("fail_queued_research_dispatch", { p_run_id: reservation.run_id, p_error_message: "Service-role queue credentials are not configured." });
-      throw new ResearchLaunchError("WORKER_NOT_CONFIGURED", error instanceof Error ? error.message : "Research processing is unavailable.", requestId, 503);
+      throw new ResearchLaunchError("WORKER_NOT_CONFIGURED", publicErrorMessage("WORKER_NOT_CONFIGURED"), requestId, 503);
     }
 
     // Canonical path: reservation RPC -> staged queue job -> authenticated worker wake-up.

@@ -1,0 +1,51 @@
+[
+  {
+    "id": "8085e1d1-2614-4e29-be05-e6d30874c1d4",
+    "run_id": "4451aa6e-b545-4ca4-b377-6e2eb99752e9",
+    "agent_name": "final_judge",
+    "status": "Complete",
+    "attempt_count": 1,
+    "payload": {
+      "methodology": [
+        {
+          "text": "The validation score was derived by cross-referencing industry-standard workflow requirements against the absence of verified buyer intent, ensuring that identified pain points are weighted against the actual market readiness to adopt new software.",
+          "evidence_ids": [
+            "fbbe4201-a961-4740-ab37-8ed296f5126b",
+            "fbc8ff84-705a-4f91-8e7a-40666ce64c29"
+          ],
+          "score_criteria": [
+            "painSeverity",
+            "willingnessToPay"
+          ]
+        }
+      ],
+      "written_verdict": "Weak Signal",
+      "executive_summary": [
+        {
+          "text": "While there is clear demand for structured approval workflows to replace inefficient email-based processes, the current market evidence lacks indicators of high purchase urgency or a willingness to pay for a new solution.",
+          "evidence_ids": [
+            "fbbe4201-a961-4740-ab37-8ed296f5126b",
+            "8298525b-0ccd-4f28-b74a-0198f9221b70"
+          ],
+          "score_criteria": [
+            "painSeverity",
+            "purchaseUrgency",
+            "willingnessToPay"
+          ]
+        },
+        {
+          "text": "Agencies struggle with version control and audit trails, yet the lack of direct commitment signals suggests that existing tools or manual workarounds are currently sufficient to manage these operational bottlenecks.",
+          "evidence_ids": [
+            "34e214cc-1fe8-45c2-9275-167e12fc2c9c",
+            "fbc8ff84-705a-4f91-8e7a-40666ce64c29"
+          ],
+          "score_criteria": [
+            "retentionPotential",
+            "speedToFirstRevenue"
+          ]
+        }
+      ]
+    },
+    "created_at": "2026-07-26T06:21:32.41854+00:00"
+  }
+]

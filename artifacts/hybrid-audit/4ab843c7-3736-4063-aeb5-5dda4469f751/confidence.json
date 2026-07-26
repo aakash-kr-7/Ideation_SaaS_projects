@@ -1,0 +1,25 @@
+{
+  "run_id": "4ab843c7-3736-4063-aeb5-5dda4469f751",
+  "band": "Moderate",
+  "score": 0.59,
+  "reasons": [
+    "8 independent domains",
+    "12 semantically accepted evidence items",
+    "3 unresolved evidence disagreements",
+    "average source authority 73%",
+    "average semantic relevance 97%",
+    "buyer-specific evidence 100%",
+    "tier distribution {\"1\":1,\"2\":9,\"3\":2}"
+  ],
+  "created_at": "2026-07-26T03:53:35.990823+00:00",
+  "updated_at": "2026-07-26T03:53:38.986+00:00",
+  "deductions": [
+    "3 major proposition-specific contradiction(s) remain unresolved."
+  ],
+  "scoring_confidence": 75,
+  "report_completeness": 65,
+  "completeness_reasons": [
+    "5/11 required evidence families covered",
+    "6/6 structural report checks passed"
+  ]
+}

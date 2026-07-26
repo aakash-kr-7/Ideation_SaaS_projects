@@ -32,7 +32,7 @@ export async function GET() {
     .single();
 
   if (userError && userError.code !== "PGRST116" && userError.code !== "42P01") {
-    return NextResponse.json({ error: userError.message }, { status: 500 });
+    return NextResponse.json({ error: "We could not load your profile." }, { status: 500 });
   }
 
   // 2. Get user preferences record
@@ -43,7 +43,7 @@ export async function GET() {
     .single();
 
   if (prefError && prefError.code !== "PGRST116" && prefError.code !== "42P01") {
-    return NextResponse.json({ error: prefError.message }, { status: 500 });
+    return NextResponse.json({ error: "We could not load your preferences." }, { status: 500 });
   }
 
   return NextResponse.json({
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
   // missing or had not created the user's profile/team records.
   const { error: bootstrapError } = await supabase.rpc("ensure_user_bootstrap");
   if (bootstrapError) {
-    return NextResponse.json({ error: bootstrapError.message }, { status: 500 });
+    return NextResponse.json({ error: "We could not prepare your workspace." }, { status: 500 });
   }
 
   const userPatch = {
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
     .single();
 
   if (userError) {
-    return NextResponse.json({ error: userError.message }, { status: 500 });
+    return NextResponse.json({ error: "We could not save your profile." }, { status: 500 });
   }
 
   const preferenceKeys = [
@@ -118,7 +118,7 @@ export async function POST(request: Request) {
       .from("user_preferences")
       .upsert({ user_id: user.id, ...preferencePatch, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
     if (prefUpdateError) {
-      return NextResponse.json({ error: prefUpdateError.message }, { status: 500 });
+      return NextResponse.json({ error: "We could not save your preferences." }, { status: 500 });
     }
   }
 
@@ -129,7 +129,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (prefError) {
-    return NextResponse.json({ error: prefError.message }, { status: 500 });
+    return NextResponse.json({ error: "We could not reload your preferences." }, { status: 500 });
   }
 
   return NextResponse.json({

@@ -1,0 +1,262 @@
+[
+  {
+    "id": "548cdec9-5fba-4cb8-bab7-e9e5c586a4e6",
+    "run_id": "6d0e168a-e6a3-47df-9f53-c206df3ff05a",
+    "sha256": "060815bcbad1ebd6563422d3201b475f102c176f7445b50d70f0306925a9a94c",
+    "chart_key": "alternatives-comparison",
+    "chart_type": "bar",
+    "created_at": "2026-07-26T06:37:34.653092+00:00",
+    "source_data": {
+      "values": {
+        "Aligno": 1
+      }
+    },
+    "chart_config": {
+      "title": "Alternatives Comparison",
+      "sourceExplanation": "Number of accepted evidence links attached to each persisted alternative or competitor."
+    },
+    "schema_version": 1,
+    "svg_storage_path": null,
+    "report_version_id": "7c48fd96-3a62-414e-be51-ec5c3cdd8bce",
+    "supporting_evidence_ids": [
+      "a42b4ed2-048b-4f34-9e45-c98c2700cbbe"
+    ]
+  },
+  {
+    "id": "22f9af52-b5fe-4db5-b85a-fddeedf4070a",
+    "run_id": "6d0e168a-e6a3-47df-9f53-c206df3ff05a",
+    "sha256": "dab2c929787717310cac48472cd02a50b1f731e0bce1b0636a073b3ad7c7dc6f",
+    "chart_key": "evidence_coverage",
+    "chart_type": "bar",
+    "created_at": "2026-07-26T06:37:34.657038+00:00",
+    "source_data": {
+      "byFamily": {
+        "problem": 4,
+        "solution": 7
+      },
+      "bySignal": {
+        "Pain": 4,
+        "Risk": 1,
+        "Demand": 5,
+        "Pricing": 1
+      }
+    },
+    "chart_config": {
+      "sourceExplanation": "Derived from persisted structured rows and evidence references in this report version."
+    },
+    "schema_version": 1,
+    "svg_storage_path": null,
+    "report_version_id": "7c48fd96-3a62-414e-be51-ec5c3cdd8bce",
+    "supporting_evidence_ids": [
+      "a42b4ed2-048b-4f34-9e45-c98c2700cbbe",
+      "1733d1ef-c6c1-4586-8597-c05b4ec4c372",
+      "8c36a11a-e599-41b1-b03a-c6f0cce4e95d",
+      "772ee70f-f535-4597-bbb2-9c4a37a792ca",
+      "79f2feab-1cb1-41cb-b1d6-d95ed29165b5",
+      "2d5557a0-3e4a-499e-91d5-1a506a52d602",
+      "61580618-81b9-4f78-b130-29318baed4a7",
+      "7efe93ac-5d8b-42c0-a591-2de6012db34f",
+      "cf828d77-f106-4742-ba71-ae53e08e01bb",
+      "f8616883-db05-4458-9f84-4c30593e529f",
+      "c4e0a919-6889-420e-a534-7d239e616423"
+    ]
+  },
+  {
+    "id": "321b86f2-69dc-406f-9463-577956c7f035",
+    "run_id": "6d0e168a-e6a3-47df-9f53-c206df3ff05a",
+    "sha256": "baa005a497942a0856180500857ad765e27d9be34a0b919531040c340a204bc2",
+    "chart_key": "evidence-balance",
+    "chart_type": "bar",
+    "created_at": "2026-07-26T06:37:34.644392+00:00",
+    "source_data": {
+      "supporting": 10,
+      "contradictory": 1
+    },
+    "chart_config": {
+      "title": "Evidence Balance",
+      "sourceExplanation": "Counts of accepted supporting and contradictory evidence rows in this report version."
+    },
+    "schema_version": 1,
+    "svg_storage_path": null,
+    "report_version_id": "7c48fd96-3a62-414e-be51-ec5c3cdd8bce",
+    "supporting_evidence_ids": [
+      "a42b4ed2-048b-4f34-9e45-c98c2700cbbe",
+      "1733d1ef-c6c1-4586-8597-c05b4ec4c372",
+      "8c36a11a-e599-41b1-b03a-c6f0cce4e95d",
+      "772ee70f-f535-4597-bbb2-9c4a37a792ca",
+      "79f2feab-1cb1-41cb-b1d6-d95ed29165b5",
+      "2d5557a0-3e4a-499e-91d5-1a506a52d602",
+      "61580618-81b9-4f78-b130-29318baed4a7",
+      "7efe93ac-5d8b-42c0-a591-2de6012db34f",
+      "cf828d77-f106-4742-ba71-ae53e08e01bb",
+      "f8616883-db05-4458-9f84-4c30593e529f",
+      "c4e0a919-6889-420e-a534-7d239e616423"
+    ]
+  },
+  {
+    "id": "c3918870-e14f-45cb-903a-856639f7f47d",
+    "run_id": "6d0e168a-e6a3-47df-9f53-c206df3ff05a",
+    "sha256": "981ffa87aa6b0a22235c737c2fb6614b5db8ae715ea166a3ef08a9a0b915d6af",
+    "chart_key": "factor-breakdown",
+    "chart_type": "bar",
+    "created_at": "2026-07-26T06:37:34.64026+00:00",
+    "source_data": {
+      "values": {
+        "mvpSpeed": 72,
+        "founderFit": 70,
+        "painSeverity": 61.6,
+        "competitionGap": 67,
+        "regulatoryRisk": 31.2,
+        "purchaseUrgency": 31.2,
+        "willingnessToPay": 10,
+        "buyerReachability": 46.4,
+        "retentionPotential": 31.2,
+        "distributionClarity": 76.3,
+        "speedToFirstRevenue": 47.4,
+        "platformDependencyRisk": 31.2
+      }
+    },
+    "chart_config": {
+      "title": "Factor Breakdown",
+      "sourceExplanation": "The 12 factor values are copied from the deterministic scorecard in this report version."
+    },
+    "schema_version": 1,
+    "svg_storage_path": null,
+    "report_version_id": "7c48fd96-3a62-414e-be51-ec5c3cdd8bce",
+    "supporting_evidence_ids": [
+      "8c36a11a-e599-41b1-b03a-c6f0cce4e95d",
+      "79f2feab-1cb1-41cb-b1d6-d95ed29165b5",
+      "2d5557a0-3e4a-499e-91d5-1a506a52d602",
+      "61580618-81b9-4f78-b130-29318baed4a7",
+      "a42b4ed2-048b-4f34-9e45-c98c2700cbbe",
+      "1733d1ef-c6c1-4586-8597-c05b4ec4c372",
+      "772ee70f-f535-4597-bbb2-9c4a37a792ca",
+      "7efe93ac-5d8b-42c0-a591-2de6012db34f",
+      "cf828d77-f106-4742-ba71-ae53e08e01bb",
+      "f8616883-db05-4458-9f84-4c30593e529f",
+      "c4e0a919-6889-420e-a534-7d239e616423"
+    ]
+  },
+  {
+    "id": "22ad0e3d-74d5-4a0c-949d-715bce44e4c7",
+    "run_id": "6d0e168a-e6a3-47df-9f53-c206df3ff05a",
+    "sha256": "20be50505ccdd355672afcaef3ee84ca22e01ab6fb67beab48593277710d0b8b",
+    "chart_key": "pricing-landscape",
+    "chart_type": "line",
+    "created_at": "2026-07-26T06:37:34.660966+00:00",
+    "source_data": {
+      "pricingEvidence": 1,
+      "competitorsWithPublicPricing": 1
+    },
+    "chart_config": {
+      "sourceExplanation": "Derived from persisted structured rows and evidence references in this report version."
+    },
+    "schema_version": 1,
+    "svg_storage_path": null,
+    "report_version_id": "7c48fd96-3a62-414e-be51-ec5c3cdd8bce",
+    "supporting_evidence_ids": [
+      "c4e0a919-6889-420e-a534-7d239e616423",
+      "a42b4ed2-048b-4f34-9e45-c98c2700cbbe"
+    ]
+  },
+  {
+    "id": "dbcaa69b-981d-409d-8b2b-f12cb385cbfe",
+    "run_id": "6d0e168a-e6a3-47df-9f53-c206df3ff05a",
+    "sha256": "af7e004a5cd25532559a4863785b8cea7e05802ba341bbcae47dd61c7d77327c",
+    "chart_key": "score-contribution",
+    "chart_type": "waterfall",
+    "created_at": "2026-07-26T06:37:34.66546+00:00",
+    "source_data": {
+      "values": {
+        "mvpSpeed": 576,
+        "founderFit": 490,
+        "painSeverity": 739.2,
+        "competitionGap": 536,
+        "regulatoryRisk": 156,
+        "purchaseUrgency": 312,
+        "willingnessToPay": 110,
+        "buyerReachability": 371.2,
+        "retentionPotential": 280.8,
+        "distributionClarity": 610.4,
+        "speedToFirstRevenue": 331.8,
+        "platformDependencyRisk": 218.4
+      }
+    },
+    "chart_config": {
+      "sourceExplanation": "Derived from persisted structured rows and evidence references in this report version."
+    },
+    "schema_version": 1,
+    "svg_storage_path": null,
+    "report_version_id": "7c48fd96-3a62-414e-be51-ec5c3cdd8bce",
+    "supporting_evidence_ids": [
+      "8c36a11a-e599-41b1-b03a-c6f0cce4e95d",
+      "79f2feab-1cb1-41cb-b1d6-d95ed29165b5",
+      "2d5557a0-3e4a-499e-91d5-1a506a52d602",
+      "61580618-81b9-4f78-b130-29318baed4a7",
+      "61580618-81b9-4f78-b130-29318baed4a7",
+      "a42b4ed2-048b-4f34-9e45-c98c2700cbbe",
+      "1733d1ef-c6c1-4586-8597-c05b4ec4c372",
+      "772ee70f-f535-4597-bbb2-9c4a37a792ca",
+      "7efe93ac-5d8b-42c0-a591-2de6012db34f",
+      "cf828d77-f106-4742-ba71-ae53e08e01bb",
+      "f8616883-db05-4458-9f84-4c30593e529f",
+      "79f2feab-1cb1-41cb-b1d6-d95ed29165b5",
+      "f8616883-db05-4458-9f84-4c30593e529f",
+      "f8616883-db05-4458-9f84-4c30593e529f",
+      "a42b4ed2-048b-4f34-9e45-c98c2700cbbe",
+      "1733d1ef-c6c1-4586-8597-c05b4ec4c372",
+      "8c36a11a-e599-41b1-b03a-c6f0cce4e95d",
+      "772ee70f-f535-4597-bbb2-9c4a37a792ca",
+      "79f2feab-1cb1-41cb-b1d6-d95ed29165b5",
+      "2d5557a0-3e4a-499e-91d5-1a506a52d602",
+      "61580618-81b9-4f78-b130-29318baed4a7",
+      "7efe93ac-5d8b-42c0-a591-2de6012db34f",
+      "cf828d77-f106-4742-ba71-ae53e08e01bb",
+      "f8616883-db05-4458-9f84-4c30593e529f",
+      "c4e0a919-6889-420e-a534-7d239e616423",
+      "a42b4ed2-048b-4f34-9e45-c98c2700cbbe",
+      "1733d1ef-c6c1-4586-8597-c05b4ec4c372",
+      "772ee70f-f535-4597-bbb2-9c4a37a792ca",
+      "7efe93ac-5d8b-42c0-a591-2de6012db34f",
+      "cf828d77-f106-4742-ba71-ae53e08e01bb",
+      "c4e0a919-6889-420e-a534-7d239e616423",
+      "61580618-81b9-4f78-b130-29318baed4a7"
+    ]
+  },
+  {
+    "id": "4ac4de61-c6b9-4c21-a635-e83c486e73fc",
+    "run_id": "6d0e168a-e6a3-47df-9f53-c206df3ff05a",
+    "sha256": "e06ac0b6791f75c906f8dbf9d20dcda2bb304960a3a485fc33469538c06e0834",
+    "chart_key": "source-quality-distribution",
+    "chart_type": "bar",
+    "created_at": "2026-07-26T06:37:34.649008+00:00",
+    "source_data": {
+      "byTier": {
+        "tier_1": 1,
+        "tier_2": 8,
+        "tier_3": 2,
+        "tier_4": 0
+      }
+    },
+    "chart_config": {
+      "title": "Source Quality Distribution",
+      "sourceExplanation": "Counts of accepted evidence rows grouped by persisted source tier."
+    },
+    "schema_version": 1,
+    "svg_storage_path": null,
+    "report_version_id": "7c48fd96-3a62-414e-be51-ec5c3cdd8bce",
+    "supporting_evidence_ids": [
+      "a42b4ed2-048b-4f34-9e45-c98c2700cbbe",
+      "1733d1ef-c6c1-4586-8597-c05b4ec4c372",
+      "8c36a11a-e599-41b1-b03a-c6f0cce4e95d",
+      "772ee70f-f535-4597-bbb2-9c4a37a792ca",
+      "79f2feab-1cb1-41cb-b1d6-d95ed29165b5",
+      "2d5557a0-3e4a-499e-91d5-1a506a52d602",
+      "61580618-81b9-4f78-b130-29318baed4a7",
+      "7efe93ac-5d8b-42c0-a591-2de6012db34f",
+      "cf828d77-f106-4742-ba71-ae53e08e01bb",
+      "f8616883-db05-4458-9f84-4c30593e529f",
+      "c4e0a919-6889-420e-a534-7d239e616423"
+    ]
+  }
+]

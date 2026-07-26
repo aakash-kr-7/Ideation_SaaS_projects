@@ -8,6 +8,7 @@ import { Brand } from "@/components/layout/brand";
 import { createClient } from "@/lib/supabase/client";
 import { errorMessage } from "@/lib/supabase/relations";
 import { authCallbackUrl, safeAuthRedirect } from "@/lib/auth-redirect";
+import { authErrorMessage } from "@/lib/public-errors";
 
 type AuthView = "sign-in" | "register" | "forgot-password";
 
@@ -73,7 +74,7 @@ function SignInCard() {
       }
       window.location.assign(data.url);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Google sign-in could not be started.");
+      setError(authErrorMessage(e instanceof Error ? e.message : ""));
       setLoading(false);
     }
   };
@@ -97,7 +98,7 @@ function SignInCard() {
           router.push(`/auth/verify?next=${encodeURIComponent(redirectTo)}`);
           return;
         }
-        setError(signInError.message === "Invalid login credentials" ? "Incorrect email or password." : signInError.message);
+        setError(authErrorMessage(signInError.message));
         setLoading(false);
         return;
       }
@@ -123,18 +124,20 @@ function SignInCard() {
     setLoading(true);
     clearMessages();
     try {
-      const supabase = createClient();
       const siteUrl = window.location.origin;
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: fullName },
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          fullName,
           emailRedirectTo: `${siteUrl}/api/auth/callback?next=${encodeURIComponent(redirectTo)}`,
-        },
+        }),
       });
-      if (signUpError) {
-        setError(signUpError.message);
+      if (!response.ok) {
+        const failure = await response.json().catch(() => ({}));
+        setError(authErrorMessage(failure.error ?? "Registration is temporarily unavailable."));
         setLoading(false);
         return;
       }
@@ -162,11 +165,11 @@ function SignInCard() {
         redirectTo: `${window.location.origin}/api/auth/callback?next=/auth/reset-password`,
       });
       if (resetError) {
-        setError(resetError.message);
+        setError("If an account exists for this email, a password reset link has been sent.");
         setLoading(false);
         return;
       }
-      setSuccess("Password reset link sent. Check your email.");
+      setSuccess("If an account exists for this email, a password reset link has been sent.");
       setLoading(false);
     } catch (error: unknown) {
       setError(errorMessage(error));

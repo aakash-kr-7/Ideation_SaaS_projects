@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Bookmark, FileText, Gauge, Radar, Rocket, Sparkles, Target } from "lucide-react";
+import { ArrowRight, Bookmark, FileText, Gauge, Radar, Rocket, SearchCheck, Target } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { ProjectCard } from "@/components/dashboard/project-card";
@@ -24,12 +24,19 @@ function isMarketType(value: string): value is MarketType {
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const { data: databaseRuns, error } = await supabase
-    .from("research_runs")
-    .select(`id, idea_name, idea_description, target_customer, market_type, target_region, mode, status, progress, created_at,
-      reports(report_versions(version_number, payload))`)
-    .order("created_at", { ascending: false });
+  const [{ data: databaseRuns, error }, { data: historyData, error: historyError }] = await Promise.all([
+    supabase.from("research_runs")
+      .select(`id, idea_name, idea_description, target_customer, market_type, target_region, mode, status, progress, created_at,
+        reports(report_versions(version_number, payload))`)
+      .order("created_at", { ascending: false }),
+    supabase.rpc("get_research_history_snapshot"),
+  ]);
   if (error) throw error;
+  if (historyError) throw historyError;
+  const history = new Map(((historyData ?? []) as Array<{
+    id: string; sourceCount: number; independentDomains: number; durationMs: number | null; completedAt: string | null;
+    groundingDegraded: boolean; publicReason: string | null; creditRestored: boolean;
+  }>).map((item) => [item.id, item]));
 
   const mappedRuns: ResearchRun[] = (databaseRuns || []).map((run) => {
     let opportunity: Opportunity | undefined = undefined;
@@ -115,7 +122,7 @@ export default async function DashboardPage() {
         <section className="dashboard-empty-state">
           <div className="empty-state-card" data-tour="reports">
             <div className="empty-state-icon">
-              <Sparkles size={28} />
+              <SearchCheck size={28} />
             </div>
             <h2>Welcome to ShouldBuild</h2>
             <p>
@@ -213,7 +220,19 @@ export default async function DashboardPage() {
                 {completedRuns.length >= 2 && <Link href="/compare">Compare ideas</Link>}
               </header>
               {mappedRuns.length > 0 ? (
-                <ReportHistory runs={mappedRuns.map(run => ({ id: run.id, ideaName: run.ideaName, mode: run.mode, status: run.status, createdAt: run.createdAt, score: run.opportunity?.score.total, verdict: run.opportunity?.verdict, sourceCount: countEvidenceSources(run.opportunity?.evidence ?? []) }))}/>
+                <ReportHistory runs={mappedRuns.map(run => {
+                  const facts = history.get(run.id);
+                  return {
+                    id: run.id, ideaName: run.ideaName, mode: run.mode, status: run.status, createdAt: run.createdAt,
+                    score: run.opportunity?.score.total, verdict: run.opportunity?.verdict, confidence: run.opportunity?.confidence,
+                    sourceCount: facts?.sourceCount ?? countEvidenceSources(run.opportunity?.evidence ?? []),
+                    independentDomains: facts?.independentDomains ?? new Set((run.opportunity?.evidence ?? []).map((item) => {
+                      try { return new URL(item.url).hostname; } catch { return item.source; }
+                    })).size,
+                    durationMs: facts?.durationMs, completedAt: facts?.completedAt, degraded: facts?.groundingDegraded,
+                    publicReason: facts?.publicReason, creditRestored: facts?.creditRestored,
+                  };
+                })}/>
               ) : (
                 <div className="saved-empty">
                   <p>Your validated ideas will appear here.</p>

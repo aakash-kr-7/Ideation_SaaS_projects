@@ -1,0 +1,2964 @@
+{
+  "id": "77bcd6d4-2379-47bc-a412-395eceec5cec",
+  "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+  "opportunity_id": "a675b767-5ef2-4684-83aa-048227945cfb",
+  "status": "Published",
+  "executive_summary": "The proposed solution faces significant market headwinds due to existing Git platform features that already address branch protection and approval rules, rendering the value proposition redundant. There is a lack of verified willingness-to-pay signals and insufficient urgency in the current workflow, making it difficult to justify the development of a standalone tool for PR validation.",
+  "methodology": "The validation score was derived by cross-referencing identified pain points in Git workflows against existing platform capabilities and assessing the absence of clear, paid-demand signals in the target market.",
+  "generated_at": "2026-07-25T12:55:00.69935+00:00",
+  "updated_at": "2026-07-25T12:55:00.69935+00:00",
+  "created_at": "2026-07-25T12:55:00.69935+00:00",
+  "report_versions": [
+    {
+      "id": "8ea6eee6-fab3-42ab-b81f-f386131abe00",
+      "payload": {
+        "id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+        "version": "2.0",
+        "reportMode": "full_validation",
+        "generatedAt": "2026-07-25T13:09:22.457Z",
+        "limitations": [
+          "pricing or willingness-to-pay evidence"
+        ],
+        "methodology": "The validation score was derived by cross-referencing identified pain points in Git workflows against existing platform capabilities and assessing the absence of clear, paid-demand signals in the target market.",
+        "opportunity": {
+          "id": "a675b767-5ef2-4684-83aa-048227945cfb",
+          "mvp": {
+            "scope": [
+              "AI-assisted invoice parsing",
+              "React UI",
+              "Dapr integration",
+              "Basic approval routing"
+            ],
+            "outcome": "Proof-of-concept microservice for AI-assisted invoice approval",
+            "exclusions": [
+              "Full 21 CFR Part 11 compliance",
+              "Enterprise-grade SSO",
+              "Advanced audit reporting"
+            ],
+            "buildEstimate": "4-8 weeks",
+            "buildComplexity": "Medium"
+          },
+          "name": "ApprovalFlow evidence proof (full_validation)",
+          "risks": [
+            {
+              "id": "f6f20c16-2759-4006-926d-adebc549abfa",
+              "category": "Regulatory",
+              "severity": "High",
+              "mitigation": "Implement rigorous validation testing frameworks and granular access controls.",
+              "description": "Pharmaceutical and life sciences require strict 21 CFR Part 11 compliance and audit trails.",
+              "evidenceIds": [
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+              ]
+            },
+            {
+              "id": "e929b40b-a98d-47bb-b77b-fac30eeaed9d",
+              "category": "Execution",
+              "severity": "Medium",
+              "mitigation": "Automate approval gates within CI/CD pipelines and PR threads.",
+              "description": "Approval workflows can become bottlenecks if not integrated into existing developer tools.",
+              "evidenceIds": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7",
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+              ]
+            }
+          ],
+          "launch": {
+            "weekOne": [
+              "Deploy GitHub App",
+              "Engage with open source maintainers",
+              "Collect feedback on validation accuracy"
+            ],
+            "successMetric": "Number of PRs validated per week",
+            "outreachMessage": "Stop waiting for PR approvals. Automate your validation workflow with AI-assisted checks directly in your PR thread.",
+            "firstTenStrategy": [
+              "Small dev teams",
+              "Startups using GitHub",
+              "Teams struggling with PR bottlenecks"
+            ],
+            "firstCustomerChannel": "GitHub Marketplace and developer communities"
+          },
+          "market": "B2B SaaS",
+          "pricing": {
+            "model": "Subscription-based",
+            "rationale": "Pricing varies significantly based on whether the tool is a simple app builder or a complex enterprise BPMN platform.",
+            "firstOffer": "Free trial or demo",
+            "pricePoint": "$19 - $3,000/month",
+            "evidenceIds": [],
+            "targetCustomers": 1000
+          },
+          "corePain": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records.",
+          "evidence": [
+            {
+              "id": "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+              "url": "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+              "date": "2026-07-25T12:54:57.889058+00:00",
+              "title": "AI-driven PR validation",
+              "signal": "Demand",
+              "source": "medium.com",
+              "snippet": "Testing lives outside the workflow where code actually gets reviewed. TestMu AI brings autonomous test validation directly into the PR thread.",
+              "excluded": false,
+              "strength": "High",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "solution"
+            },
+            {
+              "id": "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+              "url": "https://hoop.dev/blog/designing-efficient-git-workflow-approvals",
+              "date": "2026-07-25T12:54:57.896044+00:00",
+              "title": "Git workflow approval bottlenecks",
+              "signal": "Pain",
+              "source": "hoop.dev",
+              "snippet": "The pull request sits in the queue. Code is ready, but no one can merge until the right people approve. This is the heartbeat of Git workflow approvals in teams—control, accountability, and speed, all in conflict.",
+              "excluded": false,
+              "strength": "High",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "problem"
+            },
+            {
+              "id": "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+              "url": "https://approvalflow.net",
+              "date": "2026-07-25T12:54:57.902762+00:00",
+              "title": "Pharmaceutical document compliance",
+              "signal": "Demand",
+              "source": "approvalflow.net",
+              "snippet": "ApprovalFlow is the trusted online document management system for pharmaceutical and life sciences organisations. Designed to streamline the review and approval of advertising, promotional, and educational materials.",
+              "excluded": false,
+              "strength": "Medium",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "solution"
+            },
+            {
+              "id": "373ee827-0984-42f2-bb8b-1a53343f02f7",
+              "url": "https://hoop.dev/blog/designing-efficient-git-workflow-approvals",
+              "date": "2026-07-25T12:54:57.90909+00:00",
+              "title": "Adversarial assessment",
+              "signal": "Risk",
+              "source": "hoop.dev",
+              "snippet": "Existing Git platforms already provide basic branch protection and approval rules, potentially making a dedicated tool redundant.",
+              "excluded": false,
+              "strength": "Low",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": true,
+              "evidenceFamily": "solution"
+            }
+          ],
+          "oneLiner": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records.",
+          "createdAt": "2026-07-25T12:54:31.665482+00:00",
+          "scorecard": {
+            "notes": {
+              "mvpSpeed": "Execution-risk burden; fewer material risks increase feasibility.",
+              "founderFit": "Run-specific evidence access and domain signal coverage; no unsupported founder biography is inferred.",
+              "painSeverity": "Weighted verified pain strength, confidence, and contradiction ratio.",
+              "competitionGap": "Competitive density adjusted by explicit normalized gaps and gap-language evidence.",
+              "regulatoryRisk": "Regulatory and compliance risk evidence; this factor is inverted in the weighted total.",
+              "purchaseUrgency": "Urgency language in pain and demand evidence.",
+              "willingnessToPay": "No Tier 1 willingness-to-pay evidence; recommendations do not substitute for paid-demand proof.",
+              "buyerReachability": "Demand volume and independently sourced communities.",
+              "retentionPotential": "Recurring-workflow language in verified evidence.",
+              "distributionClarity": "Demand evidence plus persisted launch-channel specificity.",
+              "speedToFirstRevenue": "Pricing proof and purchase urgency combined deterministically.",
+              "platformDependencyRisk": "Platform dependency risk evidence; this factor is inverted in the weighted total."
+            },
+            "total": 38.1,
+            "scores": {
+              "mvpSpeed": 57,
+              "founderFit": 25,
+              "painSeverity": 25.2,
+              "competitionGap": 71,
+              "regulatoryRisk": 10,
+              "purchaseUrgency": 15,
+              "willingnessToPay": 10,
+              "buyerReachability": 32,
+              "retentionPotential": 30.4,
+              "distributionClarity": 59.5,
+              "speedToFirstRevenue": 8.7,
+              "platformDependencyRisk": 23.4
+            },
+            "verdict": "Avoid",
+            "weights": {
+              "mvpSpeed": 8,
+              "founderFit": 7,
+              "painSeverity": 12,
+              "competitionGap": 8,
+              "regulatoryRisk": 5,
+              "purchaseUrgency": 10,
+              "willingnessToPay": 11,
+              "buyerReachability": 8,
+              "retentionPotential": 9,
+              "distributionClarity": 8,
+              "speedToFirstRevenue": 7,
+              "platformDependencyRisk": 7
+            },
+            "confidence": 64,
+            "evidenceRefs": {
+              "mvpSpeed": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7"
+              ],
+              "founderFit": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+                "373ee827-0984-42f2-bb8b-1a53343f02f7"
+              ],
+              "painSeverity": [
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c"
+              ],
+              "competitionGap": [],
+              "regulatoryRisk": [],
+              "purchaseUrgency": [],
+              "willingnessToPay": [],
+              "buyerReachability": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+              ],
+              "retentionPotential": [
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+              ],
+              "distributionClarity": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+              ],
+              "speedToFirstRevenue": [],
+              "platformDependencyRisk": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7"
+              ]
+            }
+          },
+          "competitors": [
+            {
+              "id": "5f101dff-b697-412d-abb5-76d271ea7adf",
+              "gap": "Limited outside M365 ecosystem",
+              "name": "Microsoft Approvals",
+              "target": "Microsoft-first teams",
+              "pricing": "Included in M365",
+              "strength": "High integration",
+              "evidenceIds": [],
+              "positioning": "Microsoft 365 native approval workflow"
+            },
+            {
+              "id": "05bc2776-1725-49f0-b4a4-04484aa0ec64",
+              "gap": "Heavy manual setup",
+              "name": "Process Street",
+              "target": "Operations teams",
+              "pricing": "Not specified",
+              "strength": "Conditional logic",
+              "evidenceIds": [],
+              "positioning": "Checklist-based process templates"
+            },
+            {
+              "id": "8a65603e-3daf-43a3-9fd2-545b5a76f08a",
+              "gap": "Lacks enterprise-grade compliance depth",
+              "name": "Zite",
+              "target": "Non-technical teams",
+              "pricing": "$19/month",
+              "strength": "Ease of use",
+              "evidenceIds": [],
+              "positioning": "AI-generated custom approval apps"
+            }
+          ],
+          "targetCustomer": "Small GitHub-based software agencies and software consultancies"
+        },
+        "evidenceGaps": [
+          "insufficient problem evidence",
+          "Tier 1 evidence missing",
+          "Tier 1/2 evidence missing"
+        ],
+        "reportSections": [
+          "Conclusion",
+          "Evidence",
+          "Demand",
+          "Competition",
+          "Market",
+          "Pricing",
+          "MVP scope",
+          "Go-to-market",
+          "Risks",
+          "Adversarial",
+          "Score breakdown",
+          "Sources",
+          "Exports"
+        ],
+        "adversarialGate": {
+          "outcome": "NoStrongDisproof",
+          "severity": "Low",
+          "objection": "Existing Git platforms already provide basic branch protection and approval rules, potentially making a dedicated tool redundant.",
+          "unresolved": false,
+          "evidence_ids": [
+            "373ee827-0984-42f2-bb8b-1a53343f02f7"
+          ]
+        },
+        "decisionProduct": {
+          "score": 38.1,
+          "charts": [
+            {
+              "key": "factor-breakdown",
+              "title": "Factor Breakdown",
+              "sourceData": {
+                "values": {
+                  "mvpSpeed": 57,
+                  "founderFit": 25,
+                  "painSeverity": 25.2,
+                  "competitionGap": 71,
+                  "regulatoryRisk": 10,
+                  "purchaseUrgency": 15,
+                  "willingnessToPay": 10,
+                  "buyerReachability": 32,
+                  "retentionPotential": 30.4,
+                  "distributionClarity": 59.5,
+                  "speedToFirstRevenue": 8.7,
+                  "platformDependencyRisk": 23.4
+                }
+              },
+              "evidenceIds": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7",
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+              ],
+              "unavailable": false,
+              "sourceExplanation": "The 12 factor values are copied from the deterministic scorecard in this report version."
+            },
+            {
+              "key": "evidence-balance",
+              "title": "Evidence Balance",
+              "sourceData": {
+                "supporting": 3,
+                "contradictory": 1
+              },
+              "evidenceIds": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+                "373ee827-0984-42f2-bb8b-1a53343f02f7"
+              ],
+              "unavailable": false,
+              "sourceExplanation": "Counts of accepted supporting and contradictory evidence rows in this report version."
+            },
+            {
+              "key": "source-quality-distribution",
+              "title": "Source Quality Distribution",
+              "sourceData": {
+                "byTier": {
+                  "tier_1": 0,
+                  "tier_2": 0,
+                  "tier_3": 4,
+                  "tier_4": 0
+                }
+              },
+              "evidenceIds": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+                "373ee827-0984-42f2-bb8b-1a53343f02f7"
+              ],
+              "unavailable": false,
+              "sourceExplanation": "Counts of accepted evidence rows grouped by persisted source tier."
+            },
+            {
+              "key": "alternatives-comparison",
+              "title": "Alternatives Comparison",
+              "sourceData": {
+                "reason": "No competitor row had an accepted evidence-item reference.",
+                "values": {},
+                "unavailable": true
+              },
+              "evidenceIds": [],
+              "unavailable": true,
+              "sourceExplanation": "Unavailable: competitor rows were not sufficiently linked to accepted evidence."
+            },
+            {
+              "key": "evidence_coverage",
+              "title": "Evidence Coverage",
+              "sourceData": {
+                "byFamily": {
+                  "problem": 1,
+                  "solution": 3
+                },
+                "bySignal": {
+                  "Pain": 1,
+                  "Risk": 1,
+                  "Demand": 2
+                }
+              },
+              "evidenceIds": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+                "373ee827-0984-42f2-bb8b-1a53343f02f7"
+              ],
+              "unavailable": false,
+              "sourceExplanation": "Derived from persisted structured rows and evidence references in this report version."
+            },
+            {
+              "key": "pricing-landscape",
+              "title": "Pricing Landscape",
+              "sourceData": {
+                "pricingEvidence": 0,
+                "competitorsWithPublicPricing": 0
+              },
+              "evidenceIds": [],
+              "unavailable": false,
+              "sourceExplanation": "Derived from persisted structured rows and evidence references in this report version."
+            },
+            {
+              "key": "score-contribution",
+              "title": "Score Contribution",
+              "sourceData": {
+                "values": {
+                  "mvpSpeed": 456,
+                  "founderFit": 175,
+                  "painSeverity": 302.4,
+                  "competitionGap": 568,
+                  "regulatoryRisk": 50,
+                  "purchaseUrgency": 150,
+                  "willingnessToPay": 110,
+                  "buyerReachability": 256,
+                  "retentionPotential": 273.59999999999997,
+                  "distributionClarity": 476,
+                  "speedToFirstRevenue": 60.89999999999999,
+                  "platformDependencyRisk": 163.79999999999998
+                }
+              },
+              "evidenceIds": [
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+                "373ee827-0984-42f2-bb8b-1a53343f02f7",
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "373ee827-0984-42f2-bb8b-1a53343f02f7",
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+                "373ee827-0984-42f2-bb8b-1a53343f02f7",
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+              ],
+              "unavailable": false,
+              "sourceExplanation": "Derived from persisted structured rows and evidence references in this report version."
+            }
+          ],
+          "decision": "Avoid",
+          "headline": "Avoid: Do not commit to a build; resolve the decisive evidence gaps first.",
+          "sections": [
+            {
+              "key": "executive-decision",
+              "title": "Executive decision",
+              "summary": "Avoid at 38.1/100. Do not commit to a build; resolve the decisive evidence gaps first.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "Avoid at 38.1/100. Do not commit to a build; resolve the decisive evidence gaps first.",
+                  "sourceUrls": [
+                    "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                    "https://hoop.dev/blog/designing-efficient-git-workflow-approvals",
+                    "https://approvalflow.net"
+                  ],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "score-confidence",
+              "title": "Score, verdict and confidence",
+              "summary": "Low confidence: 3 independent domains; 0 unresolved evidence disagreements; average source authority 50%.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "Mvp Speed: 57/100. Execution-risk burden; fewer material risks increase feasibility.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Founder Fit: 25/100. Run-specific evidence access and domain signal coverage; no unsupported founder biography is inferred.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Pain Severity: 25.2/100. Weighted verified pain strength, confidence, and contradiction ratio.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Competition Gap: 71/100. Competitive density adjusted by explicit normalized gaps and gap-language evidence.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Regulatory Risk: 10/100. Regulatory and compliance risk evidence; this factor is inverted in the weighted total.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Purchase Urgency: 15/100. Urgency language in pain and demand evidence.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Willingness To Pay: 10/100. No Tier 1 willingness-to-pay evidence; recommendations do not substitute for paid-demand proof.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Buyer Reachability: 32/100. Demand volume and independently sourced communities.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Retention Potential: 30.4/100. Recurring-workflow language in verified evidence.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Distribution Clarity: 59.5/100. Demand evidence plus persisted launch-channel specificity.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Speed To First Revenue: 8.7/100. Pricing proof and purchase urgency combined deterministically.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Platform Dependency Risk: 23.4/100. Platform dependency risk evidence; this factor is inverted in the weighted total.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "idea-assumptions",
+              "title": "Idea and assumptions",
+              "summary": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records.",
+              "statements": [
+                {
+                  "kind": "Hypothesis",
+                  "text": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Hypothesis",
+                  "text": "Assumed buyer: Small GitHub-based software agencies and software consultancies. Assumed market: B2B SaaS.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "segments",
+              "title": "Target segments",
+              "summary": "Segments surfaced by shared-dossier synthesis.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "Pharmaceutical/Life Sciences",
+                  "sourceUrls": [
+                    "https://approvalflow.net"
+                  ],
+                  "evidenceIds": [
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Software Development Teams",
+                  "sourceUrls": [
+                    "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                    "https://hoop.dev/blog/designing-efficient-git-workflow-approvals"
+                  ],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "jobs",
+              "title": "Jobs to be done",
+              "summary": "Decision-relevant customer jobs.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "Pharmaceutical/Life Sciences: Ensure regulatory compliance",
+                  "sourceUrls": [
+                    "https://approvalflow.net"
+                  ],
+                  "evidenceIds": [
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Pharmaceutical/Life Sciences: Maintain audit trails",
+                  "sourceUrls": [
+                    "https://approvalflow.net"
+                  ],
+                  "evidenceIds": [
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Pharmaceutical/Life Sciences: Manage document lifecycles",
+                  "sourceUrls": [
+                    "https://approvalflow.net"
+                  ],
+                  "evidenceIds": [
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Software Development Teams: Reduce PR review latency",
+                  "sourceUrls": [
+                    "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                    "https://hoop.dev/blog/designing-efficient-git-workflow-approvals"
+                  ],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Software Development Teams: Automate quality gates",
+                  "sourceUrls": [
+                    "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                    "https://hoop.dev/blog/designing-efficient-git-workflow-approvals"
+                  ],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Software Development Teams: Ensure code compliance",
+                  "sourceUrls": [
+                    "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                    "https://hoop.dev/blog/designing-efficient-git-workflow-approvals"
+                  ],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "problem",
+              "title": "Problem severity and frequency",
+              "summary": "Frequency is reported only when sourced.",
+              "statements": [
+                {
+                  "kind": "Fact",
+                  "text": "The pull request sits in the queue. Code is ready, but no one can merge until the right people approve. This is the heartbeat of Git workflow approvals in teams—control, accountability, and speed, all in conflict.",
+                  "sourceUrls": [
+                    "https://hoop.dev/blog/designing-efficient-git-workflow-approvals"
+                  ],
+                  "evidenceIds": [
+                    "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c"
+                  ]
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "No reliable frequency estimate was accepted unless explicitly stated above.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "demand",
+              "title": "Demand and behavioural evidence",
+              "summary": "Observed signals, not a market-size estimate.",
+              "statements": [
+                {
+                  "kind": "Fact",
+                  "text": "Testing lives outside the workflow where code actually gets reviewed. TestMu AI brings autonomous test validation directly into the PR thread.",
+                  "sourceUrls": [
+                    "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c"
+                  ],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+                  ]
+                },
+                {
+                  "kind": "Fact",
+                  "text": "ApprovalFlow is the trusted online document management system for pharmaceutical and life sciences organisations. Designed to streamline the review and approval of advertising, promotional, and educational materials.",
+                  "sourceUrls": [
+                    "https://approvalflow.net"
+                  ],
+                  "evidenceIds": [
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Clear pain points identified in both manual document approvals and slow PR review cycles.",
+                  "sourceUrls": [
+                    "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                    "https://hoop.dev/blog/designing-efficient-git-workflow-approvals"
+                  ],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "alternatives",
+              "title": "Current alternatives",
+              "summary": "Microsoft Approvals: Microsoft 365 native approval workflow Process Street: Checklist-based process templates Zite: AI-generated custom approval apps",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "Microsoft Approvals: Microsoft 365 native approval workflow Process Street: Checklist-based process templates Zite: AI-generated custom approval apps",
+                  "sourceUrls": [
+                    "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                    "https://hoop.dev/blog/designing-efficient-git-workflow-approvals",
+                    "https://approvalflow.net"
+                  ],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "competitors",
+              "title": "Competitor deep dives",
+              "summary": "Only persisted, source-linked fields are shown.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "Microsoft Approvals — target: Microsoft-first teams; positioning/features: Microsoft 365 native approval workflow; pricing: Included in M365; strength: High integration; weakness or complaint: not established unless stated in evidence; opportunity gap: Limited outside M365 ecosystem.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Process Street — target: Operations teams; positioning/features: Checklist-based process templates; pricing: Not specified; strength: Conditional logic; weakness or complaint: not established unless stated in evidence; opportunity gap: Heavy manual setup.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Zite — target: Non-technical teams; positioning/features: AI-generated custom approval apps; pricing: $19/month; strength: Ease of use; weakness or complaint: not established unless stated in evidence; opportunity gap: Lacks enterprise-grade compliance depth.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "positioning",
+              "title": "Positioning opportunities",
+              "summary": "The market is fragmented between general business process tools and specialized developer workflow tools.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "The market is fragmented between general business process tools and specialized developer workflow tools.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "pricing-landscape",
+              "title": "Pricing and packaging landscape",
+              "summary": "No accepted public pricing evidence.",
+              "statements": [
+                {
+                  "kind": "MissingEvidence",
+                  "text": "No accepted public pricing evidence.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Hypothesis",
+                  "text": "Subscription-based; $19 - $3,000/month; Pricing varies significantly based on whether the tool is a simple app builder or a complex enterprise BPMN platform.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "wtp",
+              "title": "Willingness-to-pay evidence",
+              "summary": "No direct payment, paid-pilot, or purchase-commitment evidence was accepted.",
+              "statements": [
+                {
+                  "kind": "MissingEvidence",
+                  "text": "No direct payment, paid-pilot, or purchase-commitment evidence was accepted.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "market-context",
+              "title": "Market context",
+              "summary": "The approval software market is bifurcated between general business process automation and specialized, high-compliance or developer-centric tools.",
+              "statements": [
+                {
+                  "kind": "Fact",
+                  "text": "Number of tools compared in top reviews: 17",
+                  "sourceUrls": [
+                    "https://marker.io/blog/review-and-approval-software"
+                  ],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Fact",
+                  "text": "Typical enterprise pricing: $2,500+/month",
+                  "sourceUrls": [
+                    "https://www.zite.com/blog/approval-workflow-software"
+                  ],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "mvp",
+              "title": "MVP scope",
+              "summary": "Proof-of-concept microservice for AI-assisted invoice approval. Include: AI-assisted invoice parsing; React UI; Dapr integration; Basic approval routing.",
+              "statements": [
+                {
+                  "kind": "Recommendation",
+                  "text": "Proof-of-concept microservice for AI-assisted invoice approval. Include: AI-assisted invoice parsing; React UI; Dapr integration; Basic approval routing.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "not-build",
+              "title": "What not to build",
+              "summary": "Full 21 CFR Part 11 compliance; Enterprise-grade SSO; Advanced audit reporting",
+              "statements": [
+                {
+                  "kind": "Recommendation",
+                  "text": "Full 21 CFR Part 11 compliance; Enterprise-grade SSO; Advanced audit reporting",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "gtm",
+              "title": "GTM channels",
+              "summary": "Leveraging existing developer platforms like GitHub is a viable GTM strategy.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "Leveraging existing developer platforms like GitHub is a viable GTM strategy.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Recommendation",
+                  "text": "Start with GitHub Marketplace and developer communities.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "first-customers",
+              "title": "First-customer strategy",
+              "summary": "Small dev teams Startups using GitHub Teams struggling with PR bottlenecks",
+              "statements": [
+                {
+                  "kind": "Recommendation",
+                  "text": "Small dev teams Startups using GitHub Teams struggling with PR bottlenecks",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "risks",
+              "title": "Risks",
+              "summary": "Persisted risks and their mitigations.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "High Regulatory: Pharmaceutical and life sciences require strict 21 CFR Part 11 compliance and audit trails. Mitigation: Implement rigorous validation testing frameworks and granular access controls.",
+                  "sourceUrls": [
+                    "https://approvalflow.net"
+                  ],
+                  "evidenceIds": [
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Medium Execution: Approval workflows can become bottlenecks if not integrated into existing developer tools. Mitigation: Automate approval gates within CI/CD pipelines and PR threads.",
+                  "sourceUrls": [
+                    "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                    "https://hoop.dev/blog/designing-efficient-git-workflow-approvals"
+                  ],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "adversarial",
+              "title": "Adversarial findings",
+              "summary": "NoStrongDisproof: Existing Git platforms already provide basic branch protection and approval rules, potentially making a dedicated tool redundant.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "NoStrongDisproof: Existing Git platforms already provide basic branch protection and approval rules, potentially making a dedicated tool redundant.",
+                  "sourceUrls": [
+                    "https://hoop.dev/blog/designing-efficient-git-workflow-approvals"
+                  ],
+                  "evidenceIds": [
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "gaps",
+              "title": "Evidence gaps",
+              "summary": "Missing evidence is part of the decision.",
+              "statements": [
+                {
+                  "kind": "MissingEvidence",
+                  "text": "insufficient problem evidence",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "Tier 1 evidence missing",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "Tier 1/2 evidence missing",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "pricing or willingness-to-pay evidence",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "No direct willingness-to-pay evidence.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "experiments",
+              "title": "Validation experiments",
+              "summary": "Tests with explicit success and failure criteria.",
+              "statements": [
+                {
+                  "kind": "Recommendation",
+                  "text": "Problem-frequency interviews: Interview 8 qualified Small GitHub-based software agencies and software consultancies; capture the last occurrence, current workaround, frequency, consequence, and owner. Success: At least 5 describe a recent occurrence and 3 actively seek a better workflow. Failure: Fewer than 3 report a recent, consequential occurrence.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Recommendation",
+                  "text": "Concierge workflow pilot: Run the core workflow manually with 3 teams for 14 days; log repeated use, completion time, and abandonment. Success: At least 2 teams use it twice and ask to continue. Failure: Teams revert to their existing workflow or need unrelated features to participate.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Recommendation",
+                  "text": "Paid-offer test: Present the same scoped offer to 5 qualified buyers and request payment, a deposit, or a signed paid-pilot commitment. Success: At least 2 buyers make a monetary or signed commitment. Failure: Interest remains verbal or depends on unsupported feature expansion.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "scoring",
+              "title": "12-factor scoring explanation",
+              "summary": "Every factor is deterministic and evidence-linked where possible.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "Mvp Speed: 57/100. Execution-risk burden; fewer material risks increase feasibility.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Founder Fit: 25/100. Run-specific evidence access and domain signal coverage; no unsupported founder biography is inferred.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Pain Severity: 25.2/100. Weighted verified pain strength, confidence, and contradiction ratio.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Competition Gap: 71/100. Competitive density adjusted by explicit normalized gaps and gap-language evidence.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Regulatory Risk: 10/100. Regulatory and compliance risk evidence; this factor is inverted in the weighted total.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Purchase Urgency: 15/100. Urgency language in pain and demand evidence.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Willingness To Pay: 10/100. No Tier 1 willingness-to-pay evidence; recommendations do not substitute for paid-demand proof.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Buyer Reachability: 32/100. Demand volume and independently sourced communities.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Retention Potential: 30.4/100. Recurring-workflow language in verified evidence.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Distribution Clarity: 59.5/100. Demand evidence plus persisted launch-channel specificity.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Speed To First Revenue: 8.7/100. Pricing proof and purchase urgency combined deterministically.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Platform Dependency Risk: 23.4/100. Platform dependency risk evidence; this factor is inverted in the weighted total.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "methodology",
+              "title": "Methodology, limitations and sources",
+              "summary": "The validation score was derived by cross-referencing identified pain points in Git workflows against existing platform capabilities and assessing the absence of clear, paid-demand signals in the target market.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "The validation score was derived by cross-referencing identified pain points in Git workflows against existing platform capabilities and assessing the absence of clear, paid-demand signals in the target market.",
+                  "sourceUrls": [
+                    "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                    "https://hoop.dev/blog/designing-efficient-git-workflow-approvals",
+                    "https://approvalflow.net"
+                  ],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "4 accepted evidence rows across 3 evidence domains; no market sizing was inferred without an attributable metric.",
+                  "sourceUrls": [
+                    "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                    "https://hoop.dev/blog/designing-efficient-git-workflow-approvals",
+                    "https://approvalflow.net"
+                  ],
+                  "evidenceIds": [
+                    "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                    "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                    "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+                    "373ee827-0984-42f2-bb8b-1a53343f02f7"
+                  ]
+                }
+              ]
+            }
+          ],
+          "experiments": [
+            {
+              "name": "Problem-frequency interviews",
+              "method": "Interview 8 qualified Small GitHub-based software agencies and software consultancies; capture the last occurrence, current workaround, frequency, consequence, and owner.",
+              "duration": "7 days",
+              "hypothesis": "Small GitHub-based software agencies and software consultancies experience A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records. often enough to change behaviour.",
+              "failureCriterion": "Fewer than 3 report a recent, consequential occurrence.",
+              "successCriterion": "At least 5 describe a recent occurrence and 3 actively seek a better workflow."
+            },
+            {
+              "name": "Concierge workflow pilot",
+              "method": "Run the core workflow manually with 3 teams for 14 days; log repeated use, completion time, and abandonment.",
+              "duration": "14 days",
+              "hypothesis": "A narrow assisted workflow creates repeat usage before automation is built.",
+              "failureCriterion": "Teams revert to their existing workflow or need unrelated features to participate.",
+              "successCriterion": "At least 2 teams use it twice and ask to continue."
+            },
+            {
+              "name": "Paid-offer test",
+              "method": "Present the same scoped offer to 5 qualified buyers and request payment, a deposit, or a signed paid-pilot commitment.",
+              "duration": "10 days",
+              "hypothesis": "Free trial or demo is valuable enough to trigger a real commitment.",
+              "failureCriterion": "Interest remains verbal or depends on unsupported feature expansion.",
+              "successCriterion": "At least 2 buyers make a monetary or signed commitment."
+            }
+          ],
+          "schemaVersion": 1,
+          "scoreConfidence": 64,
+          "specialistOutputs": [
+            {
+              "name": "competition",
+              "confidence": "Insufficient",
+              "evidenceIds": [],
+              "keyFindings": [
+                "High competition from established platforms like Microsoft Approvals",
+                "Niche opportunities exist in AI-driven PR automation"
+              ],
+              "unresolvedGaps": [
+                "insufficient problem evidence",
+                "Tier 1 evidence missing",
+                "Tier 1/2 evidence missing",
+                "pricing or willingness-to-pay evidence"
+              ],
+              "decisionImplication": "Differentiate on a narrow workflow that incumbents demonstrably handle poorly.",
+              "opposingEvidenceIds": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7"
+              ]
+            },
+            {
+              "name": "demand",
+              "confidence": "Low",
+              "evidenceIds": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7",
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+              ],
+              "keyFindings": [
+                "PR queues are a major bottleneck for release velocity",
+                "Manual email chains for approvals are prone to error"
+              ],
+              "unresolvedGaps": [
+                "insufficient problem evidence",
+                "Tier 1 evidence missing",
+                "Tier 1/2 evidence missing",
+                "pricing or willingness-to-pay evidence"
+              ],
+              "decisionImplication": "Do not expand scope until buyer behaviour confirms that the pain is frequent and urgent.",
+              "opposingEvidenceIds": []
+            },
+            {
+              "name": "gtm",
+              "confidence": "Insufficient",
+              "evidenceIds": [],
+              "keyFindings": [
+                "GitHub Apps provide a direct path to the user workflow",
+                "Outsourced software projects benefit from standardized PR models"
+              ],
+              "unresolvedGaps": [
+                "insufficient problem evidence",
+                "Tier 1 evidence missing",
+                "Tier 1/2 evidence missing",
+                "pricing or willingness-to-pay evidence"
+              ],
+              "decisionImplication": "Use one reachable buyer channel and measure qualified conversations, pilots, and paid conversion.",
+              "opposingEvidenceIds": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7"
+              ]
+            },
+            {
+              "name": "market",
+              "confidence": "Low",
+              "evidenceIds": [
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+              ],
+              "keyFindings": [
+                "Pharma industry requires strict compliance",
+                "DevOps teams need to reduce PR latency"
+              ],
+              "unresolvedGaps": [
+                "insufficient problem evidence",
+                "Tier 1 evidence missing",
+                "Tier 1/2 evidence missing",
+                "pricing or willingness-to-pay evidence"
+              ],
+              "decisionImplication": "Use segment-level bottom-up validation; do not infer market size from generic category statistics.",
+              "opposingEvidenceIds": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7"
+              ]
+            },
+            {
+              "name": "pricing",
+              "confidence": "Insufficient",
+              "evidenceIds": [],
+              "keyFindings": [
+                "Entry-level pricing starts around $19/month",
+                "Enterprise solutions can exceed $3,000/month"
+              ],
+              "unresolvedGaps": [
+                "insufficient problem evidence",
+                "Tier 1 evidence missing",
+                "Tier 1/2 evidence missing",
+                "pricing or willingness-to-pay evidence"
+              ],
+              "decisionImplication": "Treat packaging as a hypothesis until a buyer accepts a paid pilot or purchase commitment.",
+              "opposingEvidenceIds": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7"
+              ]
+            },
+            {
+              "name": "risk",
+              "confidence": "Insufficient",
+              "evidenceIds": [],
+              "keyFindings": [
+                "21 CFR Part 11 compliance is mandatory",
+                "Data integrity and audit trails are critical"
+              ],
+              "unresolvedGaps": [
+                "insufficient problem evidence",
+                "Tier 1 evidence missing",
+                "Tier 1/2 evidence missing",
+                "pricing or willingness-to-pay evidence"
+              ],
+              "decisionImplication": "Resolve the strongest redundancy and platform-dependency objections before committing engineering capacity.",
+              "opposingEvidenceIds": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+              ]
+            }
+          ],
+          "evidenceConfidence": {
+            "band": "Low",
+            "score": 0.39,
+            "explanation": "Low confidence: 3 independent domains; 0 unresolved evidence disagreements; average source authority 50%.",
+            "missingEvidence": [
+              "insufficient problem evidence",
+              "Tier 1 evidence missing",
+              "Tier 1/2 evidence missing",
+              "pricing or willingness-to-pay evidence"
+            ]
+          }
+        },
+        "availableExports": [
+          "pdf",
+          "markdown",
+          "csv",
+          "json"
+        ],
+        "executiveSummary": "The proposed solution faces significant market headwinds due to existing Git platform features that already address branch protection and approval rules, rendering the value proposition redundant. There is a lack of verified willingness-to-pay signals and insufficient urgency in the current workflow, making it difficult to justify the development of a standalone tool for PR validation.",
+        "topRecommendation": "Number of PRs validated per week",
+        "citationValidation": {
+          "valid": true,
+          "methodology": [
+            {
+              "text": "The validation score was derived by cross-referencing identified pain points in Git workflows against existing platform capabilities and assessing the absence of clear, paid-demand signals in the target market.",
+              "evidence_ids": [
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "373ee827-0984-42f2-bb8b-1a53343f02f7",
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "speedToFirstRevenue"
+              ]
+            }
+          ],
+          "claimsChecked": 3,
+          "claimsRemoved": 0,
+          "invalidClaims": [],
+          "executiveSummary": [
+            {
+              "text": "The proposed solution faces significant market headwinds due to existing Git platform features that already address branch protection and approval rules, rendering the value proposition redundant.",
+              "evidence_ids": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7",
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "painSeverity"
+              ]
+            },
+            {
+              "text": "There is a lack of verified willingness-to-pay signals and insufficient urgency in the current workflow, making it difficult to justify the development of a standalone tool for PR validation.",
+              "evidence_ids": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+              ],
+              "score_criteria": [
+                "willingnessToPay",
+                "purchaseUrgency"
+              ]
+            }
+          ]
+        },
+        "narrativeCitations": {
+          "methodology": [
+            {
+              "text": "The validation score was derived by cross-referencing identified pain points in Git workflows against existing platform capabilities and assessing the absence of clear, paid-demand signals in the target market.",
+              "evidence_ids": [
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "373ee827-0984-42f2-bb8b-1a53343f02f7",
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "speedToFirstRevenue"
+              ]
+            }
+          ],
+          "written_verdict": "Avoid",
+          "executive_summary": [
+            {
+              "text": "The proposed solution faces significant market headwinds due to existing Git platform features that already address branch protection and approval rules, rendering the value proposition redundant.",
+              "evidence_ids": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7",
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "painSeverity"
+              ]
+            },
+            {
+              "text": "There is a lack of verified willingness-to-pay signals and insufficient urgency in the current workflow, making it difficult to justify the development of a standalone tool for PR validation.",
+              "evidence_ids": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+              ],
+              "score_criteria": [
+                "willingnessToPay",
+                "purchaseUrgency"
+              ]
+            }
+          ]
+        },
+        "specialistAssessments": [
+          {
+            "name": "competition",
+            "status": "Complete",
+            "findings": [
+              "High competition from established platforms like Microsoft Approvals",
+              "Niche opportunities exist in AI-driven PR automation"
+            ],
+            "direction": "Mixed",
+            "assessment": "The market is fragmented between general business process tools and specialized developer workflow tools.",
+            "evidenceIds": [],
+            "sourceCitations": [
+              {
+                "url": "https://worldmetrics.org/best/approval-process-software",
+                "sourceId": "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+              },
+              {
+                "url": "https://worldmetrics.org/best/approval-system-software",
+                "sourceId": "d91f4180-89e5-4df8-9b0d-e55d6d35caa3"
+              }
+            ]
+          },
+          {
+            "name": "demand",
+            "status": "Complete",
+            "findings": [
+              "PR queues are a major bottleneck for release velocity",
+              "Manual email chains for approvals are prone to error"
+            ],
+            "direction": "SupportsOpportunity",
+            "assessment": "Clear pain points identified in both manual document approvals and slow PR review cycles.",
+            "evidenceIds": [
+              "373ee827-0984-42f2-bb8b-1a53343f02f7",
+              "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+            ],
+            "sourceCitations": [
+              {
+                "url": "https://hoop.dev/blog/designing-efficient-git-workflow-approvals",
+                "sourceId": "76559098-6c07-46bf-a96d-1b5295ac78b4"
+              },
+              {
+                "url": "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                "sourceId": "8555ca13-2d58-4731-8ab9-e1e63badf6d4"
+              }
+            ]
+          },
+          {
+            "name": "gtm",
+            "status": "Complete",
+            "findings": [
+              "GitHub Apps provide a direct path to the user workflow",
+              "Outsourced software projects benefit from standardized PR models"
+            ],
+            "direction": "SupportsOpportunity",
+            "assessment": "Leveraging existing developer platforms like GitHub is a viable GTM strategy.",
+            "evidenceIds": [],
+            "sourceCitations": [
+              {
+                "url": "https://github.com/Hadassah-lerner/ApprovalFlow",
+                "sourceId": "42f1e4dd-b099-44a2-acb6-0b9e9ccd604a"
+              },
+              {
+                "url": "https://waldo.jaquith.org/blog/2025/09/github-pr-model",
+                "sourceId": "4a294484-be67-4662-b444-43b4bd853021"
+              }
+            ]
+          },
+          {
+            "name": "market",
+            "status": "Complete",
+            "findings": [
+              "Pharma industry requires strict compliance",
+              "DevOps teams need to reduce PR latency"
+            ],
+            "direction": "SupportsOpportunity",
+            "assessment": "Strong demand for automated, audit-ready approval workflows in both regulated and software development sectors.",
+            "evidenceIds": [
+              "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+              "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+            ],
+            "sourceCitations": [
+              {
+                "url": "https://approvalflow.net",
+                "sourceId": "d38e9b29-aaa3-4a96-9bbb-586ef910fa41"
+              },
+              {
+                "url": "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                "sourceId": "8555ca13-2d58-4731-8ab9-e1e63badf6d4"
+              }
+            ]
+          },
+          {
+            "name": "pricing",
+            "status": "Complete",
+            "findings": [
+              "Entry-level pricing starts around $19/month",
+              "Enterprise solutions can exceed $3,000/month"
+            ],
+            "direction": "SupportsOpportunity",
+            "assessment": "Pricing models are flexible, ranging from low-cost self-service tools to high-end enterprise solutions.",
+            "evidenceIds": [],
+            "sourceCitations": [
+              {
+                "url": "https://www.zite.com/blog/approval-workflow-software",
+                "sourceId": "0c1ded80-6a85-4ccc-a083-8bb45da19515"
+              },
+              {
+                "url": "https://worldmetrics.org/best/approval-process-software",
+                "sourceId": "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+              }
+            ]
+          },
+          {
+            "name": "risk",
+            "status": "Complete",
+            "findings": [
+              "21 CFR Part 11 compliance is mandatory",
+              "Data integrity and audit trails are critical"
+            ],
+            "direction": "ChallengesOpportunity",
+            "assessment": "Regulatory compliance and security are significant barriers to entry in the pharmaceutical sector.",
+            "evidenceIds": [],
+            "sourceCitations": [
+              {
+                "url": "https://approvalflow.net/validationframework.html",
+                "sourceId": "3bda67aa-8c95-4f4b-907e-2a9b48f1773d"
+              }
+            ]
+          }
+        ],
+        "fullValidationInsights": {
+          "gtmFindings": [
+            {
+              "finding": "Integration with existing platforms (GitHub, M365) is a key driver for adoption.",
+              "evidenceIds": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+              ],
+              "sourceCitations": [
+                {
+                  "url": "https://worldmetrics.org/best/approval-system-software",
+                  "sourceId": "d91f4180-89e5-4df8-9b0d-e55d6d35caa3"
+                },
+                {
+                  "url": "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                  "sourceId": "8555ca13-2d58-4731-8ab9-e1e63badf6d4"
+                }
+              ],
+              "evidenceSourceIds": [
+                "d91f4180-89e5-4df8-9b0d-e55d6d35caa3",
+                "8555ca13-2d58-4731-8ab9-e1e63badf6d4"
+              ]
+            },
+            {
+              "finding": "Positioning as a 'workflow engine' rather than just a 'tool' increases perceived value.",
+              "evidenceIds": [],
+              "sourceCitations": [
+                {
+                  "url": "https://worldmetrics.org/best/approval-process-software",
+                  "sourceId": "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+                }
+              ],
+              "evidenceSourceIds": [
+                "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+              ]
+            }
+          ],
+          "marketContext": {
+            "metrics": [
+              {
+                "label": "Number of tools compared in top reviews",
+                "value": "17",
+                "sourceId": "e902cc71-8c62-4007-afaa-1a85dd3cfaec",
+                "sourceUrl": "https://marker.io/blog/review-and-approval-software",
+                "evidenceId": null
+              },
+              {
+                "label": "Typical enterprise pricing",
+                "value": "$2,500+/month",
+                "sourceId": "0c1ded80-6a85-4ccc-a083-8bb45da19515",
+                "sourceUrl": "https://www.zite.com/blog/approval-workflow-software",
+                "evidenceId": null
+              }
+            ],
+            "summary": "The approval software market is bifurcated between general business process automation and specialized, high-compliance or developer-centric tools."
+          },
+          "targetSegments": [
+            {
+              "name": "Pharmaceutical/Life Sciences",
+              "evidenceIds": [
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+              ],
+              "jobsToBeDone": [
+                "Ensure regulatory compliance",
+                "Maintain audit trails",
+                "Manage document lifecycles"
+              ],
+              "sourceCitations": [
+                {
+                  "url": "https://approvalflow.net",
+                  "sourceId": "d38e9b29-aaa3-4a96-9bbb-586ef910fa41"
+                },
+                {
+                  "url": "https://approvalflow.net/validationframework.html",
+                  "sourceId": "3bda67aa-8c95-4f4b-907e-2a9b48f1773d"
+                }
+              ],
+              "evidenceSourceIds": [
+                "d38e9b29-aaa3-4a96-9bbb-586ef910fa41",
+                "3bda67aa-8c95-4f4b-907e-2a9b48f1773d"
+              ]
+            },
+            {
+              "name": "Software Development Teams",
+              "evidenceIds": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "373ee827-0984-42f2-bb8b-1a53343f02f7"
+              ],
+              "jobsToBeDone": [
+                "Reduce PR review latency",
+                "Automate quality gates",
+                "Ensure code compliance"
+              ],
+              "sourceCitations": [
+                {
+                  "url": "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                  "sourceId": "8555ca13-2d58-4731-8ab9-e1e63badf6d4"
+                },
+                {
+                  "url": "https://hoop.dev/blog/designing-efficient-git-workflow-approvals",
+                  "sourceId": "76559098-6c07-46bf-a96d-1b5295ac78b4"
+                }
+              ],
+              "evidenceSourceIds": [
+                "8555ca13-2d58-4731-8ab9-e1e63badf6d4",
+                "76559098-6c07-46bf-a96d-1b5295ac78b4"
+              ]
+            }
+          ],
+          "willingnessToPay": {
+            "finding": "High willingness to pay for enterprise-grade compliance and efficiency gains, with lower tolerance for simple workflow tools.",
+            "strength": "Moderate",
+            "evidenceIds": [],
+            "sourceCitations": [
+              {
+                "url": "https://www.zite.com/blog/approval-workflow-software",
+                "sourceId": "0c1ded80-6a85-4ccc-a083-8bb45da19515"
+              },
+              {
+                "url": "https://worldmetrics.org/best/approval-process-software",
+                "sourceId": "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+              }
+            ],
+            "evidenceSourceIds": [
+              "0c1ded80-6a85-4ccc-a083-8bb45da19515",
+              "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+            ]
+          }
+        },
+        "strongestNegativeEvidenceId": "373ee827-0984-42f2-bb8b-1a53343f02f7",
+        "strongestPositiveEvidenceId": "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+      },
+      "report_id": "77bcd6d4-2379-47bc-a412-395eceec5cec",
+      "created_at": "2026-07-25T13:09:22.462754+00:00",
+      "updated_at": "2026-07-25T13:09:22.462754+00:00",
+      "report_mode": "full_validation",
+      "market_sizing": {
+        "reason": "Market sizing deferred to evidence phase"
+      },
+      "report_exports": [
+        {
+          "id": "436794af-953d-4937-9909-6e1259b5ba91",
+          "format": "json",
+          "sha256": "5942d42592b8be3a7be2a3460b4818c7d49fd71eb487acdf7c40ffce00942161",
+          "byte_size": 66384,
+          "created_at": "2026-07-25T13:09:22.602362+00:00",
+          "storage_path": "a4010a04-3c29-4137-80c9-10cd5bb3a197/a1686d99-235e-4650-9ceb-703e8fee9c3e/v2/report.json",
+          "report_version_id": "8ea6eee6-fab3-42ab-b81f-f386131abe00"
+        },
+        {
+          "id": "4ab4fd06-83d0-457b-822b-5c26f017cbcf",
+          "format": "pdf",
+          "sha256": "1e96cf86ed519aa889798a63c3e12e906d1afbd9bc811aed456f9e2a06972d3b",
+          "byte_size": 112554,
+          "created_at": "2026-07-25T13:09:22.534892+00:00",
+          "storage_path": "a4010a04-3c29-4137-80c9-10cd5bb3a197/a1686d99-235e-4650-9ceb-703e8fee9c3e/v2/report.pdf",
+          "report_version_id": "8ea6eee6-fab3-42ab-b81f-f386131abe00"
+        },
+        {
+          "id": "77d9dd9d-2c2b-4d3a-a9b4-bdde12f2f33e",
+          "format": "markdown",
+          "sha256": "20d772ae71de1318f08879207fd928025241a1e50aa36e276616eba751153026",
+          "byte_size": 24836,
+          "created_at": "2026-07-25T13:09:22.554818+00:00",
+          "storage_path": "a4010a04-3c29-4137-80c9-10cd5bb3a197/a1686d99-235e-4650-9ceb-703e8fee9c3e/v2/report.markdown",
+          "report_version_id": "8ea6eee6-fab3-42ab-b81f-f386131abe00"
+        },
+        {
+          "id": "3df205ae-793d-47cd-a734-93fba8b68f6d",
+          "format": "csv",
+          "sha256": "d933766befef2466d95d1c21421406dc715b49e39884031f5fe7e26bd92886c0",
+          "byte_size": 478251,
+          "created_at": "2026-07-25T13:09:22.583592+00:00",
+          "storage_path": "a4010a04-3c29-4137-80c9-10cd5bb3a197/a1686d99-235e-4650-9ceb-703e8fee9c3e/v2/report.csv",
+          "report_version_id": "8ea6eee6-fab3-42ab-b81f-f386131abe00"
+        }
+      ],
+      "version_number": 2,
+      "reasoning_flags": [],
+      "adversarial_gate": {
+        "id": "5c01b066-0564-48af-ab37-148dcc7e292c",
+        "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+        "status": "Complete",
+        "outcome": "NoStrongDisproof",
+        "payload": {
+          "outcome": "NoStrongDisproof",
+          "severity": "Low",
+          "objection": "Existing Git platforms already provide basic branch protection and approval rules, potentially making a dedicated tool redundant.",
+          "sourceIds": [
+            "76559098-6c07-46bf-a96d-1b5295ac78b4",
+            "3eec2c4b-5ab8-4eaa-b33e-1fd891b6144d"
+          ],
+          "evidence_ids": [
+            "373ee827-0984-42f2-bb8b-1a53343f02f7"
+          ]
+        },
+        "severity": "Low",
+        "objection": "Existing Git platforms already provide basic branch protection and approval rules, potentially making a dedicated tool redundant.",
+        "created_at": "2026-07-25T12:54:58.090738+00:00",
+        "unresolved": false,
+        "evidence_ids": [
+          "373ee827-0984-42f2-bb8b-1a53343f02f7"
+        ],
+        "emerging_verdict": "Validate First"
+      },
+      "decision_integrity": null,
+      "citation_validation": {
+        "valid": true,
+        "methodology": [
+          {
+            "text": "The validation score was derived by cross-referencing identified pain points in Git workflows against existing platform capabilities and assessing the absence of clear, paid-demand signals in the target market.",
+            "evidence_ids": [
+              "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+              "373ee827-0984-42f2-bb8b-1a53343f02f7",
+              "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+            ],
+            "score_criteria": [
+              "competitionGap",
+              "speedToFirstRevenue"
+            ]
+          }
+        ],
+        "claimsChecked": 3,
+        "claimsRemoved": 0,
+        "invalidClaims": [],
+        "executiveSummary": [
+          {
+            "text": "The proposed solution faces significant market headwinds due to existing Git platform features that already address branch protection and approval rules, rendering the value proposition redundant.",
+            "evidence_ids": [
+              "373ee827-0984-42f2-bb8b-1a53343f02f7",
+              "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c"
+            ],
+            "score_criteria": [
+              "competitionGap",
+              "painSeverity"
+            ]
+          },
+          {
+            "text": "There is a lack of verified willingness-to-pay signals and insufficient urgency in the current workflow, making it difficult to justify the development of a standalone tool for PR validation.",
+            "evidence_ids": [
+              "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+              "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+            ],
+            "score_criteria": [
+              "willingnessToPay",
+              "purchaseUrgency"
+            ]
+          }
+        ]
+      },
+      "adversarial_downgrade": false,
+      "report_chart_datasets": [
+        {
+          "id": "bca20976-d27d-4405-9161-2934da226fd1",
+          "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+          "sha256": "90e32b28c547f3af6917640f706488e8de44304241705ada0681a53d6e47dbf0",
+          "chart_key": "factor-breakdown",
+          "chart_type": "bar",
+          "created_at": "2026-07-25T13:09:22.471681+00:00",
+          "source_data": {
+            "values": {
+              "mvpSpeed": 57,
+              "founderFit": 25,
+              "painSeverity": 25.2,
+              "competitionGap": 71,
+              "regulatoryRisk": 10,
+              "purchaseUrgency": 15,
+              "willingnessToPay": 10,
+              "buyerReachability": 32,
+              "retentionPotential": 30.4,
+              "distributionClarity": 59.5,
+              "speedToFirstRevenue": 8.7,
+              "platformDependencyRisk": 23.4
+            }
+          },
+          "chart_config": {
+            "title": "Factor Breakdown",
+            "sourceExplanation": "The 12 factor values are copied from the deterministic scorecard in this report version."
+          },
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "8ea6eee6-fab3-42ab-b81f-f386131abe00",
+          "supporting_evidence_ids": [
+            "373ee827-0984-42f2-bb8b-1a53343f02f7",
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+          ]
+        },
+        {
+          "id": "a6a11b27-2a50-433f-aca9-8520385717ee",
+          "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+          "sha256": "8a02e17774b29f0fe6984dcb40956693142eccd5f9d170cefb51c46e8d869041",
+          "chart_key": "evidence-balance",
+          "chart_type": "bar",
+          "created_at": "2026-07-25T13:09:22.478358+00:00",
+          "source_data": {
+            "supporting": 3,
+            "contradictory": 1
+          },
+          "chart_config": {
+            "title": "Evidence Balance",
+            "sourceExplanation": "Counts of accepted supporting and contradictory evidence rows in this report version."
+          },
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "8ea6eee6-fab3-42ab-b81f-f386131abe00",
+          "supporting_evidence_ids": [
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7"
+          ]
+        },
+        {
+          "id": "28e3af92-3185-4cde-adef-7a6059c5010e",
+          "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+          "sha256": "ef0d9dee76b3891b37f2dc433486be56d9b580a900a6c0cd34ab48f69a2c9fe5",
+          "chart_key": "source-quality-distribution",
+          "chart_type": "bar",
+          "created_at": "2026-07-25T13:09:22.484153+00:00",
+          "source_data": {
+            "byTier": {
+              "tier_1": 0,
+              "tier_2": 0,
+              "tier_3": 4,
+              "tier_4": 0
+            }
+          },
+          "chart_config": {
+            "title": "Source Quality Distribution",
+            "sourceExplanation": "Counts of accepted evidence rows grouped by persisted source tier."
+          },
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "8ea6eee6-fab3-42ab-b81f-f386131abe00",
+          "supporting_evidence_ids": [
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7"
+          ]
+        },
+        {
+          "id": "e7bf7780-baee-4012-a0e8-32a21d403a40",
+          "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+          "sha256": "f84277b43a49d3eca335acd6d53b40f7cd642fc19f611f021586640457dbb4db",
+          "chart_key": "alternatives-comparison",
+          "chart_type": "bar",
+          "created_at": "2026-07-25T13:09:22.490026+00:00",
+          "source_data": {
+            "reason": "No competitor row had an accepted evidence-item reference.",
+            "values": {},
+            "unavailable": true
+          },
+          "chart_config": {
+            "title": "Alternatives Comparison",
+            "sourceExplanation": "Unavailable: competitor rows were not sufficiently linked to accepted evidence."
+          },
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "8ea6eee6-fab3-42ab-b81f-f386131abe00",
+          "supporting_evidence_ids": []
+        },
+        {
+          "id": "4266e07f-57be-4437-9e33-4411e16096d0",
+          "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+          "sha256": "a7d57a575b7144cf5eea833ddff54b718b95f12fea3aede8baf566edf07280ad",
+          "chart_key": "evidence_coverage",
+          "chart_type": "bar",
+          "created_at": "2026-07-25T13:09:22.49562+00:00",
+          "source_data": {
+            "byFamily": {
+              "problem": 1,
+              "solution": 3
+            },
+            "bySignal": {
+              "Pain": 1,
+              "Risk": 1,
+              "Demand": 2
+            }
+          },
+          "chart_config": {
+            "sourceExplanation": "Derived from persisted structured rows and evidence references in this report version."
+          },
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "8ea6eee6-fab3-42ab-b81f-f386131abe00",
+          "supporting_evidence_ids": [
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7"
+          ]
+        },
+        {
+          "id": "1d56a4a1-bff6-461d-8154-c61b207524f2",
+          "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+          "sha256": "1a61c209646b7869e0db6c32e7f51d307a055c5427b9eb4dbc8582f11f3daef3",
+          "chart_key": "pricing-landscape",
+          "chart_type": "line",
+          "created_at": "2026-07-25T13:09:22.500706+00:00",
+          "source_data": {
+            "pricingEvidence": 0,
+            "competitorsWithPublicPricing": 0
+          },
+          "chart_config": {
+            "sourceExplanation": "Derived from persisted structured rows and evidence references in this report version."
+          },
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "8ea6eee6-fab3-42ab-b81f-f386131abe00",
+          "supporting_evidence_ids": []
+        },
+        {
+          "id": "66b71c83-bfb8-4b5e-913f-95764e370ddd",
+          "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+          "sha256": "f9def38d0ddb694b567b1c8fd7d3d7eddedeb76b81cfcdc9330f7f02671a7e8d",
+          "chart_key": "score-contribution",
+          "chart_type": "waterfall",
+          "created_at": "2026-07-25T13:09:22.506028+00:00",
+          "source_data": {
+            "values": {
+              "mvpSpeed": 456,
+              "founderFit": 175,
+              "painSeverity": 302.4,
+              "competitionGap": 568,
+              "regulatoryRisk": 50,
+              "purchaseUrgency": 150,
+              "willingnessToPay": 110,
+              "buyerReachability": 256,
+              "retentionPotential": 273.59999999999997,
+              "distributionClarity": 476,
+              "speedToFirstRevenue": 60.89999999999999,
+              "platformDependencyRisk": 163.79999999999998
+            }
+          },
+          "chart_config": {
+            "sourceExplanation": "Derived from persisted structured rows and evidence references in this report version."
+          },
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "8ea6eee6-fab3-42ab-b81f-f386131abe00",
+          "supporting_evidence_ids": [
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7",
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7",
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7",
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+          ]
+        }
+      ],
+      "verdict_score_mismatch": false
+    },
+    {
+      "id": "e9f4de37-6bb9-475b-b706-796b1c49019c",
+      "payload": {
+        "id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+        "version": "1.0",
+        "reportMode": "full_validation",
+        "generatedAt": "2026-07-25T12:55:00.698Z",
+        "limitations": [
+          "pricing or willingness-to-pay evidence"
+        ],
+        "methodology": "The validation score was derived by cross-referencing identified pain points in Git workflows against existing platform capabilities and assessing the absence of clear, paid-demand signals in the target market.",
+        "opportunity": {
+          "id": "a675b767-5ef2-4684-83aa-048227945cfb",
+          "mvp": {
+            "scope": [
+              "AI-assisted invoice parsing",
+              "React UI",
+              "Dapr integration",
+              "Basic approval routing"
+            ],
+            "outcome": "Proof-of-concept microservice for AI-assisted invoice approval",
+            "exclusions": [
+              "Full 21 CFR Part 11 compliance",
+              "Enterprise-grade SSO",
+              "Advanced audit reporting"
+            ],
+            "buildEstimate": "4-8 weeks",
+            "buildComplexity": "Medium"
+          },
+          "name": "ApprovalFlow evidence proof (full_validation)",
+          "risks": [
+            {
+              "id": "f6f20c16-2759-4006-926d-adebc549abfa",
+              "category": "Regulatory",
+              "severity": "High",
+              "mitigation": "Implement rigorous validation testing frameworks and granular access controls.",
+              "description": "Pharmaceutical and life sciences require strict 21 CFR Part 11 compliance and audit trails.",
+              "evidenceIds": [
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+              ]
+            },
+            {
+              "id": "e929b40b-a98d-47bb-b77b-fac30eeaed9d",
+              "category": "Execution",
+              "severity": "Medium",
+              "mitigation": "Automate approval gates within CI/CD pipelines and PR threads.",
+              "description": "Approval workflows can become bottlenecks if not integrated into existing developer tools.",
+              "evidenceIds": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7",
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+              ]
+            }
+          ],
+          "launch": {
+            "weekOne": [
+              "Deploy GitHub App",
+              "Engage with open source maintainers",
+              "Collect feedback on validation accuracy"
+            ],
+            "successMetric": "Number of PRs validated per week",
+            "outreachMessage": "Stop waiting for PR approvals. Automate your validation workflow with AI-assisted checks directly in your PR thread.",
+            "firstTenStrategy": [
+              "Small dev teams",
+              "Startups using GitHub",
+              "Teams struggling with PR bottlenecks"
+            ],
+            "firstCustomerChannel": "GitHub Marketplace and developer communities"
+          },
+          "market": "B2B SaaS",
+          "pricing": {
+            "model": "Subscription-based",
+            "rationale": "Pricing varies significantly based on whether the tool is a simple app builder or a complex enterprise BPMN platform.",
+            "firstOffer": "Free trial or demo",
+            "pricePoint": "$19 - $3,000/month",
+            "evidenceIds": [],
+            "targetCustomers": 1000
+          },
+          "corePain": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records.",
+          "evidence": [
+            {
+              "id": "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+              "url": "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+              "date": "2026-07-25T12:54:57.889058+00:00",
+              "title": "AI-driven PR validation",
+              "signal": "Demand",
+              "source": "medium.com",
+              "snippet": "Testing lives outside the workflow where code actually gets reviewed. TestMu AI brings autonomous test validation directly into the PR thread.",
+              "excluded": false,
+              "strength": "High",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "solution"
+            },
+            {
+              "id": "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+              "url": "https://hoop.dev/blog/designing-efficient-git-workflow-approvals",
+              "date": "2026-07-25T12:54:57.896044+00:00",
+              "title": "Git workflow approval bottlenecks",
+              "signal": "Pain",
+              "source": "hoop.dev",
+              "snippet": "The pull request sits in the queue. Code is ready, but no one can merge until the right people approve. This is the heartbeat of Git workflow approvals in teams—control, accountability, and speed, all in conflict.",
+              "excluded": false,
+              "strength": "High",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "problem"
+            },
+            {
+              "id": "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+              "url": "https://approvalflow.net",
+              "date": "2026-07-25T12:54:57.902762+00:00",
+              "title": "Pharmaceutical document compliance",
+              "signal": "Demand",
+              "source": "approvalflow.net",
+              "snippet": "ApprovalFlow is the trusted online document management system for pharmaceutical and life sciences organisations. Designed to streamline the review and approval of advertising, promotional, and educational materials.",
+              "excluded": false,
+              "strength": "Medium",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "solution"
+            },
+            {
+              "id": "373ee827-0984-42f2-bb8b-1a53343f02f7",
+              "url": "https://hoop.dev/blog/designing-efficient-git-workflow-approvals",
+              "date": "2026-07-25T12:54:57.90909+00:00",
+              "title": "Adversarial assessment",
+              "signal": "Risk",
+              "source": "hoop.dev",
+              "snippet": "Existing Git platforms already provide basic branch protection and approval rules, potentially making a dedicated tool redundant.",
+              "excluded": false,
+              "strength": "Low",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": true,
+              "evidenceFamily": "solution"
+            }
+          ],
+          "oneLiner": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records.",
+          "createdAt": "2026-07-25T12:54:31.665482+00:00",
+          "scorecard": {
+            "notes": {
+              "mvpSpeed": "Execution-risk burden; fewer material risks increase feasibility.",
+              "founderFit": "Run-specific evidence access and domain signal coverage; no unsupported founder biography is inferred.",
+              "painSeverity": "Weighted verified pain strength, confidence, and contradiction ratio.",
+              "competitionGap": "Competitive density adjusted by explicit normalized gaps and gap-language evidence.",
+              "regulatoryRisk": "Regulatory and compliance risk evidence; this factor is inverted in the weighted total.",
+              "purchaseUrgency": "Urgency language in pain and demand evidence.",
+              "willingnessToPay": "No Tier 1 willingness-to-pay evidence; recommendations do not substitute for paid-demand proof.",
+              "buyerReachability": "Demand volume and independently sourced communities.",
+              "retentionPotential": "Recurring-workflow language in verified evidence.",
+              "distributionClarity": "Demand evidence plus persisted launch-channel specificity.",
+              "speedToFirstRevenue": "Pricing proof and purchase urgency combined deterministically.",
+              "platformDependencyRisk": "Platform dependency risk evidence; this factor is inverted in the weighted total."
+            },
+            "total": 38.1,
+            "scores": {
+              "mvpSpeed": 57,
+              "founderFit": 25,
+              "painSeverity": 25.2,
+              "competitionGap": 71,
+              "regulatoryRisk": 10,
+              "purchaseUrgency": 15,
+              "willingnessToPay": 10,
+              "buyerReachability": 32,
+              "retentionPotential": 30.4,
+              "distributionClarity": 59.5,
+              "speedToFirstRevenue": 8.7,
+              "platformDependencyRisk": 23.4
+            },
+            "verdict": "Avoid",
+            "weights": {
+              "mvpSpeed": 8,
+              "founderFit": 7,
+              "painSeverity": 12,
+              "competitionGap": 8,
+              "regulatoryRisk": 5,
+              "purchaseUrgency": 10,
+              "willingnessToPay": 11,
+              "buyerReachability": 8,
+              "retentionPotential": 9,
+              "distributionClarity": 8,
+              "speedToFirstRevenue": 7,
+              "platformDependencyRisk": 7
+            },
+            "confidence": 64,
+            "evidenceRefs": {
+              "mvpSpeed": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7"
+              ],
+              "founderFit": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+                "373ee827-0984-42f2-bb8b-1a53343f02f7"
+              ],
+              "painSeverity": [
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c"
+              ],
+              "competitionGap": [],
+              "regulatoryRisk": [],
+              "purchaseUrgency": [],
+              "willingnessToPay": [],
+              "buyerReachability": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+              ],
+              "retentionPotential": [
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+              ],
+              "distributionClarity": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+              ],
+              "speedToFirstRevenue": [],
+              "platformDependencyRisk": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7"
+              ]
+            }
+          },
+          "competitors": [
+            {
+              "id": "5f101dff-b697-412d-abb5-76d271ea7adf",
+              "gap": "Limited outside M365 ecosystem",
+              "name": "Microsoft Approvals",
+              "target": "Microsoft-first teams",
+              "pricing": "Included in M365",
+              "strength": "High integration",
+              "evidenceIds": [],
+              "positioning": "Microsoft 365 native approval workflow"
+            },
+            {
+              "id": "05bc2776-1725-49f0-b4a4-04484aa0ec64",
+              "gap": "Heavy manual setup",
+              "name": "Process Street",
+              "target": "Operations teams",
+              "pricing": "Not specified",
+              "strength": "Conditional logic",
+              "evidenceIds": [],
+              "positioning": "Checklist-based process templates"
+            },
+            {
+              "id": "8a65603e-3daf-43a3-9fd2-545b5a76f08a",
+              "gap": "Lacks enterprise-grade compliance depth",
+              "name": "Zite",
+              "target": "Non-technical teams",
+              "pricing": "$19/month",
+              "strength": "Ease of use",
+              "evidenceIds": [],
+              "positioning": "AI-generated custom approval apps"
+            }
+          ],
+          "targetCustomer": "Small GitHub-based software agencies and software consultancies"
+        },
+        "evidenceGaps": [
+          "insufficient problem evidence",
+          "Tier 1 evidence missing",
+          "Tier 1/2 evidence missing"
+        ],
+        "reportSections": [
+          "Conclusion",
+          "Evidence",
+          "Demand",
+          "Competition",
+          "Market",
+          "Pricing",
+          "MVP scope",
+          "Go-to-market",
+          "Risks",
+          "Adversarial",
+          "Score breakdown",
+          "Sources",
+          "Exports"
+        ],
+        "adversarialGate": {
+          "outcome": "NoStrongDisproof",
+          "severity": "Low",
+          "objection": "Existing Git platforms already provide basic branch protection and approval rules, potentially making a dedicated tool redundant.",
+          "unresolved": false,
+          "evidence_ids": [
+            "373ee827-0984-42f2-bb8b-1a53343f02f7"
+          ]
+        },
+        "availableExports": [
+          "pdf",
+          "markdown",
+          "csv",
+          "json"
+        ],
+        "executiveSummary": "The proposed solution faces significant market headwinds due to existing Git platform features that already address branch protection and approval rules, rendering the value proposition redundant. There is a lack of verified willingness-to-pay signals and insufficient urgency in the current workflow, making it difficult to justify the development of a standalone tool for PR validation.",
+        "topRecommendation": "Number of PRs validated per week",
+        "citationValidation": {
+          "valid": true,
+          "methodology": [
+            {
+              "text": "The validation score was derived by cross-referencing identified pain points in Git workflows against existing platform capabilities and assessing the absence of clear, paid-demand signals in the target market.",
+              "evidence_ids": [
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "373ee827-0984-42f2-bb8b-1a53343f02f7",
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "speedToFirstRevenue"
+              ]
+            }
+          ],
+          "claimsChecked": 3,
+          "claimsRemoved": 0,
+          "invalidClaims": [],
+          "executiveSummary": [
+            {
+              "text": "The proposed solution faces significant market headwinds due to existing Git platform features that already address branch protection and approval rules, rendering the value proposition redundant.",
+              "evidence_ids": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7",
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "painSeverity"
+              ]
+            },
+            {
+              "text": "There is a lack of verified willingness-to-pay signals and insufficient urgency in the current workflow, making it difficult to justify the development of a standalone tool for PR validation.",
+              "evidence_ids": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+              ],
+              "score_criteria": [
+                "willingnessToPay",
+                "purchaseUrgency"
+              ]
+            }
+          ]
+        },
+        "narrativeCitations": {
+          "methodology": [
+            {
+              "text": "The validation score was derived by cross-referencing identified pain points in Git workflows against existing platform capabilities and assessing the absence of clear, paid-demand signals in the target market.",
+              "evidence_ids": [
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+                "373ee827-0984-42f2-bb8b-1a53343f02f7",
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "speedToFirstRevenue"
+              ]
+            }
+          ],
+          "written_verdict": "Avoid",
+          "executive_summary": [
+            {
+              "text": "The proposed solution faces significant market headwinds due to existing Git platform features that already address branch protection and approval rules, rendering the value proposition redundant.",
+              "evidence_ids": [
+                "373ee827-0984-42f2-bb8b-1a53343f02f7",
+                "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "painSeverity"
+              ]
+            },
+            {
+              "text": "There is a lack of verified willingness-to-pay signals and insufficient urgency in the current workflow, making it difficult to justify the development of a standalone tool for PR validation.",
+              "evidence_ids": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+              ],
+              "score_criteria": [
+                "willingnessToPay",
+                "purchaseUrgency"
+              ]
+            }
+          ]
+        },
+        "specialistAssessments": [
+          {
+            "name": "competition",
+            "status": "Complete",
+            "findings": [
+              "High competition from established platforms like Microsoft Approvals",
+              "Niche opportunities exist in AI-driven PR automation"
+            ],
+            "direction": "Mixed",
+            "assessment": "The market is fragmented between general business process tools and specialized developer workflow tools.",
+            "evidenceIds": [],
+            "sourceCitations": [
+              {
+                "url": "https://worldmetrics.org/best/approval-process-software",
+                "sourceId": "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+              },
+              {
+                "url": "https://worldmetrics.org/best/approval-system-software",
+                "sourceId": "d91f4180-89e5-4df8-9b0d-e55d6d35caa3"
+              }
+            ]
+          },
+          {
+            "name": "demand",
+            "status": "Complete",
+            "findings": [
+              "PR queues are a major bottleneck for release velocity",
+              "Manual email chains for approvals are prone to error"
+            ],
+            "direction": "SupportsOpportunity",
+            "assessment": "Clear pain points identified in both manual document approvals and slow PR review cycles.",
+            "evidenceIds": [
+              "373ee827-0984-42f2-bb8b-1a53343f02f7",
+              "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+            ],
+            "sourceCitations": [
+              {
+                "url": "https://hoop.dev/blog/designing-efficient-git-workflow-approvals",
+                "sourceId": "76559098-6c07-46bf-a96d-1b5295ac78b4"
+              },
+              {
+                "url": "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                "sourceId": "8555ca13-2d58-4731-8ab9-e1e63badf6d4"
+              }
+            ]
+          },
+          {
+            "name": "gtm",
+            "status": "Complete",
+            "findings": [
+              "GitHub Apps provide a direct path to the user workflow",
+              "Outsourced software projects benefit from standardized PR models"
+            ],
+            "direction": "SupportsOpportunity",
+            "assessment": "Leveraging existing developer platforms like GitHub is a viable GTM strategy.",
+            "evidenceIds": [],
+            "sourceCitations": [
+              {
+                "url": "https://github.com/Hadassah-lerner/ApprovalFlow",
+                "sourceId": "42f1e4dd-b099-44a2-acb6-0b9e9ccd604a"
+              },
+              {
+                "url": "https://waldo.jaquith.org/blog/2025/09/github-pr-model",
+                "sourceId": "4a294484-be67-4662-b444-43b4bd853021"
+              }
+            ]
+          },
+          {
+            "name": "market",
+            "status": "Complete",
+            "findings": [
+              "Pharma industry requires strict compliance",
+              "DevOps teams need to reduce PR latency"
+            ],
+            "direction": "SupportsOpportunity",
+            "assessment": "Strong demand for automated, audit-ready approval workflows in both regulated and software development sectors.",
+            "evidenceIds": [
+              "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+              "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+            ],
+            "sourceCitations": [
+              {
+                "url": "https://approvalflow.net",
+                "sourceId": "d38e9b29-aaa3-4a96-9bbb-586ef910fa41"
+              },
+              {
+                "url": "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                "sourceId": "8555ca13-2d58-4731-8ab9-e1e63badf6d4"
+              }
+            ]
+          },
+          {
+            "name": "pricing",
+            "status": "Complete",
+            "findings": [
+              "Entry-level pricing starts around $19/month",
+              "Enterprise solutions can exceed $3,000/month"
+            ],
+            "direction": "SupportsOpportunity",
+            "assessment": "Pricing models are flexible, ranging from low-cost self-service tools to high-end enterprise solutions.",
+            "evidenceIds": [],
+            "sourceCitations": [
+              {
+                "url": "https://www.zite.com/blog/approval-workflow-software",
+                "sourceId": "0c1ded80-6a85-4ccc-a083-8bb45da19515"
+              },
+              {
+                "url": "https://worldmetrics.org/best/approval-process-software",
+                "sourceId": "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+              }
+            ]
+          },
+          {
+            "name": "risk",
+            "status": "Complete",
+            "findings": [
+              "21 CFR Part 11 compliance is mandatory",
+              "Data integrity and audit trails are critical"
+            ],
+            "direction": "ChallengesOpportunity",
+            "assessment": "Regulatory compliance and security are significant barriers to entry in the pharmaceutical sector.",
+            "evidenceIds": [],
+            "sourceCitations": [
+              {
+                "url": "https://approvalflow.net/validationframework.html",
+                "sourceId": "3bda67aa-8c95-4f4b-907e-2a9b48f1773d"
+              }
+            ]
+          }
+        ],
+        "fullValidationInsights": {
+          "gtmFindings": [
+            {
+              "finding": "Integration with existing platforms (GitHub, M365) is a key driver for adoption.",
+              "evidenceIds": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+              ],
+              "sourceCitations": [
+                {
+                  "url": "https://worldmetrics.org/best/approval-system-software",
+                  "sourceId": "d91f4180-89e5-4df8-9b0d-e55d6d35caa3"
+                },
+                {
+                  "url": "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                  "sourceId": "8555ca13-2d58-4731-8ab9-e1e63badf6d4"
+                }
+              ],
+              "evidenceSourceIds": [
+                "d91f4180-89e5-4df8-9b0d-e55d6d35caa3",
+                "8555ca13-2d58-4731-8ab9-e1e63badf6d4"
+              ]
+            },
+            {
+              "finding": "Positioning as a 'workflow engine' rather than just a 'tool' increases perceived value.",
+              "evidenceIds": [],
+              "sourceCitations": [
+                {
+                  "url": "https://worldmetrics.org/best/approval-process-software",
+                  "sourceId": "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+                }
+              ],
+              "evidenceSourceIds": [
+                "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+              ]
+            }
+          ],
+          "marketContext": {
+            "metrics": [
+              {
+                "label": "Number of tools compared in top reviews",
+                "value": "17",
+                "sourceId": "e902cc71-8c62-4007-afaa-1a85dd3cfaec",
+                "sourceUrl": "https://marker.io/blog/review-and-approval-software",
+                "evidenceId": null
+              },
+              {
+                "label": "Typical enterprise pricing",
+                "value": "$2,500+/month",
+                "sourceId": "0c1ded80-6a85-4ccc-a083-8bb45da19515",
+                "sourceUrl": "https://www.zite.com/blog/approval-workflow-software",
+                "evidenceId": null
+              }
+            ],
+            "summary": "The approval software market is bifurcated between general business process automation and specialized, high-compliance or developer-centric tools."
+          },
+          "targetSegments": [
+            {
+              "name": "Pharmaceutical/Life Sciences",
+              "evidenceIds": [
+                "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+              ],
+              "jobsToBeDone": [
+                "Ensure regulatory compliance",
+                "Maintain audit trails",
+                "Manage document lifecycles"
+              ],
+              "sourceCitations": [
+                {
+                  "url": "https://approvalflow.net",
+                  "sourceId": "d38e9b29-aaa3-4a96-9bbb-586ef910fa41"
+                },
+                {
+                  "url": "https://approvalflow.net/validationframework.html",
+                  "sourceId": "3bda67aa-8c95-4f4b-907e-2a9b48f1773d"
+                }
+              ],
+              "evidenceSourceIds": [
+                "d38e9b29-aaa3-4a96-9bbb-586ef910fa41",
+                "3bda67aa-8c95-4f4b-907e-2a9b48f1773d"
+              ]
+            },
+            {
+              "name": "Software Development Teams",
+              "evidenceIds": [
+                "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+                "373ee827-0984-42f2-bb8b-1a53343f02f7"
+              ],
+              "jobsToBeDone": [
+                "Reduce PR review latency",
+                "Automate quality gates",
+                "Ensure code compliance"
+              ],
+              "sourceCitations": [
+                {
+                  "url": "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+                  "sourceId": "8555ca13-2d58-4731-8ab9-e1e63badf6d4"
+                },
+                {
+                  "url": "https://hoop.dev/blog/designing-efficient-git-workflow-approvals",
+                  "sourceId": "76559098-6c07-46bf-a96d-1b5295ac78b4"
+                }
+              ],
+              "evidenceSourceIds": [
+                "8555ca13-2d58-4731-8ab9-e1e63badf6d4",
+                "76559098-6c07-46bf-a96d-1b5295ac78b4"
+              ]
+            }
+          ],
+          "willingnessToPay": {
+            "finding": "High willingness to pay for enterprise-grade compliance and efficiency gains, with lower tolerance for simple workflow tools.",
+            "strength": "Moderate",
+            "evidenceIds": [],
+            "sourceCitations": [
+              {
+                "url": "https://www.zite.com/blog/approval-workflow-software",
+                "sourceId": "0c1ded80-6a85-4ccc-a083-8bb45da19515"
+              },
+              {
+                "url": "https://worldmetrics.org/best/approval-process-software",
+                "sourceId": "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+              }
+            ],
+            "evidenceSourceIds": [
+              "0c1ded80-6a85-4ccc-a083-8bb45da19515",
+              "a6b088ff-257e-4ac7-b77f-8b4c7e287a29"
+            ]
+          }
+        },
+        "strongestNegativeEvidenceId": "373ee827-0984-42f2-bb8b-1a53343f02f7",
+        "strongestPositiveEvidenceId": "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+      },
+      "report_id": "77bcd6d4-2379-47bc-a412-395eceec5cec",
+      "created_at": "2026-07-25T12:55:00.70537+00:00",
+      "updated_at": "2026-07-25T12:55:00.70537+00:00",
+      "report_mode": "full_validation",
+      "market_sizing": {
+        "reason": "Market sizing deferred to evidence phase"
+      },
+      "report_exports": [
+        {
+          "id": "ce3b3691-8d78-4325-85e9-58138ce5db33",
+          "format": "pdf",
+          "sha256": "0e149eaac4c4849ce70995443c6296185285972efc3a5c19ea18c6453292effa",
+          "byte_size": 37941,
+          "created_at": "2026-07-25T12:55:00.820505+00:00",
+          "storage_path": "a4010a04-3c29-4137-80c9-10cd5bb3a197/a1686d99-235e-4650-9ceb-703e8fee9c3e/v1/report.pdf",
+          "report_version_id": "e9f4de37-6bb9-475b-b706-796b1c49019c"
+        },
+        {
+          "id": "6adaeeed-4a9b-4478-a313-575807ec3c89",
+          "format": "markdown",
+          "sha256": "f30fee6226698ce90904fe81712e0a8d6bffa050bf5ff4e0e29dfe18eac67af4",
+          "byte_size": 2431,
+          "created_at": "2026-07-25T12:55:00.838553+00:00",
+          "storage_path": "a4010a04-3c29-4137-80c9-10cd5bb3a197/a1686d99-235e-4650-9ceb-703e8fee9c3e/v1/report.markdown",
+          "report_version_id": "e9f4de37-6bb9-475b-b706-796b1c49019c"
+        },
+        {
+          "id": "7de5e4da-643d-4642-a3eb-22c6d607d6e9",
+          "format": "csv",
+          "sha256": "0c48ea91201be94007ffccf491c5f36dc5412cf1fa53634103f4bf0f247ebead",
+          "byte_size": 22346,
+          "created_at": "2026-07-25T12:55:00.856527+00:00",
+          "storage_path": "a4010a04-3c29-4137-80c9-10cd5bb3a197/a1686d99-235e-4650-9ceb-703e8fee9c3e/v1/report.csv",
+          "report_version_id": "e9f4de37-6bb9-475b-b706-796b1c49019c"
+        },
+        {
+          "id": "7d8039a4-9336-4544-97a3-f3819015cdea",
+          "format": "json",
+          "sha256": "c1cb87651962bb19be22f11123b89c4e12965030995341e99718528a21f94997",
+          "byte_size": 24481,
+          "created_at": "2026-07-25T12:55:00.872837+00:00",
+          "storage_path": "a4010a04-3c29-4137-80c9-10cd5bb3a197/a1686d99-235e-4650-9ceb-703e8fee9c3e/v1/report.json",
+          "report_version_id": "e9f4de37-6bb9-475b-b706-796b1c49019c"
+        }
+      ],
+      "version_number": 1,
+      "reasoning_flags": [],
+      "adversarial_gate": {
+        "id": "5c01b066-0564-48af-ab37-148dcc7e292c",
+        "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+        "status": "Complete",
+        "outcome": "NoStrongDisproof",
+        "payload": {
+          "outcome": "NoStrongDisproof",
+          "severity": "Low",
+          "objection": "Existing Git platforms already provide basic branch protection and approval rules, potentially making a dedicated tool redundant.",
+          "sourceIds": [
+            "76559098-6c07-46bf-a96d-1b5295ac78b4",
+            "3eec2c4b-5ab8-4eaa-b33e-1fd891b6144d"
+          ],
+          "evidence_ids": [
+            "373ee827-0984-42f2-bb8b-1a53343f02f7"
+          ]
+        },
+        "severity": "Low",
+        "objection": "Existing Git platforms already provide basic branch protection and approval rules, potentially making a dedicated tool redundant.",
+        "created_at": "2026-07-25T12:54:58.090738+00:00",
+        "unresolved": false,
+        "evidence_ids": [
+          "373ee827-0984-42f2-bb8b-1a53343f02f7"
+        ],
+        "emerging_verdict": "Validate First"
+      },
+      "decision_integrity": null,
+      "citation_validation": {
+        "valid": true,
+        "methodology": [
+          {
+            "text": "The validation score was derived by cross-referencing identified pain points in Git workflows against existing platform capabilities and assessing the absence of clear, paid-demand signals in the target market.",
+            "evidence_ids": [
+              "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+              "373ee827-0984-42f2-bb8b-1a53343f02f7",
+              "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+            ],
+            "score_criteria": [
+              "competitionGap",
+              "speedToFirstRevenue"
+            ]
+          }
+        ],
+        "claimsChecked": 3,
+        "claimsRemoved": 0,
+        "invalidClaims": [],
+        "executiveSummary": [
+          {
+            "text": "The proposed solution faces significant market headwinds due to existing Git platform features that already address branch protection and approval rules, rendering the value proposition redundant.",
+            "evidence_ids": [
+              "373ee827-0984-42f2-bb8b-1a53343f02f7",
+              "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c"
+            ],
+            "score_criteria": [
+              "competitionGap",
+              "painSeverity"
+            ]
+          },
+          {
+            "text": "There is a lack of verified willingness-to-pay signals and insufficient urgency in the current workflow, making it difficult to justify the development of a standalone tool for PR validation.",
+            "evidence_ids": [
+              "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+              "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+            ],
+            "score_criteria": [
+              "willingnessToPay",
+              "purchaseUrgency"
+            ]
+          }
+        ]
+      },
+      "adversarial_downgrade": false,
+      "report_chart_datasets": [
+        {
+          "id": "4eadff2c-527a-4e62-a40e-e862f5a3f027",
+          "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+          "sha256": "90e32b28c547f3af6917640f706488e8de44304241705ada0681a53d6e47dbf0",
+          "chart_key": "opportunity-factor-breakdown",
+          "chart_type": "radar",
+          "created_at": "2026-07-25T12:55:00.711127+00:00",
+          "source_data": {
+            "values": {
+              "mvpSpeed": 57,
+              "founderFit": 25,
+              "painSeverity": 25.2,
+              "competitionGap": 71,
+              "regulatoryRisk": 10,
+              "purchaseUrgency": 15,
+              "willingnessToPay": 10,
+              "buyerReachability": 32,
+              "retentionPotential": 30.4,
+              "distributionClarity": 59.5,
+              "speedToFirstRevenue": 8.7,
+              "platformDependencyRisk": 23.4
+            }
+          },
+          "chart_config": {},
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "e9f4de37-6bb9-475b-b706-796b1c49019c",
+          "supporting_evidence_ids": [
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7",
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7",
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7",
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+          ]
+        },
+        {
+          "id": "251f69b2-f9dc-4e64-94a8-197432b2276d",
+          "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+          "sha256": "e21278154f26dddaa83a6b48ed9b8c4863572812ecdae1be6bd5093eac54fa0f",
+          "chart_key": "evidence-balance",
+          "chart_type": "pie",
+          "created_at": "2026-07-25T12:55:00.715598+00:00",
+          "source_data": {
+            "negative": 1,
+            "positive": 3
+          },
+          "chart_config": {},
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "e9f4de37-6bb9-475b-b706-796b1c49019c",
+          "supporting_evidence_ids": [
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7"
+          ]
+        },
+        {
+          "id": "71ee2e9a-34af-430c-ad10-0af6624038e5",
+          "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+          "sha256": "11a0f3e06484b053efe2a6ed8b18efec6fa7503a9776840aaf83240e9589fd60",
+          "chart_key": "source-quality-distribution",
+          "chart_type": "bar",
+          "created_at": "2026-07-25T12:55:00.720887+00:00",
+          "source_data": {
+            "byTier": {
+              "t1": 0,
+              "t2": 0,
+              "t3": 4,
+              "t4": 0
+            }
+          },
+          "chart_config": {},
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "e9f4de37-6bb9-475b-b706-796b1c49019c",
+          "supporting_evidence_ids": [
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7"
+          ]
+        },
+        {
+          "id": "4cb8c791-1c91-44ee-a192-5725fe4dfdb4",
+          "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+          "sha256": "a7d57a575b7144cf5eea833ddff54b718b95f12fea3aede8baf566edf07280ad",
+          "chart_key": "evidence_coverage",
+          "chart_type": "bar",
+          "created_at": "2026-07-25T12:55:00.725978+00:00",
+          "source_data": {
+            "byFamily": {
+              "problem": 1,
+              "solution": 3
+            },
+            "bySignal": {
+              "Pain": 1,
+              "Risk": 1,
+              "Demand": 2
+            }
+          },
+          "chart_config": {},
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "e9f4de37-6bb9-475b-b706-796b1c49019c",
+          "supporting_evidence_ids": [
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7"
+          ]
+        },
+        {
+          "id": "e83cd355-50dc-4cea-a9b9-ceec4701cfb9",
+          "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+          "sha256": "1a61c209646b7869e0db6c32e7f51d307a055c5427b9eb4dbc8582f11f3daef3",
+          "chart_key": "pricing-landscape",
+          "chart_type": "line",
+          "created_at": "2026-07-25T12:55:00.730603+00:00",
+          "source_data": {
+            "pricingEvidence": 0,
+            "competitorsWithPublicPricing": 0
+          },
+          "chart_config": {},
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "e9f4de37-6bb9-475b-b706-796b1c49019c",
+          "supporting_evidence_ids": []
+        },
+        {
+          "id": "e5de77ce-76e3-4f42-9de6-3b4cfa70382f",
+          "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+          "sha256": "f9def38d0ddb694b567b1c8fd7d3d7eddedeb76b81cfcdc9330f7f02671a7e8d",
+          "chart_key": "score-contribution",
+          "chart_type": "waterfall",
+          "created_at": "2026-07-25T12:55:00.735531+00:00",
+          "source_data": {
+            "values": {
+              "mvpSpeed": 456,
+              "founderFit": 175,
+              "painSeverity": 302.4,
+              "competitionGap": 568,
+              "regulatoryRisk": 50,
+              "purchaseUrgency": 150,
+              "willingnessToPay": 110,
+              "buyerReachability": 256,
+              "retentionPotential": 273.59999999999997,
+              "distributionClarity": 476,
+              "speedToFirstRevenue": 60.89999999999999,
+              "platformDependencyRisk": 163.79999999999998
+            }
+          },
+          "chart_config": {},
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "e9f4de37-6bb9-475b-b706-796b1c49019c",
+          "supporting_evidence_ids": [
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7",
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7",
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+            "373ee827-0984-42f2-bb8b-1a53343f02f7",
+            "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+            "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+          ]
+        }
+      ],
+      "verdict_score_mismatch": false
+    }
+  ]
+}

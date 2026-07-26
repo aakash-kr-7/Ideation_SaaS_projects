@@ -18,6 +18,7 @@ export const researchRequestSchema = z.object({
   ]),
   targetRegion: z.string().trim().min(2).max(120),
   assumptions: z.object({
+    industry: z.string().max(120).optional(),
     revenueTarget: z.string().max(100).optional(),
     monetization: z.string().max(100).optional(),
     complexityTolerance: z.string().max(100).optional(),

@@ -1,0 +1,36 @@
+{
+  "run_id": "1415a293-2db7-479b-984d-f6b51d94034a",
+  "band": "Insufficient",
+  "score": 0.29,
+  "reasons": [
+    "1 independent domains",
+    "1 semantically accepted evidence items",
+    "0 unresolved evidence disagreements",
+    "average source authority 75%",
+    "average semantic relevance 100%",
+    "buyer-specific evidence 100%",
+    "1/11 required evidence families represented",
+    "0/1 accepted items are primary evidence",
+    "0 direct buyer/payment evidence items",
+    "0 proposition-specific contradiction pairs",
+    "direct relevance 100%",
+    "extraction integrity 100%",
+    "tier distribution {\"2\":1}"
+  ],
+  "created_at": "2026-07-26T08:05:38.6894+00:00",
+  "updated_at": "2026-07-26T08:05:40.872+00:00",
+  "deductions": [
+    "No Tier 1/primary page supports the dossier.",
+    "Primary-source coverage is weak (0/1 accepted items).",
+    "Only 1/11 Full Validation evidence families are represented.",
+    "No direct buyer-payment, deposit, paid-pilot, or purchase-commitment evidence was accepted.",
+    "No strong proposition-specific contradictory evidence was found.",
+    "Fewer than four usable evidence items were accepted."
+  ],
+  "scoring_confidence": 25,
+  "report_completeness": 36,
+  "completeness_reasons": [
+    "0/5 required evidence families covered",
+    "4/6 structural report checks passed"
+  ]
+}

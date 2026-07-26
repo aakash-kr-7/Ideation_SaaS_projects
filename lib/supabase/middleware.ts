@@ -32,6 +32,17 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Never trust an inbound identity hint. Replace it only after Supabase has
+  // authenticated this request so server components can retain the verified
+  // identity during the same response in which an expired JWT is refreshed.
+  request.headers.delete("x-shouldbuild-user-id")
+  if (user) request.headers.set("x-shouldbuild-user-id", user.id)
+  const authenticatedResponse = NextResponse.next({ request })
+  supabaseResponse.cookies.getAll().forEach((cookie) => {
+    authenticatedResponse.cookies.set(cookie.name, cookie.value, cookie)
+  })
+  supabaseResponse = authenticatedResponse
+
   const path = request.nextUrl.pathname
 
   // Public paths — no auth required

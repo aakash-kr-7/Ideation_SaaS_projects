@@ -1,0 +1,78 @@
+{
+  "id": "9991efb5-8941-4840-ade5-4c0e041a747f",
+  "run_id": "71aab438-1151-4d8a-bc04-f563ab07cf9a",
+  "candidates_discovered": 6,
+  "pages_attempted": 6,
+  "pages_fetched": 6,
+  "sources_accepted": 6,
+  "sources_rejected_by_reason": {},
+  "independent_domains": 6,
+  "evidence_items_extracted": 4,
+  "cost_per_stage": {},
+  "cost_per_accepted_source": 0.00022996249999999999,
+  "cost_per_accepted_evidence": 0.00034494375,
+  "retry_count": 0,
+  "cache_hit_rate": null,
+  "provider_fallback_count": 0,
+  "terminal_failure_reason": null,
+  "stage_timings": {
+    "71aab438-1151-4d8a-bc04-f563ab07cf9a|0|plan|0|0|": {
+      "duration_ms": 1656
+    },
+    "71aab438-1151-4d8a-bc04-f563ab07cf9a|0|complete|0|0|": {
+      "duration_ms": 36
+    },
+    "71aab438-1151-4d8a-bc04-f563ab07cf9a|0|analyze_score|0|0|": {
+      "duration_ms": 151
+    },
+    "71aab438-1151-4d8a-bc04-f563ab07cf9a|0|generate_report|0|0|": {
+      "duration_ms": 2909
+    },
+    "71aab438-1151-4d8a-bc04-f563ab07cf9a|0|generate_exports|0|0|": {
+      "duration_ms": 133
+    },
+    "71aab438-1151-4d8a-bc04-f563ab07cf9a|0|evidence_boosters|0|0|": {
+      "duration_ms": 16262,
+      "pages_fetched": 6,
+      "pages_attempted": 6,
+      "sources_accepted": 6,
+      "sources_rejected": 0,
+      "independent_domains": 6,
+      "candidates_discovered": 6
+    },
+    "71aab438-1151-4d8a-bc04-f563ab07cf9a|0|grounded_research|0|0|": {
+      "duration_ms": 68,
+      "sources_accepted": 0,
+      "provider_fallbacks": 0,
+      "candidates_discovered": 0
+    },
+    "71aab438-1151-4d8a-bc04-f563ab07cf9a|0|validate_normalize|0|0|": {
+      "duration_ms": 8398,
+      "evidence_extracted": 4
+    }
+  },
+  "total_provider_cost_usd": 0.001379775,
+  "total_jobs_created": 8,
+  "created_at": "2026-07-26T06:00:42.058309+00:00",
+  "updated_at": "2026-07-26T06:01:13.342756+00:00",
+  "provider_calls": 18,
+  "grounded_calls": 0,
+  "fallback_calls": 0,
+  "cache_hits": 6,
+  "total_duration_ms": 28461,
+  "input_tokens": 7917,
+  "output_tokens": 2620,
+  "cache_misses": 18,
+  "model_call_counts": {
+    "gemini-3.1-flash-lite": 3
+  },
+  "pricing_version": "gemini-estimate-v1-2026-07-25",
+  "grounded_calls_attempted": 0,
+  "grounded_calls_completed": 0,
+  "grounded_calls_quota_blocked": 0,
+  "external_search_calls": 15,
+  "synthesis_calls": 3,
+  "degraded_providers": [],
+  "grounding_mode": "disabled",
+  "grounding_degraded": false
+}

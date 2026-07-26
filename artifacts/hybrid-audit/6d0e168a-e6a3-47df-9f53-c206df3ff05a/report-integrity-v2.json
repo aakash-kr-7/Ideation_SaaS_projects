@@ -1,0 +1,45 @@
+{
+  "latestVersion": 1,
+  "payloadVersion": "2.0",
+  "reportCompleteness": {
+    "expectedSections": 23,
+    "actualSections": 23,
+    "threeExperiments": true,
+    "specialistOutputs": 6,
+    "chartStates": 7
+  },
+  "scoreMatches": true,
+  "verdictMatches": true,
+  "confidenceMatches": true,
+  "jsonPayloadMatches": true,
+  "unresolvedEvidenceIds": [],
+  "chartMismatches": [],
+  "sourceUrlsInspectable": true,
+  "exportFiles": [
+    {
+      "format": "pdf",
+      "checksumMatches": true,
+      "containsScore": true,
+      "containsVerdict": true
+    },
+    {
+      "format": "markdown",
+      "checksumMatches": true,
+      "containsScore": true,
+      "containsVerdict": true
+    },
+    {
+      "format": "csv",
+      "checksumMatches": true,
+      "containsScore": true,
+      "containsVerdict": true
+    },
+    {
+      "format": "json",
+      "checksumMatches": true,
+      "containsScore": true,
+      "containsVerdict": true
+    }
+  ],
+  "passed": true
+}

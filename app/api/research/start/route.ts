@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { researchRequestSchema } from "@/lib/research/schema";
 import { ResearchLaunchError, ResearchService } from "@/lib/services/research";
 import { createClient } from "@/lib/supabase/server";
+import { publicErrorMessage } from "@/lib/public-errors";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -76,16 +77,24 @@ export async function POST(request: Request) {
       reportUrl: `/api/research/${run.id}`,
     }, { status: 202 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const privateMessage = error instanceof Error ? error.message : String(error);
     const requestId = error instanceof ResearchLaunchError ? error.requestId : crypto.randomUUID();
     const code = error instanceof ResearchLaunchError ? error.code : "RESEARCH_LAUNCH_FAILED";
     const status = error instanceof ResearchLaunchError ? error.status : 500;
     await supabase.from("error_logs").insert({
       user_id: user.id,
       context: "api:research:start",
-      error_message: message,
+      error_message: privateMessage,
       stack_trace: error instanceof Error ? error.stack || null : null,
     });
-    return NextResponse.json({ error: { code, message, requestId } }, { status });
+    return NextResponse.json({
+      error: {
+        code,
+        message: error instanceof ResearchLaunchError
+          ? publicErrorMessage(code, error.message)
+          : "Research could not be started. Please try again.",
+        requestId,
+      },
+    }, { status });
   }
 }

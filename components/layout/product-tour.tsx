@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import {
   ArrowLeft, ArrowRight, BarChart3, Check, FileText, LayoutDashboard,
-  Lightbulb, Plus, Scale, Sparkles, X,
+  Lightbulb, Plus, Scale, SearchCheck, X,
 } from "lucide-react";
 
 interface TourStep {
@@ -19,7 +19,7 @@ interface TourStep {
 
 const tourSteps: TourStep[] = [
   {
-    icon: Sparkles,
+    icon: SearchCheck,
     section: "Welcome to ShouldBuild",
     title: "Validate first. Build with evidence.",
     body: "This quick walkthrough shows where each workflow lives and how to move from an idea to a decision-ready report.",

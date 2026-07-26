@@ -1,0 +1,47 @@
+{
+  "id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+  "project_id": "ac32044c-738c-4845-80d5-71f42e754bbd",
+  "created_by": "f480534d-55d8-48d9-a435-189320eb31b6",
+  "idea_name": "ApprovalFlow evidence proof (quick_scan)",
+  "idea_description": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records.",
+  "target_customer": "Small GitHub-based software agencies and software consultancies",
+  "market_type": "B2B SaaS",
+  "target_region": "United States and global English-speaking markets",
+  "mode": "quick_scan",
+  "status": "Completed",
+  "progress": 100,
+  "error_message": null,
+  "created_at": "2026-07-25T12:50:04.431048+00:00",
+  "updated_at": "2026-07-25T12:50:19.638779+00:00",
+  "progress_detail": "Research complete",
+  "retrieval_sufficient": false,
+  "retrieval_coverage": null,
+  "retrieval_coverage_gaps": [
+    "insufficient problem evidence",
+    "Tier 1/2 evidence missing"
+  ],
+  "retrieval_budget_limited": false,
+  "idempotency_key": "02fff131-bcf4-482c-9b9e-ce3298cb78ad",
+  "request_id": "95aaf81c-117d-4ffc-a5d7-c3ee56de80ac",
+  "assumptions": {
+    "buyer": "Agency owner or engineering lead",
+    "priceHypothesis": "Per-team monthly subscription"
+  },
+  "credit_cost": 1,
+  "credit_state": "consumed",
+  "current_stage": "complete",
+  "current_stage_started_at": "2026-07-25T12:50:19.591751+00:00",
+  "last_progress_at": "2026-07-25T12:50:19.638779+00:00",
+  "terminal_at": "2026-07-25T12:50:19.638779+00:00",
+  "total_provider_cost_usd": 0.001203675,
+  "total_tokens_used": {
+    "input": 7101,
+    "total": 9338,
+    "output": 2237
+  },
+  "time_budget_exhausted": false,
+  "cost_budget_exhausted": false,
+  "pipeline_version": "staged",
+  "max_jobs_per_run": 200,
+  "max_research_cycles": 3
+}

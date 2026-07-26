@@ -805,16 +805,21 @@ export type Database = {
       }
       evidence_items: {
         Row: {
+          associated_claim_ids: string[]
           author: string | null
+          canonical_url: string
           claim_fingerprint: string | null
           cluster_key: string | null
           confidence: number
           contradicting_count: number
           created_at: string
+          currency: string | null
           disconfirming: boolean
           evidence_family: string | null
           excluded: boolean
           exclusion_reason: string | null
+          extraction_method: string
+          geography: string | null
           id: string
           independent_domain_count: number
           independent_source_count: number
@@ -822,17 +827,26 @@ export type Database = {
           market_size_metric: string | null
           market_size_source_qualified: boolean
           named_entities: string[]
+          numeric_value: number | null
           opportunity_id: string | null
           pain_point: string | null
+          publisher: string
+          relevant_excerpt: string
           research_pass: number | null
           research_query_id: string | null
+          retrieval_date: string
           run_id: string
+          segment: string | null
           signal_type: string
           snippet: string
+          source_class: string
           source_domain: string | null
           source_id: string | null
           source_tier: number | null
+          source_title: string
           strength: string
+          structured_value: Json | null
+          support_classification: string
           supporting_count: number
           tier_reason: string | null
           title: string
@@ -840,16 +854,21 @@ export type Database = {
           verified: boolean
         }
         Insert: {
+          associated_claim_ids?: string[]
           author?: string | null
+          canonical_url: string
           claim_fingerprint?: string | null
           cluster_key?: string | null
           confidence?: number
           contradicting_count?: number
           created_at?: string
+          currency?: string | null
           disconfirming?: boolean
           evidence_family?: string | null
           excluded?: boolean
           exclusion_reason?: string | null
+          extraction_method: string
+          geography?: string | null
           id?: string
           independent_domain_count?: number
           independent_source_count?: number
@@ -857,17 +876,26 @@ export type Database = {
           market_size_metric?: string | null
           market_size_source_qualified?: boolean
           named_entities?: string[]
+          numeric_value?: number | null
           opportunity_id?: string | null
           pain_point?: string | null
+          publisher: string
+          relevant_excerpt: string
           research_pass?: number | null
           research_query_id?: string | null
+          retrieval_date: string
           run_id: string
+          segment?: string | null
           signal_type: string
           snippet: string
+          source_class: string
           source_domain?: string | null
           source_id?: string | null
           source_tier?: number | null
+          source_title: string
           strength: string
+          structured_value?: Json | null
+          support_classification: string
           supporting_count?: number
           tier_reason?: string | null
           title: string
@@ -875,16 +903,21 @@ export type Database = {
           verified?: boolean
         }
         Update: {
+          associated_claim_ids?: string[]
           author?: string | null
+          canonical_url?: string
           claim_fingerprint?: string | null
           cluster_key?: string | null
           confidence?: number
           contradicting_count?: number
           created_at?: string
+          currency?: string | null
           disconfirming?: boolean
           evidence_family?: string | null
           excluded?: boolean
           exclusion_reason?: string | null
+          extraction_method?: string
+          geography?: string | null
           id?: string
           independent_domain_count?: number
           independent_source_count?: number
@@ -892,17 +925,26 @@ export type Database = {
           market_size_metric?: string | null
           market_size_source_qualified?: boolean
           named_entities?: string[]
+          numeric_value?: number | null
           opportunity_id?: string | null
           pain_point?: string | null
+          publisher?: string
+          relevant_excerpt?: string
           research_pass?: number | null
           research_query_id?: string | null
+          retrieval_date?: string
           run_id?: string
+          segment?: string | null
           signal_type?: string
           snippet?: string
+          source_class?: string
           source_domain?: string | null
           source_id?: string | null
           source_tier?: number | null
+          source_title?: string
           strength?: string
+          structured_value?: Json | null
+          support_classification?: string
           supporting_count?: number
           tier_reason?: string | null
           title?: string
@@ -2505,11 +2547,15 @@ export type Database = {
           created_at: string
           evidence_family: string | null
           excluded: boolean
+          extraction_method: string
           id: string
           market_size_qualification_reason: string | null
           market_size_source_qualified: boolean
           published_at: string | null
+          publisher: string
+          retrieval_date: string
           run_id: string
+          source_class: string
           source_domain: string | null
           source_tier: number | null
           source_type: string
@@ -2523,11 +2569,15 @@ export type Database = {
           created_at?: string
           evidence_family?: string | null
           excluded?: boolean
+          extraction_method: string
           id?: string
           market_size_qualification_reason?: string | null
           market_size_source_qualified?: boolean
           published_at?: string | null
+          publisher: string
+          retrieval_date: string
           run_id: string
+          source_class: string
           source_domain?: string | null
           source_tier?: number | null
           source_type: string
@@ -2541,11 +2591,15 @@ export type Database = {
           created_at?: string
           evidence_family?: string | null
           excluded?: boolean
+          extraction_method?: string
           id?: string
           market_size_qualification_reason?: string | null
           market_size_source_qualified?: boolean
           published_at?: string | null
+          publisher?: string
+          retrieval_date?: string
           run_id?: string
+          source_class?: string
           source_domain?: string | null
           source_tier?: number | null
           source_type?: string
@@ -2891,6 +2945,11 @@ export type Database = {
         Returns: string
       }
       finalize_research_run: { Args: { p_run_id: string }; Returns: string }
+      get_research_history_snapshot: { Args: never; Returns: Json }
+      get_research_progress_snapshot: {
+        Args: { p_run_id: string }
+        Returns: Json
+      }
       get_team_credit_snapshot: {
         Args: never
         Returns: {

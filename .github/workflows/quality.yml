@@ -40,8 +40,17 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Test
-        run: npm test
+      - name: Product truth scan
+        run: npm run check:text
+
+      - name: Secret scan
+        run: npm run test:secrets
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Deno checks
+        run: npm run check:deno
 
       - name: Build
         run: npm run build

@@ -6,6 +6,7 @@ import { Database, Mail, ShieldCheck, UserRound, Save, LoaderCircle, CheckCircle
 import { AppShell } from "@/components/layout/app-shell";
 import { useAuth } from "@/components/layout/auth-provider";
 import { SUPPORT_EMAIL } from "@/lib/pricing";
+import { ProjectSettings } from "@/components/settings/project-settings";
 
 export default function SettingsPage() {
   const { user, profile, refreshProfile } = useAuth();
@@ -173,6 +174,8 @@ export default function SettingsPage() {
             </button>
           </div>
         </section>
+
+        <ProjectSettings />
 
         <section className="settings-section">
           <div className="settings-section-header">

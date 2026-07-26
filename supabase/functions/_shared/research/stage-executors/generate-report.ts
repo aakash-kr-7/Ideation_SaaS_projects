@@ -11,7 +11,9 @@ import { stageCompleted, stageFailed } from "../stages.ts";
 import { finalJudgeSchema, assertCitationsBelongToRun } from "../reasoning.ts";
 import { validateNarrativeCitations, narrativeSupportsVerdict } from "../reasoning-integrity.ts";
 import { costBudgetForRun, updateState, logError } from "../pipeline-utils.ts";
-import { evidenceConfidence, reportCompleteness } from "../evidence-intelligence.ts";
+import { evidenceConfidence, reportCompleteness, semanticPublicationQuality } from "../evidence-intelligence.ts";
+import { buildDecisionCharts, buildDecisionProduct } from "../decision-product.ts";
+import { validationReportSchema } from "../../report-schema.ts";
 
 export async function executeGenerateReport(
   ctx: StageContext,
@@ -48,24 +50,38 @@ export async function executeGenerateReport(
   await updateState(runId, "Generating", 93, `Generating ${config.label}`, db);
 
   // --- Load evidence for citations ---
-  const [{ data: evidence }, { data: runCoverage }] = await Promise.all([
+  const [{ data: evidence }, { data: runCoverage }, { data: confidenceContradictions }] = await Promise.all([
     db.from("evidence_items")
-      .select("id, source_id, excluded, source_tier, snippet, title, signal_type, strength, evidence_family, pain_point, source_domain, disconfirming, created_at, sources(url)")
+      .select("id, source_id, excluded, source_tier, snippet, title, signal_type, strength, evidence_family, evidence_topic, pain_point, source_domain, source_class, disconfirming, created_at, relevance_score, relevance_class, matched_brief_dimensions, mismatch_reasons, acceptance_decision, sources(url)")
       .eq("run_id", runId),
     db.from("research_runs")
       .select("retrieval_sufficient,retrieval_coverage_gaps,status")
       .eq("id", runId)
       .single(),
+    db.from("evidence_contradictions")
+      .select("id,resolution_status")
+      .eq("run_id", runId),
   ]);
 
   if (runCoverage?.status === "Cancelled") return stageFailed("permanent", "Run was cancelled before publication.");
 
   const allowed = new Set<string>(
     (evidence || [])
-      .filter((e: any) => e.id && e.source_id && !e.excluded && e.source_tier !== 4 && e.sources?.url)
+      .filter((e: any) => e.id && e.source_id && !e.excluded && e.source_tier !== 4 && e.acceptance_decision === "accepted_core" && e.sources?.url)
       .map((e: any) => e.id),
   );
-  const confidence = evidenceConfidence((evidence || []) as any);
+  const confidence = evidenceConfidence(
+    (evidence || []) as any,
+    undefined,
+    (confidenceContradictions || []).filter((item: any) => item.resolution_status === "unresolved").length,
+    confidenceContradictions?.length || 0,
+  );
+  const allowedSourceIds = new Set<string>(
+    (evidence || [])
+      .filter((item: any) => allowed.has(item.id))
+      .map((item: any) => item.source_id)
+      .filter(Boolean),
+  );
 
   // --- Load breakdowns ---
   const { data: breakdowns } = await db
@@ -80,6 +96,7 @@ export async function executeGenerateReport(
   let judgeOutput: any;
   try {
     const allowedEvidenceIdSchema = { type: "string", enum: [...allowed] };
+    const allowedCriteria = (breakdowns || []).map((row: any) => String(row.criterion));
     const result = await dependencies.createGemini().generate({
       runId, taskType: "final_judge", db, budget,
       systemInstruction:
@@ -94,13 +111,13 @@ export async function executeGenerateReport(
         type: "object",
         properties: {
           written_verdict: { type: "string", enum: ["Build Now", "Validate First", "Niche Down", "Weak Signal", "Avoid"] },
-          executive_summary: { type: "array", minItems: 2, maxItems: 2, items: { type: "object", properties: { text: { type: "string" }, evidence_ids: { type: "array", items: allowedEvidenceIdSchema }, score_criteria: { type: "array", items: { type: "string" } } }, required: ["text", "evidence_ids", "score_criteria"] } },
-          methodology: { type: "array", minItems: 1, maxItems: 1, items: { type: "object", properties: { text: { type: "string" }, evidence_ids: { type: "array", items: allowedEvidenceIdSchema }, score_criteria: { type: "array", items: { type: "string" } } }, required: ["text", "evidence_ids", "score_criteria"] } },
+          executive_summary: { type: "array", minItems: 2, maxItems: 2, items: { type: "object", properties: { text: { type: "string" }, evidence_ids: { type: "array", items: allowedEvidenceIdSchema }, score_criteria: { type: "array", items: { type: "string", enum: allowedCriteria } } }, required: ["text", "evidence_ids", "score_criteria"] } },
+          methodology: { type: "array", minItems: 1, maxItems: 1, items: { type: "object", properties: { text: { type: "string" }, evidence_ids: { type: "array", items: allowedEvidenceIdSchema }, score_criteria: { type: "array", items: { type: "string", enum: allowedCriteria } } }, required: ["text", "evidence_ids", "score_criteria"] } },
         },
         required: ["written_verdict", "executive_summary", "methodology"],
       },
     });
-    judgeOutput = finalJudgeSchema.parse(result.parsed);
+    judgeOutput = finalJudgeSchema.parse(normalizeJudgeCriteria(result.parsed, allowedCriteria));
     assertCitationsBelongToRun(judgeOutput, allowed);
   } catch (error) {
     await logError(runId, "final_judge", error, db);
@@ -118,7 +135,13 @@ export async function executeGenerateReport(
     hasPricing: (evidence || []).some((e: any) => !e.excluded && (e.signal_type === "Pricing" || /pricing|price|\$/i.test(e.snippet || ""))),
     hasCompetitor: (evidence || []).some((e: any) => !e.excluded && e.source_tier <= 3),
     citationsValid: narrativeValid,
+    evidenceTopics: (evidence || []).filter((e: any) => allowed.has(e.id)).map((e: any) => e.evidence_topic).filter(Boolean),
   });
+  await db.from("evidence_confidence_results").update({
+    report_completeness: completeness.score,
+    completeness_reasons: completeness.reasons,
+    updated_at: new Date().toISOString(),
+  }).eq("run_id", runId);
   // Weak or negative evidence is a publishable decision result. Only the
   // technical inability to produce an attributable, citation-valid report blocks
   // publication; evidence gaps remain visible as limitations.
@@ -186,25 +209,82 @@ export async function executeGenerateReport(
     weights: Object.fromEntries(criteria.map((key) => [key, Number(criterionMap.get(key)?.weight || 1)])),
     total: Number(scoreRow.total), confidence: Number(scoreRow.confidence), verdict: scoreRow.verdict,
   };
-  const [{ data: adversarialGate }, { data: specialistRows }] = await Promise.all([
+  const [{ data: adversarialGate }, { data: specialistRows }, { data: researchBriefRow }, { data: contradictions }, { data: numericValidations }] = await Promise.all([
     db.from("adversarial_verdict_gates").select("*").eq("run_id", runId).maybeSingle(),
     db.from("reasoning_agent_outputs").select("agent_name,status,payload").eq("run_id", runId).in("agent_name", ["competition", "market", "pricing", "risk", "demand", "gtm"]),
+    db.from("research_briefs").select("brief").eq("run_id", runId).single(),
+    db.from("evidence_contradictions").select("*").eq("run_id", runId).order("created_at"),
+    db.from("numeric_claim_validations").select("status,claim_type").eq("run_id", runId),
   ]);
   const specialistAssessments = (specialistRows || []).map((row: any) => ({
     name: row.agent_name,
     status: row.status,
-    direction: row.payload?.direction || "Insufficient",
-    assessment: row.payload?.assessment || "No assessment was produced.",
-    findings: Array.isArray(row.payload?.findings) ? row.payload.findings : [],
-    evidenceIds: Array.isArray(row.payload?.evidence_ids) ? row.payload.evidence_ids : [],
+    direction: Array.isArray(row.payload?.evidence_ids) && row.payload.evidence_ids.some((id: string) => allowed.has(id))
+      ? customerDirection(row.payload?.direction)
+      : "Insufficient evidence",
+    assessment: cleanSpecialistText(row.payload?.assessment) || "Insufficient evidence",
+    findings: Array.isArray(row.payload?.findings)
+      ? row.payload.findings.map(cleanSpecialistText).filter(Boolean)
+      : ["Insufficient evidence"],
+    evidenceIds: Array.isArray(row.payload?.evidence_ids)
+      ? row.payload.evidence_ids.filter((id: string) => allowed.has(id))
+      : [],
+    sourceCitations: Array.isArray(row.payload?.source_citations)
+      ? row.payload.source_citations.filter((citation: any) => allowedSourceIds.has(citation?.sourceId))
+      : [],
+    opposingEvidenceIds: Array.isArray(row.payload?.opposing_evidence_ids)
+      ? row.payload.opposing_evidence_ids.filter((id: string) => allowed.has(id))
+      : [],
+    confidence: row.payload?.confidence || "Insufficient",
+    relevantBriefDimensions: Array.isArray(row.payload?.relevant_brief_dimensions) ? row.payload.relevant_brief_dimensions : [],
+    unresolvedGaps: Array.isArray(row.payload?.unresolved_gaps) ? row.payload.unresolved_gaps : [],
   }));
   if (config.mode === "full_validation" && specialistAssessments.length !== 6) {
     return stageFailed("permanent", `Full Validation requires six persisted specialist assessments; found ${specialistAssessments.length}.`);
   }
+  const publicationStandard = semanticPublicationQuality({
+    mode: config.mode,
+    evidence: (evidence || []) as any,
+    competitors: competitors || [],
+    contradictions: contradictions || [],
+    specialists: specialistRows || [],
+    charts: chartDatasets,
+    numericValidations: numericValidations || [],
+  });
+  const effectiveConfidence = config.mode === "full_validation" && !publicationStandard.met && confidence.band === "High"
+    ? {
+      ...confidence,
+      band: "Moderate" as const,
+      score: Math.min(confidence.score, 0.59),
+      deductions: [...(confidence.deductions || []), ...publicationStandard.gaps],
+    }
+    : confidence;
+  if (effectiveConfidence.score !== confidence.score || effectiveConfidence.band !== confidence.band) {
+    await db.from("evidence_confidence_results").update({
+      band: effectiveConfidence.band,
+      score: effectiveConfidence.score,
+      deductions: effectiveConfidence.deductions,
+      updated_at: new Date().toISOString(),
+    }).eq("run_id", runId);
+  }
   const strongestPositive = (evidence || []).find((item: any) => !item.excluded && !item.disconfirming);
   const strongestNegative = (evidence || []).find((item: any) => !item.excluded && item.disconfirming);
-  const reportPayload = {
-    id: runId, version: "1.0", reportMode: config.mode, generatedAt: new Date().toISOString(),
+  const brief = researchBriefRow?.brief as Record<string, unknown> | undefined;
+  const targetBuyer = String(brief?.targetBuyer || opportunity.target_customer || "target buyers");
+  const weekOne = (launch.launch_strategies || [])
+    .filter((item: any) => item.strategy_type === "WeekOne")
+    .map((item: any) => String(item.description || "").trim())
+    .filter(Boolean);
+  const firstTenStrategy = (launch.launch_strategies || [])
+    .filter((item: any) => item.strategy_type === "FirstTen")
+    .map((item: any) => String(item.description || "").trim())
+    .filter(Boolean);
+  const mvpScope = (mvp.mvp_scope_items || [])
+    .filter((item: any) => item.item_type === "Scope")
+    .map((item: any) => String(item.description || "").trim())
+    .filter(Boolean);
+  const reportPayload: any = {
+    id: runId, version: "2.0", reportMode: config.mode, generatedAt: new Date().toISOString(),
     executiveSummary, methodology,
     opportunity: {
       id: opportunity.id, name: opportunity.name, oneLiner: opportunity.one_liner,
@@ -216,11 +296,46 @@ export async function executeGenerateReport(
         signal: item.signal_type, strength: item.strength, date: item.created_at,
         evidenceFamily: item.evidence_family, sourceTier: item.source_tier, excluded: item.excluded,
         disconfirming: item.disconfirming, painPoint: item.pain_point || undefined,
+        evidenceTopic: item.evidence_topic,
+        relevanceScore: Number(item.relevance_score || 0),
+        relevanceClass: item.relevance_class,
+        matchedBriefDimensions: item.matched_brief_dimensions || [],
+        mismatchReasons: item.mismatch_reasons || [],
+        acceptanceDecision: item.acceptance_decision,
       })),
-      competitors: (competitors || []).map((item: any) => ({ id: item.id, name: item.name, positioning: item.positioning, pricing: item.pricing, target: item.target, strength: item.strength, gap: item.gap, evidenceIds: item.evidence_ids || [] })),
+      competitors: (competitors || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        positioning: item.positioning,
+        pricing: item.pricing,
+        target: item.target,
+        strength: item.strength,
+        gap: item.gap,
+        classification: item.classification || "adjacent",
+        comparability: {
+          targetBuyer: Boolean(item.comparability?.targetBuyer),
+          workflow: Boolean(item.comparability?.workflow),
+          approvalModel: Boolean(item.comparability?.approvalModel),
+          attributionAudit: Boolean(item.comparability?.attributionAudit),
+          productUseCase: Boolean(item.comparability?.productUseCase),
+        },
+        evidenceIds: item.evidence_ids || [],
+      })),
       pricing: { model: pricing.model, pricePoint: pricing.price_point, rationale: pricing.rationale, firstOffer: pricing.first_offer, targetCustomers: pricing.target_customers, evidenceIds: pricing.evidence_ids || [] },
-      mvp: { outcome: mvp.outcome, buildEstimate: mvp.build_estimate, buildComplexity: mvp.build_complexity, scope: (mvp.mvp_scope_items || []).filter((item: any) => item.item_type === "Scope").map((item: any) => item.description), exclusions: (mvp.mvp_scope_items || []).filter((item: any) => item.item_type === "Exclusion").map((item: any) => item.description) },
-      launch: { firstCustomerChannel: launch.first_customer_channel, outreachMessage: launch.outreach_message, successMetric: launch.success_metric, weekOne: (launch.launch_strategies || []).filter((item: any) => item.strategy_type === "WeekOne").map((item: any) => item.description), firstTenStrategy: (launch.launch_strategies || []).filter((item: any) => item.strategy_type === "FirstTen").map((item: any) => item.description) },
+      mvp: {
+        outcome: mvp.outcome,
+        buildEstimate: mvp.build_estimate,
+        buildComplexity: mvp.build_complexity,
+        scope: mvpScope.length ? mvpScope : ["Prototype only the submitted idea's core workflow and test it with target buyers."],
+        exclusions: (mvp.mvp_scope_items || []).filter((item: any) => item.item_type === "Exclusion").map((item: any) => item.description),
+      },
+      launch: {
+        firstCustomerChannel: launch.first_customer_channel,
+        outreachMessage: launch.outreach_message,
+        successMetric: launch.success_metric,
+        weekOne: weekOne.length ? weekOne : [`Recruit ${targetBuyer} for evidence-led problem interviews and a workflow walkthrough.`],
+        firstTenStrategy: firstTenStrategy.length ? firstTenStrategy : [`Invite qualified ${targetBuyer} to a time-boxed pilot with an explicit payment decision.`],
+      },
       risks: (risks || []).map((item: any) => ({ id: item.id, category: item.category, severity: item.severity, description: item.description, mitigation: item.mitigation, evidenceIds: item.evidence_ids || [] })),
       createdAt: opportunity.created_at,
     },
@@ -234,7 +349,41 @@ export async function executeGenerateReport(
     topRecommendation: launch.success_metric,
     strongestPositiveEvidenceId: strongestPositive?.id,
     strongestNegativeEvidenceId: strongestNegative?.id,
+    canonicalResearchBrief: researchBriefRow?.brief,
+    contradictions: (contradictions || []).map((item: any) => ({
+      exactClaimTested: item.tested_claim,
+      supportingEvidenceIds: item.supporting_evidence_ids || [],
+      challengingEvidenceIds: item.challenging_evidence_ids || [],
+      relationship: item.relationship,
+      resolutionStatus: item.resolution_status,
+      resolutionNote: item.resolution_note,
+      proposition: item.proposition || item.tested_claim,
+      segmentApplicability: item.segment_applicability,
+      geographyApplicability: item.geography_applicability,
+      contradictionStatus: item.contradiction_status || item.resolution_status,
+      unresolvedImplication: item.unresolved_implication || item.resolution_note,
+    })),
+    confidenceDimensions: {
+      evidence: { band: effectiveConfidence.band, score: effectiveConfidence.score, reasons: effectiveConfidence.reasons, deductions: effectiveConfidence.deductions || [] },
+      scoring: { score: Number(scoreRow.confidence), explanation: `${scorecard.evidenceRefs ? Object.values(scorecard.evidenceRefs).filter((ids: any) => ids.length).length : 0}/12 deterministic factors have evidence references; capped by ${effectiveConfidence.band} evidence confidence.` },
+      completeness: { score: completeness.score, complete: completeness.complete, reasons: completeness.reasons, missing: completeness.missing },
+    },
+    publicationStandard,
   };
+  const normalizedChartDatasets = chartDatasets.map((item) => ({
+    chartKey: item.chartKey || item.chart_key,
+    chartType: item.chartType || item.chart_type,
+    sourceData: item.sourceData || item.source_data || {},
+    chartConfig: item.chartConfig || item.chart_config || {},
+    supportingEvidenceIds: item.supportingEvidenceIds || item.supporting_evidence_ids || [],
+  }));
+  const decisionCharts = buildDecisionCharts(reportPayload, normalizedChartDatasets);
+  reportPayload.decisionProduct = buildDecisionProduct(reportPayload, decisionCharts, effectiveConfidence);
+  reportPayload.topRecommendation = reportPayload.decisionProduct.primaryRecommendation;
+  const validatedReport = validationReportSchema.safeParse(reportPayload);
+  if (!validatedReport.success) {
+    return stageFailed("permanent", `Report payload validation failed: ${validatedReport.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; ")}`);
+  }
 
   // --- Persist report ---
   const { data: report, error: reportError } = await db
@@ -260,7 +409,7 @@ export async function executeGenerateReport(
       report_id: report.id,
       version_number: 1,
       report_mode: config.mode,
-      payload: reportPayload,
+      payload: validatedReport.data,
       adversarial_gate: adversarialGate || null,
       citation_validation: citationValidation,
       reasoning_flags: [],
@@ -275,20 +424,20 @@ export async function executeGenerateReport(
   }
 
   // --- Persist chart datasets linked to the report version ---
-  if (chartDatasets?.length && version?.id) {
-    for (const chart of chartDatasets) {
-      const dataString = JSON.stringify(chart.source_data);
+  if (decisionCharts.length && version?.id) {
+    for (const chart of decisionCharts) {
+      const dataString = JSON.stringify(chart.sourceData);
       const checksum = await sha256Hex(dataString);
 
       await db.from("report_chart_datasets").insert({
         report_version_id: version.id,
         run_id: runId,
-        chart_key: chart.chart_key,
-        chart_type: chart.chart_type,
+        chart_key: chart.chartKey,
+        chart_type: chart.chartType,
         schema_version: 1,
-        source_data: chart.source_data,
-        chart_config: chart.chart_config || {},
-        supporting_evidence_ids: chart.supporting_evidence_ids || [],
+        source_data: chart.sourceData,
+        chart_config: chart.chartConfig || {},
+        supporting_evidence_ids: chart.supportingEvidenceIds || [],
         sha256: checksum,
       });
     }
@@ -314,6 +463,57 @@ export async function executeGenerateReport(
       },
     },
   );
+}
+
+function normalizeJudgeCriteria(value: unknown, allowed: string[]) {
+  if (!value || typeof value !== "object") return value;
+  const canonicalByToken = new Map(allowed.map((criterion) => [tokenizeCriterion(criterion), criterion]));
+  const aliases: Record<string, string> = {
+    marketdemand: "purchaseUrgency",
+    demandvolume: "purchaseUrgency",
+    competitivedensity: "competitionGap",
+  };
+  const normalizeEntries = (entries: unknown) => Array.isArray(entries)
+    ? entries.map((entry) => {
+      if (!entry || typeof entry !== "object") return entry;
+      const row = entry as Record<string, unknown>;
+      const criteria = Array.isArray(row.score_criteria) ? row.score_criteria : [];
+      return {
+        ...row,
+        score_criteria: [...new Set(criteria.flatMap((raw) => {
+          const token = tokenizeCriterion(String(raw || ""));
+          const mapped = canonicalByToken.get(token) || aliases[token];
+          return mapped && allowed.includes(mapped) ? [mapped] : [];
+        }))],
+      };
+    })
+    : entries;
+  const parsed = value as Record<string, unknown>;
+  return {
+    ...parsed,
+    executive_summary: normalizeEntries(parsed.executive_summary),
+    methodology: normalizeEntries(parsed.methodology),
+  };
+}
+
+function tokenizeCriterion(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function customerDirection(value: unknown) {
+  if (value === "SupportsOpportunity") return "Supports opportunity";
+  if (value === "ChallengesOpportunity") return "Challenges opportunity";
+  if (value === "Insufficient") return "Insufficient evidence";
+  return "Mixed evidence";
+}
+
+function cleanSpecialistText(value: unknown) {
+  return String(value || "")
+    .replace(/\bSOURCE_ID\s*:?\s*[0-9a-f-]{8,}\b/gi, "")
+    .replace(/\bsource[_\s-]?id\s*:?\s*[^\s,;.)]+/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([,.;:])/g, "$1")
+    .trim();
 }
 
 /** Simple SHA-256 hex hash. */

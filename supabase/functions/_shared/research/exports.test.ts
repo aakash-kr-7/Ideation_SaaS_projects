@@ -51,6 +51,15 @@ const input = {
       adversarialDowngrade: true,
       reason: "Unresolved evidence-cited objection.",
     },
+    opportunity: {
+      evidence: [{
+        id: "00000000-0000-4000-8000-000000000002",
+        source: "Buyer interview archive",
+        title: "Attributable buyer pain",
+        snippet: "Service teams report approval disputes.",
+        url: "https://example.test/evidence",
+      }],
+    },
   },
 };
 
@@ -61,9 +70,9 @@ Deno.test("all export formats carry consistent run facts", () => {
     renderCsv(input),
     new TextDecoder().decode(renderPdf(input)),
   ];
-  for (const output of outputs) {
+  for (const [index, output] of outputs.entries()) {
     assert(output.includes("Actual run content"), "idea missing");
-    assert(output.includes(input.runId), "run ID missing");
+    assert(index === 3 ? output.includes("Report reference 00000000") : output.includes(input.runId), "report reference missing");
     assert(output.includes("84"), "score missing");
     assert(output.includes("Validate First"), "verdict missing");
     assert(
@@ -81,14 +90,17 @@ Deno.test("all export formats carry consistent run facts", () => {
     );
   }
   assert(
-    outputs[1].includes(input.breakdowns[0].evidenceIds[0]),
-    "markdown citation missing",
+    outputs[1].includes("[S1] Attributable buyer pain (Buyer interview archive)"),
+    "human-readable markdown citation missing",
   );
+  assert(!outputs[1].includes(input.breakdowns[0].evidenceIds[0]), "Markdown exposed a raw evidence UUID");
   assert(
     outputs[2].includes(input.breakdowns[0].evidenceIds[0]),
     "csv citation missing",
   );
   assert(outputs[3].startsWith("%PDF-1.4"), "invalid PDF signature");
+  assert(outputs[3].includes("[S1] Buyer interview archive"), "readable PDF citation missing");
+  assert(!outputs[3].includes(input.breakdowns[0].evidenceIds[0]), "PDF exposed a raw evidence UUID");
 });
 
 Deno.test("PDF wraps citations across pages without truncating them", () => {
@@ -105,9 +117,23 @@ Deno.test("PDF wraps citations across pages without truncating them", () => {
       note: "A traceable deterministic factor with a concise explanation.",
       evidenceIds,
     })),
+    payload: {
+      ...input.payload,
+      opportunity: {
+        evidence: evidenceIds.map((id, index) => ({
+          id,
+          source: `Readable source ${index + 1}`,
+          title: `Evidence ${index + 1}`,
+          snippet: "Traceable evidence.",
+          url: `https://source-${index + 1}.example.test`,
+        })),
+      },
+    },
   }));
-  assert(/\/Count [2-9]/.test(pdf), "long report was not paginated");
-  assert(pdf.includes(evidenceIds.at(-1)!), "final evidence ID was truncated");
+  const pageCount = Number(pdf.match(/\/Count (\d+)/)?.[1] ?? 0);
+  assert(pageCount > 1, "long report was not paginated");
+  assert(pdf.includes("[S12] Readable source 12"), "final readable citation was truncated");
+  assert(!pdf.includes(evidenceIds.at(-1)!), "PDF exposed the final raw evidence UUID");
 });
 
 Deno.test("text exports preserve UTF-8 and PDF encodes WinAnsi punctuation and accents", () => {

@@ -45,6 +45,7 @@ export interface ResearchFormInitialValues {
   targetRegion?: string;
   marketType?: MarketType;
   assumptions?: {
+    industry?: string;
     revenueTarget?: string;
     monetization?: string;
     complexityTolerance?: string;
@@ -83,10 +84,11 @@ export function ResearchForm({
         project_id: project.id,
         idea_name: String(form.get("ideaName") ?? ""),
         idea_description: String(form.get("ideaDescription") ?? ""),
-        target_customer: String(form.get("targetCustomer") ?? ""),
+        target_customer: String(form.get("targetCustomer") || "Not specified"),
         market_type: String(form.get("marketType") ?? "B2B") as MarketType,
         target_region: String(form.get("targetRegion") ?? "Global"),
         assumptions: {
+          industry: String(form.get("industry") ?? ""),
           revenueTarget: String(form.get("revenueTarget") ?? ""),
           monetization: String(form.get("monetization") ?? ""),
           complexityTolerance: String(form.get("complexityTolerance") ?? ""),
@@ -119,8 +121,9 @@ export function ResearchForm({
       <div className="field-grid">
         <label className="field full"><span>Idea name</span><input name="ideaName" defaultValue={initialValues.ideaName} placeholder="e.g. Appointment recovery assistant for salons" required /></label>
         <label className="field full"><span>What does it do?</span><textarea name="ideaDescription" defaultValue={initialValues.ideaDescription} placeholder="Describe the workflow, problem, and intended outcome." required /></label>
-        <label className="field"><span>Who would pay for this?</span><input name="targetCustomer" defaultValue={initialValues.targetCustomer} placeholder="e.g. Independent salons with repeat bookings" required /></label>
-        <label className="field"><span>Target region</span><input name="targetRegion" defaultValue={initialValues.targetRegion ?? "Global"} required /></label>
+        <label className="field"><span>Customer <small>Optional</small></span><input name="targetCustomer" defaultValue={initialValues.targetCustomer === "Not specified" ? "" : initialValues.targetCustomer} placeholder="e.g. Independent salons with repeat bookings" /></label>
+        <label className="field"><span>Geography <small>Optional</small></span><input name="targetRegion" defaultValue={initialValues.targetRegion ?? "Global"} /></label>
+        <label className="field full"><span>Industry <small>Optional</small></span><input name="industry" defaultValue={initialValues.assumptions?.industry} placeholder="e.g. Beauty and personal care" /></label>
         <label className="field full"><span>Market type</span><select name="marketType" defaultValue={initialValues.marketType ?? "B2B"}>{markets.map((market) => <option key={market}>{market}</option>)}</select></label>
       </div>
     </section>
@@ -145,6 +148,7 @@ export function ResearchForm({
         <div><p className="eyebrow">Report type</p><h2>Choose the depth of this decision.</h2></div>
         <div className="credit-balance"><WalletCards size={16} /><span><b>{creditSnapshot ? creditSnapshot.paid_credits : "Unavailable"}</b> paid credits</span><small>{creditSnapshot ? (creditSnapshot.free_quick_scans_remaining ? "Monthly Quick Scan available" : "Monthly Quick Scan used") : "Entitlement status unavailable"}</small></div>
       </div>
+      <div className="grounding-readiness" role="status"><ShieldAlert size={15} /><span><b>Provider readiness is checked securely at launch.</b> If optional grounding is quota-limited, the live room will show the persisted degraded state and external retrieval fallback.</span></div>
       <div className="mode-grid production-mode-grid">
         {(["quick_scan", "full_validation"] as const).map((reportMode) => {
           const config = getReportModeConfig(reportMode);

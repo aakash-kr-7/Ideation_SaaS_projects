@@ -6,7 +6,7 @@ const directory = path.dirname(fileURLToPath(import.meta.url));
 const compat = new FlatCompat({ baseDirectory: directory });
 
 const eslintConfig = [
-  { ignores: [".next/**", "node_modules/**", "coverage/**", "next-env.d.ts", "tsconfig.tsbuildinfo", "supabase/functions/_shared/database.types.ts", "supabase/functions/_shared/types.ts"] },
+  { ignores: [".next/**", "node_modules/**", "coverage/**", "artifacts/**", "next-env.d.ts", "tsconfig.tsbuildinfo", "supabase/functions/_shared/database.types.ts", "supabase/functions/_shared/types.ts"] },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {
@@ -30,6 +30,10 @@ const eslintConfig = [
   {
     files: ["scripts/**/*.{js,cjs}"],
     rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
+  {
+    files: ["scripts/upgrade-report-quality.ts"],
+    rules: { "@typescript-eslint/no-explicit-any": "off" },
   },
 ];
 

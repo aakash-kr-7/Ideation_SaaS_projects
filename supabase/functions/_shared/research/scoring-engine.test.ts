@@ -43,14 +43,16 @@ Deno.test("Tier 3 volume cannot match Tier 1/2 evidence quality", () => {
     title: "General category discussion",
     snippet: "Pricing is discussed",
     source_tier: 3 as const,
+    evidence_topic: "pricing",
   }));
   const tierOne = [{
     id: "t1",
     signal_type: "Pricing" as const,
     strength: "High" as const,
-    title: "Paid plan",
-    snippet: "$49 per month",
+    title: "Paid-pilot results",
+    snippet: "Three agency buyers signed a paid pilot commitment after the workflow test.",
     source_tier: 1 as const,
+    evidence_topic: "willingness_to_pay",
   }];
   const weak = computeFactors({ ...base, evidence: tierThree }).find((f) =>
     f.criterion === "willingnessToPay"
@@ -64,6 +66,21 @@ Deno.test("Tier 3 volume cannot match Tier 1/2 evidence quality", () => {
     );
   }
   assertEquals(weak.evidenceIds.length, 0);
+
+  const competitorListPrice = computeFactors({
+    ...base,
+    evidence: [{
+      id: "official-list-price",
+      signal_type: "Pricing" as const,
+      strength: "High" as const,
+      title: "Official pricing",
+      snippet: "Agency plan $299 per month",
+      source_tier: 1 as const,
+      evidence_topic: "pricing",
+    }],
+  }).find((factor) => factor.criterion === "willingnessToPay")!;
+  assertEquals(competitorListPrice.score, 10);
+  assertEquals(competitorListPrice.evidenceIds.length, 0);
 
   const generalDemand = Array.from({ length: 12 }, (_, i) => ({
     id: `discussion-${i}`,
@@ -109,4 +126,17 @@ Deno.test("weighted score is pure and deterministic", () => {
   assertEquals(calculateDeterministicScore(factors, weights), 80);
   assertEquals(calculateDeterministicScore(factors, weights), 80);
   globalThis.fetch = originalFetch;
+});
+
+Deno.test("adjacent e-signature products do not receive direct-incumbent scoring weight", () => {
+  const base = { evidence: [], risks: [], hasPricingModel: false, launchStrategyCount: 0 };
+  const adjacent = computeFactors({
+    ...base,
+    competitors: [{ id: "docusign", gap: "General", strength: "Large", pricing: "$", classification: "adjacent" as const }],
+  }).find((factor) => factor.criterion === "competitionGap")!;
+  const direct = computeFactors({
+    ...base,
+    competitors: [{ id: "direct", gap: "Same", strength: "Focused", pricing: "$", classification: "direct" as const }],
+  }).find((factor) => factor.criterion === "competitionGap")!;
+  if (adjacent.score <= direct.score) throw new Error("Adjacent competitor was weighted as heavily as a direct incumbent.");
 });

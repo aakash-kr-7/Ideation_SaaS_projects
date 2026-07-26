@@ -32,6 +32,12 @@ export const evidenceSchema = z.object({
   painPoint: z.string().nullish().transform((value) => value ?? undefined),
   independentSourceCount: z.number().int().nonnegative().optional(),
   independentDomainCount: z.number().int().nonnegative().optional(),
+  evidenceTopic: z.string().optional(),
+  relevanceScore: z.number().min(0).max(1).optional(),
+  relevanceClass: z.enum(["directly_relevant", "contextually_relevant", "adjacent", "out_of_scope"]).optional(),
+  matchedBriefDimensions: z.array(z.string()).optional(),
+  mismatchReasons: z.array(z.string()).optional(),
+  acceptanceDecision: z.string().optional(),
 });
 export const competitorSchema = z.object({
   id: z.string(),
@@ -41,6 +47,21 @@ export const competitorSchema = z.object({
   target: z.string(),
   strength: z.string(),
   gap: z.string(),
+  classification: z.enum(["direct", "adjacent", "substitute", "workflow_workaround"]).default("adjacent"),
+  comparability: z.object({
+    targetBuyer: z.boolean(),
+    workflow: z.boolean(),
+    approvalModel: z.boolean(),
+    attributionAudit: z.boolean(),
+    productUseCase: z.boolean(),
+  }).default({
+    targetBuyer: false,
+    workflow: false,
+    approvalModel: false,
+    attributionAudit: false,
+    productUseCase: false,
+  }),
+  evidenceIds: z.array(z.string().uuid()).default([]),
 });
 export const pricingModelSchema = z.object({
   model: z.string(),
@@ -185,17 +206,23 @@ export const narrativeCitationsSchema = z.object({
 export const specialistAssessmentSchema = z.object({
   name: z.enum(["competition", "market", "pricing", "risk", "demand", "gtm"]),
   status: z.enum(["Complete", "Incomplete"]),
-  direction: z.enum(["SupportsOpportunity", "Mixed", "ChallengesOpportunity", "Insufficient"]),
+  direction: z.enum(["Supports opportunity", "Mixed evidence", "Challenges opportunity", "Insufficient evidence"]),
   assessment: z.string().min(1),
   findings: z.array(z.string()),
-  evidenceIds: z.array(z.string().uuid()).min(1),
+  evidenceIds: z.array(z.string().uuid()).default([]),
+  sourceCitations: z.array(z.object({ sourceId: z.string().uuid(), url: z.string().url() })).default([]),
+  opposingEvidenceIds: z.array(z.string().uuid()).default([]),
+  confidence: z.enum(["High", "Moderate", "Low", "Insufficient"]).default("Insufficient"),
+  relevantBriefDimensions: z.array(z.string()).default([]),
+  unresolvedGaps: z.array(z.string()).default([]),
 });
 export const fullValidationInsightsSchema = z.object({
   targetSegments: z.array(z.object({
     name: z.string().min(1),
     jobsToBeDone: z.array(z.string()).min(1),
     evidenceSourceUrls: z.array(z.string().url()).default([]),
-    evidenceIds: z.array(z.string().uuid()).min(1),
+    evidenceIds: z.array(z.string().uuid()).default([]),
+    sourceCitations: z.array(z.object({ sourceId: z.string().uuid(), url: z.string().url() })).default([]),
   })).default([]),
   willingnessToPay: z.object({
     finding: z.string().default("Insufficient public willingness-to-pay evidence."),
@@ -206,18 +233,88 @@ export const fullValidationInsightsSchema = z.object({
   marketContext: z.object({
     summary: z.string(),
     metrics: z.array(z.object({
-      label: z.string(), value: z.string(), sourceUrl: z.string().url(), evidenceId: z.string().uuid(),
+      label: z.string(), value: z.string(), sourceUrl: z.string().url(), evidenceId: z.string().uuid().nullable(),
+      numericValidation: z.record(z.string(), z.unknown()).nullable().optional(),
     })).default([]),
   }),
   gtmFindings: z.array(z.object({
     finding: z.string(),
     evidenceSourceUrls: z.array(z.string().url()).default([]),
-    evidenceIds: z.array(z.string().uuid()).min(1),
+    evidenceIds: z.array(z.string().uuid()).default([]),
+    sourceCitations: z.array(z.object({ sourceId: z.string().uuid(), url: z.string().url() })).default([]),
   })).default([]),
+});
+export const decisionStatementSchema = z.object({
+  kind: z.enum(["Fact", "Inference", "Hypothesis", "Recommendation", "MissingEvidence"]),
+  text: z.string().min(1),
+  evidenceIds: z.array(z.string().uuid()).default([]),
+  sourceUrls: z.array(z.string().url()).default([]),
+});
+export const decisionSectionSchema = z.object({
+  key: z.string().min(1),
+  title: z.string().min(1),
+  summary: z.string().min(1),
+  statements: z.array(decisionStatementSchema).min(1),
+});
+export const validationExperimentSchema = z.object({
+  name: z.string().min(1),
+  hypothesis: z.string().min(1),
+  method: z.string().min(1),
+  targetParticipant: z.string().min(1),
+  recruitmentMethod: z.string().min(1),
+  sampleSize: z.string().min(1),
+  successCriterion: z.string().min(1),
+  failureCriterion: z.string().min(1),
+  duration: z.string().min(1),
+  decisionUnlocked: z.string().min(1),
+});
+export const specialistDecisionOutputSchema = z.object({
+  name: z.enum(["competition", "market", "pricing", "risk", "demand", "gtm"]),
+  keyFindings: z.array(z.string().min(1)).min(1),
+  evidenceIds: z.array(z.string().uuid()),
+  opposingEvidenceIds: z.array(z.string().uuid()),
+  confidence: z.enum(["High", "Moderate", "Low", "Insufficient"]),
+  relevantBriefDimensions: z.array(z.string()),
+  unresolvedGaps: z.array(z.string()),
+  decisionImplication: z.string().min(1),
+});
+export const decisionChartSchema = z.object({
+  key: z.string().min(1),
+  title: z.string().min(1),
+  sourceData: z.record(z.string(), z.unknown()),
+  evidenceIds: z.array(z.string().uuid()),
+  sourceExplanation: z.string().min(1),
+  unavailable: z.boolean(),
+});
+export const decisionProductSchema = z.object({
+  schemaVersion: z.literal(1),
+  headline: z.string().min(1),
+  decision: verdictSchema,
+  score: z.number().min(0).max(100),
+  scoreConfidence: z.number().min(0).max(100),
+  evidenceConfidence: z.object({
+    band: z.enum(["High", "Moderate", "Low", "Insufficient"]),
+    score: z.number().min(0).max(1),
+    explanation: z.string().min(1),
+    missingEvidence: z.array(z.string()),
+    deductions: z.array(z.string()).default([]),
+  }),
+  reportCompleteness: z.object({
+    score: z.number().min(0).max(100),
+    complete: z.boolean(),
+    explanation: z.string().min(1),
+    missing: z.array(z.string()),
+  }),
+  sections: z.array(decisionSectionSchema).min(13),
+  experiments: z.array(validationExperimentSchema).length(3),
+  primaryRecommendation: z.string().min(1),
+  specialistOutputs: z.array(specialistDecisionOutputSchema),
+  charts: z.array(decisionChartSchema).min(4),
+  fullValidationRecommended: z.boolean().optional(),
 });
 export const validationReportSchema = z.object({
   id: z.string(),
-  version: z.literal("1.0"),
+  version: z.enum(["1.0", "2.0"]),
   reportMode: reportModeSchema.default("full_validation"),
   generatedAt: z.string(),
   executiveSummary: z.string(),
@@ -240,6 +337,33 @@ export const validationReportSchema = z.object({
   topRecommendation: z.string().optional(),
   strongestPositiveEvidenceId: z.string().optional(),
   strongestNegativeEvidenceId: z.string().optional(),
+  decisionProduct: decisionProductSchema.optional(),
+  canonicalResearchBrief: z.record(z.string(), z.unknown()).optional(),
+  contradictions: z.array(z.object({
+    exactClaimTested: z.string(),
+    supportingEvidenceIds: z.array(z.string().uuid()),
+    challengingEvidenceIds: z.array(z.string().uuid()),
+    relationship: z.string(),
+    resolutionStatus: z.enum(["resolved", "unresolved", "segment_specific"]),
+    resolutionNote: z.string().nullable().optional(),
+    proposition: z.string().optional(),
+    segmentApplicability: z.string().nullable().optional(),
+    geographyApplicability: z.string().nullable().optional(),
+    contradictionStatus: z.string().optional(),
+    unresolvedImplication: z.string().nullable().optional(),
+  })).default([]),
+  confidenceDimensions: z.object({
+    evidence: z.record(z.string(), z.unknown()),
+    scoring: z.record(z.string(), z.unknown()),
+    completeness: z.record(z.string(), z.unknown()),
+  }).optional(),
+  publicationStandard: z.object({
+    met: z.boolean(),
+    gaps: z.array(z.string()),
+    gapPassPerformed: z.boolean(),
+    publishedWithReducedConfidence: z.boolean(),
+    dimensions: z.record(z.string(), z.number()),
+  }).optional(),
 });
 
 export interface ReportOpportunity {
@@ -270,7 +394,7 @@ export interface ReportOpportunity {
 }
 export interface ValidationReport {
   id: string;
-  version: "1.0";
+  version: "1.0" | "2.0";
   reportMode: z.infer<typeof reportModeSchema>;
   generatedAt: string;
   executiveSummary: string;
@@ -292,6 +416,7 @@ export interface ValidationReport {
   topRecommendation?: string;
   strongestPositiveEvidenceId?: string;
   strongestNegativeEvidenceId?: string;
+  decisionProduct?: z.infer<typeof decisionProductSchema>;
 }
 
 // Database-specific schema constraints for Server Actions inputs
@@ -391,6 +516,7 @@ export const startResearchRunSchema = z.object({
   ]),
   target_region: z.string().min(1),
   assumptions: z.object({
+    industry: z.string().max(120).optional(),
     revenueTarget: z.string().max(100).optional(),
     monetization: z.string().max(100).optional(),
     complexityTolerance: z.string().max(100).optional(),

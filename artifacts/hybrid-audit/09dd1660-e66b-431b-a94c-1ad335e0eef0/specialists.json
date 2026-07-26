@@ -1,0 +1,50 @@
+[
+  {
+    "id": "ce2c8cfa-96d8-4b3e-b8ca-d2b99168a7ac",
+    "run_id": "09dd1660-e66b-431b-a94c-1ad335e0eef0",
+    "agent_name": "final_judge",
+    "status": "Complete",
+    "attempt_count": 1,
+    "payload": {
+      "methodology": [
+        {
+          "text": "The validation score was determined by cross-referencing industry-standard workflow requirements against the lack of direct purchase intent signals and the high competitive density in the agency software space.",
+          "evidence_ids": [
+            "e19f814b-d787-402e-a4d9-0ffe50d38034",
+            "749f157c-df2d-4b0d-b773-0a10faa8f685"
+          ],
+          "score_criteria": [
+            "buyerReachability",
+            "competitionGap"
+          ]
+        }
+      ],
+      "written_verdict": "Weak Signal",
+      "executive_summary": [
+        {
+          "text": "While there is clear demand for structured approval workflows to replace inefficient email-based processes, the current evidence lacks proof of purchase urgency or willingness to pay for a new solution.",
+          "evidence_ids": [
+            "e19f814b-d787-402e-a4d9-0ffe50d38034",
+            "0d6bb40c-61aa-4eb4-848f-9211beef47ee"
+          ],
+          "score_criteria": [
+            "painSeverity",
+            "willingnessToPay"
+          ]
+        },
+        {
+          "text": "Agencies face significant operational friction due to version confusion and lack of audit trails, yet the market is saturated with existing tools, making it difficult to differentiate without a clear revenue model.",
+          "evidence_ids": [
+            "2cf7f4e0-cfb6-45ea-a544-41b2ba09cd7c",
+            "749f157c-df2d-4b0d-b773-0a10faa8f685"
+          ],
+          "score_criteria": [
+            "competitionGap",
+            "speedToFirstRevenue"
+          ]
+        }
+      ]
+    },
+    "created_at": "2026-07-26T07:25:07.261125+00:00"
+  }
+]

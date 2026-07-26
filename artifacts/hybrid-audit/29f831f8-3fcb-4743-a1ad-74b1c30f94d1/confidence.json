@@ -1,0 +1,32 @@
+{
+  "run_id": "29f831f8-3fcb-4743-a1ad-74b1c30f94d1",
+  "band": "Moderate",
+  "score": 0.59,
+  "reasons": [
+    "14 independent domains",
+    "18 semantically accepted evidence items",
+    "0 unresolved evidence disagreements",
+    "average source authority 74%",
+    "average semantic relevance 96%",
+    "buyer-specific evidence 83%",
+    "9/11 required evidence families represented",
+    "3/18 accepted items are primary evidence",
+    "0 direct buyer/payment evidence items",
+    "0 proposition-specific contradiction pairs",
+    "direct relevance 100%",
+    "extraction integrity 100%",
+    "tier distribution {\"1\":3,\"2\":11,\"3\":4}"
+  ],
+  "created_at": "2026-07-26T08:07:26.384794+00:00",
+  "updated_at": "2026-07-26T08:07:39.968+00:00",
+  "deductions": [
+    "No direct buyer-payment, deposit, paid-pilot, or purchase-commitment evidence was accepted.",
+    "No strong proposition-specific contradictory evidence was found."
+  ],
+  "scoring_confidence": 75,
+  "report_completeness": 82,
+  "completeness_reasons": [
+    "9/11 required evidence families covered",
+    "5/6 structural report checks passed"
+  ]
+}

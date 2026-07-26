@@ -1,0 +1,1260 @@
+{
+  "id": "a47d3419-2e36-4f64-be24-1821c216b52d",
+  "run_id": "1415a293-2db7-479b-984d-f6b51d94034a",
+  "opportunity_id": "5173023c-76e4-42b5-bfec-9e9d41959a6a",
+  "status": "Published",
+  "executive_summary": "The current market demand for agency approval workflows shows a lack of urgency, as evidenced by the absence of direct purchase commitments or clear willingness to pay for the proposed solution. While the workflow structure is well-defined, the low pain severity and high platform dependency risks suggest that the current value proposition does not sufficiently solve a critical business problem.",
+  "methodology": "The validation score was derived by analyzing the alignment between the proposed three-stage agency workflow and the actual market demand, identifying significant gaps in revenue potential and buyer urgency.",
+  "generated_at": "2026-07-26T08:05:40.899214+00:00",
+  "updated_at": "2026-07-26T08:05:40.899214+00:00",
+  "created_at": "2026-07-26T08:05:40.899214+00:00",
+  "report_versions": [
+    {
+      "id": "3a41fea7-455d-4e12-91ba-1e5e0a00bc34",
+      "payload": {
+        "id": "1415a293-2db7-479b-984d-f6b51d94034a",
+        "version": "2.0",
+        "reportMode": "quick_scan",
+        "generatedAt": "2026-07-26T08:05:40.896Z",
+        "limitations": [
+          "contradictory evidence",
+          "pricing or willingness-to-pay evidence",
+          "evidence family: customer pain",
+          "evidence family: behavior demand",
+          "evidence family: competitors",
+          "evidence family: pricing",
+          "evidence family: contradiction"
+        ],
+        "methodology": "The validation score was derived by analyzing the alignment between the proposed three-stage agency workflow and the actual market demand, identifying significant gaps in revenue potential and buyer urgency.",
+        "opportunity": {
+          "id": "5173023c-76e4-42b5-bfec-9e9d41959a6a",
+          "mvp": {
+            "scope": [
+              "No-login review links",
+              "Audit trail of approvals",
+              "Version history",
+              "In-context annotations"
+            ],
+            "outcome": "Centralized, attributable approval record for service deliverables.",
+            "exclusions": [
+              "Complex CI/CD pipelines",
+              "General e-signature without service-delivery context"
+            ],
+            "buildEstimate": "Insufficient evidence",
+            "buildComplexity": "Medium"
+          },
+          "name": "Approval evidence workspace — Quick Scan",
+          "risks": [],
+          "launch": {
+            "weekOne": [
+              "Identify 10 target agencies",
+              "Conduct discovery calls",
+              "Offer beta access"
+            ],
+            "successMetric": "Number of deliverables approved through the platform vs email.",
+            "outreachMessage": "Stop chasing approvals via email. Use our lightweight workspace to get attributable sign-off and reduce billing disputes.",
+            "firstTenStrategy": [
+              "Onboard 10 agencies",
+              "Collect feedback on workflow friction",
+              "Refine audit trail features"
+            ],
+            "firstCustomerChannel": "Direct outreach to agency operations leads and project managers."
+          },
+          "market": "B2B",
+          "pricing": {
+            "model": "Insufficient evidence",
+            "rationale": "No accepted pricing or willingness-to-pay evidence supports a value.",
+            "firstOffer": "Insufficient evidence",
+            "pricePoint": "Insufficient evidence",
+            "targetCustomers": 1
+          },
+          "corePain": "A lightweight approval and audit-trail workspace for service teams that need to collect customer sign-off, preserve attributable approval history and reduce disputes.",
+          "evidence": [
+            {
+              "id": "d38c91c4-b605-4c85-ab76-e23f224775b7",
+              "url": "https://campaignswift.com/blog/agency-approval-workflows",
+              "date": "2026-07-26T08:05:38.621077+00:00",
+              "title": "Agency Approval Workflows: Complete Guide | CampaignSwift",
+              "signal": "Demand",
+              "source": "campaignswift.com",
+              "snippet": "Agency approval workflows work best as a three-stage pipeline: internal review, account manager sign-off, then client approval through a no-login review link.",
+              "excluded": false,
+              "strength": "High",
+              "sourceTier": 2,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceTopic": "gtm",
+              "evidenceFamily": "solution",
+              "relevanceClass": "directly_relevant",
+              "relevanceScore": 1,
+              "mismatchReasons": [],
+              "acceptanceDecision": "accepted_core",
+              "matchedBriefDimensions": [
+                "target_buyer",
+                "user_workflow",
+                "problem",
+                "proposed_solution",
+                "expected_outcome",
+                "market_category"
+              ]
+            }
+          ],
+          "oneLiner": "A lightweight approval and audit-trail workspace for service teams that need to collect customer sign-off, preserve attributable approval history and reduce disputes.",
+          "createdAt": "2026-07-26T08:04:55.918295+00:00",
+          "scorecard": {
+            "notes": {
+              "mvpSpeed": "Execution-risk burden; fewer material risks increase feasibility.",
+              "founderFit": "Run-specific evidence access and domain signal coverage; no unsupported founder biography is inferred.",
+              "painSeverity": "Weighted verified pain strength, confidence, and contradiction ratio.",
+              "competitionGap": "Classification-weighted competitive density; only justified direct competitors receive full incumbent pressure or gap credit.",
+              "regulatoryRisk": "Regulatory and compliance risk evidence; this factor is inverted in the weighted total.",
+              "purchaseUrgency": "Urgency language in pain and demand evidence.",
+              "willingnessToPay": "No direct Tier 1 buyer payment or purchase-commitment evidence; competitor list prices do not prove willingness to pay.",
+              "buyerReachability": "Demand volume and independently sourced communities.",
+              "retentionPotential": "Recurring-workflow language in verified evidence.",
+              "distributionClarity": "Demand evidence plus persisted launch-channel specificity.",
+              "speedToFirstRevenue": "Pricing proof and purchase urgency combined deterministically.",
+              "platformDependencyRisk": "Platform dependency risk evidence; this factor is inverted in the weighted total."
+            },
+            "total": 40.3,
+            "scores": {
+              "mvpSpeed": 75,
+              "founderFit": 32,
+              "painSeverity": 20,
+              "competitionGap": 65,
+              "regulatoryRisk": 10,
+              "purchaseUrgency": 15,
+              "willingnessToPay": 10,
+              "buyerReachability": 33.8,
+              "retentionPotential": 31.2,
+              "distributionClarity": 61.6,
+              "speedToFirstRevenue": 8.7,
+              "platformDependencyRisk": 10
+            },
+            "verdict": "Weak Signal",
+            "weights": {
+              "mvpSpeed": 8,
+              "founderFit": 7,
+              "painSeverity": 12,
+              "competitionGap": 8,
+              "regulatoryRisk": 5,
+              "purchaseUrgency": 10,
+              "willingnessToPay": 11,
+              "buyerReachability": 8,
+              "retentionPotential": 9,
+              "distributionClarity": 8,
+              "speedToFirstRevenue": 7,
+              "platformDependencyRisk": 7
+            },
+            "confidence": 25,
+            "evidenceRefs": {
+              "mvpSpeed": [],
+              "founderFit": [
+                "d38c91c4-b605-4c85-ab76-e23f224775b7"
+              ],
+              "painSeverity": [],
+              "competitionGap": [],
+              "regulatoryRisk": [],
+              "purchaseUrgency": [],
+              "willingnessToPay": [],
+              "buyerReachability": [
+                "d38c91c4-b605-4c85-ab76-e23f224775b7"
+              ],
+              "retentionPotential": [
+                "d38c91c4-b605-4c85-ab76-e23f224775b7"
+              ],
+              "distributionClarity": [
+                "d38c91c4-b605-4c85-ab76-e23f224775b7"
+              ],
+              "speedToFirstRevenue": [],
+              "platformDependencyRisk": []
+            }
+          },
+          "competitors": [],
+          "targetCustomer": "Client-service agencies and service operations leaders"
+        },
+        "evidenceGaps": [
+          "need 4 usable evidence items",
+          "insufficient problem evidence",
+          "insufficient solution evidence",
+          "insufficient disconfirming evidence"
+        ],
+        "contradictions": [],
+        "reportSections": [
+          "Conclusion",
+          "Evidence",
+          "Competition",
+          "Score breakdown",
+          "Pricing",
+          "Next actions",
+          "Risks",
+          "Exports"
+        ],
+        "adversarialGate": {
+          "outcome": "InsufficientEvidence",
+          "severity": "None",
+          "objection": "Insufficient evidence",
+          "unresolved": false,
+          "evidence_ids": []
+        },
+        "decisionProduct": {
+          "score": 40.3,
+          "charts": [
+            {
+              "key": "factor-breakdown",
+              "title": "Factor Breakdown",
+              "sourceData": {
+                "values": {
+                  "mvpSpeed": 75,
+                  "founderFit": 32,
+                  "painSeverity": 20,
+                  "competitionGap": 65,
+                  "regulatoryRisk": 10,
+                  "purchaseUrgency": 15,
+                  "willingnessToPay": 10,
+                  "buyerReachability": 33.8,
+                  "retentionPotential": 31.2,
+                  "distributionClarity": 61.6,
+                  "speedToFirstRevenue": 8.7,
+                  "platformDependencyRisk": 10
+                }
+              },
+              "evidenceIds": [
+                "d38c91c4-b605-4c85-ab76-e23f224775b7"
+              ],
+              "unavailable": false,
+              "sourceExplanation": "The 12 factor values are copied from the deterministic scorecard in this report version."
+            },
+            {
+              "key": "evidence-balance",
+              "title": "Evidence Balance",
+              "sourceData": {
+                "supporting": 1,
+                "contradictory": 0
+              },
+              "evidenceIds": [
+                "d38c91c4-b605-4c85-ab76-e23f224775b7"
+              ],
+              "unavailable": false,
+              "sourceExplanation": "Counts of accepted supporting and contradictory evidence rows in this report version."
+            },
+            {
+              "key": "source-quality-distribution",
+              "title": "Source Quality Distribution",
+              "sourceData": {
+                "byTier": {
+                  "tier_1": 0,
+                  "tier_2": 1,
+                  "tier_3": 0,
+                  "tier_4": 0
+                }
+              },
+              "evidenceIds": [
+                "d38c91c4-b605-4c85-ab76-e23f224775b7"
+              ],
+              "unavailable": false,
+              "sourceExplanation": "Counts of accepted evidence rows grouped by persisted source tier."
+            },
+            {
+              "key": "alternatives-comparison",
+              "title": "Alternatives Comparison",
+              "sourceData": {
+                "reason": "No competitor row had an accepted evidence-item reference.",
+                "values": {},
+                "unavailable": true
+              },
+              "evidenceIds": [],
+              "unavailable": true,
+              "sourceExplanation": "Unavailable: competitor rows were not sufficiently linked to accepted evidence."
+            }
+          ],
+          "decision": "Weak Signal",
+          "headline": "Weak Signal: Do not build beyond a cheap demand test.",
+          "sections": [
+            {
+              "key": "executive-decision",
+              "title": "Executive decision",
+              "summary": "Weak Signal at 40.3/100. Do not build beyond a cheap demand test.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "Weak Signal at 40.3/100. Do not build beyond a cheap demand test.",
+                  "sourceUrls": [
+                    "https://campaignswift.com/blog/agency-approval-workflows"
+                  ],
+                  "evidenceIds": [
+                    "d38c91c4-b605-4c85-ab76-e23f224775b7"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "score-confidence",
+              "title": "Score, verdict and Evidence Confidence",
+              "summary": "Insufficient confidence: 1 independent domains; 1 semantically accepted evidence items; 0 unresolved evidence disagreements; average source authority 75%; average semantic relevance 100%; buyer-specific evidence 100%; 1/11 required evidence families represented; 0/1 accepted items are primary evidence; 0 direct buyer/payment evidence items; 0 proposition-specific contradiction pairs; direct relevance 100%; extraction integrity 100%; tier distribution {\"2\":1}.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "Pain Severity: 20/100. Weighted verified pain strength, confidence, and contradiction ratio.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Purchase Urgency: 15/100. Urgency language in pain and demand evidence.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Willingness To Pay: 10/100. No direct Tier 1 buyer payment or purchase-commitment evidence; competitor list prices do not prove willingness to pay.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Buyer Reachability: 33.8/100. Demand volume and independently sourced communities.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "d38c91c4-b605-4c85-ab76-e23f224775b7"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Mvp Speed: 75/100. Execution-risk burden; fewer material risks increase feasibility.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Competition Gap: 65/100. Classification-weighted competitive density; only justified direct competitors receive full incumbent pressure or gap credit.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Retention Potential: 31.2/100. Recurring-workflow language in verified evidence.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "d38c91c4-b605-4c85-ab76-e23f224775b7"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Platform Dependency Risk: 10/100. Platform dependency risk evidence; this factor is inverted in the weighted total.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Regulatory Risk: 10/100. Regulatory and compliance risk evidence; this factor is inverted in the weighted total.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Founder Fit: 32/100. Run-specific evidence access and domain signal coverage; no unsupported founder biography is inferred.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "d38c91c4-b605-4c85-ab76-e23f224775b7"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Distribution Clarity: 61.6/100. Demand evidence plus persisted launch-channel specificity.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "d38c91c4-b605-4c85-ab76-e23f224775b7"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Speed To First Revenue: 8.7/100. Pricing proof and purchase urgency combined deterministically.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "idea-interpretation",
+              "title": "Idea interpretation",
+              "summary": "A lightweight approval and audit-trail workspace for service teams that need to collect customer sign-off, preserve attributable approval history and reduce disputes. The canonical research brief remains the semantic boundary; this is a testable product hypothesis, not an established market fact.",
+              "statements": [
+                {
+                  "kind": "Hypothesis",
+                  "text": "A lightweight approval and audit-trail workspace for service teams that need to collect customer sign-off, preserve attributable approval history and reduce disputes. The canonical research brief remains the semantic boundary; this is a testable product hypothesis, not an established market fact.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "target-customer",
+              "title": "Target customer and job to be done",
+              "summary": "Client-service agencies and service operations leaders need to complete the underlying workflow without a lightweight approval and audit-trail workspace for service teams that need to collect customer sign-off, preserve attributable approval history and reduce disputes..",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "Client-service agencies and service operations leaders need to complete the underlying workflow without a lightweight approval and audit-trail workspace for service teams that need to collect customer sign-off, preserve attributable approval history and reduce disputes..",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "problem-demand",
+              "title": "Problem and demand",
+              "summary": "What the retrieved evidence actually establishes.",
+              "statements": [
+                {
+                  "kind": "Fact",
+                  "text": "Agency approval workflows work best as a three-stage pipeline: internal review, account manager sign-off, then client approval through a no-login review link.",
+                  "sourceUrls": [
+                    "https://campaignswift.com/blog/agency-approval-workflows"
+                  ],
+                  "evidenceIds": [
+                    "d38c91c4-b605-4c85-ab76-e23f224775b7"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "alternatives",
+              "title": "Alternatives and competitors",
+              "summary": "No attributable competitor comparison was established.",
+              "statements": [
+                {
+                  "kind": "MissingEvidence",
+                  "text": "No attributable competitor comparison was established.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "pricing",
+              "title": "Pricing and willingness to pay",
+              "summary": "No accepted pricing or willingness-to-pay evidence exists. Treat the stored offer as a hypothesis.",
+              "statements": [
+                {
+                  "kind": "MissingEvidence",
+                  "text": "No accepted pricing or willingness-to-pay evidence exists. Treat the stored offer as a hypothesis.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Hypothesis",
+                  "text": "Insufficient evidence; initial offer: Insufficient evidence.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "positive",
+              "title": "Strongest positive signal",
+              "summary": "Agency approval workflows work best as a three-stage pipeline: internal review, account manager sign-off, then client approval through a no-login review link.",
+              "statements": [
+                {
+                  "kind": "Fact",
+                  "text": "Agency approval workflows work best as a three-stage pipeline: internal review, account manager sign-off, then client approval through a no-login review link.",
+                  "sourceUrls": [
+                    "https://campaignswift.com/blog/agency-approval-workflows"
+                  ],
+                  "evidenceIds": [
+                    "d38c91c4-b605-4c85-ab76-e23f224775b7"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "negative",
+              "title": "Strongest negative signal",
+              "summary": "No attributable evidence was available for this point.",
+              "statements": [
+                {
+                  "kind": "MissingEvidence",
+                  "text": "No attributable evidence was available for this point.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "risks-gaps",
+              "title": "Risks and missing evidence",
+              "summary": "What can still invalidate the decision.",
+              "statements": [
+                {
+                  "kind": "MissingEvidence",
+                  "text": "need 4 usable evidence items",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "insufficient problem evidence",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "insufficient solution evidence",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "insufficient disconfirming evidence",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "contradictory evidence",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "pricing or willingness-to-pay evidence",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "evidence family: customer pain",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "evidence family: behavior demand",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "evidence family: competitors",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "evidence family: pricing",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "evidence family: contradiction",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "experiments",
+              "title": "Three concrete experiments",
+              "summary": "Run these before increasing build scope.",
+              "statements": [
+                {
+                  "kind": "Recommendation",
+                  "text": "Problem-frequency interviews: Interview 8 qualified Client-service agencies and service operations leaders; capture the last occurrence, current workaround, frequency, consequence, and owner. Success: At least 5 describe a recent occurrence and 3 actively seek a better workflow.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Recommendation",
+                  "text": "Concierge workflow pilot: Run the core workflow manually with 3 teams for 14 days; log repeated use, completion time, and abandonment. Success: At least 2 teams use it twice and ask to continue.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Recommendation",
+                  "text": "Paid-offer test: Present the same scoped offer to 5 qualified buyers and request payment, a deposit, or a signed paid-pilot commitment. Success: At least 2 buyers make a monetary or signed commitment.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "final-recommendation",
+              "title": "Final recommendation",
+              "summary": "Do not build beyond a cheap demand test. Founder action: recruit 8 qualified participants from The buyer or workflow owner at a qualified Client-service agencies and service operations leaders organization via Founder-led outreach through professional-service associations, agency directories, and warm introductions; screen for recent customer sign-off responsibility. Offer and artefact: Interview 8 qualified Client-service agencies and service operations leaders; capture the last occurrence, current workaround, frequency, consequence, and owner. Timing: 7 days. Success threshold: At least 5 describe a recent occurrence and 3 actively seek a better workflow. Failure threshold: Fewer than 3 report a recent, consequential occurrence. Decision unlocked: Whether the approval/sign-off problem is frequent and consequential enough to justify a workflow product.",
+              "statements": [
+                {
+                  "kind": "Recommendation",
+                  "text": "Do not build beyond a cheap demand test. Founder action: recruit 8 qualified participants from The buyer or workflow owner at a qualified Client-service agencies and service operations leaders organization via Founder-led outreach through professional-service associations, agency directories, and warm introductions; screen for recent customer sign-off responsibility. Offer and artefact: Interview 8 qualified Client-service agencies and service operations leaders; capture the last occurrence, current workaround, frequency, consequence, and owner. Timing: 7 days. Success threshold: At least 5 describe a recent occurrence and 3 actively seek a better workflow. Failure threshold: Fewer than 3 report a recent, consequential occurrence. Decision unlocked: Whether the approval/sign-off problem is frequent and consequential enough to justify a workflow product.",
+                  "sourceUrls": [
+                    "https://campaignswift.com/blog/agency-approval-workflows"
+                  ],
+                  "evidenceIds": [
+                    "d38c91c4-b605-4c85-ab76-e23f224775b7"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "methodology",
+              "title": "Methodology and sources",
+              "summary": "The validation score was derived by analyzing the alignment between the proposed three-stage agency workflow and the actual market demand, identifying significant gaps in revenue potential and buyer urgency.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "The validation score was derived by analyzing the alignment between the proposed three-stage agency workflow and the actual market demand, identifying significant gaps in revenue potential and buyer urgency.",
+                  "sourceUrls": [
+                    "https://campaignswift.com/blog/agency-approval-workflows"
+                  ],
+                  "evidenceIds": [
+                    "d38c91c4-b605-4c85-ab76-e23f224775b7"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "1 accepted evidence rows across 1 evidence domains.",
+                  "sourceUrls": [
+                    "https://campaignswift.com/blog/agency-approval-workflows"
+                  ],
+                  "evidenceIds": [
+                    "d38c91c4-b605-4c85-ab76-e23f224775b7"
+                  ]
+                }
+              ]
+            }
+          ],
+          "experiments": [
+            {
+              "name": "Problem-frequency interviews",
+              "method": "Interview 8 qualified Client-service agencies and service operations leaders; capture the last occurrence, current workaround, frequency, consequence, and owner.",
+              "duration": "7 days",
+              "hypothesis": "Client-service agencies and service operations leaders experience A lightweight approval and audit-trail workspace for service teams that need to collect customer sign-off, preserve attributable approval history and reduce disputes. often enough to change behaviour.",
+              "sampleSize": "8 qualified participants",
+              "decisionUnlocked": "Whether the approval/sign-off problem is frequent and consequential enough to justify a workflow product.",
+              "failureCriterion": "Fewer than 3 report a recent, consequential occurrence.",
+              "successCriterion": "At least 5 describe a recent occurrence and 3 actively seek a better workflow.",
+              "recruitmentMethod": "Founder-led outreach through professional-service associations, agency directories, and warm introductions; screen for recent customer sign-off responsibility.",
+              "targetParticipant": "The buyer or workflow owner at a qualified Client-service agencies and service operations leaders organization"
+            },
+            {
+              "name": "Concierge workflow pilot",
+              "method": "Run the core workflow manually with 3 teams for 14 days; log repeated use, completion time, and abandonment.",
+              "duration": "14 days",
+              "hypothesis": "A narrow assisted workflow creates repeat usage before automation is built.",
+              "sampleSize": "3 service teams",
+              "decisionUnlocked": "Whether the proposed workflow changes repeat behaviour before engineering automation.",
+              "failureCriterion": "Teams revert to their existing workflow or need unrelated features to participate.",
+              "successCriterion": "At least 2 teams use it twice and ask to continue.",
+              "recruitmentMethod": "Recruit from interview participants who can provide a live deliverable requiring customer sign-off during the test window.",
+              "targetParticipant": "Operational users at qualified Client-service agencies and service operations leaders teams who currently collect customer approval"
+            },
+            {
+              "name": "Paid-offer test",
+              "method": "Present the same scoped offer to 5 qualified buyers and request payment, a deposit, or a signed paid-pilot commitment.",
+              "duration": "10 days",
+              "hypothesis": "Insufficient evidence is valuable enough to trigger a real commitment.",
+              "sampleSize": "5 qualified buyers",
+              "decisionUnlocked": "Whether to proceed with paid product development, change packaging, or stop.",
+              "failureCriterion": "Interest remains verbal or depends on unsupported feature expansion.",
+              "successCriterion": "At least 2 buyers make a monetary or signed commitment.",
+              "recruitmentMethod": "Re-contact teams that completed the workflow pilot and supplement with matched outbound prospects using the same qualification screen.",
+              "targetParticipant": "Budget-holding buyers at qualified Client-service agencies and service operations leaders organizations"
+            }
+          ],
+          "schemaVersion": 1,
+          "scoreConfidence": 25,
+          "specialistOutputs": [],
+          "evidenceConfidence": {
+            "band": "Insufficient",
+            "score": 0.29,
+            "deductions": [
+              "No Tier 1/primary page supports the dossier.",
+              "Primary-source coverage is weak (0/1 accepted items).",
+              "Only 1/11 Full Validation evidence families are represented.",
+              "No direct buyer-payment, deposit, paid-pilot, or purchase-commitment evidence was accepted.",
+              "No strong proposition-specific contradictory evidence was found.",
+              "Fewer than four usable evidence items were accepted."
+            ],
+            "explanation": "Insufficient confidence: 1 independent domains; 1 semantically accepted evidence items; 0 unresolved evidence disagreements; average source authority 75%; average semantic relevance 100%; buyer-specific evidence 100%; 1/11 required evidence families represented; 0/1 accepted items are primary evidence; 0 direct buyer/payment evidence items; 0 proposition-specific contradiction pairs; direct relevance 100%; extraction integrity 100%; tier distribution {\"2\":1}.",
+            "missingEvidence": [
+              "need 4 usable evidence items",
+              "insufficient problem evidence",
+              "insufficient solution evidence",
+              "insufficient disconfirming evidence",
+              "contradictory evidence",
+              "pricing or willingness-to-pay evidence",
+              "evidence family: customer pain",
+              "evidence family: behavior demand",
+              "evidence family: competitors",
+              "evidence family: pricing",
+              "evidence family: contradiction"
+            ]
+          },
+          "reportCompleteness": {
+            "score": 36,
+            "missing": [
+              "contradictory evidence",
+              "pricing or willingness-to-pay evidence",
+              "evidence family: customer pain",
+              "evidence family: behavior demand",
+              "evidence family: competitors",
+              "evidence family: pricing",
+              "evidence family: contradiction"
+            ],
+            "complete": false,
+            "explanation": "0/5 required evidence families covered; 4/6 structural report checks passed"
+          },
+          "primaryRecommendation": "Founder action: recruit 8 qualified participants from The buyer or workflow owner at a qualified Client-service agencies and service operations leaders organization via Founder-led outreach through professional-service associations, agency directories, and warm introductions; screen for recent customer sign-off responsibility. Offer and artefact: Interview 8 qualified Client-service agencies and service operations leaders; capture the last occurrence, current workaround, frequency, consequence, and owner. Timing: 7 days. Success threshold: At least 5 describe a recent occurrence and 3 actively seek a better workflow. Failure threshold: Fewer than 3 report a recent, consequential occurrence. Decision unlocked: Whether the approval/sign-off problem is frequent and consequential enough to justify a workflow product.",
+          "fullValidationRecommended": false
+        },
+        "availableExports": [
+          "pdf",
+          "markdown",
+          "csv",
+          "json"
+        ],
+        "executiveSummary": "The current market demand for agency approval workflows shows a lack of urgency, as evidenced by the absence of direct purchase commitments or clear willingness to pay for the proposed solution. While the workflow structure is well-defined, the low pain severity and high platform dependency risks suggest that the current value proposition does not sufficiently solve a critical business problem.",
+        "topRecommendation": "Founder action: recruit 8 qualified participants from The buyer or workflow owner at a qualified Client-service agencies and service operations leaders organization via Founder-led outreach through professional-service associations, agency directories, and warm introductions; screen for recent customer sign-off responsibility. Offer and artefact: Interview 8 qualified Client-service agencies and service operations leaders; capture the last occurrence, current workaround, frequency, consequence, and owner. Timing: 7 days. Success threshold: At least 5 describe a recent occurrence and 3 actively seek a better workflow. Failure threshold: Fewer than 3 report a recent, consequential occurrence. Decision unlocked: Whether the approval/sign-off problem is frequent and consequential enough to justify a workflow product.",
+        "citationValidation": {
+          "valid": true,
+          "claimsChecked": 3,
+          "claimsRemoved": 0,
+          "invalidClaims": []
+        },
+        "narrativeCitations": {
+          "methodology": [
+            {
+              "text": "The validation score was derived by analyzing the alignment between the proposed three-stage agency workflow and the actual market demand, identifying significant gaps in revenue potential and buyer urgency.",
+              "evidence_ids": [
+                "d38c91c4-b605-4c85-ab76-e23f224775b7"
+              ],
+              "score_criteria": [
+                "speedToFirstRevenue",
+                "buyerReachability"
+              ]
+            }
+          ],
+          "written_verdict": "Weak Signal",
+          "executive_summary": [
+            {
+              "text": "The current market demand for agency approval workflows shows a lack of urgency, as evidenced by the absence of direct purchase commitments or clear willingness to pay for the proposed solution.",
+              "evidence_ids": [
+                "d38c91c4-b605-4c85-ab76-e23f224775b7"
+              ],
+              "score_criteria": [
+                "willingnessToPay",
+                "purchaseUrgency"
+              ]
+            },
+            {
+              "text": "While the workflow structure is well-defined, the low pain severity and high platform dependency risks suggest that the current value proposition does not sufficiently solve a critical business problem.",
+              "evidence_ids": [
+                "d38c91c4-b605-4c85-ab76-e23f224775b7"
+              ],
+              "score_criteria": [
+                "painSeverity",
+                "platformDependencyRisk"
+              ]
+            }
+          ]
+        },
+        "publicationStandard": {
+          "met": false,
+          "gaps": [
+            "Fewer than two independent cited domains are represented."
+          ],
+          "dimensions": {
+            "verifiedPrices": 0,
+            "primaryEvidence": 0,
+            "supportedCharts": 4,
+            "acceptedEvidence": 1,
+            "evidenceFamilies": 1,
+            "directCompetitors": 0,
+            "independentDomains": 1,
+            "buyerPaymentEvidence": 0,
+            "evidenceSafeSpecialists": 0,
+            "propositionContradictions": 0
+          },
+          "gapPassPerformed": false,
+          "publishedWithReducedConfidence": false
+        },
+        "confidenceDimensions": {
+          "scoring": {
+            "score": 25,
+            "explanation": "4/12 deterministic factors have evidence references; capped by Insufficient evidence confidence."
+          },
+          "evidence": {
+            "band": "Insufficient",
+            "score": 0.29,
+            "reasons": [
+              "1 independent domains",
+              "1 semantically accepted evidence items",
+              "0 unresolved evidence disagreements",
+              "average source authority 75%",
+              "average semantic relevance 100%",
+              "buyer-specific evidence 100%",
+              "1/11 required evidence families represented",
+              "0/1 accepted items are primary evidence",
+              "0 direct buyer/payment evidence items",
+              "0 proposition-specific contradiction pairs",
+              "direct relevance 100%",
+              "extraction integrity 100%",
+              "tier distribution {\"2\":1}"
+            ],
+            "deductions": [
+              "No Tier 1/primary page supports the dossier.",
+              "Primary-source coverage is weak (0/1 accepted items).",
+              "Only 1/11 Full Validation evidence families are represented.",
+              "No direct buyer-payment, deposit, paid-pilot, or purchase-commitment evidence was accepted.",
+              "No strong proposition-specific contradictory evidence was found.",
+              "Fewer than four usable evidence items were accepted."
+            ]
+          },
+          "completeness": {
+            "score": 36,
+            "missing": [
+              "contradictory evidence",
+              "pricing or willingness-to-pay evidence",
+              "evidence family: customer pain",
+              "evidence family: behavior demand",
+              "evidence family: competitors",
+              "evidence family: pricing",
+              "evidence family: contradiction"
+            ],
+            "reasons": [
+              "0/5 required evidence families covered",
+              "4/6 structural report checks passed"
+            ],
+            "complete": false
+          }
+        },
+        "canonicalResearchBrief": {
+          "endUser": "Client-service agencies and service operations leaders",
+          "industry": "Professional services software",
+          "geography": "United States and United Kingdom",
+          "targetBuyer": "Client-service agencies and service operations leaders",
+          "terminology": [
+            "lightweight",
+            "approval",
+            "and",
+            "audit-trail",
+            "workspace",
+            "for",
+            "teams",
+            "collect",
+            "customer",
+            "sign-off",
+            "preserve",
+            "attributable",
+            "history",
+            "reduce",
+            "disputes",
+            "client-service agencies and service operations leaders",
+            "client-service",
+            "agencies",
+            "operations",
+            "leaders",
+            "approvals",
+            "approve",
+            "signoff",
+            "customer sign-off",
+            "client sign-off",
+            "customer approval",
+            "client approval",
+            "acceptance",
+            "proofing",
+            "review and approval",
+            "audit trail",
+            "approval history",
+            "approver identity",
+            "timestamped approval",
+            "approval record",
+            "record of approval",
+            "who approved",
+            "signed acceptance",
+            "service team",
+            "agency",
+            "professional services",
+            "consultancy",
+            "client",
+            "deliverable",
+            "project manager",
+            "account manager",
+            "operations lead",
+            "customer success"
+          ],
+          "businessModel": "B2B",
+          "problemSolved": "Customer approvals are scattered or ambiguous, leaving service teams without attributable proof and exposed to disputes",
+          "expectedOutcome": "Faster customer sign-off, preserved attributable approval history, and fewer delivery or billing disputes",
+          "workflowChanged": "Requesting, collecting, recording, and retrieving customer approval or sign-off on service deliverables",
+          "dimensionKeywords": {
+            "problem": [
+              "customer",
+              "approvals",
+              "are",
+              "scattered",
+              "ambiguous",
+              "leaving",
+              "teams",
+              "without",
+              "attributable",
+              "proof",
+              "and",
+              "exposed",
+              "disputes",
+              "scattered approval",
+              "ambiguous approval",
+              "dispute",
+              "lost approval",
+              "approval delay"
+            ],
+            "target_buyer": [
+              "client-service agencies and service operations leaders",
+              "client-service",
+              "agencies",
+              "and",
+              "operations",
+              "leaders",
+              "service team",
+              "agency",
+              "professional services",
+              "consultancy",
+              "client",
+              "customer",
+              "deliverable",
+              "project manager",
+              "account manager",
+              "operations lead",
+              "customer success"
+            ],
+            "user_workflow": [
+              "requesting",
+              "collecting",
+              "recording",
+              "and",
+              "retrieving",
+              "customer",
+              "approval",
+              "sign-off",
+              "deliverables",
+              "approvals",
+              "approve",
+              "signoff",
+              "customer sign-off",
+              "client sign-off",
+              "customer approval",
+              "client approval",
+              "acceptance",
+              "proofing",
+              "review and approval",
+              "audit trail",
+              "approval history",
+              "attributable",
+              "approver identity",
+              "timestamped approval",
+              "approval record",
+              "record of approval",
+              "who approved",
+              "signed acceptance"
+            ],
+            "market_category": [
+              "client approval online proofing and customer sign-off audit-trail software",
+              "client",
+              "approval",
+              "online",
+              "proofing",
+              "and",
+              "customer",
+              "sign-off",
+              "audit-trail",
+              "online proofing",
+              "client approval",
+              "customer sign-off",
+              "approval workflow"
+            ],
+            "expected_outcome": [
+              "faster",
+              "customer",
+              "sign-off",
+              "preserved",
+              "attributable",
+              "approval",
+              "history",
+              "and",
+              "fewer",
+              "delivery",
+              "billing",
+              "disputes",
+              "reduce disputes",
+              "avoid disputes",
+              "proof",
+              "accountability",
+              "faster approval",
+              "preserve history"
+            ],
+            "proposed_solution": [
+              "lightweight",
+              "approval",
+              "and",
+              "audit-trail",
+              "workspace",
+              "for",
+              "teams",
+              "collect",
+              "customer",
+              "sign-off",
+              "preserve",
+              "attributable",
+              "history",
+              "reduce",
+              "disputes",
+              "approvals",
+              "approve",
+              "signoff",
+              "customer sign-off",
+              "client sign-off",
+              "customer approval",
+              "client approval",
+              "acceptance",
+              "proofing",
+              "review and approval",
+              "audit trail",
+              "approval history",
+              "approver identity",
+              "timestamped approval",
+              "approval record",
+              "record of approval",
+              "who approved",
+              "signed acceptance"
+            ]
+          },
+          "exactProductProposition": "A lightweight approval and audit-trail workspace for service teams that need to collect customer sign-off, preserve attributable approval history and reduce disputes.",
+          "directCompetitorCategory": "Client approval, online proofing, and customer sign-off audit-trail software",
+          "adjacentOutOfScopeCategories": [
+            "CI/CD pipelines",
+            "deployment automation",
+            "YAML pipelines",
+            "generic DevOps workflows",
+            "internal code-review approvals without customer sign-off",
+            "general e-signature without the specified service-delivery approval workflow"
+          ]
+        },
+        "strongestPositiveEvidenceId": "d38c91c4-b605-4c85-ab76-e23f224775b7"
+      },
+      "report_id": "a47d3419-2e36-4f64-be24-1821c216b52d",
+      "created_at": "2026-07-26T08:05:40.905579+00:00",
+      "updated_at": "2026-07-26T08:05:40.905579+00:00",
+      "report_mode": "quick_scan",
+      "market_sizing": {
+        "reason": "Market sizing deferred to evidence phase"
+      },
+      "report_exports": [
+        {
+          "id": "9c26a36c-6848-48f8-b7bb-40cfaa417853",
+          "format": "pdf",
+          "sha256": "c79a7647fa9ff5ed1bc79ebb60bbc86ed1dadd700d6a739da9556a3d6a2e5269",
+          "byte_size": 76008,
+          "created_at": "2026-07-26T08:05:41.013192+00:00",
+          "storage_path": "215266ab-be31-4346-9fcf-da6ce24b9316/1415a293-2db7-479b-984d-f6b51d94034a/v1/report.pdf",
+          "report_version_id": "3a41fea7-455d-4e12-91ba-1e5e0a00bc34"
+        },
+        {
+          "id": "3f4fe819-af44-4e82-bfe0-c76aad43c666",
+          "format": "markdown",
+          "sha256": "765212ce89bfd172acab94a8b6a032df8e4f7aeaeef850d0791b7bfd4b40de71",
+          "byte_size": 16281,
+          "created_at": "2026-07-26T08:05:41.030095+00:00",
+          "storage_path": "215266ab-be31-4346-9fcf-da6ce24b9316/1415a293-2db7-479b-984d-f6b51d94034a/v1/report.markdown",
+          "report_version_id": "3a41fea7-455d-4e12-91ba-1e5e0a00bc34"
+        },
+        {
+          "id": "5e3cbe1f-78ad-49d1-9b81-17c20fa724b4",
+          "format": "csv",
+          "sha256": "d1545833ac95e6476e8835cfc2172cd1bb7830c9cce1549d23d9600c7f8cd47e",
+          "byte_size": 273409,
+          "created_at": "2026-07-26T08:05:41.055512+00:00",
+          "storage_path": "215266ab-be31-4346-9fcf-da6ce24b9316/1415a293-2db7-479b-984d-f6b51d94034a/v1/report.csv",
+          "report_version_id": "3a41fea7-455d-4e12-91ba-1e5e0a00bc34"
+        },
+        {
+          "id": "654d22cb-b922-43e2-b472-d1b847447ec5",
+          "format": "json",
+          "sha256": "8097c28ce49c7fdeddc7fc7525346f6ba11a6ad35825b6530ef7f22b88d3561c",
+          "byte_size": 42786,
+          "created_at": "2026-07-26T08:05:41.07347+00:00",
+          "storage_path": "215266ab-be31-4346-9fcf-da6ce24b9316/1415a293-2db7-479b-984d-f6b51d94034a/v1/report.json",
+          "report_version_id": "3a41fea7-455d-4e12-91ba-1e5e0a00bc34"
+        }
+      ],
+      "version_number": 1,
+      "reasoning_flags": [],
+      "adversarial_gate": {
+        "id": "c39e6370-5a0c-4f4a-a6ad-c96ff7a69493",
+        "run_id": "1415a293-2db7-479b-984d-f6b51d94034a",
+        "status": "Complete",
+        "outcome": "InsufficientEvidence",
+        "payload": {
+          "outcome": "InsufficientEvidence",
+          "severity": "None",
+          "objection": "Insufficient evidence",
+          "sourceIds": [],
+          "evidence_ids": []
+        },
+        "severity": "None",
+        "objection": "Insufficient evidence",
+        "created_at": "2026-07-26T08:05:38.721881+00:00",
+        "unresolved": false,
+        "evidence_ids": [],
+        "emerging_verdict": "Validate First"
+      },
+      "decision_integrity": null,
+      "citation_validation": {
+        "valid": true,
+        "methodology": [
+          {
+            "text": "The validation score was derived by analyzing the alignment between the proposed three-stage agency workflow and the actual market demand, identifying significant gaps in revenue potential and buyer urgency.",
+            "evidence_ids": [
+              "d38c91c4-b605-4c85-ab76-e23f224775b7"
+            ],
+            "score_criteria": [
+              "speedToFirstRevenue",
+              "buyerReachability"
+            ]
+          }
+        ],
+        "claimsChecked": 3,
+        "claimsRemoved": 0,
+        "invalidClaims": [],
+        "executiveSummary": [
+          {
+            "text": "The current market demand for agency approval workflows shows a lack of urgency, as evidenced by the absence of direct purchase commitments or clear willingness to pay for the proposed solution.",
+            "evidence_ids": [
+              "d38c91c4-b605-4c85-ab76-e23f224775b7"
+            ],
+            "score_criteria": [
+              "willingnessToPay",
+              "purchaseUrgency"
+            ]
+          },
+          {
+            "text": "While the workflow structure is well-defined, the low pain severity and high platform dependency risks suggest that the current value proposition does not sufficiently solve a critical business problem.",
+            "evidence_ids": [
+              "d38c91c4-b605-4c85-ab76-e23f224775b7"
+            ],
+            "score_criteria": [
+              "painSeverity",
+              "platformDependencyRisk"
+            ]
+          }
+        ]
+      },
+      "adversarial_downgrade": false,
+      "report_chart_datasets": [
+        {
+          "id": "d86f6fbf-1927-4004-86b2-3c45bef36ccd",
+          "run_id": "1415a293-2db7-479b-984d-f6b51d94034a",
+          "sha256": "3d7fc0f59667b175260c266a2e8686716a4b33e9f63d2d982852151e1753dbe4",
+          "chart_key": "factor-breakdown",
+          "chart_type": "bar",
+          "created_at": "2026-07-26T08:05:40.912173+00:00",
+          "source_data": {
+            "values": {
+              "mvpSpeed": 75,
+              "founderFit": 32,
+              "painSeverity": 20,
+              "competitionGap": 65,
+              "regulatoryRisk": 10,
+              "purchaseUrgency": 15,
+              "willingnessToPay": 10,
+              "buyerReachability": 33.8,
+              "retentionPotential": 31.2,
+              "distributionClarity": 61.6,
+              "speedToFirstRevenue": 8.7,
+              "platformDependencyRisk": 10
+            }
+          },
+          "chart_config": {
+            "title": "Factor Breakdown",
+            "sourceExplanation": "The 12 factor values are copied from the deterministic scorecard in this report version."
+          },
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "3a41fea7-455d-4e12-91ba-1e5e0a00bc34",
+          "supporting_evidence_ids": [
+            "d38c91c4-b605-4c85-ab76-e23f224775b7"
+          ]
+        },
+        {
+          "id": "901a42d1-c50e-4bd1-ba5e-5f6728df4cf3",
+          "run_id": "1415a293-2db7-479b-984d-f6b51d94034a",
+          "sha256": "10410a0cc082499c772c70e408f44daa72dd6e5630919d4cc0857a14fdff548c",
+          "chart_key": "evidence-balance",
+          "chart_type": "bar",
+          "created_at": "2026-07-26T08:05:40.919358+00:00",
+          "source_data": {
+            "supporting": 1,
+            "contradictory": 0
+          },
+          "chart_config": {
+            "title": "Evidence Balance",
+            "sourceExplanation": "Counts of accepted supporting and contradictory evidence rows in this report version."
+          },
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "3a41fea7-455d-4e12-91ba-1e5e0a00bc34",
+          "supporting_evidence_ids": [
+            "d38c91c4-b605-4c85-ab76-e23f224775b7"
+          ]
+        },
+        {
+          "id": "f44f7ca2-6f80-43c2-81dd-92a10d65df06",
+          "run_id": "1415a293-2db7-479b-984d-f6b51d94034a",
+          "sha256": "b5b2ce80caa496d90b6ec3de069b9b6480b20cf48af0de5195a91e819ed66966",
+          "chart_key": "source-quality-distribution",
+          "chart_type": "bar",
+          "created_at": "2026-07-26T08:05:40.925082+00:00",
+          "source_data": {
+            "byTier": {
+              "tier_1": 0,
+              "tier_2": 1,
+              "tier_3": 0,
+              "tier_4": 0
+            }
+          },
+          "chart_config": {
+            "title": "Source Quality Distribution",
+            "sourceExplanation": "Counts of accepted evidence rows grouped by persisted source tier."
+          },
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "3a41fea7-455d-4e12-91ba-1e5e0a00bc34",
+          "supporting_evidence_ids": [
+            "d38c91c4-b605-4c85-ab76-e23f224775b7"
+          ]
+        },
+        {
+          "id": "1eadcbe9-7b15-4239-b306-2370b33d766f",
+          "run_id": "1415a293-2db7-479b-984d-f6b51d94034a",
+          "sha256": "f84277b43a49d3eca335acd6d53b40f7cd642fc19f611f021586640457dbb4db",
+          "chart_key": "alternatives-comparison",
+          "chart_type": "bar",
+          "created_at": "2026-07-26T08:05:40.931432+00:00",
+          "source_data": {
+            "reason": "No competitor row had an accepted evidence-item reference.",
+            "values": {},
+            "unavailable": true
+          },
+          "chart_config": {
+            "title": "Alternatives Comparison",
+            "sourceExplanation": "Unavailable: competitor rows were not sufficiently linked to accepted evidence."
+          },
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "3a41fea7-455d-4e12-91ba-1e5e0a00bc34",
+          "supporting_evidence_ids": []
+        }
+      ],
+      "verdict_score_mismatch": false
+    }
+  ]
+}

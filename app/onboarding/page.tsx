@@ -117,6 +117,8 @@ const launchChannelOptions = [
   { value: "paid-ads", label: "Paid ads" },
 ];
 
+const ONBOARDING_DRAFT_KEY = "shouldbuild-onboarding-draft";
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -137,6 +139,16 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     setNextPath(safeAuthRedirect(new URL(window.location.href).searchParams.get("next")));
+    const storedDraft = sessionStorage.getItem(ONBOARDING_DRAFT_KEY);
+    if (storedDraft) {
+      try {
+        const draft = JSON.parse(storedDraft) as { step?: number; data?: Partial<OnboardingData> };
+        if (draft.data) setData(current => ({ ...current, ...draft.data }));
+        if (typeof draft.step === "number") setStep(Math.max(0, Math.min(steps.length - 1, draft.step)));
+      } catch {
+        sessionStorage.removeItem(ONBOARDING_DRAFT_KEY);
+      }
+    }
     // Pre-fill name from auth profile
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -149,16 +161,24 @@ export default function OnboardingPage() {
   }, []);
 
   const update = <Field extends keyof OnboardingData>(field: Field, value: OnboardingData[Field]) => {
-    setData(d => ({ ...d, [field]: value }));
+    setData(d => {
+      const nextData = { ...d, [field]: value };
+      sessionStorage.setItem(ONBOARDING_DRAFT_KEY, JSON.stringify({ step, data: nextData }));
+      return nextData;
+    });
   };
 
   const toggleChannel = (channel: string) => {
-    setData(d => ({
-      ...d,
-      launch_channels: d.launch_channels.includes(channel)
+    setData(d => {
+      const nextData = {
+        ...d,
+        launch_channels: d.launch_channels.includes(channel)
         ? d.launch_channels.filter(c => c !== channel)
         : [...d.launch_channels, channel],
-    }));
+      };
+      sessionStorage.setItem(ONBOARDING_DRAFT_KEY, JSON.stringify({ step, data: nextData }));
+      return nextData;
+    });
   };
 
   const canProceed = () => {
@@ -188,6 +208,7 @@ export default function OnboardingPage() {
         const result = await response.json().catch(() => null);
         throw new Error(result?.error || "We could not save your onboarding details.");
       }
+      sessionStorage.removeItem(ONBOARDING_DRAFT_KEY);
       const separator = nextPath.includes("?") ? "&" : "?";
       router.replace(`${nextPath}${separator}tour=start`);
     } catch (error) {
@@ -212,6 +233,7 @@ export default function OnboardingPage() {
         const result = await response.json().catch(() => null);
         throw new Error(result?.error || "We could not save your onboarding status.");
       }
+      sessionStorage.removeItem(ONBOARDING_DRAFT_KEY);
       const separator = nextPath.includes("?") ? "&" : "?";
       router.replace(`${nextPath}${separator}tour=start`);
     } catch (error) {
@@ -222,7 +244,11 @@ export default function OnboardingPage() {
 
   const next = () => {
     if (step < steps.length - 1) {
-      setStep(s => s + 1);
+      setStep(s => {
+        const nextStep = s + 1;
+        sessionStorage.setItem(ONBOARDING_DRAFT_KEY, JSON.stringify({ step: nextStep, data }));
+        return nextStep;
+      });
     } else {
       finish();
     }

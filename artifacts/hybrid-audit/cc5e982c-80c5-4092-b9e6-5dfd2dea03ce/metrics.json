@@ -1,0 +1,80 @@
+{
+  "id": "60cc59b0-6f3a-41f8-9ddb-017ef4d3d9ae",
+  "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+  "candidates_discovered": 43,
+  "pages_attempted": 36,
+  "pages_fetched": 34,
+  "sources_accepted": 34,
+  "sources_rejected_by_reason": {
+    "empty_or_unextractable": 2
+  },
+  "independent_domains": 32,
+  "evidence_items_extracted": 11,
+  "cost_per_stage": {},
+  "cost_per_accepted_source": 0.00018015661764705882,
+  "cost_per_accepted_evidence": 0.0005568477272727272,
+  "retry_count": 0,
+  "cache_hit_rate": null,
+  "provider_fallback_count": 0,
+  "terminal_failure_reason": null,
+  "stage_timings": {
+    "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce|0|plan|0|0|": {
+      "duration_ms": 941
+    },
+    "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce|0|complete|0|0|": {
+      "duration_ms": 37
+    },
+    "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce|0|analyze_score|0|0|": {
+      "duration_ms": 185
+    },
+    "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce|0|generate_report|0|0|": {
+      "duration_ms": 3362
+    },
+    "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce|0|generate_exports|0|0|": {
+      "duration_ms": 171
+    },
+    "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce|0|evidence_boosters|0|0|": {
+      "duration_ms": 36132,
+      "pages_fetched": 34,
+      "pages_attempted": 36,
+      "sources_accepted": 34,
+      "sources_rejected": 2,
+      "independent_domains": 32,
+      "candidates_discovered": 43
+    },
+    "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce|0|grounded_research|0|0|": {
+      "duration_ms": 21,
+      "sources_accepted": 0,
+      "provider_fallbacks": 0,
+      "candidates_discovered": 0
+    },
+    "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce|0|validate_normalize|0|0|": {
+      "duration_ms": 29127,
+      "evidence_extracted": 11
+    }
+  },
+  "total_provider_cost_usd": 0.006125325,
+  "total_jobs_created": 8,
+  "created_at": "2026-07-26T06:21:41.187548+00:00",
+  "updated_at": "2026-07-26T06:22:51.419392+00:00",
+  "provider_calls": 46,
+  "grounded_calls": 0,
+  "fallback_calls": 0,
+  "cache_hits": 34,
+  "total_duration_ms": 68297,
+  "input_tokens": 46931,
+  "output_tokens": 8685,
+  "cache_misses": 46,
+  "model_call_counts": {
+    "gemini-3.1-flash-lite": 8
+  },
+  "pricing_version": "gemini-estimate-v1-2026-07-25",
+  "grounded_calls_attempted": 0,
+  "grounded_calls_completed": 0,
+  "grounded_calls_quota_blocked": 0,
+  "external_search_calls": 36,
+  "synthesis_calls": 8,
+  "degraded_providers": [],
+  "grounding_mode": "disabled",
+  "grounding_degraded": false
+}

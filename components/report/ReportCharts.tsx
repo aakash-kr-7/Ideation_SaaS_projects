@@ -71,12 +71,13 @@ export function ReportCharts({ report, datasets = [] }: { report: ValidationRepo
         const data = chartData(chart);
         const max = Math.max(...data.map((item) => item.value), 1);
         return <figure className="report-chart" key={chart.chartKey}>
-          <figcaption><span>{chart.chartType}</span><b>{String(chart.chartConfig.title ?? titleFor(chart.chartKey))}</b><small>{chart.supportingEvidenceIds.length ? `${chart.supportingEvidenceIds.length} linked evidence item${chart.supportingEvidenceIds.length === 1 ? "" : "s"}` : "Deterministic score inputs"}</small></figcaption>
+          <figcaption><span>{chart.chartType}</span><b>{String(chart.chartConfig.title ?? titleFor(chart.chartKey))}</b><small>{chart.supportingEvidenceIds.length ? `${chart.supportingEvidenceIds.length} linked evidence item${chart.supportingEvidenceIds.length === 1 ? "" : "s"}` : String(chart.chartConfig.sourceExplanation ?? "Structured-data explanation available")}</small></figcaption>
           {data.length ? <div className="chart-bars" role="img" aria-label={`${titleFor(chart.chartKey)} chart: ${data.map((item) => `${item.label}, ${item.value}`).join("; ")}`}>
             {data.slice(0, 12).map((item) => <div className="chart-bar" key={item.label}>
               <span title={item.label}>{titleFor(item.label)}</span><i><b style={{ width: `${Math.max(4, (item.value / max) * 100)}%` }} /></i><strong>{item.value}</strong>
             </div>)}
-          </div> : <p className="chart-empty">No chartable evidence was persisted for this report.</p>}
+          </div> : <p className="chart-empty">{String(chart.sourceData.reason ?? "No chartable evidence was persisted for this report.")}</p>}
+          <p className="chart-source-explanation">{String(chart.chartConfig.sourceExplanation ?? "Derived from persisted structured report data.")}</p>
           {data.length > 0 && <details><summary>Accessible values</summary><table><tbody>{data.map((item) => <tr key={item.label}><th>{titleFor(item.label)}</th><td>{item.value}</td></tr>)}</tbody></table></details>}
         </figure>;
       })}

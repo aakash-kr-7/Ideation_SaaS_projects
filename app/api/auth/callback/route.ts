@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   const authError = searchParams.get('error')
   const authErrorDesc = searchParams.get('error_description')
   if (authError || authErrorDesc) {
-    const msg = authErrorDesc || authError || 'Authentication failed'
+    const msg = 'Authentication could not be completed. Please try again.'
     return NextResponse.redirect(`${origin}/sign-in?error=AuthCallbackError&message=${encodeURIComponent(msg)}`)
   }
 
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
     if (!error) {
       return redirectResponse
     }
-    return NextResponse.redirect(`${origin}/sign-in?error=AuthCallbackError&message=${encodeURIComponent(error.message)}`)
+    return NextResponse.redirect(`${origin}/sign-in?error=AuthCallbackError&message=${encodeURIComponent('Authentication could not be completed. Please try again.')}`)
   }
 
   // Handle email verification / password recovery token
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
     if (!error) {
       return redirectResponse
     }
-    return NextResponse.redirect(`${origin}/sign-in?error=VerificationError&message=${encodeURIComponent(error.message)}`)
+    return NextResponse.redirect(`${origin}/sign-in?error=VerificationError&message=${encodeURIComponent('This verification link is invalid or has expired.')}`)
   }
 
   // No valid params

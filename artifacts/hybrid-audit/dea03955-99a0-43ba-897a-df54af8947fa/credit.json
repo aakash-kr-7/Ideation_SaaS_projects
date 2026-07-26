@@ -1,0 +1,47 @@
+{
+  "reservation": {
+    "id": "06c1d4e5-2c5a-4612-a229-a2ab08cc24a9",
+    "team_id": "727cef60-367a-44e7-8015-5c84d160a5cb",
+    "run_id": "dea03955-99a0-43ba-897a-df54af8947fa",
+    "report_mode": "full_validation",
+    "credit_cost": 3,
+    "credit_source": "paid",
+    "status": "consumed",
+    "idempotency_key": "f720741b-abbc-456e-866c-980fc10441f7",
+    "reserved_at": "2026-07-26T03:56:12.183941+00:00",
+    "finalized_at": "2026-07-26T03:57:31.103177+00:00",
+    "created_at": "2026-07-26T03:56:12.183941+00:00",
+    "updated_at": "2026-07-26T03:57:31.103177+00:00"
+  },
+  "ledger": [
+    {
+      "id": "c0b542e8-6590-47c7-b8ea-e9ff1a049421",
+      "team_id": "727cef60-367a-44e7-8015-5c84d160a5cb",
+      "run_id": "dea03955-99a0-43ba-897a-df54af8947fa",
+      "reservation_id": "06c1d4e5-2c5a-4612-a229-a2ab08cc24a9",
+      "event_type": "reserve",
+      "paid_credit_delta": -3,
+      "free_credit_delta": 0,
+      "external_reference": null,
+      "metadata": {
+        "request_id": "a3974d50-f6ad-4e81-ab75-1a70b293ae69",
+        "report_mode": "full_validation"
+      },
+      "created_at": "2026-07-26T03:56:12.183941+00:00"
+    },
+    {
+      "id": "f9eab3bc-c645-4a15-9e2e-c1d69f68db20",
+      "team_id": "727cef60-367a-44e7-8015-5c84d160a5cb",
+      "run_id": "dea03955-99a0-43ba-897a-df54af8947fa",
+      "reservation_id": "06c1d4e5-2c5a-4612-a229-a2ab08cc24a9",
+      "event_type": "consume",
+      "paid_credit_delta": 0,
+      "free_credit_delta": 0,
+      "external_reference": null,
+      "metadata": {
+        "report_mode": "full_validation"
+      },
+      "created_at": "2026-07-26T03:57:31.103177+00:00"
+    }
+  ]
+}

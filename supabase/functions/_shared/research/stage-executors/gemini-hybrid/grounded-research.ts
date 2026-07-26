@@ -4,11 +4,13 @@ import { updateState, costBudgetForRun } from "../../pipeline-utils.ts";
 import { GeminiRequestError, getGeminiGroundingMode } from "../../gemini.ts";
 import { buildResearchPacks } from "../../external-retrieval.ts";
 import { groundedCallLimit, groundingFailureAction } from "../../grounding-policy.ts";
+import type { CanonicalResearchBrief } from "../../research-brief.ts";
 
 export async function executeHybridGroundedResearch(ctx: StageContext): Promise<StageResult> {
   const { runId, db, config, startedAt, inputMeta } = ctx;
   const opportunityId = String(inputMeta.opportunityId || "");
   const mode = String(inputMeta.mode || "quick_scan");
+  const researchBrief = inputMeta.researchBrief as CanonicalResearchBrief | undefined;
   const groundingMode = String(inputMeta.groundingMode || getGeminiGroundingMode());
   try {
     await updateState(
@@ -31,7 +33,8 @@ export async function executeHybridGroundedResearch(ctx: StageContext): Promise<
       .single();
     if (error || !run) return stageFailed("permanent", `Run not found: ${error?.message || "missing"}`);
 
-    const externalPacks = buildResearchPacks(run, mode);
+    if (!researchBrief) return stageFailed("permanent", "Canonical research brief is missing before discovery.");
+    const externalPacks = buildResearchPacks(run, mode, researchBrief);
     const groundedPacks = externalPacks.slice(
       0,
       groundedCallLimit(groundingMode as "required" | "optional" | "disabled", mode, externalPacks.length),
@@ -52,6 +55,7 @@ export async function executeHybridGroundedResearch(ctx: StageContext): Promise<
           db,
           systemInstruction: "Act as a skeptical research booster. Use Google Search grounding and preserve source attribution. Do not invent sources.",
           prompt: `Research this startup idea for ${pack.focus}.
+Canonical research brief (the semantic boundary; do not drift): ${JSON.stringify(researchBrief)}
 Name: ${run.idea_name}
 Description: ${run.idea_description}
 Target customer: ${run.target_customer}
@@ -118,9 +122,11 @@ Preferred registry domains: ${registry.map((entry: any) => entry.domain).join(",
         groundingSources,
         researchPacks: externalPacks,
         targetCustomer: run.target_customer,
+        targetRegion: run.target_region,
         marketType: run.market_type,
         ideaName: run.idea_name,
         runInput: run,
+        researchBrief,
       },
     });
   } catch (error) {

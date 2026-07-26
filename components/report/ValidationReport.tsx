@@ -29,6 +29,9 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
   }).filter(Boolean)).size;
   const primarySourceCount = o.evidence.filter((item) => !item.excluded && (item.sourceTier ?? 4) <= 2).length;
   const contradictoryEvidenceCount = o.evidence.filter((item) => !item.excluded && item.disconfirming).length;
+  const acceptedEvidenceCount = o.evidence.filter((item) => !item.excluded).length;
+  const evidenceConfidence = report.decisionProduct?.evidenceConfidence;
+  const reportDate = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(report.generatedAt));
 
   const exportFile = async (format: "md" | "json" | "csv" | "pdf") => {
     const payload = { ...report, opportunity: o };
@@ -62,7 +65,7 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
 
     <header className="report-engine-hero">
       <div>
-        <p className="eyebrow">{publicMode ? "Sample validation report" : config.label} · {report.generatedAt}</p>
+        <p className="eyebrow">{publicMode ? "Sample validation report" : config.label} · {reportDate}</p>
         <span className={`report-mode-badge mode-${report.reportMode}`}>{config.label}</span>
         <h2>{o.name}</h2>
         <p>{o.oneLiner}</p>
@@ -88,9 +91,12 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
 
     <section className="report-decision-strip" aria-label={`${config.label} decision summary`}>
       <article><span>Official verdict</span><b>{o.scorecard.verdict}</b></article>
-      <article><span>Score confidence</span><b>{o.scorecard.confidence}%</b></article>
-      <article><span>Sources analyzed</span><b>{canonicalSourceCount}</b></article>
-      <article><span>Independent domains</span><b>{independentDomainCount}</b></article>
+      <article><span>Evidence confidence</span><b>{evidenceConfidence?.band ?? "Insufficient evidence"}</b></article>
+      <article><span>Score reliability</span><b>{o.scorecard.confidence}%</b></article>
+      <article><span>Report completeness</span><b>{report.decisionProduct?.reportCompleteness.score ?? 0}%</b></article>
+      <article><span>Evidence findings accepted</span><b>{acceptedEvidenceCount}</b></article>
+      <article><span>Distinct sources cited</span><b>{canonicalSourceCount}</b></article>
+      <article><span>Independent cited domains</span><b>{independentDomainCount}</b></article>
       {report.reportMode === "full_validation" && <><article><span>Primary / official sources</span><b>{primarySourceCount}</b></article><article><span>Contradictory evidence</span><b>{contradictoryEvidenceCount}</b></article></>}
       <article><span>{report.reportMode === "quick_scan" ? "Strongest positive signal" : "Most important opportunity"}</span><b>{strongestPositive?.title ?? "Not enough supporting evidence"}</b></article>
       <article><span>{report.reportMode === "quick_scan" ? "Strongest negative signal" : "Most important objection"}</span><b>{strongestNegative?.title ?? report.adversarialGate?.objection ?? "No independent negative signal resolved"}</b></article>
@@ -119,10 +125,10 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
           </div>
         </div>
         <div className="sidebar-metrics">
-          <Metric label="Report date" value={report.generatedAt}/>
+          <Metric label="Report date" value={reportDate}/>
           <Metric label="Report type" value={config.label}/>
-          <Metric label="Sources analyzed" value={String(canonicalSourceCount)}/>
-          <Metric label="Evidence found" value={String(o.evidence.length)}/>
+          <Metric label="Distinct sources cited" value={String(canonicalSourceCount)}/>
+          <Metric label="Accepted findings" value={String(acceptedEvidenceCount)}/>
           <Metric label="Competitors mapped" value={String(o.competitors.length)}/>
         </div>
         <hr/>
@@ -142,7 +148,7 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
           {tabs.map(t => <button key={t} className={`${tab === t ? "active" : ""} ${motion.buttonTight}`} aria-pressed={tab === t} onClick={() => setTab(t)}>{t}</button>)}
         </nav>
         <div className="report-tab-content sf-content-enter" key={tab}>
-          {tab === "Conclusion" && <Verdict report={report}/>}
+          {tab === "Conclusion" && <><Verdict report={report}/><DecisionDossier report={report}/></>}
           {tab === "Evidence" && <EvidenceView report={report} onPreview={setSourcePreview}/>}
           {tab === "Demand" && <EvidenceSignalView report={report} signals={["Pain", "Demand"]}/>}
           {tab === "Competition" && <CompetitorView report={report}/>}
@@ -179,7 +185,7 @@ function Verdict({ report }: { report: ReportType }) {
         <h3>{report.executiveSummary}</h3>
         <p><b>Strongest signal:</b> {o.evidence[0]?.snippet}</p>
         <p><b>Primary risk:</b> {o.risks[0]?.description}</p>
-        <p><b>Validate first:</b> {o.launch.successMetric}</p>
+        <p><b>Validate first:</b> {report.topRecommendation ?? o.launch.successMetric}</p>
         {!!report.narrativeCitations?.executive_summary.length && <div className="sentence-citations">
           {report.narrativeCitations.executive_summary.map((claim, index) => <p key={`${claim.text}-${index}`}>{claim.text}<EvidenceCitations report={report} evidenceIds={claim.evidence_ids}/></p>)}
         </div>}
@@ -272,6 +278,25 @@ function ScoringView({ scorecard }: { scorecard: ReportType["opportunity"]["scor
 
 function pretty(value: string) {
   return value.replace(/([A-Z])/g, " $1").replace(/^./, x => x.toUpperCase());
+}
+
+function specialistName(value: string) {
+  const names: Record<string, string> = {
+    competition: "Competitive landscape",
+    market: "Market context",
+    pricing: "Pricing and willingness to pay",
+    risk: "Adoption and execution risk",
+    demand: "Buyer demand",
+    gtm: "Customer acquisition",
+  };
+  return names[value] ?? pretty(value);
+}
+
+function specialistDirectionLabel(value: string) {
+  if (value === "SupportsOpportunity" || value === "Supports opportunity") return "Supports opportunity";
+  if (value === "ChallengesOpportunity" || value === "Challenges opportunity") return "Challenges opportunity";
+  if (value === "Insufficient" || value === "Insufficient evidence") return "Insufficient evidence";
+  return "Mixed evidence";
 }
 
 function MvpView({ report }: { report: ReportType }) {
@@ -453,8 +478,49 @@ function EvidenceSignalView({ report, signals }: { report: ReportType; signals: 
   </section>;
 }
 
+function DecisionDossier({ report }: { report: ReportType }) {
+  const product = report.decisionProduct;
+  if (!product) return null;
+  return <section className="decision-dossier">
+    <header>
+      <p className="eyebrow">Decision dossier · version {report.version}</p>
+      <h3>{product.headline}</h3>
+      <p>{product.evidenceConfidence.explanation}</p>
+    </header>
+    <div className="decision-section-list">
+      {product.sections.map((section, sectionIndex) => <article key={section.key} className={revealUpClass} style={getStaggerDelay(sectionIndex)}>
+        <span>{String(sectionIndex + 1).padStart(2, "0")}</span>
+        <div>
+          <h4>{section.title}</h4>
+          <p>{section.summary}</p>
+          <ul>{section.statements.map((statement, index) => <li key={`${statement.kind}-${index}`}>
+            <b className={`statement-kind kind-${statement.kind.toLowerCase()}`}>{statement.kind}</b>
+            <span>{statement.text}</span>
+            {!!statement.evidenceIds.length && <EvidenceCitations report={report} evidenceIds={statement.evidenceIds}/>}
+            {!statement.evidenceIds.length && statement.sourceUrls.map((url, sourceIndex) => <a key={url} href={url} target="_blank" rel="noreferrer">[source {sourceIndex + 1}]</a>)}
+          </li>)}</ul>
+        </div>
+      </article>)}
+    </div>
+    <div className="experiment-grid">
+      {product.experiments.map((experiment) => <article key={experiment.name}>
+        <span>{experiment.duration}</span><h4>{experiment.name}</h4>
+        <p><b>Hypothesis:</b> {experiment.hypothesis}</p>
+        <p><b>Participant:</b> {experiment.targetParticipant}</p>
+        <p><b>Recruitment:</b> {experiment.recruitmentMethod}</p>
+        <p><b>Sample:</b> {experiment.sampleSize}</p>
+        <p><b>Method:</b> {experiment.method}</p>
+        <p><b>Pass:</b> {experiment.successCriterion}</p>
+        <p><b>Fail:</b> {experiment.failureCriterion}</p>
+        <p><b>Decision unlocked:</b> {experiment.decisionUnlocked}</p>
+      </article>)}
+    </div>
+  </section>;
+}
+
 function SpecialistView({ report }: { report: ReportType }) {
   const specialists = report.specialistAssessments ?? [];
+  const decisionSpecialists = new Map((report.decisionProduct?.specialistOutputs ?? []).map((item) => [item.name, item]));
   const insights = report.fullValidationInsights;
   return <div className="specialist-assessments">
     <section className="report-callout">
@@ -465,12 +531,21 @@ function SpecialistView({ report }: { report: ReportType }) {
       </div>
     </section>
     <div className="evidence-card-grid">
-      {specialists.map((specialist) => <article key={specialist.name}>
-        <div><b>{pretty(specialist.name)}</b><span>{specialist.direction}</span></div>
+      {specialists.map((specialist) => {
+        const decision = decisionSpecialists.get(specialist.name);
+        return <article key={specialist.name}>
+        <div><b>{specialistName(specialist.name)}</b><span>{specialistDirectionLabel(specialist.direction)}</span></div>
         <h3>{specialist.assessment}</h3>
-        <ul>{specialist.findings.map((finding) => <li key={finding}>{finding}</li>)}</ul>
+        <ul>{(decision?.keyFindings ?? specialist.findings).map((finding) => <li key={finding}>{finding}</li>)}</ul>
+        {decision && <dl>
+          <div><dt>Confidence</dt><dd>{decision.confidence}</dd></div>
+          <div><dt>Brief dimensions</dt><dd>{decision.relevantBriefDimensions.join("; ") || "Not established"}</dd></div>
+          <div><dt>Opposing evidence</dt><dd>{decision.opposingEvidenceIds.length ? <EvidenceCitations report={report} evidenceIds={decision.opposingEvidenceIds}/> : "None resolved"}</dd></div>
+          <div><dt>Unresolved gaps</dt><dd>{decision.unresolvedGaps.join("; ") || "None recorded"}</dd></div>
+          <div><dt>Decision implication</dt><dd>{decision.decisionImplication}</dd></div>
+        </dl>}
         <small>{specialist.evidenceIds.length} linked evidence item{specialist.evidenceIds.length === 1 ? "" : "s"}</small>
-      </article>)}
+      </article>;})}
     </div>
     {insights && <div className="scope-groups">
       <article><b>Target segments and jobs to be done</b>{insights.targetSegments.map((segment) => <p key={segment.name}><strong>{segment.name}:</strong> {segment.jobsToBeDone.join(" · ")}</p>)}</article>
@@ -516,14 +591,15 @@ function ExportView({ onExport, formats }: { onExport: (format: "md" | "json" | 
 
 function FinalBlock({ report }: { report: ReportType }) {
   const o = report.opportunity;
+  const action = report.decisionProduct?.primaryRecommendation ?? report.topRecommendation ?? "Insufficient evidence";
   return <section className="final-verdict-block">
     <p className="eyebrow">Final recommendation</p>
     <h3>{o.scorecard.verdict}</h3>
     <div>
-      <span><b>Next action: </b>{o.launch.successMetric}</span>
+      <span><b>Next action: </b>{action}</span>
       {report.reportMode === "full_validation" && <span><b>Build first: </b>{o.mvp.scope[0]}</span>}
       {report.reportMode === "full_validation" && <span><b>Do not build: </b>{o.mvp.exclusions[0]}</span>}
-      <span><b>Prove before scaling: </b>{o.launch.successMetric}</span>
+      <span><b>Decision threshold: </b>{report.decisionProduct?.experiments[0]?.decisionUnlocked ?? "Insufficient evidence"}</span>
     </div>
   </section>;
 }

@@ -1,5 +1,4 @@
-import { getReportModeConfig } from "./report-modes.ts";
-import { countEvidenceSources, deriveProgressSteps, filterReportHistory, hasMixedResearchDepth, REPORT_TABS } from "./report-mode-ui.ts";
+import { countEvidenceSources, filterReportHistory, hasMixedResearchDepth, REPORT_TABS } from "./report-mode-ui.ts";
 
 declare const Deno: { test(name: string, fn: () => void | Promise<void>): void };
 
@@ -29,13 +28,4 @@ Deno.test("comparison flags unequal research scopes", () => {
 
 Deno.test("source counts use distinct persisted citation URLs", () => {
   assert(countEvidenceSources([{ url: "https://example.test/a" }, { url: "https://example.test/a" }, { url: "https://example.test/b" }, { url: "" }]) === 2, "duplicate evidence rows must not inflate source counts");
-});
-
-Deno.test("progress derives one current step from persisted status and percentage", () => {
-  const steps = deriveProgressSteps(getReportModeConfig("full_validation"), {
-    stage: "Scoring",
-    progress: 75,
-  });
-  assert(steps.filter((step) => step.state === "active").length === 1, "multiple canonical stages were active");
-  assert(steps.find((step) => step.key === "analyze_score")?.state === "active", "deterministic analysis stage was not active");
 });

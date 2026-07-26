@@ -44,17 +44,24 @@ Deno.serve(async (req: Request) => {
       return jsonResponse(diagnostic);
     }
     // Requests only wake a durable queue consumer. They can never execute a run payload directly.
-    return await handleStagedClaim(db);
+    const requestedRunId = typeof body?.runId === "string" && /^[0-9a-f-]{36}$/i.test(body.runId)
+      ? body.runId
+      : undefined;
+    return await handleStagedClaim(db, requestedRunId);
   } catch (error) {
     console.error("Worker error:", error);
     return jsonResponse({ error: error instanceof Error ? error.message : String(error) }, 500);
   }
 });
 
-async function handleStagedClaim(db: any): Promise<Response> {
+async function handleStagedClaim(db: any, requestedRunId?: string): Promise<Response> {
   const workerId = `worker-${crypto.randomUUID().slice(0, 8)}`;
-  const job = await claimJob(db, workerId, 150_000);
+  const job = await claimJob(db, workerId, 150_000, requestedRunId);
   if (!job) return jsonResponse({ message: "No pending jobs", worker: workerId });
+  if (requestedRunId && job.run_id !== requestedRunId) {
+    console.error(JSON.stringify({ event: "worker_scope_violation", requestedRunId, claimedRunId: job.run_id, jobId: job.id }));
+    return jsonResponse({ error: "Worker claimed a job outside the requested run namespace.", requested_run_id: requestedRunId, claimed_run_id: job.run_id }, 409);
+  }
 
   const { data: run } = await db.from("research_runs").select("mode,status").eq("id", job.run_id).single();
   if (!run || ["Completed", "Failed", "Cancelled"].includes(run.status)) {
@@ -62,7 +69,7 @@ async function handleStagedClaim(db: any): Promise<Response> {
       status: "failed", nextStage: null, nextInputMeta: {}, nextStageIteration: 0, nextBatchIndex: 0,
       nextBatchSize: 0, nextJobPurpose: "stage", outputMeta: {}, metrics: {},
       error: { class: "permanent", message: run ? `Run is terminal: ${run.status}` : "Run not found" },
-    });
+    }, requestedRunId);
     return jsonResponse({ error: run ? "Run is terminal" : "Run not found", job_id: job.id }, run ? 409 : 404);
   }
 
@@ -75,8 +82,8 @@ async function handleStagedClaim(db: any): Promise<Response> {
   const stage = validateJobStage(job.stage);
   const stageResult = await executeStage(stage, ctx);
   await reconcileUsageMetrics(job.run_id, db);
-  await commitStageResult(db, job.id, stageResult);
-  return jsonResponse({ message: "Stage processed", job_id: job.id, stage, status: stageResult.status, next_stage: stageResult.nextStage, worker: workerId }, 202);
+  await commitStageResult(db, job.id, stageResult, requestedRunId);
+  return jsonResponse({ message: "Stage processed", run_id: job.run_id, job_id: job.id, stage, status: stageResult.status, next_stage: stageResult.nextStage, worker: workerId }, 202);
 }
 
 function jsonResponse(body: unknown, status = 200): Response {

@@ -1,0 +1,529 @@
+{
+  "nodes": [
+    {
+      "id": "3b5e5737-82e4-4d3c-82b0-999c3575f222",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "opportunity",
+      "node_key": "d635d2b8-d5f5-4e6d-87a0-dcd816e62245",
+      "label": "Validated opportunity",
+      "attributes": {
+        "mode": "full_validation"
+      },
+      "created_at": "2026-07-26T06:22:47.389479+00:00"
+    },
+    {
+      "id": "77ff5841-3988-4cb9-9859-33d05899de5a",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "source",
+      "node_key": "c46c3888-8bf7-4303-8da5-adbeaa4e46b2",
+      "label": "Client Approval Workflow For Agencies - The Workhint Blog",
+      "attributes": {
+        "url": "https://blog.workhint.com/blog/client-approval-workflow-agencies",
+        "tier": 2,
+        "domain": "blog.workhint.com"
+      },
+      "created_at": "2026-07-26T06:22:47.392791+00:00"
+    },
+    {
+      "id": "aec55b61-522d-4b08-9f57-3983364580d1",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "claim",
+      "node_key": "dac95304-352c-4e17-b88d-62fee23556b1",
+      "label": "Client Approval Workflow For Agencies - The Workhint Blog",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Pain",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-26T06:22:47.396131+00:00"
+    },
+    {
+      "id": "028d55a9-d01a-4ef8-9a5d-64cecfee7bae",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "source",
+      "node_key": "ed6a3848-7176-4858-a9b4-2a48642af2e4",
+      "label": "Frictionless Client Experience",
+      "attributes": {
+        "url": "https://aligno.io",
+        "tier": 2,
+        "domain": "aligno.io"
+      },
+      "created_at": "2026-07-26T06:22:47.402784+00:00"
+    },
+    {
+      "id": "7831c546-d654-4770-b549-98f788359bf9",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "claim",
+      "node_key": "083f8b8d-9808-43e5-9c6d-8d3890cc3a08",
+      "label": "Client Approval & Sign-Off Tool, No Client Login — Aligno",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Demand",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-26T06:22:47.406551+00:00"
+    },
+    {
+      "id": "1adbf2ef-c42f-4bc0-a034-d34887370f29",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "source",
+      "node_key": "9e20e49a-3059-4dd7-9f0b-845f936370ba",
+      "label": "Regulatory Compliance Drivers",
+      "attributes": {
+        "url": "https://approvalwhisper.com/approval-audit-trail-software",
+        "tier": 2,
+        "domain": "approvalwhisper.com"
+      },
+      "created_at": "2026-07-26T06:22:47.412398+00:00"
+    },
+    {
+      "id": "9d062e7e-0436-44b4-b4ce-6c3a174dd75c",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "claim",
+      "node_key": "82877b1c-abd7-4913-947e-8a5ff750f4fe",
+      "label": "Approval Audit Trail Software | ApprovalWhisper",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Demand",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-26T06:22:47.415744+00:00"
+    },
+    {
+      "id": "18a8392c-996c-4ad2-8be6-b2b7a5de63b2",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "claim",
+      "node_key": "3ebfffa3-7f2b-43e4-bc61-289f7c17c967",
+      "label": "Approval Audit Trail Software | ApprovalWhisper",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Pain",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-26T06:22:47.426187+00:00"
+    },
+    {
+      "id": "02c3b1f7-8b50-498b-86a8-62599cc39e65",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "source",
+      "node_key": "e22be98c-8d17-4034-a76e-ae73f457c130",
+      "label": "Best Client Approval Software (2026)",
+      "attributes": {
+        "url": "https://wifitalents.com/best/client-approval-software",
+        "tier": 3,
+        "domain": "wifitalents.com"
+      },
+      "created_at": "2026-07-26T06:22:47.433041+00:00"
+    },
+    {
+      "id": "a3f00a0d-86e4-43ff-9576-04b5add1ca63",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "claim",
+      "node_key": "31b71d4e-6309-4019-bc34-a85f8d0a8a4c",
+      "label": "Best Client Approval Software (2026)",
+      "attributes": {
+        "strength": "Medium",
+        "signalType": "Demand",
+        "disconfirming": true
+      },
+      "created_at": "2026-07-26T06:22:47.436421+00:00"
+    },
+    {
+      "id": "bd671000-066c-496c-b2f5-46318e604a69",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "source",
+      "node_key": "79252ea5-1c52-4093-8d2c-e11368c90a8c",
+      "label": "Scope Dispute Prevalence",
+      "attributes": {
+        "url": "https://www.agency-os.tech/blog/client-portal/client-approval-workflow",
+        "tier": 2,
+        "domain": "www.agency-os.tech"
+      },
+      "created_at": "2026-07-26T06:22:47.443336+00:00"
+    },
+    {
+      "id": "521ab2c5-b14b-4019-922b-f2bfe622fee1",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "claim",
+      "node_key": "1e4e7fa9-6d18-4f85-b559-95c97faea6b4",
+      "label": "Scope Dispute Prevalence",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Pain",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-26T06:22:47.446883+00:00"
+    },
+    {
+      "id": "fd4aaeee-b710-4588-a95c-a92a2da4b5e9",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "source",
+      "node_key": "cf35f108-f666-408f-8be0-40fa0847b7e0",
+      "label": "Efficiency Gains from Structured Workflows",
+      "attributes": {
+        "url": "https://aibrify.com/blog/agency-client-content-approval-workflow-guide",
+        "tier": 2,
+        "domain": "aibrify.com"
+      },
+      "created_at": "2026-07-26T06:22:47.453303+00:00"
+    },
+    {
+      "id": "ffcd846a-d48e-4723-8031-c7e0340d77ce",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "claim",
+      "node_key": "f3901cfe-a614-4e56-ba1e-d4ddecccb7f9",
+      "label": "Efficiency Gains from Structured Workflows",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Demand",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-26T06:22:47.456595+00:00"
+    },
+    {
+      "id": "f6ef39c8-7cc3-4949-bd0f-1c82701af96b",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "claim",
+      "node_key": "142ff9ee-692f-4df9-b5bf-97255c80d9cb",
+      "label": "Regulatory Compliance Drivers",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Risk",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-26T06:22:47.466099+00:00"
+    },
+    {
+      "id": "c23a5897-72e9-4113-8254-39ad5a40c3fd",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "claim",
+      "node_key": "eb1b8f17-7477-457a-8a06-1066a740c438",
+      "label": "Frictionless Client Experience",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Demand",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-26T06:22:47.47535+00:00"
+    },
+    {
+      "id": "510d130c-2a4b-4aeb-8ff0-3acbb2ea748d",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "source",
+      "node_key": "c2ce4889-105b-4585-9556-cce8a3357cd8",
+      "label": "Blink Approval Pricing",
+      "attributes": {
+        "url": "https://www.blinkapproval.com/pricing",
+        "tier": 1,
+        "domain": "www.blinkapproval.com"
+      },
+      "created_at": "2026-07-26T06:22:47.481035+00:00"
+    },
+    {
+      "id": "2bb62baa-267f-43e5-9c2d-70db4da40dc6",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "claim",
+      "node_key": "2a07c759-26f5-43ea-8ad4-7405d646396a",
+      "label": "Blink Approval Pricing",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Pricing",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-26T06:22:47.484623+00:00"
+    },
+    {
+      "id": "a0a60eb6-428c-4282-8b51-9abdf82fa278",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "source",
+      "node_key": "fdf83293-1d09-4845-b8f6-b6e0124b3a49",
+      "label": "ApproveWell Pricing",
+      "attributes": {
+        "url": "https://approvewell.com/pricing",
+        "tier": 1,
+        "domain": "approvewell.com"
+      },
+      "created_at": "2026-07-26T06:22:47.490497+00:00"
+    },
+    {
+      "id": "2aac1941-f17f-446f-ab39-b6dc8237fc54",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "node_type": "claim",
+      "node_key": "29fa29d5-11ee-458d-90b2-8f12e42dc9ec",
+      "label": "ApproveWell Pricing",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Pricing",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-26T06:22:47.49347+00:00"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e524aff1-7c57-4624-a7ab-2aac0eb51192",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "aec55b61-522d-4b08-9f57-3983364580d1",
+      "to_node_id": "3b5e5737-82e4-4d3c-82b0-999c3575f222",
+      "relation": "informs",
+      "evidence_ids": [
+        "dac95304-352c-4e17-b88d-62fee23556b1"
+      ],
+      "created_at": "2026-07-26T06:22:47.399446+00:00"
+    },
+    {
+      "id": "75308bfe-a840-4e21-b357-cdd77a78b29b",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "77ff5841-3988-4cb9-9859-33d05899de5a",
+      "to_node_id": "aec55b61-522d-4b08-9f57-3983364580d1",
+      "relation": "supports",
+      "evidence_ids": [
+        "dac95304-352c-4e17-b88d-62fee23556b1"
+      ],
+      "created_at": "2026-07-26T06:22:47.399446+00:00"
+    },
+    {
+      "id": "7b1b84c3-3480-4357-826d-8c63a428ce83",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "7831c546-d654-4770-b549-98f788359bf9",
+      "to_node_id": "3b5e5737-82e4-4d3c-82b0-999c3575f222",
+      "relation": "informs",
+      "evidence_ids": [
+        "083f8b8d-9808-43e5-9c6d-8d3890cc3a08"
+      ],
+      "created_at": "2026-07-26T06:22:47.40956+00:00"
+    },
+    {
+      "id": "f5d2f5bc-003e-45f6-b854-cf3d4585db63",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "028d55a9-d01a-4ef8-9a5d-64cecfee7bae",
+      "to_node_id": "7831c546-d654-4770-b549-98f788359bf9",
+      "relation": "supports",
+      "evidence_ids": [
+        "083f8b8d-9808-43e5-9c6d-8d3890cc3a08"
+      ],
+      "created_at": "2026-07-26T06:22:47.40956+00:00"
+    },
+    {
+      "id": "b1228539-782b-4228-8507-01002ac92594",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "1adbf2ef-c42f-4bc0-a034-d34887370f29",
+      "to_node_id": "9d062e7e-0436-44b4-b4ce-6c3a174dd75c",
+      "relation": "supports",
+      "evidence_ids": [
+        "82877b1c-abd7-4913-947e-8a5ff750f4fe"
+      ],
+      "created_at": "2026-07-26T06:22:47.419506+00:00"
+    },
+    {
+      "id": "52bcd86f-caca-45c6-b840-a9b906354eaa",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "9d062e7e-0436-44b4-b4ce-6c3a174dd75c",
+      "to_node_id": "3b5e5737-82e4-4d3c-82b0-999c3575f222",
+      "relation": "informs",
+      "evidence_ids": [
+        "82877b1c-abd7-4913-947e-8a5ff750f4fe"
+      ],
+      "created_at": "2026-07-26T06:22:47.419506+00:00"
+    },
+    {
+      "id": "9c39cf02-46ac-4225-aa72-ffc89fa194e3",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "1adbf2ef-c42f-4bc0-a034-d34887370f29",
+      "to_node_id": "18a8392c-996c-4ad2-8be6-b2b7a5de63b2",
+      "relation": "supports",
+      "evidence_ids": [
+        "3ebfffa3-7f2b-43e4-bc61-289f7c17c967"
+      ],
+      "created_at": "2026-07-26T06:22:47.428842+00:00"
+    },
+    {
+      "id": "206530f2-e192-456c-bd6b-50222a8e966e",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "18a8392c-996c-4ad2-8be6-b2b7a5de63b2",
+      "to_node_id": "3b5e5737-82e4-4d3c-82b0-999c3575f222",
+      "relation": "informs",
+      "evidence_ids": [
+        "3ebfffa3-7f2b-43e4-bc61-289f7c17c967"
+      ],
+      "created_at": "2026-07-26T06:22:47.428842+00:00"
+    },
+    {
+      "id": "7b70bee8-79a7-4e56-a378-081a2452db9b",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "a3f00a0d-86e4-43ff-9576-04b5add1ca63",
+      "to_node_id": "3b5e5737-82e4-4d3c-82b0-999c3575f222",
+      "relation": "informs",
+      "evidence_ids": [
+        "31b71d4e-6309-4019-bc34-a85f8d0a8a4c"
+      ],
+      "created_at": "2026-07-26T06:22:47.439936+00:00"
+    },
+    {
+      "id": "7bb2e225-3623-4208-952e-711effc5bcf6",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "02c3b1f7-8b50-498b-86a8-62599cc39e65",
+      "to_node_id": "a3f00a0d-86e4-43ff-9576-04b5add1ca63",
+      "relation": "contradicts",
+      "evidence_ids": [
+        "31b71d4e-6309-4019-bc34-a85f8d0a8a4c"
+      ],
+      "created_at": "2026-07-26T06:22:47.439936+00:00"
+    },
+    {
+      "id": "6edc9da4-eb23-452d-b032-14af83f061df",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "521ab2c5-b14b-4019-922b-f2bfe622fee1",
+      "to_node_id": "3b5e5737-82e4-4d3c-82b0-999c3575f222",
+      "relation": "informs",
+      "evidence_ids": [
+        "1e4e7fa9-6d18-4f85-b559-95c97faea6b4"
+      ],
+      "created_at": "2026-07-26T06:22:47.449908+00:00"
+    },
+    {
+      "id": "59a77207-de03-47c5-9fa5-268e8fbd13ec",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "bd671000-066c-496c-b2f5-46318e604a69",
+      "to_node_id": "521ab2c5-b14b-4019-922b-f2bfe622fee1",
+      "relation": "supports",
+      "evidence_ids": [
+        "1e4e7fa9-6d18-4f85-b559-95c97faea6b4"
+      ],
+      "created_at": "2026-07-26T06:22:47.449908+00:00"
+    },
+    {
+      "id": "967ec781-fd24-49ad-8de4-5a47b988539a",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "ffcd846a-d48e-4723-8031-c7e0340d77ce",
+      "to_node_id": "3b5e5737-82e4-4d3c-82b0-999c3575f222",
+      "relation": "informs",
+      "evidence_ids": [
+        "f3901cfe-a614-4e56-ba1e-d4ddecccb7f9"
+      ],
+      "created_at": "2026-07-26T06:22:47.459797+00:00"
+    },
+    {
+      "id": "960cbe3a-f3e2-4a54-b3f4-ea70525061e2",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "fd4aaeee-b710-4588-a95c-a92a2da4b5e9",
+      "to_node_id": "ffcd846a-d48e-4723-8031-c7e0340d77ce",
+      "relation": "supports",
+      "evidence_ids": [
+        "f3901cfe-a614-4e56-ba1e-d4ddecccb7f9"
+      ],
+      "created_at": "2026-07-26T06:22:47.459797+00:00"
+    },
+    {
+      "id": "137a9ce0-b0af-4655-8590-29fd6eda4ed4",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "1adbf2ef-c42f-4bc0-a034-d34887370f29",
+      "to_node_id": "f6ef39c8-7cc3-4949-bd0f-1c82701af96b",
+      "relation": "supports",
+      "evidence_ids": [
+        "142ff9ee-692f-4df9-b5bf-97255c80d9cb"
+      ],
+      "created_at": "2026-07-26T06:22:47.469275+00:00"
+    },
+    {
+      "id": "236f8830-2710-43b9-a14d-a05f9ce52fc6",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "f6ef39c8-7cc3-4949-bd0f-1c82701af96b",
+      "to_node_id": "3b5e5737-82e4-4d3c-82b0-999c3575f222",
+      "relation": "informs",
+      "evidence_ids": [
+        "142ff9ee-692f-4df9-b5bf-97255c80d9cb"
+      ],
+      "created_at": "2026-07-26T06:22:47.469275+00:00"
+    },
+    {
+      "id": "f5941361-2c70-4891-9328-f9eed9afcd06",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "c23a5897-72e9-4113-8254-39ad5a40c3fd",
+      "to_node_id": "3b5e5737-82e4-4d3c-82b0-999c3575f222",
+      "relation": "informs",
+      "evidence_ids": [
+        "eb1b8f17-7477-457a-8a06-1066a740c438"
+      ],
+      "created_at": "2026-07-26T06:22:47.478162+00:00"
+    },
+    {
+      "id": "b9e10f58-2a3f-4d85-9aa2-66bb9f211109",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "028d55a9-d01a-4ef8-9a5d-64cecfee7bae",
+      "to_node_id": "c23a5897-72e9-4113-8254-39ad5a40c3fd",
+      "relation": "supports",
+      "evidence_ids": [
+        "eb1b8f17-7477-457a-8a06-1066a740c438"
+      ],
+      "created_at": "2026-07-26T06:22:47.478162+00:00"
+    },
+    {
+      "id": "0d6ef6d3-016b-4705-bdbf-8dbedc00987a",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "2bb62baa-267f-43e5-9c2d-70db4da40dc6",
+      "to_node_id": "3b5e5737-82e4-4d3c-82b0-999c3575f222",
+      "relation": "informs",
+      "evidence_ids": [
+        "2a07c759-26f5-43ea-8ad4-7405d646396a"
+      ],
+      "created_at": "2026-07-26T06:22:47.487537+00:00"
+    },
+    {
+      "id": "e70013c2-729f-4325-879a-27ad28c3c92c",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "510d130c-2a4b-4aeb-8ff0-3acbb2ea748d",
+      "to_node_id": "2bb62baa-267f-43e5-9c2d-70db4da40dc6",
+      "relation": "supports",
+      "evidence_ids": [
+        "2a07c759-26f5-43ea-8ad4-7405d646396a"
+      ],
+      "created_at": "2026-07-26T06:22:47.487537+00:00"
+    },
+    {
+      "id": "2154d07c-57cb-4be8-b031-1c25efdeea8f",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "a0a60eb6-428c-4282-8b51-9abdf82fa278",
+      "to_node_id": "2aac1941-f17f-446f-ab39-b6dc8237fc54",
+      "relation": "supports",
+      "evidence_ids": [
+        "29fa29d5-11ee-458d-90b2-8f12e42dc9ec"
+      ],
+      "created_at": "2026-07-26T06:22:47.496359+00:00"
+    },
+    {
+      "id": "66defd9a-c81e-436f-9a26-256c8229d2fc",
+      "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+      "from_node_id": "2aac1941-f17f-446f-ab39-b6dc8237fc54",
+      "to_node_id": "3b5e5737-82e4-4d3c-82b0-999c3575f222",
+      "relation": "informs",
+      "evidence_ids": [
+        "29fa29d5-11ee-458d-90b2-8f12e42dc9ec"
+      ],
+      "created_at": "2026-07-26T06:22:47.496359+00:00"
+    }
+  ],
+  "confidence": {
+    "run_id": "cc5e982c-80c5-4092-b9e6-5dfd2dea03ce",
+    "band": "High",
+    "score": 0.83,
+    "reasons": [
+      "8 independent domains",
+      "11 semantically accepted evidence items",
+      "0 unresolved evidence disagreements",
+      "average source authority 77%",
+      "average semantic relevance 91%",
+      "buyer-specific evidence 73%",
+      "tier distribution {\"1\":2,\"2\":8,\"3\":1}"
+    ],
+    "created_at": "2026-07-26T06:22:47.381444+00:00",
+    "updated_at": "2026-07-26T06:22:51.056+00:00",
+    "deductions": [],
+    "scoring_confidence": 79,
+    "report_completeness": 71,
+    "completeness_reasons": [
+      "6/11 required evidence families covered",
+      "6/6 structural report checks passed"
+    ]
+  }
+}

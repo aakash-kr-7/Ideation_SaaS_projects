@@ -1,0 +1,52 @@
+[
+  {
+    "id": "75a499ae-87b4-4460-984d-da972a35d0c3",
+    "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+    "agent_name": "final_judge",
+    "status": "Complete",
+    "attempt_count": 1,
+    "payload": {
+      "methodology": [
+        {
+          "text": "The validation score was derived by cross-referencing high-volume usage metrics against identified feature gaps and competitive threats to determine the long-term viability and market defensibility of the solution.",
+          "evidence_ids": [
+            "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+            "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+            "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+          ],
+          "score_criteria": [
+            "competitionGap",
+            "painSeverity"
+          ]
+        }
+      ],
+      "written_verdict": "Avoid",
+      "executive_summary": [
+        {
+          "text": "While the platform demonstrates significant adoption with over 250,000 documents processed, the lack of critical feature depth, such as version-level approvals, limits the severity of the pain point addressed.",
+          "evidence_ids": [
+            "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+            "4baeb504-507a-4f39-ad41-4fd7a06623f1"
+          ],
+          "score_criteria": [
+            "painSeverity",
+            "retentionPotential"
+          ]
+        },
+        {
+          "text": "The competitive landscape poses a substantial risk, as existing alternatives provide superior automation and broader integration capabilities that current offerings fail to match.",
+          "evidence_ids": [
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+            "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+          ],
+          "score_criteria": [
+            "competitionGap",
+            "willingnessToPay"
+          ]
+        }
+      ]
+    },
+    "created_at": "2026-07-25T12:50:19.390615+00:00"
+  }
+]

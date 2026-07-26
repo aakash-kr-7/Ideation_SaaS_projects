@@ -1,0 +1,208 @@
+{
+  "nodes": [
+    {
+      "id": "7d301e71-5d35-40ab-be1f-e871db095fc9",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "node_type": "opportunity",
+      "node_key": "a675b767-5ef2-4684-83aa-048227945cfb",
+      "label": "Validated opportunity",
+      "attributes": {
+        "mode": "full_validation"
+      },
+      "created_at": "2026-07-25T12:54:57.99773+00:00"
+    },
+    {
+      "id": "215e74d9-07c1-4d6e-931a-de18053f4587",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "node_type": "source",
+      "node_key": "8555ca13-2d58-4731-8ab9-e1e63badf6d4",
+      "label": "AI-driven PR validation",
+      "attributes": {
+        "url": "https://medium.com/@mythilir_60670/how-to-automate-pull-request-validation-with-ai-agents-inside-github-5bf8da40ca2c",
+        "tier": 3,
+        "domain": "medium.com"
+      },
+      "created_at": "2026-07-25T12:54:58.002788+00:00"
+    },
+    {
+      "id": "649e4fe5-733a-4aae-8287-f99cc59a69a9",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "node_type": "claim",
+      "node_key": "c54a2ff7-e052-4336-bfdb-0f50803492f2",
+      "label": "AI-driven PR validation",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Demand",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-25T12:54:58.007502+00:00"
+    },
+    {
+      "id": "b860d27f-6b70-401b-bae9-5535d149b7d6",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "node_type": "source",
+      "node_key": "76559098-6c07-46bf-a96d-1b5295ac78b4",
+      "label": "Designing Efficient Git Workflow Approvals - hoop.dev",
+      "attributes": {
+        "url": "https://hoop.dev/blog/designing-efficient-git-workflow-approvals",
+        "tier": 3,
+        "domain": "hoop.dev"
+      },
+      "created_at": "2026-07-25T12:54:58.016804+00:00"
+    },
+    {
+      "id": "d8f69936-963a-4146-8b8c-3eea7f2879c0",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "node_type": "claim",
+      "node_key": "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c",
+      "label": "Git workflow approval bottlenecks",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Pain",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-25T12:54:58.021938+00:00"
+    },
+    {
+      "id": "e0ee2b76-6b6b-4665-baae-b2399a9946c7",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "node_type": "source",
+      "node_key": "d38e9b29-aaa3-4a96-9bbb-586ef910fa41",
+      "label": "Pharmaceutical document compliance",
+      "attributes": {
+        "url": "https://approvalflow.net",
+        "tier": 3,
+        "domain": "approvalflow.net"
+      },
+      "created_at": "2026-07-25T12:54:58.031153+00:00"
+    },
+    {
+      "id": "9ca1cebd-3cd5-44ee-9edd-e6e062f185fc",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "node_type": "claim",
+      "node_key": "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c",
+      "label": "Pharmaceutical document compliance",
+      "attributes": {
+        "strength": "Medium",
+        "signalType": "Demand",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-25T12:54:58.035455+00:00"
+    },
+    {
+      "id": "b8d3f5ef-69d0-427e-b5cd-60843a0b4d8b",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "node_type": "claim",
+      "node_key": "373ee827-0984-42f2-bb8b-1a53343f02f7",
+      "label": "Adversarial assessment",
+      "attributes": {
+        "strength": "Low",
+        "signalType": "Risk",
+        "disconfirming": true
+      },
+      "created_at": "2026-07-25T12:54:58.047531+00:00"
+    }
+  ],
+  "edges": [
+    {
+      "id": "eaf592dc-1326-4375-8266-6b1ba265df0c",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "from_node_id": "215e74d9-07c1-4d6e-931a-de18053f4587",
+      "to_node_id": "649e4fe5-733a-4aae-8287-f99cc59a69a9",
+      "relation": "supports",
+      "evidence_ids": [
+        "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+      ],
+      "created_at": "2026-07-25T12:54:58.011939+00:00"
+    },
+    {
+      "id": "1300a2f3-4fd3-4905-ba40-efc1461200b2",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "from_node_id": "649e4fe5-733a-4aae-8287-f99cc59a69a9",
+      "to_node_id": "7d301e71-5d35-40ab-be1f-e871db095fc9",
+      "relation": "informs",
+      "evidence_ids": [
+        "c54a2ff7-e052-4336-bfdb-0f50803492f2"
+      ],
+      "created_at": "2026-07-25T12:54:58.011939+00:00"
+    },
+    {
+      "id": "4b0dffda-157f-453b-8712-c4a706d603ee",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "from_node_id": "b860d27f-6b70-401b-bae9-5535d149b7d6",
+      "to_node_id": "d8f69936-963a-4146-8b8c-3eea7f2879c0",
+      "relation": "supports",
+      "evidence_ids": [
+        "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c"
+      ],
+      "created_at": "2026-07-25T12:54:58.026643+00:00"
+    },
+    {
+      "id": "f06dcc9a-2fe4-4379-be75-76768ab87d90",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "from_node_id": "d8f69936-963a-4146-8b8c-3eea7f2879c0",
+      "to_node_id": "7d301e71-5d35-40ab-be1f-e871db095fc9",
+      "relation": "informs",
+      "evidence_ids": [
+        "44a11d4c-ec29-4ea0-b8b3-2f08ad56d60c"
+      ],
+      "created_at": "2026-07-25T12:54:58.026643+00:00"
+    },
+    {
+      "id": "63807a7d-5c0b-44b0-baf8-4e9897e52dc4",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "from_node_id": "e0ee2b76-6b6b-4665-baae-b2399a9946c7",
+      "to_node_id": "9ca1cebd-3cd5-44ee-9edd-e6e062f185fc",
+      "relation": "supports",
+      "evidence_ids": [
+        "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+      ],
+      "created_at": "2026-07-25T12:54:58.039669+00:00"
+    },
+    {
+      "id": "0d1e89a9-a29a-4e8b-b0a1-056a09c67e8a",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "from_node_id": "9ca1cebd-3cd5-44ee-9edd-e6e062f185fc",
+      "to_node_id": "7d301e71-5d35-40ab-be1f-e871db095fc9",
+      "relation": "informs",
+      "evidence_ids": [
+        "5d0c10db-d37a-43ee-b421-1f6a60f5fb4c"
+      ],
+      "created_at": "2026-07-25T12:54:58.039669+00:00"
+    },
+    {
+      "id": "0272398a-ff92-46d2-8a4a-521084c2e5d8",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "from_node_id": "b860d27f-6b70-401b-bae9-5535d149b7d6",
+      "to_node_id": "b8d3f5ef-69d0-427e-b5cd-60843a0b4d8b",
+      "relation": "contradicts",
+      "evidence_ids": [
+        "373ee827-0984-42f2-bb8b-1a53343f02f7"
+      ],
+      "created_at": "2026-07-25T12:54:58.052693+00:00"
+    },
+    {
+      "id": "6d859fd8-7820-486b-9229-ddb1dd29e3ae",
+      "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+      "from_node_id": "b8d3f5ef-69d0-427e-b5cd-60843a0b4d8b",
+      "to_node_id": "7d301e71-5d35-40ab-be1f-e871db095fc9",
+      "relation": "informs",
+      "evidence_ids": [
+        "373ee827-0984-42f2-bb8b-1a53343f02f7"
+      ],
+      "created_at": "2026-07-25T12:54:58.052693+00:00"
+    }
+  ],
+  "confidence": {
+    "run_id": "a1686d99-235e-4650-9ceb-703e8fee9c3e",
+    "band": "Low",
+    "score": 0.39,
+    "reasons": [
+      "3 independent domains",
+      "0 unresolved evidence disagreements",
+      "average source authority 50%"
+    ],
+    "created_at": "2026-07-25T12:54:57.987023+00:00",
+    "updated_at": "2026-07-25T12:54:57.986+00:00"
+  }
+}

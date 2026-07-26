@@ -15,7 +15,7 @@ export function ProjectCard({ run }: { run: ResearchRun }) {
   return <article className={`project-card group ${motion.cardInteractive}`}>
     <div className="project-top"><span className={`report-mode-badge ${run.mode}`}>{mode.label}</span>{opportunity && <ScoreBadge score={opportunity.score.total} size="sm"/>}</div>
     <h3>{run.ideaName}</h3><p>{run.ideaDescription}</p>
-    <div className="project-meta"><span><Calendar size={13}/> {run.createdAt}</span><span>{run.status}{opportunity ? ` · ${sourceCount} distinct sources` : ""}</span>{opportunity && <VerdictBadge verdict={opportunity.verdict}/>}</div>
+    <div className="project-meta"><span><Calendar size={13}/> {new Date(run.createdAt).toLocaleDateString()}</span><span>{run.status}{opportunity ? ` · ${sourceCount} distinct cited sources` : ""}</span>{opportunity && <VerdictBadge verdict={opportunity.verdict}/>}</div>
     <Link href={href} className="project-card-link">{run.status === "Completed" ? "Open report" : "View progress"} <ArrowUpRight size={14}/></Link>
   </article>;
 }

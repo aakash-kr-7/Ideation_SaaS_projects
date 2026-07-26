@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Scale, Sparkles } from "lucide-react";
+import { ArrowRight, Scale, SearchCheck } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { CompareMatrix } from "@/components/opportunity/CompareMatrix";
 import { validationReportSchema } from "@/lib/report-schema";
@@ -37,7 +37,7 @@ export default async function ComparePage() {
               </p>
               <div className="empty-state-meta">
                 <span className="empty-state-count">
-                  <Sparkles size={14} />
+                  <SearchCheck size={14} />
                   {reports.length === 0
                     ? "No completed validations yet"
                     : "1 completed validation — need 1 more"}

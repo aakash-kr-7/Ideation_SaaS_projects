@@ -1,0 +1,117 @@
+[
+  {
+    "id": "b6f7ba2b-ac99-478d-ac71-0eec012bda52",
+    "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+    "sha256": "b5d509fcb5551cfe21a21121f395560903cafc99203d50e2f91866f92bfea85e",
+    "chart_key": "factor-breakdown",
+    "chart_type": "bar",
+    "created_at": "2026-07-25T13:08:52.361379+00:00",
+    "source_data": {
+      "values": {
+        "mvpSpeed": 57,
+        "founderFit": 25,
+        "painSeverity": 24.3,
+        "competitionGap": 71,
+        "regulatoryRisk": 10,
+        "purchaseUrgency": 24.3,
+        "willingnessToPay": 10,
+        "buyerReachability": 32,
+        "retentionPotential": 20,
+        "distributionClarity": 59.5,
+        "speedToFirstRevenue": 21.1,
+        "platformDependencyRisk": 23.4
+      }
+    },
+    "chart_config": {
+      "title": "Factor Breakdown",
+      "sourceExplanation": "The 12 factor values are copied from the deterministic scorecard in this report version."
+    },
+    "schema_version": 1,
+    "svg_storage_path": null,
+    "report_version_id": "7cd7a95a-9650-4cb5-ae21-ef4071b1cc31",
+    "supporting_evidence_ids": [
+      "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+      "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+      "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+      "37c421b3-f7f2-4abd-bf78-cf1747f886ec"
+    ]
+  },
+  {
+    "id": "d9ce14ad-4ad2-407d-99f0-2afd12ce58bf",
+    "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+    "sha256": "8a02e17774b29f0fe6984dcb40956693142eccd5f9d170cefb51c46e8d869041",
+    "chart_key": "evidence-balance",
+    "chart_type": "bar",
+    "created_at": "2026-07-25T13:08:52.378084+00:00",
+    "source_data": {
+      "supporting": 3,
+      "contradictory": 1
+    },
+    "chart_config": {
+      "title": "Evidence Balance",
+      "sourceExplanation": "Counts of accepted supporting and contradictory evidence rows in this report version."
+    },
+    "schema_version": 1,
+    "svg_storage_path": null,
+    "report_version_id": "7cd7a95a-9650-4cb5-ae21-ef4071b1cc31",
+    "supporting_evidence_ids": [
+      "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+      "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+      "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+      "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+    ]
+  },
+  {
+    "id": "2be3d405-08fe-46a2-9f45-cf39c63dff83",
+    "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+    "sha256": "ef0d9dee76b3891b37f2dc433486be56d9b580a900a6c0cd34ab48f69a2c9fe5",
+    "chart_key": "source-quality-distribution",
+    "chart_type": "bar",
+    "created_at": "2026-07-25T13:08:52.392979+00:00",
+    "source_data": {
+      "byTier": {
+        "tier_1": 0,
+        "tier_2": 0,
+        "tier_3": 4,
+        "tier_4": 0
+      }
+    },
+    "chart_config": {
+      "title": "Source Quality Distribution",
+      "sourceExplanation": "Counts of accepted evidence rows grouped by persisted source tier."
+    },
+    "schema_version": 1,
+    "svg_storage_path": null,
+    "report_version_id": "7cd7a95a-9650-4cb5-ae21-ef4071b1cc31",
+    "supporting_evidence_ids": [
+      "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+      "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+      "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+      "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+    ]
+  },
+  {
+    "id": "0ad379b2-0c9c-4808-ba65-d2bf1fe5aebf",
+    "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+    "sha256": "16ed6d3a4a609719ec856e34980049ba6e5fee4cd4f09d21f705c38bea5cde02",
+    "chart_key": "alternatives-comparison",
+    "chart_type": "bar",
+    "created_at": "2026-07-25T13:08:52.406943+00:00",
+    "source_data": {
+      "values": {
+        "AppFox Workflows": 1,
+        "Comala Document Mgmt": 1
+      }
+    },
+    "chart_config": {
+      "title": "Alternatives Comparison",
+      "sourceExplanation": "Number of accepted evidence links attached to each persisted alternative or competitor."
+    },
+    "schema_version": 1,
+    "svg_storage_path": null,
+    "report_version_id": "7cd7a95a-9650-4cb5-ae21-ef4071b1cc31",
+    "supporting_evidence_ids": [
+      "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+    ]
+  }
+]

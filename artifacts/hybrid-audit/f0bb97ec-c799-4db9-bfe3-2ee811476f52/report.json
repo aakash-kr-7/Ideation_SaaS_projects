@@ -1,0 +1,1767 @@
+{
+  "id": "f6643aac-794b-4678-be4c-ae39d0f6dd97",
+  "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+  "opportunity_id": "40dae80e-a368-413a-9a37-a0c59092313a",
+  "status": "Published",
+  "executive_summary": "While the platform demonstrates significant adoption with over 250,000 documents processed, the lack of critical feature depth, such as version-level approvals, limits the severity of the pain point addressed. The competitive landscape poses a substantial risk, as existing alternatives provide superior automation and broader integration capabilities that current offerings fail to match.",
+  "methodology": "The validation score was derived by cross-referencing high-volume usage metrics against identified feature gaps and competitive threats to determine the long-term viability and market defensibility of the solution.",
+  "generated_at": "2026-07-25T12:50:19.404006+00:00",
+  "updated_at": "2026-07-25T12:50:19.404006+00:00",
+  "created_at": "2026-07-25T12:50:19.404006+00:00",
+  "report_versions": [
+    {
+      "id": "7cd7a95a-9650-4cb5-ae21-ef4071b1cc31",
+      "payload": {
+        "id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+        "version": "2.0",
+        "reportMode": "quick_scan",
+        "generatedAt": "2026-07-25T13:08:52.329Z",
+        "limitations": [
+          "pricing or willingness-to-pay evidence"
+        ],
+        "methodology": "The validation score was derived by cross-referencing high-volume usage metrics against identified feature gaps and competitive threats to determine the long-term viability and market defensibility of the solution.",
+        "opportunity": {
+          "id": "40dae80e-a368-413a-9a37-a0c59092313a",
+          "mvp": {
+            "scope": [
+              "Document upload",
+              "Markup tools",
+              "Automated routing",
+              "Dashboard reporting"
+            ],
+            "outcome": "Streamlined document review and approval system.",
+            "exclusions": [
+              "Complex BPMN workflows",
+              "External client-facing portals without login"
+            ],
+            "buildEstimate": "Not specified",
+            "buildComplexity": "Medium"
+          },
+          "name": "ApprovalFlow evidence proof (quick_scan)",
+          "risks": [
+            {
+              "id": "63dcb504-3c51-43b8-9c32-010792ba18f1",
+              "category": "Market",
+              "severity": "Medium",
+              "mitigation": "Provide clear documentation on specific use cases like document review vs. bug tracking.",
+              "description": "Market fragmentation makes it difficult for users to select the right tool without clear use-case alignment.",
+              "evidenceIds": []
+            },
+            {
+              "id": "218d2090-05c2-4c06-8832-47f068ebf255",
+              "category": "Execution",
+              "severity": "Medium",
+              "mitigation": "Focus on intuitive setup and quick-start templates.",
+              "description": "Configuration overhead can be a barrier for administrators.",
+              "evidenceIds": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ]
+            }
+          ],
+          "launch": {
+            "weekOne": [
+              "Publish to Atlassian Marketplace",
+              "Enable 30-day free trial",
+              "Publish comparison blog post"
+            ],
+            "successMetric": "Number of active monthly users and document approval cycles.",
+            "outreachMessage": "Streamline your Confluence approval workflows with ApprovalFlow—now with transparent pricing and audit-ready trails.",
+            "firstTenStrategy": [
+              "Confluence admins",
+              "Compliance officers",
+              "Product operations teams"
+            ],
+            "firstCustomerChannel": "Atlassian Marketplace"
+          },
+          "market": "B2B SaaS",
+          "pricing": {
+            "model": "Per-user monthly subscription",
+            "rationale": "Tiered pricing based on user volume to scale with workspace growth.",
+            "firstOffer": "Free for up to 10 users",
+            "pricePoint": "$0.29/user/month",
+            "evidenceIds": [
+              "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+            ],
+            "targetCustomers": 100
+          },
+          "corePain": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records.",
+          "evidence": [
+            {
+              "id": "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+              "url": "https://approvalflow.net/features.html",
+              "date": "2026-07-25T12:50:16.388059+00:00",
+              "title": "ApprovalFlow Operational Impact",
+              "signal": "Demand",
+              "source": "approvalflow.net",
+              "snippet": "With over 50,000 promotional pieces reviewed through ApprovalFlow, we've helped our clients achieve significant cost and time savings.",
+              "excluded": false,
+              "strength": "Medium",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "solution"
+            },
+            {
+              "id": "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+              "url": "https://approvalflow.net/features.html",
+              "date": "2026-07-25T12:50:16.393505+00:00",
+              "title": "ApprovalFlow Document Processing Volume",
+              "signal": "Demand",
+              "source": "approvalflow.net",
+              "snippet": "The impressive milestone of over 250,000 PDF documents uploaded to ApprovalFlow underscores the platform's widespread adoption.",
+              "excluded": false,
+              "strength": "Medium",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "solution"
+            },
+            {
+              "id": "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+              "url": "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox",
+              "date": "2026-07-25T12:50:16.399365+00:00",
+              "title": "ApprovalFlow Feature Comparison",
+              "signal": "Pain",
+              "source": "flowdence.io",
+              "snippet": "ApprovalFlow supports page-level approvals and audit trails, but version-level approval capabilities are only partially documented.",
+              "excluded": false,
+              "strength": "Medium",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "solution"
+            },
+            {
+              "id": "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+              "url": "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox",
+              "date": "2026-07-25T12:50:16.405978+00:00",
+              "title": "Adversarial assessment",
+              "signal": "Risk",
+              "source": "flowdence.io",
+              "snippet": "Competitors may offer more complex automation or broader platform integration.",
+              "excluded": false,
+              "strength": "Low",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": true,
+              "evidenceFamily": "solution"
+            }
+          ],
+          "oneLiner": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records.",
+          "createdAt": "2026-07-25T12:50:05.236469+00:00",
+          "scorecard": {
+            "notes": {
+              "mvpSpeed": "Execution-risk burden; fewer material risks increase feasibility.",
+              "founderFit": "Run-specific evidence access and domain signal coverage; no unsupported founder biography is inferred.",
+              "painSeverity": "Weighted verified pain strength, confidence, and contradiction ratio.",
+              "competitionGap": "Competitive density adjusted by explicit normalized gaps and gap-language evidence.",
+              "regulatoryRisk": "Regulatory and compliance risk evidence; this factor is inverted in the weighted total.",
+              "purchaseUrgency": "Urgency language in pain and demand evidence.",
+              "willingnessToPay": "No Tier 1 willingness-to-pay evidence; recommendations do not substitute for paid-demand proof.",
+              "buyerReachability": "Demand volume and independently sourced communities.",
+              "retentionPotential": "Recurring-workflow language in verified evidence.",
+              "distributionClarity": "Demand evidence plus persisted launch-channel specificity.",
+              "speedToFirstRevenue": "Pricing proof and purchase urgency combined deterministically.",
+              "platformDependencyRisk": "Platform dependency risk evidence; this factor is inverted in the weighted total."
+            },
+            "total": 38.9,
+            "scores": {
+              "mvpSpeed": 57,
+              "founderFit": 25,
+              "painSeverity": 24.3,
+              "competitionGap": 71,
+              "regulatoryRisk": 10,
+              "purchaseUrgency": 24.3,
+              "willingnessToPay": 10,
+              "buyerReachability": 32,
+              "retentionPotential": 20,
+              "distributionClarity": 59.5,
+              "speedToFirstRevenue": 21.1,
+              "platformDependencyRisk": 23.4
+            },
+            "verdict": "Avoid",
+            "weights": {
+              "mvpSpeed": 8,
+              "founderFit": 7,
+              "painSeverity": 12,
+              "competitionGap": 8,
+              "regulatoryRisk": 5,
+              "purchaseUrgency": 10,
+              "willingnessToPay": 11,
+              "buyerReachability": 8,
+              "retentionPotential": 9,
+              "distributionClarity": 8,
+              "speedToFirstRevenue": 7,
+              "platformDependencyRisk": 7
+            },
+            "confidence": 65,
+            "evidenceRefs": {
+              "mvpSpeed": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ],
+              "founderFit": [
+                "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ],
+              "painSeverity": [
+                "4baeb504-507a-4f39-ad41-4fd7a06623f1"
+              ],
+              "competitionGap": [],
+              "regulatoryRisk": [],
+              "purchaseUrgency": [
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+              ],
+              "willingnessToPay": [],
+              "buyerReachability": [
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec"
+              ],
+              "retentionPotential": [],
+              "distributionClarity": [
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec"
+              ],
+              "speedToFirstRevenue": [
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+              ],
+              "platformDependencyRisk": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ]
+            }
+          },
+          "competitors": [
+            {
+              "id": "1e8ffcad-7cb0-43aa-9904-4e7fcfbc70f3",
+              "gap": "Limited documentation on specific version-level controls",
+              "name": "AppFox Workflows",
+              "target": "Confluence users",
+              "pricing": "Marketplace rates",
+              "strength": "Medium",
+              "evidenceIds": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ],
+              "positioning": "Forge-native workflow automation"
+            },
+            {
+              "id": "66a56d96-39c1-4581-a760-4ce929b7fe97",
+              "gap": "Requires Confluence environment",
+              "name": "Comala Document Mgmt",
+              "target": "Confluence admins and compliance teams",
+              "pricing": "Marketplace rates",
+              "strength": "High",
+              "evidenceIds": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ],
+              "positioning": "Confluence-native approval workflow"
+            },
+            {
+              "id": "beaf45d4-2551-49ed-b5d0-cf493f0338ee",
+              "gap": "Requires building custom logic",
+              "name": "Zite",
+              "target": "Non-technical teams",
+              "pricing": "$19/month",
+              "strength": "High",
+              "evidenceIds": [],
+              "positioning": "Custom app builder for approval processes"
+            }
+          ],
+          "targetCustomer": "Small GitHub-based software agencies and software consultancies"
+        },
+        "evidenceGaps": [
+          "insufficient problem evidence",
+          "Tier 1/2 evidence missing"
+        ],
+        "reportSections": [
+          "Conclusion",
+          "Evidence",
+          "Competition",
+          "Score breakdown",
+          "Pricing",
+          "Next actions",
+          "Risks",
+          "Exports"
+        ],
+        "adversarialGate": {
+          "outcome": "NoStrongDisproof",
+          "severity": "None",
+          "objection": "Competitors may offer more complex automation or broader platform integration.",
+          "unresolved": false,
+          "evidence_ids": [
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+          ]
+        },
+        "decisionProduct": {
+          "score": 38.9,
+          "charts": [
+            {
+              "key": "factor-breakdown",
+              "title": "Factor Breakdown",
+              "sourceData": {
+                "values": {
+                  "mvpSpeed": 57,
+                  "founderFit": 25,
+                  "painSeverity": 24.3,
+                  "competitionGap": 71,
+                  "regulatoryRisk": 10,
+                  "purchaseUrgency": 24.3,
+                  "willingnessToPay": 10,
+                  "buyerReachability": 32,
+                  "retentionPotential": 20,
+                  "distributionClarity": 59.5,
+                  "speedToFirstRevenue": 21.1,
+                  "platformDependencyRisk": 23.4
+                }
+              },
+              "evidenceIds": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+                "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec"
+              ],
+              "unavailable": false,
+              "sourceExplanation": "The 12 factor values are copied from the deterministic scorecard in this report version."
+            },
+            {
+              "key": "evidence-balance",
+              "title": "Evidence Balance",
+              "sourceData": {
+                "supporting": 3,
+                "contradictory": 1
+              },
+              "evidenceIds": [
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ],
+              "unavailable": false,
+              "sourceExplanation": "Counts of accepted supporting and contradictory evidence rows in this report version."
+            },
+            {
+              "key": "source-quality-distribution",
+              "title": "Source Quality Distribution",
+              "sourceData": {
+                "byTier": {
+                  "tier_1": 0,
+                  "tier_2": 0,
+                  "tier_3": 4,
+                  "tier_4": 0
+                }
+              },
+              "evidenceIds": [
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ],
+              "unavailable": false,
+              "sourceExplanation": "Counts of accepted evidence rows grouped by persisted source tier."
+            },
+            {
+              "key": "alternatives-comparison",
+              "title": "Alternatives Comparison",
+              "sourceData": {
+                "values": {
+                  "AppFox Workflows": 1,
+                  "Comala Document Mgmt": 1
+                }
+              },
+              "evidenceIds": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ],
+              "unavailable": false,
+              "sourceExplanation": "Number of accepted evidence links attached to each persisted alternative or competitor."
+            }
+          ],
+          "decision": "Avoid",
+          "headline": "Avoid: Do not advance to Full Validation until the missing demand or payment signal is found.",
+          "sections": [
+            {
+              "key": "executive-decision",
+              "title": "Executive decision",
+              "summary": "Avoid at 38.9/100. Do not advance to Full Validation until the missing demand or payment signal is found.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "Avoid at 38.9/100. Do not advance to Full Validation until the missing demand or payment signal is found.",
+                  "sourceUrls": [
+                    "https://approvalflow.net/features.html",
+                    "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox"
+                  ],
+                  "evidenceIds": [
+                    "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                    "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                    "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+                    "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "score-confidence",
+              "title": "Score, verdict and Evidence Confidence",
+              "summary": "Low confidence: 2 independent domains; 0 unresolved evidence disagreements; average source authority 50%.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "Mvp Speed: 57/100. Execution-risk burden; fewer material risks increase feasibility.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Founder Fit: 25/100. Run-specific evidence access and domain signal coverage; no unsupported founder biography is inferred.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+                    "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                    "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                    "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Pain Severity: 24.3/100. Weighted verified pain strength, confidence, and contradiction ratio.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "4baeb504-507a-4f39-ad41-4fd7a06623f1"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Competition Gap: 71/100. Competitive density adjusted by explicit normalized gaps and gap-language evidence.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Regulatory Risk: 10/100. Regulatory and compliance risk evidence; this factor is inverted in the weighted total.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Purchase Urgency: 24.3/100. Urgency language in pain and demand evidence.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Willingness To Pay: 10/100. No Tier 1 willingness-to-pay evidence; recommendations do not substitute for paid-demand proof.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Buyer Reachability: 32/100. Demand volume and independently sourced communities.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                    "37c421b3-f7f2-4abd-bf78-cf1747f886ec"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Retention Potential: 20/100. Recurring-workflow language in verified evidence.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Distribution Clarity: 59.5/100. Demand evidence plus persisted launch-channel specificity.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                    "37c421b3-f7f2-4abd-bf78-cf1747f886ec"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Speed To First Revenue: 21.1/100. Pricing proof and purchase urgency combined deterministically.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Platform Dependency Risk: 23.4/100. Platform dependency risk evidence; this factor is inverted in the weighted total.",
+                  "sourceUrls": [],
+                  "evidenceIds": [
+                    "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "idea-interpretation",
+              "title": "Idea interpretation",
+              "summary": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records. The current interpretation is a testable product hypothesis, not an established market fact.",
+              "statements": [
+                {
+                  "kind": "Hypothesis",
+                  "text": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records. The current interpretation is a testable product hypothesis, not an established market fact.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "target-customer",
+              "title": "Target customer and job to be done",
+              "summary": "Small GitHub-based software agencies and software consultancies need to complete the underlying workflow without a lightweight pull-request approval and audit-trail service for small github-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records..",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "Small GitHub-based software agencies and software consultancies need to complete the underlying workflow without a lightweight pull-request approval and audit-trail service for small github-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records..",
+                  "sourceUrls": [
+                    "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox"
+                  ],
+                  "evidenceIds": [
+                    "4baeb504-507a-4f39-ad41-4fd7a06623f1"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "problem-demand",
+              "title": "Problem and demand",
+              "summary": "What the retrieved evidence actually establishes.",
+              "statements": [
+                {
+                  "kind": "Fact",
+                  "text": "ApprovalFlow supports page-level approvals and audit trails, but version-level approval capabilities are only partially documented.",
+                  "sourceUrls": [
+                    "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox"
+                  ],
+                  "evidenceIds": [
+                    "4baeb504-507a-4f39-ad41-4fd7a06623f1"
+                  ]
+                },
+                {
+                  "kind": "Fact",
+                  "text": "With over 50,000 promotional pieces reviewed through ApprovalFlow, we've helped our clients achieve significant cost and time savings.",
+                  "sourceUrls": [
+                    "https://approvalflow.net/features.html"
+                  ],
+                  "evidenceIds": [
+                    "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+                  ]
+                },
+                {
+                  "kind": "Fact",
+                  "text": "The impressive milestone of over 250,000 PDF documents uploaded to ApprovalFlow underscores the platform's widespread adoption.",
+                  "sourceUrls": [
+                    "https://approvalflow.net/features.html"
+                  ],
+                  "evidenceIds": [
+                    "37c421b3-f7f2-4abd-bf78-cf1747f886ec"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "alternatives",
+              "title": "Alternatives and competitors",
+              "summary": "AppFox Workflows: Forge-native workflow automation; pricing Marketplace rates. Comala Document Mgmt: Confluence-native approval workflow; pricing Marketplace rates. Zite: Custom app builder for approval processes; pricing $19/month.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "AppFox Workflows: Forge-native workflow automation; pricing Marketplace rates. Comala Document Mgmt: Confluence-native approval workflow; pricing Marketplace rates. Zite: Custom app builder for approval processes; pricing $19/month.",
+                  "sourceUrls": [
+                    "https://approvalflow.net/features.html",
+                    "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox"
+                  ],
+                  "evidenceIds": [
+                    "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                    "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                    "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+                    "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "pricing",
+              "title": "Pricing and willingness to pay",
+              "summary": "No accepted pricing or willingness-to-pay evidence exists. Treat the stored offer as a hypothesis.",
+              "statements": [
+                {
+                  "kind": "MissingEvidence",
+                  "text": "No accepted pricing or willingness-to-pay evidence exists. Treat the stored offer as a hypothesis.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Hypothesis",
+                  "text": "Per-user monthly subscription; initial offer: Free for up to 10 users.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "positive",
+              "title": "Strongest positive signal",
+              "summary": "With over 50,000 promotional pieces reviewed through ApprovalFlow, we've helped our clients achieve significant cost and time savings.",
+              "statements": [
+                {
+                  "kind": "Fact",
+                  "text": "With over 50,000 promotional pieces reviewed through ApprovalFlow, we've helped our clients achieve significant cost and time savings.",
+                  "sourceUrls": [
+                    "https://approvalflow.net/features.html"
+                  ],
+                  "evidenceIds": [
+                    "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "negative",
+              "title": "Strongest negative signal",
+              "summary": "Competitors may offer more complex automation or broader platform integration.",
+              "statements": [
+                {
+                  "kind": "Fact",
+                  "text": "Competitors may offer more complex automation or broader platform integration.",
+                  "sourceUrls": [
+                    "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox"
+                  ],
+                  "evidenceIds": [
+                    "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "risks-gaps",
+              "title": "Risks and missing evidence",
+              "summary": "What can still invalidate the decision.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "Medium Market risk: Market fragmentation makes it difficult for users to select the right tool without clear use-case alignment.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Inference",
+                  "text": "Medium Execution risk: Configuration overhead can be a barrier for administrators.",
+                  "sourceUrls": [
+                    "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox"
+                  ],
+                  "evidenceIds": [
+                    "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+                  ]
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "insufficient problem evidence",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "Tier 1/2 evidence missing",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "MissingEvidence",
+                  "text": "pricing or willingness-to-pay evidence",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "experiments",
+              "title": "Three concrete experiments",
+              "summary": "Run these before increasing build scope.",
+              "statements": [
+                {
+                  "kind": "Recommendation",
+                  "text": "Problem-frequency interviews: Interview 8 qualified Small GitHub-based software agencies and software consultancies; capture the last occurrence, current workaround, frequency, consequence, and owner. Success: At least 5 describe a recent occurrence and 3 actively seek a better workflow.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Recommendation",
+                  "text": "Concierge workflow pilot: Run the core workflow manually with 3 teams for 14 days; log repeated use, completion time, and abandonment. Success: At least 2 teams use it twice and ask to continue.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                },
+                {
+                  "kind": "Recommendation",
+                  "text": "Paid-offer test: Present the same scoped offer to 5 qualified buyers and request payment, a deposit, or a signed paid-pilot commitment. Success: At least 2 buyers make a monetary or signed commitment.",
+                  "sourceUrls": [],
+                  "evidenceIds": []
+                }
+              ]
+            },
+            {
+              "key": "final-recommendation",
+              "title": "Final recommendation",
+              "summary": "Do not advance to Full Validation until the missing demand or payment signal is found. Next action: Number of active monthly users and document approval cycles.",
+              "statements": [
+                {
+                  "kind": "Recommendation",
+                  "text": "Do not advance to Full Validation until the missing demand or payment signal is found. Next action: Number of active monthly users and document approval cycles.",
+                  "sourceUrls": [
+                    "https://approvalflow.net/features.html",
+                    "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox"
+                  ],
+                  "evidenceIds": [
+                    "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                    "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                    "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+                    "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "methodology",
+              "title": "Methodology and sources",
+              "summary": "The validation score was derived by cross-referencing high-volume usage metrics against identified feature gaps and competitive threats to determine the long-term viability and market defensibility of the solution.",
+              "statements": [
+                {
+                  "kind": "Inference",
+                  "text": "The validation score was derived by cross-referencing high-volume usage metrics against identified feature gaps and competitive threats to determine the long-term viability and market defensibility of the solution.",
+                  "sourceUrls": [
+                    "https://approvalflow.net/features.html",
+                    "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox"
+                  ],
+                  "evidenceIds": [
+                    "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                    "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                    "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+                    "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+                  ]
+                },
+                {
+                  "kind": "Inference",
+                  "text": "4 accepted evidence rows across 2 evidence domains.",
+                  "sourceUrls": [
+                    "https://approvalflow.net/features.html",
+                    "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox"
+                  ],
+                  "evidenceIds": [
+                    "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                    "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                    "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+                    "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+                  ]
+                }
+              ]
+            }
+          ],
+          "experiments": [
+            {
+              "name": "Problem-frequency interviews",
+              "method": "Interview 8 qualified Small GitHub-based software agencies and software consultancies; capture the last occurrence, current workaround, frequency, consequence, and owner.",
+              "duration": "7 days",
+              "hypothesis": "Small GitHub-based software agencies and software consultancies experience A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records. often enough to change behaviour.",
+              "failureCriterion": "Fewer than 3 report a recent, consequential occurrence.",
+              "successCriterion": "At least 5 describe a recent occurrence and 3 actively seek a better workflow."
+            },
+            {
+              "name": "Concierge workflow pilot",
+              "method": "Run the core workflow manually with 3 teams for 14 days; log repeated use, completion time, and abandonment.",
+              "duration": "14 days",
+              "hypothesis": "A narrow assisted workflow creates repeat usage before automation is built.",
+              "failureCriterion": "Teams revert to their existing workflow or need unrelated features to participate.",
+              "successCriterion": "At least 2 teams use it twice and ask to continue."
+            },
+            {
+              "name": "Paid-offer test",
+              "method": "Present the same scoped offer to 5 qualified buyers and request payment, a deposit, or a signed paid-pilot commitment.",
+              "duration": "10 days",
+              "hypothesis": "Free for up to 10 users is valuable enough to trigger a real commitment.",
+              "failureCriterion": "Interest remains verbal or depends on unsupported feature expansion.",
+              "successCriterion": "At least 2 buyers make a monetary or signed commitment."
+            }
+          ],
+          "schemaVersion": 1,
+          "scoreConfidence": 65,
+          "specialistOutputs": [],
+          "evidenceConfidence": {
+            "band": "Low",
+            "score": 0.35,
+            "explanation": "Low confidence: 2 independent domains; 0 unresolved evidence disagreements; average source authority 50%.",
+            "missingEvidence": [
+              "insufficient problem evidence",
+              "Tier 1/2 evidence missing",
+              "pricing or willingness-to-pay evidence"
+            ]
+          },
+          "fullValidationRecommended": false
+        },
+        "availableExports": [
+          "pdf",
+          "markdown",
+          "csv",
+          "json"
+        ],
+        "executiveSummary": "While the platform demonstrates significant adoption with over 250,000 documents processed, the lack of critical feature depth, such as version-level approvals, limits the severity of the pain point addressed. The competitive landscape poses a substantial risk, as existing alternatives provide superior automation and broader integration capabilities that current offerings fail to match.",
+        "topRecommendation": "Number of active monthly users and document approval cycles.",
+        "citationValidation": {
+          "valid": true,
+          "methodology": [
+            {
+              "text": "The validation score was derived by cross-referencing high-volume usage metrics against identified feature gaps and competitive threats to determine the long-term viability and market defensibility of the solution.",
+              "evidence_ids": [
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "painSeverity"
+              ]
+            }
+          ],
+          "claimsChecked": 3,
+          "claimsRemoved": 0,
+          "invalidClaims": [],
+          "executiveSummary": [
+            {
+              "text": "While the platform demonstrates significant adoption with over 250,000 documents processed, the lack of critical feature depth, such as version-level approvals, limits the severity of the pain point addressed.",
+              "evidence_ids": [
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                "4baeb504-507a-4f39-ad41-4fd7a06623f1"
+              ],
+              "score_criteria": [
+                "painSeverity",
+                "retentionPotential"
+              ]
+            },
+            {
+              "text": "The competitive landscape poses a substantial risk, as existing alternatives provide superior automation and broader integration capabilities that current offerings fail to match.",
+              "evidence_ids": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "willingnessToPay"
+              ]
+            }
+          ]
+        },
+        "narrativeCitations": {
+          "methodology": [
+            {
+              "text": "The validation score was derived by cross-referencing high-volume usage metrics against identified feature gaps and competitive threats to determine the long-term viability and market defensibility of the solution.",
+              "evidence_ids": [
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "painSeverity"
+              ]
+            }
+          ],
+          "written_verdict": "Avoid",
+          "executive_summary": [
+            {
+              "text": "While the platform demonstrates significant adoption with over 250,000 documents processed, the lack of critical feature depth, such as version-level approvals, limits the severity of the pain point addressed.",
+              "evidence_ids": [
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                "4baeb504-507a-4f39-ad41-4fd7a06623f1"
+              ],
+              "score_criteria": [
+                "painSeverity",
+                "retentionPotential"
+              ]
+            },
+            {
+              "text": "The competitive landscape poses a substantial risk, as existing alternatives provide superior automation and broader integration capabilities that current offerings fail to match.",
+              "evidence_ids": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "willingnessToPay"
+              ]
+            }
+          ]
+        },
+        "strongestNegativeEvidenceId": "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+        "strongestPositiveEvidenceId": "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+      },
+      "report_id": "f6643aac-794b-4678-be4c-ae39d0f6dd97",
+      "created_at": "2026-07-25T13:08:52.344138+00:00",
+      "updated_at": "2026-07-25T13:08:52.344138+00:00",
+      "report_mode": "quick_scan",
+      "market_sizing": {
+        "reason": "Market sizing deferred to evidence phase"
+      },
+      "report_exports": [
+        {
+          "id": "5779189a-2625-45dd-b963-91f1d4209678",
+          "format": "pdf",
+          "sha256": "5f632da00acbd87f411c109ddade34ca1e7e0218f3d0adba0c9e83c1ad36f102",
+          "byte_size": 73560,
+          "created_at": "2026-07-25T13:08:52.446455+00:00",
+          "storage_path": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v2/report.pdf",
+          "report_version_id": "7cd7a95a-9650-4cb5-ae21-ef4071b1cc31"
+        },
+        {
+          "id": "c011bcb4-4e51-4f48-9c30-09ab832549e3",
+          "format": "markdown",
+          "sha256": "68ed070e14c57ea4be90334a819af5d5baa9d051c1990786921501160c7e2cc2",
+          "byte_size": 14600,
+          "created_at": "2026-07-25T13:08:52.466184+00:00",
+          "storage_path": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v2/report.markdown",
+          "report_version_id": "7cd7a95a-9650-4cb5-ae21-ef4071b1cc31"
+        },
+        {
+          "id": "98dcf29e-67eb-4247-84a1-a62a2ae87f7a",
+          "format": "csv",
+          "sha256": "d4224f878825de1d71e89573eed1700f698132ccd227cb16044f1018898e9f54",
+          "byte_size": 274143,
+          "created_at": "2026-07-25T13:08:52.490853+00:00",
+          "storage_path": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v2/report.csv",
+          "report_version_id": "7cd7a95a-9650-4cb5-ae21-ef4071b1cc31"
+        },
+        {
+          "id": "99a6a85d-04fa-401d-b89e-c62ff28a2189",
+          "format": "json",
+          "sha256": "77af19e6782dbe568d251c9211652180245c7bcc16071d29c8335cb6f85baa37",
+          "byte_size": 36908,
+          "created_at": "2026-07-25T13:08:52.511686+00:00",
+          "storage_path": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v2/report.json",
+          "report_version_id": "7cd7a95a-9650-4cb5-ae21-ef4071b1cc31"
+        }
+      ],
+      "version_number": 2,
+      "reasoning_flags": [],
+      "adversarial_gate": {
+        "id": "e50bf2fa-251e-45d7-ac3f-8718f07ccd0f",
+        "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+        "status": "Complete",
+        "outcome": "NoStrongDisproof",
+        "payload": {
+          "outcome": "NoStrongDisproof",
+          "severity": "None",
+          "objection": "Competitors may offer more complex automation or broader platform integration.",
+          "sourceIds": [
+            "94ebada0-3696-4de1-8cf7-68a722e040cf"
+          ],
+          "evidence_ids": [
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+          ]
+        },
+        "severity": "None",
+        "objection": "Competitors may offer more complex automation or broader platform integration.",
+        "created_at": "2026-07-25T12:50:16.553067+00:00",
+        "unresolved": false,
+        "evidence_ids": [
+          "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+        ],
+        "emerging_verdict": "Validate First"
+      },
+      "decision_integrity": null,
+      "citation_validation": {
+        "valid": true,
+        "methodology": [
+          {
+            "text": "The validation score was derived by cross-referencing high-volume usage metrics against identified feature gaps and competitive threats to determine the long-term viability and market defensibility of the solution.",
+            "evidence_ids": [
+              "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+              "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+              "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+              "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+            ],
+            "score_criteria": [
+              "competitionGap",
+              "painSeverity"
+            ]
+          }
+        ],
+        "claimsChecked": 3,
+        "claimsRemoved": 0,
+        "invalidClaims": [],
+        "executiveSummary": [
+          {
+            "text": "While the platform demonstrates significant adoption with over 250,000 documents processed, the lack of critical feature depth, such as version-level approvals, limits the severity of the pain point addressed.",
+            "evidence_ids": [
+              "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+              "4baeb504-507a-4f39-ad41-4fd7a06623f1"
+            ],
+            "score_criteria": [
+              "painSeverity",
+              "retentionPotential"
+            ]
+          },
+          {
+            "text": "The competitive landscape poses a substantial risk, as existing alternatives provide superior automation and broader integration capabilities that current offerings fail to match.",
+            "evidence_ids": [
+              "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+              "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+            ],
+            "score_criteria": [
+              "competitionGap",
+              "willingnessToPay"
+            ]
+          }
+        ]
+      },
+      "adversarial_downgrade": false,
+      "report_chart_datasets": [
+        {
+          "id": "b6f7ba2b-ac99-478d-ac71-0eec012bda52",
+          "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+          "sha256": "b5d509fcb5551cfe21a21121f395560903cafc99203d50e2f91866f92bfea85e",
+          "chart_key": "factor-breakdown",
+          "chart_type": "bar",
+          "created_at": "2026-07-25T13:08:52.361379+00:00",
+          "source_data": {
+            "values": {
+              "mvpSpeed": 57,
+              "founderFit": 25,
+              "painSeverity": 24.3,
+              "competitionGap": 71,
+              "regulatoryRisk": 10,
+              "purchaseUrgency": 24.3,
+              "willingnessToPay": 10,
+              "buyerReachability": 32,
+              "retentionPotential": 20,
+              "distributionClarity": 59.5,
+              "speedToFirstRevenue": 21.1,
+              "platformDependencyRisk": 23.4
+            }
+          },
+          "chart_config": {
+            "title": "Factor Breakdown",
+            "sourceExplanation": "The 12 factor values are copied from the deterministic scorecard in this report version."
+          },
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "7cd7a95a-9650-4cb5-ae21-ef4071b1cc31",
+          "supporting_evidence_ids": [
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+            "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+            "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+            "37c421b3-f7f2-4abd-bf78-cf1747f886ec"
+          ]
+        },
+        {
+          "id": "d9ce14ad-4ad2-407d-99f0-2afd12ce58bf",
+          "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+          "sha256": "8a02e17774b29f0fe6984dcb40956693142eccd5f9d170cefb51c46e8d869041",
+          "chart_key": "evidence-balance",
+          "chart_type": "bar",
+          "created_at": "2026-07-25T13:08:52.378084+00:00",
+          "source_data": {
+            "supporting": 3,
+            "contradictory": 1
+          },
+          "chart_config": {
+            "title": "Evidence Balance",
+            "sourceExplanation": "Counts of accepted supporting and contradictory evidence rows in this report version."
+          },
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "7cd7a95a-9650-4cb5-ae21-ef4071b1cc31",
+          "supporting_evidence_ids": [
+            "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+            "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+            "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+          ]
+        },
+        {
+          "id": "2be3d405-08fe-46a2-9f45-cf39c63dff83",
+          "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+          "sha256": "ef0d9dee76b3891b37f2dc433486be56d9b580a900a6c0cd34ab48f69a2c9fe5",
+          "chart_key": "source-quality-distribution",
+          "chart_type": "bar",
+          "created_at": "2026-07-25T13:08:52.392979+00:00",
+          "source_data": {
+            "byTier": {
+              "tier_1": 0,
+              "tier_2": 0,
+              "tier_3": 4,
+              "tier_4": 0
+            }
+          },
+          "chart_config": {
+            "title": "Source Quality Distribution",
+            "sourceExplanation": "Counts of accepted evidence rows grouped by persisted source tier."
+          },
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "7cd7a95a-9650-4cb5-ae21-ef4071b1cc31",
+          "supporting_evidence_ids": [
+            "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+            "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+            "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+          ]
+        },
+        {
+          "id": "0ad379b2-0c9c-4808-ba65-d2bf1fe5aebf",
+          "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+          "sha256": "16ed6d3a4a609719ec856e34980049ba6e5fee4cd4f09d21f705c38bea5cde02",
+          "chart_key": "alternatives-comparison",
+          "chart_type": "bar",
+          "created_at": "2026-07-25T13:08:52.406943+00:00",
+          "source_data": {
+            "values": {
+              "AppFox Workflows": 1,
+              "Comala Document Mgmt": 1
+            }
+          },
+          "chart_config": {
+            "title": "Alternatives Comparison",
+            "sourceExplanation": "Number of accepted evidence links attached to each persisted alternative or competitor."
+          },
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "7cd7a95a-9650-4cb5-ae21-ef4071b1cc31",
+          "supporting_evidence_ids": [
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+          ]
+        }
+      ],
+      "verdict_score_mismatch": false
+    },
+    {
+      "id": "150f822a-724d-40f3-98fe-7f202c02a51c",
+      "payload": {
+        "id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+        "version": "1.0",
+        "reportMode": "quick_scan",
+        "generatedAt": "2026-07-25T12:50:19.402Z",
+        "limitations": [
+          "pricing or willingness-to-pay evidence"
+        ],
+        "methodology": "The validation score was derived by cross-referencing high-volume usage metrics against identified feature gaps and competitive threats to determine the long-term viability and market defensibility of the solution.",
+        "opportunity": {
+          "id": "40dae80e-a368-413a-9a37-a0c59092313a",
+          "mvp": {
+            "scope": [
+              "Document upload",
+              "Markup tools",
+              "Automated routing",
+              "Dashboard reporting"
+            ],
+            "outcome": "Streamlined document review and approval system.",
+            "exclusions": [
+              "Complex BPMN workflows",
+              "External client-facing portals without login"
+            ],
+            "buildEstimate": "Not specified",
+            "buildComplexity": "Medium"
+          },
+          "name": "ApprovalFlow evidence proof (quick_scan)",
+          "risks": [
+            {
+              "id": "63dcb504-3c51-43b8-9c32-010792ba18f1",
+              "category": "Market",
+              "severity": "Medium",
+              "mitigation": "Provide clear documentation on specific use cases like document review vs. bug tracking.",
+              "description": "Market fragmentation makes it difficult for users to select the right tool without clear use-case alignment.",
+              "evidenceIds": []
+            },
+            {
+              "id": "218d2090-05c2-4c06-8832-47f068ebf255",
+              "category": "Execution",
+              "severity": "Medium",
+              "mitigation": "Focus on intuitive setup and quick-start templates.",
+              "description": "Configuration overhead can be a barrier for administrators.",
+              "evidenceIds": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ]
+            }
+          ],
+          "launch": {
+            "weekOne": [
+              "Publish to Atlassian Marketplace",
+              "Enable 30-day free trial",
+              "Publish comparison blog post"
+            ],
+            "successMetric": "Number of active monthly users and document approval cycles.",
+            "outreachMessage": "Streamline your Confluence approval workflows with ApprovalFlow—now with transparent pricing and audit-ready trails.",
+            "firstTenStrategy": [
+              "Confluence admins",
+              "Compliance officers",
+              "Product operations teams"
+            ],
+            "firstCustomerChannel": "Atlassian Marketplace"
+          },
+          "market": "B2B SaaS",
+          "pricing": {
+            "model": "Per-user monthly subscription",
+            "rationale": "Tiered pricing based on user volume to scale with workspace growth.",
+            "firstOffer": "Free for up to 10 users",
+            "pricePoint": "$0.29/user/month",
+            "evidenceIds": [
+              "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+            ],
+            "targetCustomers": 100
+          },
+          "corePain": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records.",
+          "evidence": [
+            {
+              "id": "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+              "url": "https://approvalflow.net/features.html",
+              "date": "2026-07-25T12:50:16.388059+00:00",
+              "title": "ApprovalFlow Operational Impact",
+              "signal": "Demand",
+              "source": "approvalflow.net",
+              "snippet": "With over 50,000 promotional pieces reviewed through ApprovalFlow, we've helped our clients achieve significant cost and time savings.",
+              "excluded": false,
+              "strength": "Medium",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "solution"
+            },
+            {
+              "id": "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+              "url": "https://approvalflow.net/features.html",
+              "date": "2026-07-25T12:50:16.393505+00:00",
+              "title": "ApprovalFlow Document Processing Volume",
+              "signal": "Demand",
+              "source": "approvalflow.net",
+              "snippet": "The impressive milestone of over 250,000 PDF documents uploaded to ApprovalFlow underscores the platform's widespread adoption.",
+              "excluded": false,
+              "strength": "Medium",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "solution"
+            },
+            {
+              "id": "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+              "url": "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox",
+              "date": "2026-07-25T12:50:16.399365+00:00",
+              "title": "ApprovalFlow Feature Comparison",
+              "signal": "Pain",
+              "source": "flowdence.io",
+              "snippet": "ApprovalFlow supports page-level approvals and audit trails, but version-level approval capabilities are only partially documented.",
+              "excluded": false,
+              "strength": "Medium",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": false,
+              "evidenceFamily": "solution"
+            },
+            {
+              "id": "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+              "url": "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox",
+              "date": "2026-07-25T12:50:16.405978+00:00",
+              "title": "Adversarial assessment",
+              "signal": "Risk",
+              "source": "flowdence.io",
+              "snippet": "Competitors may offer more complex automation or broader platform integration.",
+              "excluded": false,
+              "strength": "Low",
+              "sourceTier": 3,
+              "sourceType": "RetrievedWeb",
+              "disconfirming": true,
+              "evidenceFamily": "solution"
+            }
+          ],
+          "oneLiner": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records.",
+          "createdAt": "2026-07-25T12:50:05.236469+00:00",
+          "scorecard": {
+            "notes": {
+              "mvpSpeed": "Execution-risk burden; fewer material risks increase feasibility.",
+              "founderFit": "Run-specific evidence access and domain signal coverage; no unsupported founder biography is inferred.",
+              "painSeverity": "Weighted verified pain strength, confidence, and contradiction ratio.",
+              "competitionGap": "Competitive density adjusted by explicit normalized gaps and gap-language evidence.",
+              "regulatoryRisk": "Regulatory and compliance risk evidence; this factor is inverted in the weighted total.",
+              "purchaseUrgency": "Urgency language in pain and demand evidence.",
+              "willingnessToPay": "No Tier 1 willingness-to-pay evidence; recommendations do not substitute for paid-demand proof.",
+              "buyerReachability": "Demand volume and independently sourced communities.",
+              "retentionPotential": "Recurring-workflow language in verified evidence.",
+              "distributionClarity": "Demand evidence plus persisted launch-channel specificity.",
+              "speedToFirstRevenue": "Pricing proof and purchase urgency combined deterministically.",
+              "platformDependencyRisk": "Platform dependency risk evidence; this factor is inverted in the weighted total."
+            },
+            "total": 38.9,
+            "scores": {
+              "mvpSpeed": 57,
+              "founderFit": 25,
+              "painSeverity": 24.3,
+              "competitionGap": 71,
+              "regulatoryRisk": 10,
+              "purchaseUrgency": 24.3,
+              "willingnessToPay": 10,
+              "buyerReachability": 32,
+              "retentionPotential": 20,
+              "distributionClarity": 59.5,
+              "speedToFirstRevenue": 21.1,
+              "platformDependencyRisk": 23.4
+            },
+            "verdict": "Avoid",
+            "weights": {
+              "mvpSpeed": 8,
+              "founderFit": 7,
+              "painSeverity": 12,
+              "competitionGap": 8,
+              "regulatoryRisk": 5,
+              "purchaseUrgency": 10,
+              "willingnessToPay": 11,
+              "buyerReachability": 8,
+              "retentionPotential": 9,
+              "distributionClarity": 8,
+              "speedToFirstRevenue": 7,
+              "platformDependencyRisk": 7
+            },
+            "confidence": 65,
+            "evidenceRefs": {
+              "mvpSpeed": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ],
+              "founderFit": [
+                "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ],
+              "painSeverity": [
+                "4baeb504-507a-4f39-ad41-4fd7a06623f1"
+              ],
+              "competitionGap": [],
+              "regulatoryRisk": [],
+              "purchaseUrgency": [
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+              ],
+              "willingnessToPay": [],
+              "buyerReachability": [
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec"
+              ],
+              "retentionPotential": [],
+              "distributionClarity": [
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec"
+              ],
+              "speedToFirstRevenue": [
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+              ],
+              "platformDependencyRisk": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ]
+            }
+          },
+          "competitors": [
+            {
+              "id": "1e8ffcad-7cb0-43aa-9904-4e7fcfbc70f3",
+              "gap": "Limited documentation on specific version-level controls",
+              "name": "AppFox Workflows",
+              "target": "Confluence users",
+              "pricing": "Marketplace rates",
+              "strength": "Medium",
+              "evidenceIds": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ],
+              "positioning": "Forge-native workflow automation"
+            },
+            {
+              "id": "66a56d96-39c1-4581-a760-4ce929b7fe97",
+              "gap": "Requires Confluence environment",
+              "name": "Comala Document Mgmt",
+              "target": "Confluence admins and compliance teams",
+              "pricing": "Marketplace rates",
+              "strength": "High",
+              "evidenceIds": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ],
+              "positioning": "Confluence-native approval workflow"
+            },
+            {
+              "id": "beaf45d4-2551-49ed-b5d0-cf493f0338ee",
+              "gap": "Requires building custom logic",
+              "name": "Zite",
+              "target": "Non-technical teams",
+              "pricing": "$19/month",
+              "strength": "High",
+              "evidenceIds": [],
+              "positioning": "Custom app builder for approval processes"
+            }
+          ],
+          "targetCustomer": "Small GitHub-based software agencies and software consultancies"
+        },
+        "evidenceGaps": [
+          "insufficient problem evidence",
+          "Tier 1/2 evidence missing"
+        ],
+        "reportSections": [
+          "Conclusion",
+          "Evidence",
+          "Competition",
+          "Score breakdown",
+          "Pricing",
+          "Next actions",
+          "Risks",
+          "Exports"
+        ],
+        "adversarialGate": {
+          "outcome": "NoStrongDisproof",
+          "severity": "None",
+          "objection": "Competitors may offer more complex automation or broader platform integration.",
+          "unresolved": false,
+          "evidence_ids": [
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+          ]
+        },
+        "availableExports": [
+          "pdf",
+          "markdown",
+          "csv",
+          "json"
+        ],
+        "executiveSummary": "While the platform demonstrates significant adoption with over 250,000 documents processed, the lack of critical feature depth, such as version-level approvals, limits the severity of the pain point addressed. The competitive landscape poses a substantial risk, as existing alternatives provide superior automation and broader integration capabilities that current offerings fail to match.",
+        "topRecommendation": "Number of active monthly users and document approval cycles.",
+        "citationValidation": {
+          "valid": true,
+          "methodology": [
+            {
+              "text": "The validation score was derived by cross-referencing high-volume usage metrics against identified feature gaps and competitive threats to determine the long-term viability and market defensibility of the solution.",
+              "evidence_ids": [
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "painSeverity"
+              ]
+            }
+          ],
+          "claimsChecked": 3,
+          "claimsRemoved": 0,
+          "invalidClaims": [],
+          "executiveSummary": [
+            {
+              "text": "While the platform demonstrates significant adoption with over 250,000 documents processed, the lack of critical feature depth, such as version-level approvals, limits the severity of the pain point addressed.",
+              "evidence_ids": [
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                "4baeb504-507a-4f39-ad41-4fd7a06623f1"
+              ],
+              "score_criteria": [
+                "painSeverity",
+                "retentionPotential"
+              ]
+            },
+            {
+              "text": "The competitive landscape poses a substantial risk, as existing alternatives provide superior automation and broader integration capabilities that current offerings fail to match.",
+              "evidence_ids": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "willingnessToPay"
+              ]
+            }
+          ]
+        },
+        "narrativeCitations": {
+          "methodology": [
+            {
+              "text": "The validation score was derived by cross-referencing high-volume usage metrics against identified feature gaps and competitive threats to determine the long-term viability and market defensibility of the solution.",
+              "evidence_ids": [
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "painSeverity"
+              ]
+            }
+          ],
+          "written_verdict": "Avoid",
+          "executive_summary": [
+            {
+              "text": "While the platform demonstrates significant adoption with over 250,000 documents processed, the lack of critical feature depth, such as version-level approvals, limits the severity of the pain point addressed.",
+              "evidence_ids": [
+                "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+                "4baeb504-507a-4f39-ad41-4fd7a06623f1"
+              ],
+              "score_criteria": [
+                "painSeverity",
+                "retentionPotential"
+              ]
+            },
+            {
+              "text": "The competitive landscape poses a substantial risk, as existing alternatives provide superior automation and broader integration capabilities that current offerings fail to match.",
+              "evidence_ids": [
+                "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+                "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+              ],
+              "score_criteria": [
+                "competitionGap",
+                "willingnessToPay"
+              ]
+            }
+          ]
+        },
+        "strongestNegativeEvidenceId": "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+        "strongestPositiveEvidenceId": "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+      },
+      "report_id": "f6643aac-794b-4678-be4c-ae39d0f6dd97",
+      "created_at": "2026-07-25T12:50:19.410425+00:00",
+      "updated_at": "2026-07-25T12:50:19.410425+00:00",
+      "report_mode": "quick_scan",
+      "market_sizing": {
+        "reason": "Market sizing deferred to evidence phase"
+      },
+      "report_exports": [
+        {
+          "id": "2c83551a-bb82-48cf-a425-ae58d5b3cd6b",
+          "format": "pdf",
+          "sha256": "b2774efc417cb198fd421bff3246f9333774ca65dd6e33832d34d4ab9c443445",
+          "byte_size": 37420,
+          "created_at": "2026-07-25T12:50:19.514493+00:00",
+          "storage_path": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v1/report.pdf",
+          "report_version_id": "150f822a-724d-40f3-98fe-7f202c02a51c"
+        },
+        {
+          "id": "36a42caf-1727-4514-8411-b2fd64a5e359",
+          "format": "markdown",
+          "sha256": "c89f15e48e0dc69ba6b08eb5daa0d82f922bb360c67661928765d6c85f6b9fa6",
+          "byte_size": 2380,
+          "created_at": "2026-07-25T12:50:19.529034+00:00",
+          "storage_path": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v1/report.markdown",
+          "report_version_id": "150f822a-724d-40f3-98fe-7f202c02a51c"
+        },
+        {
+          "id": "d768be18-3c7d-4e49-a623-720be31c75b1",
+          "format": "csv",
+          "sha256": "95a2cbff33f955fd30c2111c6e52fe044789a22d0aad45127b559316ce65aa9d",
+          "byte_size": 22190,
+          "created_at": "2026-07-25T12:50:19.547677+00:00",
+          "storage_path": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v1/report.csv",
+          "report_version_id": "150f822a-724d-40f3-98fe-7f202c02a51c"
+        },
+        {
+          "id": "d34205f7-8757-4747-ac7a-fcbd953b6fcf",
+          "format": "json",
+          "sha256": "811b93efef7eb34828eb019907bb459706154ce64b3fb5c9046ee6fff0d8ca95",
+          "byte_size": 14994,
+          "created_at": "2026-07-25T12:50:19.56606+00:00",
+          "storage_path": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v1/report.json",
+          "report_version_id": "150f822a-724d-40f3-98fe-7f202c02a51c"
+        }
+      ],
+      "version_number": 1,
+      "reasoning_flags": [],
+      "adversarial_gate": {
+        "id": "e50bf2fa-251e-45d7-ac3f-8718f07ccd0f",
+        "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+        "status": "Complete",
+        "outcome": "NoStrongDisproof",
+        "payload": {
+          "outcome": "NoStrongDisproof",
+          "severity": "None",
+          "objection": "Competitors may offer more complex automation or broader platform integration.",
+          "sourceIds": [
+            "94ebada0-3696-4de1-8cf7-68a722e040cf"
+          ],
+          "evidence_ids": [
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+          ]
+        },
+        "severity": "None",
+        "objection": "Competitors may offer more complex automation or broader platform integration.",
+        "created_at": "2026-07-25T12:50:16.553067+00:00",
+        "unresolved": false,
+        "evidence_ids": [
+          "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+        ],
+        "emerging_verdict": "Validate First"
+      },
+      "decision_integrity": null,
+      "citation_validation": {
+        "valid": true,
+        "methodology": [
+          {
+            "text": "The validation score was derived by cross-referencing high-volume usage metrics against identified feature gaps and competitive threats to determine the long-term viability and market defensibility of the solution.",
+            "evidence_ids": [
+              "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+              "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+              "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+              "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+            ],
+            "score_criteria": [
+              "competitionGap",
+              "painSeverity"
+            ]
+          }
+        ],
+        "claimsChecked": 3,
+        "claimsRemoved": 0,
+        "invalidClaims": [],
+        "executiveSummary": [
+          {
+            "text": "While the platform demonstrates significant adoption with over 250,000 documents processed, the lack of critical feature depth, such as version-level approvals, limits the severity of the pain point addressed.",
+            "evidence_ids": [
+              "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+              "4baeb504-507a-4f39-ad41-4fd7a06623f1"
+            ],
+            "score_criteria": [
+              "painSeverity",
+              "retentionPotential"
+            ]
+          },
+          {
+            "text": "The competitive landscape poses a substantial risk, as existing alternatives provide superior automation and broader integration capabilities that current offerings fail to match.",
+            "evidence_ids": [
+              "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+              "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+            ],
+            "score_criteria": [
+              "competitionGap",
+              "willingnessToPay"
+            ]
+          }
+        ]
+      },
+      "adversarial_downgrade": false,
+      "report_chart_datasets": [
+        {
+          "id": "479f60b4-1e64-4f88-9486-29b57174dcd6",
+          "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+          "sha256": "b5d509fcb5551cfe21a21121f395560903cafc99203d50e2f91866f92bfea85e",
+          "chart_key": "opportunity-factor-breakdown",
+          "chart_type": "radar",
+          "created_at": "2026-07-25T12:50:19.415772+00:00",
+          "source_data": {
+            "values": {
+              "mvpSpeed": 57,
+              "founderFit": 25,
+              "painSeverity": 24.3,
+              "competitionGap": 71,
+              "regulatoryRisk": 10,
+              "purchaseUrgency": 24.3,
+              "willingnessToPay": 10,
+              "buyerReachability": 32,
+              "retentionPotential": 20,
+              "distributionClarity": 59.5,
+              "speedToFirstRevenue": 21.1,
+              "platformDependencyRisk": 23.4
+            }
+          },
+          "chart_config": {},
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "150f822a-724d-40f3-98fe-7f202c02a51c",
+          "supporting_evidence_ids": [
+            "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+            "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+            "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+            "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+            "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+            "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+            "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+            "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+            "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+            "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+          ]
+        },
+        {
+          "id": "1357b300-62ff-492f-ba61-bd4369e31fdf",
+          "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+          "sha256": "e21278154f26dddaa83a6b48ed9b8c4863572812ecdae1be6bd5093eac54fa0f",
+          "chart_key": "evidence-balance",
+          "chart_type": "pie",
+          "created_at": "2026-07-25T12:50:19.421183+00:00",
+          "source_data": {
+            "negative": 1,
+            "positive": 3
+          },
+          "chart_config": {},
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "150f822a-724d-40f3-98fe-7f202c02a51c",
+          "supporting_evidence_ids": [
+            "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+            "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+            "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+          ]
+        },
+        {
+          "id": "882c6468-a8e2-4412-a228-0d01bb999070",
+          "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+          "sha256": "11a0f3e06484b053efe2a6ed8b18efec6fa7503a9776840aaf83240e9589fd60",
+          "chart_key": "source-quality-distribution",
+          "chart_type": "bar",
+          "created_at": "2026-07-25T12:50:19.425957+00:00",
+          "source_data": {
+            "byTier": {
+              "t1": 0,
+              "t2": 0,
+              "t3": 4,
+              "t4": 0
+            }
+          },
+          "chart_config": {},
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "150f822a-724d-40f3-98fe-7f202c02a51c",
+          "supporting_evidence_ids": [
+            "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+            "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+            "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+          ]
+        },
+        {
+          "id": "051ca4ff-dba8-40e1-929c-7da6cf73db6a",
+          "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+          "sha256": "9dc5f2adf8a25211e0e345cb1531b86d53994419d86b91e1f456b617bd05339d",
+          "chart_key": "evidence_coverage",
+          "chart_type": "bar",
+          "created_at": "2026-07-25T12:50:19.430875+00:00",
+          "source_data": {
+            "byFamily": {
+              "solution": 4
+            },
+            "bySignal": {
+              "Pain": 1,
+              "Risk": 1,
+              "Demand": 2
+            }
+          },
+          "chart_config": {},
+          "schema_version": 1,
+          "svg_storage_path": null,
+          "report_version_id": "150f822a-724d-40f3-98fe-7f202c02a51c",
+          "supporting_evidence_ids": [
+            "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+            "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+            "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+          ]
+        }
+      ],
+      "verdict_score_mismatch": false
+    }
+  ]
+}

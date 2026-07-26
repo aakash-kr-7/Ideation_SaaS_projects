@@ -114,11 +114,14 @@ export async function claimJob(
   db: SupabaseDb,
   workerId: string,
   visibilityTimeoutMs = 60_000,
+  runId?: string,
 ): Promise<ResearchJob | null> {
-  const { data, error } = await db.rpc("claim_research_job", {
-    p_worker_id: workerId,
-    p_visibility_timeout_ms: visibilityTimeoutMs,
-  });
+  const { data, error } = await db.rpc(
+    runId ? "claim_research_job_for_run" : "claim_research_job",
+    runId
+      ? { p_worker_id: workerId, p_visibility_timeout_ms: visibilityTimeoutMs, p_run_id: runId }
+      : { p_worker_id: workerId, p_visibility_timeout_ms: visibilityTimeoutMs },
+  );
 
   if (error) {
     throw new JobQueueError(`claim failed: ${JSON.stringify(error)}`, "claim");
@@ -207,6 +210,7 @@ export async function commitStageResult(
   db: SupabaseDb,
   jobId: string,
   result: StageResult,
+  scopedRunId?: string,
 ): Promise<void> {
   if (result.status === "completed") {
     await completeJob(db, {
@@ -223,7 +227,7 @@ export async function commitStageResult(
 
     // Best-effort self-trigger — fire and forget
     if (result.nextStage) {
-      attemptSelfTrigger().catch(() => {
+      attemptSelfTrigger(scopedRunId).catch(() => {
         // Polling fallback will pick it up
       });
     }
@@ -258,7 +262,7 @@ export async function updateRunProgress(
  * This is a best-effort call — correctness does not depend on it.
  * If it fails, the polling schedule will pick up the pending job.
  */
-export async function attemptSelfTrigger(): Promise<boolean> {
+export async function attemptSelfTrigger(runId?: string): Promise<boolean> {
   const supabaseUrl = getEnv("SUPABASE_URL");
   const serviceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -274,7 +278,7 @@ export async function attemptSelfTrigger(): Promise<boolean> {
         "Authorization": `Bearer ${serviceRoleKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ trigger: "self", source: "job_completion" }),
+      body: JSON.stringify({ trigger: "self", source: "job_completion", ...(runId ? { runId } : {}) }),
       signal: AbortSignal.timeout(5_000),
     });
 
@@ -293,8 +297,11 @@ export async function attemptSelfTrigger(): Promise<boolean> {
  * Check for and return the count of pending visible jobs.
  * The caller (cron/schedule) uses this to decide whether to invoke the worker.
  */
-export async function countPendingJobs(db: SupabaseDb): Promise<number> {
-  const { data, error } = await db.rpc("process_pending_research_jobs", {});
+export async function countPendingJobs(db: SupabaseDb, runId?: string): Promise<number> {
+  const { data, error } = await db.rpc(
+    runId ? "count_pending_research_jobs_for_run" : "process_pending_research_jobs",
+    runId ? { p_run_id: runId } : {},
+  );
   if (error) return 0;
   return (data as number) ?? 0;
 }
@@ -306,10 +313,14 @@ export async function countPendingJobs(db: SupabaseDb): Promise<number> {
 export async function recoverStaleJobs(
   db: SupabaseDb,
   staleThresholdMs = 120_000,
+  runId?: string,
 ): Promise<number> {
-  const { data, error } = await db.rpc("recover_stale_research_jobs", {
-    p_stale_threshold_ms: staleThresholdMs,
-  });
+  const { data, error } = await db.rpc(
+    runId ? "recover_stale_research_jobs_for_run" : "recover_stale_research_jobs",
+    runId
+      ? { p_stale_threshold_ms: staleThresholdMs, p_run_id: runId }
+      : { p_stale_threshold_ms: staleThresholdMs },
+  );
   if (error) return 0;
   return (data as number) ?? 0;
 }

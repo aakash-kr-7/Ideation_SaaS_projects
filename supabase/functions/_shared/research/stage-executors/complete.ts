@@ -13,7 +13,7 @@ import { reconcileUsageMetrics } from "../pipeline-utils.ts";
 export async function executeComplete(
   ctx: StageContext,
 ): Promise<StageResult> {
-  const { runId, db, startedAt } = ctx;
+  const { runId, db, config, startedAt } = ctx;
 
   // --- Check if already completed ---
   const { data: run } = await db
@@ -30,6 +30,36 @@ export async function executeComplete(
 
   if (run?.status === "Failed" || run?.status === "Cancelled") {
     return stageFailed("permanent", `Run is already terminal: ${run.status}`);
+  }
+
+  // "Completed" is a customer-facing readiness guarantee, not merely a queue
+  // state. Refuse to finalize until the immutable report, charts, and every
+  // mode-required export are visible in the production database.
+  const { data: report, error: reportError } = await db
+    .from("reports")
+    .select("id,report_versions(id,version_number,report_exports(format),report_chart_datasets(id))")
+    .eq("run_id", runId)
+    .maybeSingle();
+  if (reportError) return stageFailed("transient", `Report readiness check failed: ${reportError.message}`);
+  const versions = Array.isArray(report?.report_versions)
+    ? report.report_versions
+    : report?.report_versions ? [report.report_versions] : [];
+  const latest = [...versions].sort((a: any, b: any) =>
+    Number(b.version_number || 0) - Number(a.version_number || 0)
+  )[0] as any;
+  const persistedFormats = new Set(
+    (Array.isArray(latest?.report_exports) ? latest.report_exports : [])
+      .map((item: any) => item.format),
+  );
+  const missingFormats = config.exports.filter((format) => !persistedFormats.has(format));
+  const chartCount = Array.isArray(latest?.report_chart_datasets)
+    ? latest.report_chart_datasets.length
+    : 0;
+  if (!report || !latest || missingFormats.length || chartCount < 4) {
+    return stageFailed(
+      "transient",
+      `Report is not publication-ready: report=${Boolean(report)}, version=${Boolean(latest)}, charts=${chartCount}, missing_exports=${missingFormats.join(",") || "none"}`,
+    );
   }
 
   // Rebuild run-level observability from immutable provider usage rows before

@@ -1,0 +1,18 @@
+[
+  {
+    "id": "a35cc3e3-0575-4826-b2f8-d8cd73089a59",
+    "run_id": "a304e3ef-09f4-4769-9fb1-3f68a1d64d04",
+    "opportunity_id": "32800404-a749-47a2-9613-75502eae2fdb",
+    "tested_claim": "Service teams lack an adequate way to collect client sign-off or retain attributable approval history.",
+    "supporting_evidence_ids": [
+      "783ca40a-8f40-44a5-8502-2e55d965a2bd"
+    ],
+    "challenging_evidence_ids": [
+      "dec03c2c-6f99-4e38-b2d0-b76348552b3f"
+    ],
+    "relationship": "The supporting page documents missing attributable customer approval records; the challenging page documents an applicable product that supplies attributable approval history.",
+    "resolution_status": "unresolved",
+    "resolution_note": "The workflow pain is directly documented, but an existing applicable product challenges whether the proposed capability is meaningfully unmet.",
+    "created_at": "2026-07-26T04:02:45.266173+00:00"
+  }
+]

@@ -1,0 +1,232 @@
+{
+  "runId": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+  "status": "Completed",
+  "mode": "quick_scan",
+  "groundingMode": "disabled",
+  "groundingDegraded": false,
+  "groundedCallsAttempted": 0,
+  "groundedCallsCompleted": 0,
+  "groundedCallsQuotaBlocked": 0,
+  "externalSearchCalls": 4,
+  "pagesFetched": 8,
+  "sourcesAccepted": 8,
+  "independentDomains": 8,
+  "evidenceCount": 4,
+  "providerCalls": 9,
+  "synthesisCalls": 3,
+  "tokens": {
+    "input": 7101,
+    "output": 2237,
+    "total": 9338
+  },
+  "estimatedCostUsd": 0.001203675,
+  "pricingVersion": "gemini-estimate-v1-2026-07-25",
+  "degradedProviders": [],
+  "cacheHits": 8,
+  "cacheMisses": 9,
+  "durationMs": 13257,
+  "retryCount": 0,
+  "score": 38.9,
+  "verdict": "Avoid",
+  "scoreConfidence": 65,
+  "evidenceConfidence": {
+    "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+    "band": "Low",
+    "score": 0.35,
+    "reasons": [
+      "2 independent domains",
+      "0 unresolved evidence disagreements",
+      "average source authority 50%"
+    ],
+    "created_at": "2026-07-25T12:50:16.481044+00:00",
+    "updated_at": "2026-07-25T12:50:16.48+00:00"
+  },
+  "positiveEvidence": 3,
+  "negativeEvidence": 1,
+  "domains": [
+    "approvalflow.net",
+    "blog.jestor.com",
+    "flowdence.io",
+    "github.com",
+    "marker.io",
+    "productive.io",
+    "worldmetrics.org",
+    "www.zite.com"
+  ],
+  "claimMappings": [
+    {
+      "evidenceId": "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+      "claim": "With over 50,000 promotional pieces reviewed through ApprovalFlow, we've helped our clients achieve significant cost and time savings.",
+      "signal": "Demand",
+      "disconfirming": false,
+      "sourceId": "8fdabc51-2bd9-409a-9098-b2a27b11a401",
+      "sourceUrl": "https://approvalflow.net/features.html",
+      "sourceDomain": "approvalflow.net"
+    },
+    {
+      "evidenceId": "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+      "claim": "The impressive milestone of over 250,000 PDF documents uploaded to ApprovalFlow underscores the platform's widespread adoption.",
+      "signal": "Demand",
+      "disconfirming": false,
+      "sourceId": "8fdabc51-2bd9-409a-9098-b2a27b11a401",
+      "sourceUrl": "https://approvalflow.net/features.html",
+      "sourceDomain": "approvalflow.net"
+    },
+    {
+      "evidenceId": "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+      "claim": "ApprovalFlow supports page-level approvals and audit trails, but version-level approval capabilities are only partially documented.",
+      "signal": "Pain",
+      "disconfirming": false,
+      "sourceId": "94ebada0-3696-4de1-8cf7-68a722e040cf",
+      "sourceUrl": "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox",
+      "sourceDomain": "flowdence.io"
+    },
+    {
+      "evidenceId": "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+      "claim": "Competitors may offer more complex automation or broader platform integration.",
+      "signal": "Risk",
+      "disconfirming": true,
+      "sourceId": "94ebada0-3696-4de1-8cf7-68a722e040cf",
+      "sourceUrl": "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox",
+      "sourceDomain": "flowdence.io"
+    }
+  ],
+  "contradictionPair": {
+    "supporting": {
+      "evidenceId": "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+      "claim": "With over 50,000 promotional pieces reviewed through ApprovalFlow, we've helped our clients achieve significant cost and time savings.",
+      "sourceUrl": "https://approvalflow.net/features.html"
+    },
+    "contradicting": {
+      "evidenceId": "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+      "claim": "Competitors may offer more complex automation or broader platform integration.",
+      "sourceUrl": "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox"
+    }
+  },
+  "factorMapping": {
+    "factor": "painSeverity",
+    "score": 24.3,
+    "evidence": [
+      {
+        "evidenceId": "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+        "claim": "ApprovalFlow supports page-level approvals and audit trails, but version-level approval capabilities are only partially documented.",
+        "sourceUrl": "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox"
+      }
+    ]
+  },
+  "marketMetricMapping": null,
+  "chartMappings": [
+    {
+      "chartKey": "factor-breakdown",
+      "supportingEvidenceIds": [
+        "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+        "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+        "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+        "37c421b3-f7f2-4abd-bf78-cf1747f886ec"
+      ],
+      "sourceData": {
+        "values": {
+          "mvpSpeed": 57,
+          "founderFit": 25,
+          "painSeverity": 24.3,
+          "competitionGap": 71,
+          "regulatoryRisk": 10,
+          "purchaseUrgency": 24.3,
+          "willingnessToPay": 10,
+          "buyerReachability": 32,
+          "retentionPotential": 20,
+          "distributionClarity": 59.5,
+          "speedToFirstRevenue": 21.1,
+          "platformDependencyRisk": 23.4
+        }
+      }
+    },
+    {
+      "chartKey": "evidence-balance",
+      "supportingEvidenceIds": [
+        "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+        "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+        "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+        "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+      ],
+      "sourceData": {
+        "supporting": 3,
+        "contradictory": 1
+      }
+    },
+    {
+      "chartKey": "source-quality-distribution",
+      "supportingEvidenceIds": [
+        "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+        "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+        "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+        "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+      ],
+      "sourceData": {
+        "byTier": {
+          "tier_1": 0,
+          "tier_2": 0,
+          "tier_3": 4,
+          "tier_4": 0
+        }
+      }
+    },
+    {
+      "chartKey": "alternatives-comparison",
+      "supportingEvidenceIds": [
+        "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+      ],
+      "sourceData": {
+        "values": {
+          "AppFox Workflows": 1,
+          "Comala Document Mgmt": 1
+        }
+      }
+    }
+  ],
+  "exportChecks": [
+    {
+      "format": "pdf",
+      "storagePath": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v2/report.pdf",
+      "sha256": "5f632da00acbd87f411c109ddade34ca1e7e0218f3d0adba0c9e83c1ad36f102",
+      "bytes": 73560,
+      "opened": true
+    },
+    {
+      "format": "markdown",
+      "storagePath": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v2/report.markdown",
+      "sha256": "68ed070e14c57ea4be90334a819af5d5baa9d051c1990786921501160c7e2cc2",
+      "bytes": 14600,
+      "opened": true
+    },
+    {
+      "format": "csv",
+      "storagePath": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v2/report.csv",
+      "sha256": "d4224f878825de1d71e89573eed1700f698132ccd227cb16044f1018898e9f54",
+      "bytes": 274143,
+      "opened": true
+    },
+    {
+      "format": "json",
+      "storagePath": "4c29a644-0193-4168-b902-78021b97f238/f0bb97ec-c799-4db9-bfe3-2ee811476f52/v2/report.json",
+      "sha256": "77af19e6782dbe568d251c9211652180245c7bcc16071d29c8335cb6f85baa37",
+      "bytes": 36908,
+      "opened": true
+    }
+  ],
+  "usageReconciliation": {
+    "externalSearchCalls": true,
+    "groundedAttempted": true,
+    "groundedCompleted": true,
+    "synthesisCalls": true,
+    "pagesFetched": true,
+    "inputTokens": true,
+    "outputTokens": true,
+    "estimatedCost": true
+  },
+  "credit": {
+    "reservationStatus": "consumed",
+    "reserveEvents": 1,
+    "consumeEvents": 1
+  }
+}

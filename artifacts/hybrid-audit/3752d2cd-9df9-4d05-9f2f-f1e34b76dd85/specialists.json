@@ -1,0 +1,50 @@
+[
+  {
+    "id": "e652455e-62b9-4d35-a10f-63062ed4a26d",
+    "run_id": "3752d2cd-9df9-4d05-9f2f-f1e34b76dd85",
+    "agent_name": "final_judge",
+    "status": "Complete",
+    "attempt_count": 1,
+    "payload": {
+      "methodology": [
+        {
+          "text": "The validation score was determined by analyzing the gap between identified operational pain points in agency workflows and the lack of concrete evidence regarding buyer urgency and financial commitment.",
+          "evidence_ids": [
+            "d4dddaa2-2d22-4779-9457-0bb4d9e24cc6",
+            "475a4381-9f38-4388-9f01-6524bd526cc3"
+          ],
+          "score_criteria": [
+            "painSeverity",
+            "willingnessToPay"
+          ]
+        }
+      ],
+      "written_verdict": "Weak Signal",
+      "executive_summary": [
+        {
+          "text": "While there is clear demand for structured approval workflows to replace inefficient email-based processes, the current evidence lacks proof of urgent purchase intent or willingness to pay for a new solution.",
+          "evidence_ids": [
+            "d4dddaa2-2d22-4779-9457-0bb4d9e24cc6",
+            "00c15b6a-78a9-49f0-b153-1b2342b1dd68"
+          ],
+          "score_criteria": [
+            "purchaseUrgency",
+            "willingnessToPay"
+          ]
+        },
+        {
+          "text": "The pain point of scattered feedback and version confusion is well-documented, yet the market is saturated with existing tools, making it difficult to differentiate without a clear path to rapid revenue.",
+          "evidence_ids": [
+            "475a4381-9f38-4388-9f01-6524bd526cc3",
+            "846a1656-8c0b-45b4-be07-86c5e1ee1451"
+          ],
+          "score_criteria": [
+            "painSeverity",
+            "speedToFirstRevenue"
+          ]
+        }
+      ]
+    },
+    "created_at": "2026-07-26T03:26:51.732324+00:00"
+  }
+]

@@ -1,6 +1,8 @@
 import "server-only";
 import { z } from "zod";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { scorecardSchema, validationReportSchema, type ValidationReport } from "@/lib/report-schema";
 import type { OpportunityScorecard } from "@/lib/types";
 import { scoringCriteria } from "@/lib/scoring";
@@ -10,6 +12,10 @@ import type { ReportChartDataset } from "@/components/report/ReportCharts";
 export type StoredExportFormat = "json" | "markdown" | "csv" | "pdf";
 export type StoredExport = { format: StoredExportFormat; storagePath: string; byteSize: number };
 export type LoadedReport = { report: ValidationReport; exports: StoredExport[]; chartDatasets: ReportChartDataset[] };
+export type ReportLoadResult =
+  | { state: "ready"; value: LoadedReport }
+  | { state: "access_denied" }
+  | { state: "pending"; reason: string };
 export type CompletedScorecard = { id: string; name: string; scorecard: OpportunityScorecard };
 
 const reportSelect = `
@@ -90,11 +96,111 @@ function mapReport(input: unknown): LoadedReport {
   };
 }
 
-export async function loadReportForRun(runId: string): Promise<LoadedReport | null> {
+const ownedReportRpcSchema = z.discriminatedUnion("state", [
+  z.object({ state: z.literal("access_denied") }),
+  z.object({
+    state: z.literal("pending"),
+    reason: z.string().default("report_consistency_delay"),
+    runStatus: z.string().optional(),
+  }),
+  z.object({
+    state: z.literal("ready"),
+    runId: z.string(),
+    payload: z.unknown(),
+    exports: z.array(exportRowSchema).default([]),
+    charts: z.array(z.object({
+      chart_key: z.string(),
+      chart_type: z.string(),
+      source_data: z.record(z.string(), z.unknown()),
+      chart_config: z.record(z.string(), z.unknown()),
+      supporting_evidence_ids: z.array(z.string()),
+    })).default([]),
+  }),
+]);
+
+export function parseOwnedReportRpc(input: unknown): ReportLoadResult {
+  const result = ownedReportRpcSchema.parse(input);
+  if (result.state !== "ready") return result;
+  const report = validationReportSchema.parse(result.payload);
+  return {
+    state: "ready",
+    value: {
+      report,
+      exports: result.exports.map((item) => ({
+        format: item.format,
+        storagePath: item.storage_path,
+        byteSize: item.byte_size,
+      })),
+      chartDatasets: result.charts.map((item) => ({
+        chartKey: item.chart_key,
+        chartType: item.chart_type,
+        sourceData: item.source_data,
+        chartConfig: item.chart_config,
+        supportingEvidenceIds: item.supporting_evidence_ids,
+      })),
+    },
+  };
+}
+
+export async function loadReportForRun(runId: string): Promise<ReportLoadResult> {
+  const deny = (reason: string) => {
+    console.warn(JSON.stringify({ event: "report_access_denied", runId, reason }));
+    return { state: "access_denied" as const };
+  };
   const supabase = await createClient();
-  const { data, error } = await supabase.from("reports").select(reportSelect).eq("run_id", runId).maybeSingle();
-  if (error) throw error;
-  return data ? mapReport(data) : null;
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: refreshed } = user
+    ? { data: { session: null } }
+    : await supabase.auth.refreshSession();
+  // Middleware supplies this only after authenticating the request and removes
+  // any client-provided value. It bridges the response where an expired access
+  // token is refreshed but the server component still sees the original cookie.
+  const authenticatedUserId = user?.id
+    ?? refreshed.session?.user.id
+    ?? (await headers()).get("x-shouldbuild-user-id");
+  if (!authenticatedUserId) return deny("missing_authenticated_user");
+  const admin = createServiceRoleClient();
+  const rpc = admin.rpc.bind(admin) as unknown as (
+    name: string,
+    params: Record<string, string>,
+  ) => Promise<{ data: unknown; error: { message: string } | null }>;
+  // The SECURITY DEFINER RPC proves ownership and resolves the canonical latest
+  // immutable version in one PostgreSQL snapshot. It intentionally returns the
+  // same access-denied state for unknown and cross-tenant run IDs.
+  const delays = [0, 150, 300, 600, 1_200, 2_400];
+  let lastPending: ReportLoadResult = { state: "pending", reason: "report_consistency_delay" };
+  for (const delay of delays) {
+    if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+    const { data, error } = await rpc("get_owned_latest_report", {
+      p_run_id: runId,
+      p_user_id: authenticatedUserId,
+    });
+    if (error) throw error;
+    const parsed = parseOwnedReportRpc(data);
+    if (parsed.state === "ready") return parsed;
+    if (parsed.state === "access_denied") return deny("ownership_not_proved");
+    lastPending = parsed;
+    // A pending result has already proved tenant ownership inside the
+    // SECURITY DEFINER function. In some PostgREST connection-pool snapshots,
+    // that function can briefly miss a relation row that a fresh direct
+    // service-role statement sees. Resolve the same canonical immutable
+    // version on a new no-store statement without ever widening tenant scope.
+    const { data: directlyVisible, error: directError } = await admin
+      .from("reports")
+      .select(reportSelect)
+      .eq("run_id", runId)
+      .maybeSingle();
+    if (directError) throw directError;
+    if (directlyVisible) {
+      const row = reportRowSchema.safeParse(directlyVisible);
+      if (row.success && row.data.report_versions.length) {
+        console.info(JSON.stringify({ event: "report_consistency_direct_fallback", runId }));
+        return { state: "ready", value: mapReport(row.data) };
+      }
+    }
+  }
+  console.info(JSON.stringify({ event: "report_consistency_retry", runId, reason: lastPending.reason }));
+  return lastPending;
 }
 
 export async function loadCompletedReports(): Promise<LoadedReport[]> {

@@ -1,0 +1,676 @@
+{
+  "jobs": [
+    {
+      "id": "a1c2632d-148f-45d2-bc63-fb8e1e6f5074",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage": "plan",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": null,
+      "claimed_by": "worker-9736ffd9",
+      "claimed_at": "2026-07-25T12:50:05.219129+00:00",
+      "visible_after": "2026-07-25T12:52:35.219129+00:00",
+      "input_meta": {
+        "mode": "quick_scan"
+      },
+      "output_meta": {
+        "planned": true,
+        "groundingMode": "disabled",
+        "opportunityId": "40dae80e-a368-413a-9a37-a0c59092313a",
+        "configuredModels": {
+          "research": "gemini-2.5-flash",
+          "synthesis": "gemini-3.1-flash-lite"
+        },
+        "geminiConfigurationVerified": true
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:50:04.449175+00:00",
+      "updated_at": "2026-07-25T12:50:06.169748+00:00",
+      "completed_at": "2026-07-25T12:50:06.169748+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "f0bb97ec-c799-4db9-bfe3-2ee811476f52|0|plan|0|0|"
+    },
+    {
+      "id": "9ca01206-734e-418a-bd6a-55f6689fdb2e",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage": "grounded_research",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": "a1c2632d-148f-45d2-bc63-fb8e1e6f5074",
+      "claimed_by": "worker-ffaefcbd",
+      "claimed_at": "2026-07-25T12:50:06.185208+00:00",
+      "visible_after": "2026-07-25T12:52:36.185208+00:00",
+      "input_meta": {
+        "mode": "quick_scan",
+        "groundingMode": "disabled",
+        "opportunityId": "40dae80e-a368-413a-9a37-a0c59092313a"
+      },
+      "output_meta": {
+        "groundedPacks": [],
+        "groundingMode": "disabled",
+        "sources_count": 0,
+        "registryRowsRead": 8,
+        "research_summary": "",
+        "groundingDegraded": false,
+        "registryDomainsUsed": [
+          "bls.gov",
+          "census.gov",
+          "sec.gov",
+          "data.gov",
+          "europa.eu",
+          "github.com",
+          "news.ycombinator.com",
+          "g2.com"
+        ]
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:50:06.169748+00:00",
+      "updated_at": "2026-07-25T12:50:06.242585+00:00",
+      "completed_at": "2026-07-25T12:50:06.242585+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "f0bb97ec-c799-4db9-bfe3-2ee811476f52|0|grounded_research|0|0|"
+    },
+    {
+      "id": "9597f0ff-5a7d-43ba-9c04-dbd50e52e492",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage": "evidence_boosters",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": "9ca01206-734e-418a-bd6a-55f6689fdb2e",
+      "claimed_by": "worker-3789cdb7",
+      "claimed_at": "2026-07-25T12:50:06.252566+00:00",
+      "visible_after": "2026-07-25T12:52:36.252566+00:00",
+      "input_meta": {
+        "mode": "quick_scan",
+        "ideaName": "ApprovalFlow evidence proof (quick_scan)",
+        "runInput": {
+          "idea_name": "ApprovalFlow evidence proof (quick_scan)",
+          "assumptions": {
+            "buyer": "Agency owner or engineering lead",
+            "priceHypothesis": "Per-team monthly subscription"
+          },
+          "market_type": "B2B SaaS",
+          "target_region": "United States and global English-speaking markets",
+          "target_customer": "Small GitHub-based software agencies and software consultancies",
+          "idea_description": "A lightweight pull-request approval and audit-trail service for small GitHub-based software agencies, centralizing review requests, reminders, client sign-off, and immutable approval records."
+        },
+        "marketType": "B2B SaaS",
+        "targetRegion": "United States and global English-speaking markets",
+        "groundingMode": "disabled",
+        "opportunityId": "40dae80e-a368-413a-9a37-a0c59092313a",
+        "researchPacks": [
+          {
+            "key": "quick_scan",
+            "focus": "problem demand, alternatives, pricing and disconfirming evidence",
+            "query": "approvalflow evidence proof quick scan lightweight pull-request small github-based software agencies and alternatives pricing demand complaints"
+          }
+        ],
+        "targetCustomer": "Small GitHub-based software agencies and software consultancies",
+        "groundingSources": [],
+        "rawGroundingText": "",
+        "groundingDegraded": false
+      },
+      "output_meta": {
+        "groundingMode": "disabled",
+        "candidateCount": 10,
+        "rejectedByReason": {
+          "empty_or_unextractable": 2
+        },
+        "groundingDegraded": false,
+        "independentDomains": 8,
+        "acceptedSourceCount": 8,
+        "externalSearchCalls": 4
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:50:06.242585+00:00",
+      "updated_at": "2026-07-25T12:50:10.048942+00:00",
+      "completed_at": "2026-07-25T12:50:10.048942+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "f0bb97ec-c799-4db9-bfe3-2ee811476f52|0|evidence_boosters|0|0|"
+    },
+    {
+      "id": "6b5c584b-c34d-46ff-9ef5-8841f969b1e3",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage": "validate_normalize",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": "9597f0ff-5a7d-43ba-9c04-dbd50e52e492",
+      "claimed_by": "worker-b073bb3a",
+      "claimed_at": "2026-07-25T12:50:10.058141+00:00",
+      "visible_after": "2026-07-25T12:52:40.058141+00:00",
+      "input_meta": {
+        "mode": "quick_scan",
+        "combinedText": "RETRIEVED_EVIDENCE_DOSSIER:\nSOURCE_ID: a214a37b-2353-45b2-9fe8-c7e2bc3fdb12\nTITLE: ApprovalFlow - GitHub\nCANONICAL_URL: https://github.com/neozhu/workflow\nDOMAIN: github.com\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nGitHub - neozhu/workflow: an efficient system for managing approval workflows. It handles visitor requests, contractor applications, and digital exit permits, streamlining operations and promoting transparency. · GitHub Skip to content Navigation Menu Toggle navigation Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry New Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build Secret protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events & webinars Ebooks & reports Business insights GitHub Skills SUPPORT & SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community Accelerator GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search or jump to... Search code, repositories, users, issues, pull requests... --> Search Clear Search syntax tips Provide feedback --> We read every piece of feedback, and take your input very seriously. Include my email address so I can be contacted Cancel Submit feedback Saved searches Use saved searches to filter your results more quickly --> Name Query To see all available qualifiers, see our documentation . Cancel Create saved search Sign in Sign up Appearance settings Resetting focus You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert {{ message }} neozhu / workflow Public Notifications You must be signed in to change notification settings Fork 7 Star 27 Code Issues 0 Pull requests 0 Actions Projects Security and quality 0 Insights Additional navigation options Code Issues Pull requests Actions Projects Security and quality Insights neozhu/workflow main Branches Tags Go to file Code Open more actions menu Folders and files Name Name Last commit message Last commit date Latest commit History 9 Commits 9 Commits .gitignore .gitignore LICENSE LICENSE README.md README.md publish-dotnet8.zip publish-dotnet8.zip release.zip release.zip View all files Repository files navigation README MIT license More items ApprovalFlow Project Overview ApprovalFlow is an enterprise-level, internal application workflow approval system designed to streamline the process of request submissions and approvals. This \n\n---\n\nSOURCE_ID: 94ebada0-3696-4de1-8cf7-68a722e040cf\nTITLE: ApprovalFlow vs Comala vs AppFox for Confluence\nCANONICAL_URL: https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox\nDOMAIN: flowdence.io\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nApprovalFlow vs Comala vs AppFox for Confluence | Flowdence Blog Skip to content Flowdence Blog Posts Tags Docs About svg]:stroke-accent md:size-8\"> Flowdence main site svg]:stroke-accent md:size-8\"> Archives svg]:stroke-accent md:size-8\"> Search svg]:stroke-accent md:size-8 relative\" title=\"Toggles light & dark\" aria-label=\"auto\" aria-live=\"polite\" data-header-icon=\"theme\"> Go back ApprovalFlow vs Comala vs AppFox for Confluence 24 Feb, 2026 | This guide is for Confluence admins, compliance owners, and product operations teams that need to select an approval workflow app without getting buried in marketing claims. Most comparison pages either oversimplify the differences or optimize for one metric only, usually the list price at one user tier. In practice, real decisions usually come from a combination of factors: how version approvals work in your authoring process, how much configuration overhead your admins can absorb, how your auditors evaluate trail quality, and how your monthly bill changes as your workspace grows. The goal here is to keep a visual “one-page comparison sheet” format while making the underlying claims defensible. Every numeric competitor claim in this post is validated against Atlassian Marketplace cloud listing data captured on February 24, 2026 . ApprovalFlow pricing is based on the current published Marketplace rates: free for up to 10 users, $0.29/user/month (11–100 users), $0.20/user/month (101–1,000 users) , with lower rates for larger teams. All plans include a 30-day free trial . To keep this useful for buyers, this post does not present one tool as universally best. Instead, it explains where each option is stronger and where each option introduces tradeoffs that matter at deployment time. Methodology This comparison uses four source categories: Atlassian Marketplace overview pages for Comala and AppFox. Atlassian Marketplace live pricing API data for Comala and AppFox cloud tiers ( perUnitItems for monthly per-user tiers plus items for entry-tier monthly blocks). Flowdence ApprovalFlow product documentation and policy pages. Explicitly stated ApprovalFlow list pricing you provided for this post. How claims were handled: If a feature is directly and clearly documented by a vendor, it is marked as supported. If a related capability is documented but wording does not exactly match the comparison label, it is marked as partial ( ~ ) with a short clarification. If a claim could not be responsibly verified from public documentation, it is not asserted as a firm yes. This is important because feature words like “version approval,” “global templates,” and “residency compliance” are often defined differently by different vendors. FLOWDENCE · Product Comparison February 2026 Confluence Approval Tools Compared A side-by-side look at three approval workflow apps for Confluence Cloud: features, pricing, architecture, and ideal use cases. Feature Comparison Feature Comala Document Mgmt ApprovalFlow by Flowdence AppFox Workflows Page-level approvals ✓ ✓ ✓ Version-level approvals Approve specific page versions ~ Related controls documented, not described with this exact label ✓ Per-page-version tracking documented ~ Versioning language present, not identical wording Audit trail ✓ ✓ ✓ Simple setup Up and running in minutes ~ Feature-rich enterprise workflow configuration model ✓ Space-scoped setup documented with quick-start flows ~ Visual builder + broader automation surface Forge-native Platform and processing model — \n\n---\n\nSOURCE_ID: 8fdabc51-2bd9-409a-9098-b2a27b11a401\nTITLE: ApprovalFlow | Product Features\nCANONICAL_URL: https://approvalflow.net/features.html\nDOMAIN: approvalflow.net\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nApprovalFlow | Product Features Skip to main content Loading... Home Features Support Support enquiry Videos FAQ User guide Core Claims guide Blog Contact Us Schedule a Demo! Product features Home Product features ApprovalFlow has an intuitive document review workflow ApprovalFlow offers an end-to-end digital workflow to review, approve and manage promotional materials and documents. 01 Start your review Upload your document and any supporting materials. Give it a title and any other basic info needed to start the approval process. 02 Mark it up Use the built-in tools to highlight, comment, and annotate directly on the document. 03 Send it for approval The system automatically sends the document to the next person in line for review. They'll get an email when it's their turn. 04 Stay in the loop Track the document's progress in real-time. Use the timeline and dashboards to see where it is in the approval process and get helpful reports. Super-charge your promotional material review process Contact our sales team for a demonstration. Contact our sales team Utilisation Dashboards Real-time metrics at your fingertips The ApprovalFlow Dashboard is your central hub for streamlined document management and workflow oversight. Designed with simplicity and efficiency in mind, the dashboard provides a clear snapshot of your document activity, including totals, active and completed documents, and average processing rates per month. The \"Actions Required\" section ensures nothing slips through the cracks by highlighting tasks that need your attention, complete with actionable links for quick resolution. With intuitive navigation and real-time updates, the ApprovalFlow Dashboard empowers teams to stay on top of their approval processes, boosting productivity and ensuring seamless collaboration. Review setup Set up a document review in a minute! Getting your document reviewed and approved in ApprovalFlow is incredibly simple and takes just three easy steps. Initiate a new review cycle by adding basic information about your document Define your workflow by adding the necessary reviewers and approvers Upload your primary document and any supporting materials with our intuitive drag-and-drop interface. 15 Years in operation With over a decade of experience, we've consistently delivered exceptional service and support. Our long-standing customer relationships, many spanning numerous years, reflect the value we bring to their businesses. Promotional pieces reviewed With over 50,000 promotional pieces reviewed through ApprovalFlow, we've helped our clients achieve significant cost and time savings. The streamlined review process eliminates bottlenecks and dramatically reduces the time spent on each approval cycle. 250000 PDF documents uploaded The impressive milestone of over 250,000 PDF documents uploaded to ApprovalFlow underscores the platform's widespread adoption and the significant impact it has on our clients' workflows. This translates directly into substantial savings, reduced paper usage, and minimised administrative overhead. 9642 Pages ApprovalFlow has processed over 3,000,000 pages, significantly reducing paper consumption and demonstrating a commitment to environmental responsibility by minimising the need for printed documents. We helped businesses reduce their carbon footprint associated with paper production, transportation, and disposal, contributing to a more sustainable planet. Advanced features to keep your document review moving Approv\n\n---\n\nSOURCE_ID: ed3b4ee8-dd75-44b5-abac-cfe291d382ce\nTITLE: Review and Approval Software: 17 Tools Compared - Marker.io\nCANONICAL_URL: https://marker.io/blog/review-and-approval-software\nDOMAIN: marker.io\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nReview and Approval Software: 17 Tools Compared Introducing Website Monitoring (beta) → surface website issues automatically Features Features Product Tour Learn the basics of what Marker.io does. Widget Capture website feedback instantly. Session Replay Record and watch user sessions on your site. Data Masking Hide personal data in screenshots and replays. Workspace Analytics Monitor performance analytics with actionable insights. AI features & MCP AI Translation, AI Magic Rewrite, and AI Title Generation. scan Website Monitoring (BETA) Catch website issues before your users do. Who is it for Company Type Ecommerce Manage site updates across large websites. Enterprise Unlock maximum control and security in Marker.io. Pharmaceuticals Seamless website feedback in regulated environments. Agency Collect website feedback from your clients. Software Development Report bugs and issues in your web app. Use Cases Website Annotations Website Feedback User Acceptance Testing QA Testing Bug Tracker Integrations Project Management Trello Asana ClickUp Teamwork Basecamp Notion Wrike Monday.com Shortcut CMS Plugins WordPress Issue Tracker Jira GitHub GitLab Azure DevOps Linear Bitbucket Other Intercom Zendesk LogRocket FullStory BrowserStack Slack View All Integrations Resources Resources Help Center & Support Advice and answers from the Marker.io team. Academy Learn the basics of Marker.io. PerfectBugReport.io Learn how to write bug reports developers love. Website Redesign Checklist Everything you need to launch your next redesign. pharmacy-24px Website Reviews in Pharmaceutical Industry How enterprise pharma teams handle feedback. Insights Blog Customer Stories Webinars Changelog About us Pricing Login Login Start free trial Get a demo The Best Review and Approval Software: 17 Top Tools Compared Book a Demo Start Free Trial The Best Review and Approval Software: 17 Top Tools Compared This website review and approval software comparison breaks down 17 tools by use case, features, and pricing, so you can pick the right fit fast. Nathan Vander Heyden • Software Reviews • Last updated: Feb 25, 2026 Contents Text Link Text Link but this is a very big long text Text Link Text Link Text Link Text Link In this blog post, we look at the 17 best review and approval tools on the market based on features, use cases, and pricing. TL;DR: Using review and approval software, teams can collect feedback on work in progress and get a formal sign-off before it ships. Websites, video, documents, creative assets, and business processes each need a different type of approval tool, so the right solution depends on what you're reviewing and who with. This guide breaks down 17 review and approval software tools. Read on for details 👇 Introduction If you've searched for review and approval software, you've probably seen a wide variety of results. Some point you toward video editing tools, while others push document sign-off platforms or project management add-ons. None of them are wrong; they're just describing different corners of a much bigger category. Picking review and approval software before you've worked out what you're actually reviewing – a website, a video, a PDF, or a stack of invoices – is how teams end up with a tool that handles half the job. This guide breaks each category down properly, draws a clear line between approval software and bug tracking tools , and compares 17 tools so you can find the one built for the review workflow you actually run. What is \n\n---\n\nSOURCE_ID: cab66a6b-f478-40be-b287-422aedd67c4f\nTITLE: Top 10 Workflow Approval Software (Paid & Free) 2026 Review\nCANONICAL_URL: https://productive.io/blog/workflow-approval-software\nDOMAIN: productive.io\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nTop 10 Workflow Approval Software (Paid & Free) 2026 Review Skip to main content Product Resourcing Resource Planning Time Tracking Time Off Management '#0699EC' fill='none'/> Projects Project Management Gantt Charts Docs Sales CRM AI Notetaker New Financials Budgeting & Profitability Invoicing Forecasting Expense Management Revenue Recognition Scenario Builder Platform Agents New Integrations Skills New Reporting Automations Pricing Industries Agency Run projects, budgets, and resources in one place with real-time insights Software & Hi-Tech Allocate resources by skills, seniority, and availability to streamline service delivery Consultancy Run each client like a separate P&L and centralize communication Accounting & Finance Simplify invoicing, budgeting, and financial reporting in one platform IT Services Deliver IT projects on time and under budget with clear profitability insights Architecture & Engineering Coordinate multi-phase projects, manage resources, and deliver designs on schedule CUSTOMER SUCCESS STORY Saffron Got Clarity on All Aspects of Business Saffron is a brand consultancy of 100+ people that specializes in creating, growing, adapting, and transforming brands Read more Resources Explore Productive Scenario Builder Eliminate uncertainty in project planning Product Updates Big feature releases, product updates, and improvements Roadmap Get a glimpse into what’s coming next Success Stories See how companies streamline work and grow with Productive Run a Better Business Webinars Learn how to run a more successful professional service business Blog Read about resource management, operations, financial planning and forecasting Bold Community A network for agency professionals and consultants by Productive Guides & Tools Browse our collection of market insights and tools for professional service industries Become a Pro Productive Academy Step-by-step lessons designed to help you feel confident using Productive Productive Sessions Tips and tricks on how to work smarter and faster in Productive Help Center Guides, best practices, and how-tos in one place AI Careers Login Book a Demo Try Productive Product Resourcing Resource Planning Time Tracking Time Off Management '#0699EC' fill='none'/> Projects Project Management Gantt Charts Docs Sales CRM AI Notetaker New Financials Budgeting & Profitability Invoicing Forecasting Expense Management Revenue Recognition Scenario Builder Platform Agents New Integrations Skills New Reporting Automations Pricing Industries Agency Run projects, budgets, and resources in one place with real-time insights Software & Hi-Tech Allocate resources by skills, seniority, and availability to streamline service delivery Consultancy Run each client like a separate P&L and centralize communication Accounting & Finance Simplify invoicing, budgeting, and financial reporting in one platform IT Services Deliver IT projects on time and under budget with clear profitability insights Architecture & Engineering Coordinate multi-phase projects, manage resources, and deliver designs on schedule CUSTOMER SUCCESS STORY Saffron Got Clarity on All Aspects of Business Saffron is a brand consultancy of 100+ people that specializes in creating, growing, adapting, and transforming brands Read more Resources Explore Productive Scenario Builder Eliminate uncertainty in project planning Product Updates Big feature releases, product updates, and improvements Roadmap Get a glimpse into what’s coming next Success Stories See how\n\n---\n\nSOURCE_ID: ba1e97d5-54bb-4c28-bbb3-533d57aa185c\nTITLE: Top 10 Best Proof Approval Software | 2026 Edition\nCANONICAL_URL: https://worldmetrics.org/best/proof-approval-software\nDOMAIN: worldmetrics.org\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nTop 10 Best Proof Approval Software | 2026 Edition Proprietary research & verified data Services Custom Market Research Tailored research from €5,000 Industry Reports Ready-made reports from €499 Software Advisory Vendor selection from €2,500 Market Data All topics AI In Industry Technology Digital Media Entertainment Events Medical Conditions Disorders Safety Accidents Mental Health Psychology Marketing Advertising Education Learning Manufacturing Engineering Social Issues Societal Trends View all → Software Advice Overview Aerospace Aviation Space Aerospace Defense Agriculture Farming AI In Industry Art Design Arts Creative Expression Automotive Services Beverages Alcohol View all → Editorial Process Company About Team Blog As Seen In Partners Careers Privacy Policy Contact Us Home Services Market Data Software Advice Editorial Process Company Contact Us Get Custom Research Browse Reports Home / Reviews / Business Finance / Top 10 Best Proof Approval Software of 2026 Worldmetrics SOFTWARE ADVICE Business Finance Top 10 Best Proof Approval Software of 2026 Discover the top 10 best proof approval software for streamlined workflows. Proof approval workflows are shifting from scattered email threads to systems that preserve review context with audit trails, version history, and permissioned sign-offs. This review ranks the top 10 platforms across collaborative markup, approval-state automation, and exportable approval history so teams can compare how each tool handles reviewer control, compliance logging, and end-to-end proof circulation. Comparison table included Verified Apr 29, 2026 Independently tested 14 min read Confluence Jira Software Microsoft Teams Written by Gabriela Novak · Edited by Niklas Forsberg · Fact-checked by Benjamin Osei-Mensah Published Feb 19, 2026 Last verified Apr 29, 2026 Next Oct 2026 14 min read Side-by-side review On this page ( 14 ) ▸ 01 Comparison Table 02 Confluence #1 03 Jira Software #2 04 Microsoft Teams #3 05 Google Workspace #4 06 monday.com #5 07 Wrike #6 08 ProofHub #7 09 Filecamp #8 10 Filestage #9 11 Inky #10 12 Conclusion 13 Frequently Asked Questions About Proof Approval Software 14 Sources Includes paid placements · ranking is editorial. Worldmetrics may earn a commission through links on this page. This does not influence our rankings — products are evaluated through our verification process and ranked by quality and fit. Read our editorial policy → Editor’s picks Editor’s top 3 picks Our editors shortlisted the strongest options from 20 tools evaluated in this guide. 1 Confluence Best overall Inline comments and page-based context for review decisions Best for: Product and content teams managing proofs inside shared documentation hubs Visit Confluence Read full review 2 Jira Software Best value Workflow engine with status transitions and automation for proof approval lifecycles Best for: Teams building approval workflows on Jira with audit trails and automation Visit Jira Software Read full review 3 Microsoft Teams Easiest to use SharePoint document versioning paired with approval workflow notifications Best for: Organizations needing Microsoft-integrated proof approvals and version traceability Visit Microsoft Teams Read full review How we ranked these tools 4-step methodology · Independent product evaluation Methodology 01 Feature verification We check product claims against official documentation, changelogs and independent reviews. 02 Review aggregation We analyse written and video review\n\n---\n\nSOURCE_ID: dd722fd1-89cd-428d-b6fc-4a3208d042ca\nTITLE: I Tested The 11 Best Approval Workflow Software Tools in 2026\nCANONICAL_URL: https://www.zite.com/blog/approval-workflow-software\nDOMAIN: www.zite.com\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nI Tested The 11 Best Approval Workflow Software Tools in 2026 Product Apps Design, build, and deploy web applications Databases Forms to create and update responses Solutions By use case Apps Sites Dashboards Portals Internal Tools Calculators AI Apps Link in Bio Resources Company Marketplace Explore Templates & Apps Careers Join our Team Help Center View FAQs & Guides Enterprise Pricing Sign in Create account Blog Apps I Tested The 11 Best Approval Workflow Software Tools in 2026 Table of contents Heading 2 Share this post Written by Laura Wendel Reviewed by Michelle Brown Published on March 20, 2026 After testing 20+ approval workflow tools across expense requests, content sign-offs, and purchase orders, here are the 11 best options that speed up approvals in 2026. Best approval workflow software: TL;DR If you want approvals tied to forms, look at Jotform or Formstack . For project-based approvals, use Wrike , Monday , or Hive . If you want client sign-offs without forcing them to log in, use Tallyfy . For custom approval apps, use Zite . Here's how the top tools compare head-to-head: Tool Best for Starting price Zite Building apps for custom approval processes $19/month Wrike Enterprise teams with complex creative approvals $10/user/month Jotform Workflows Form-to-approval routing $39/month Kissflow Large-scale enterprise process automation $2,500/month Birdview Professional services with expense/time approvals $9/user/month Tallyfy Client-facing workflows (no login required) $30/user/month Formstack Document-heavy approvals with e-signatures $99/month monday Cross-team visibility on pending approvals $14/seat/month Hive Marketing teams with asset proofing $7/user/month Approveit Slack-native PTO and expense approvals $850/month ProcessMaker Complex enterprise BPMN workflows $3,000/month billed annually 1. Zite: Best for building apps that use custom approval workflows What it does: Zite lets you describe the approval flow you need in plain language and automatically builds a tailored app around it. In minutes, you get a working approval app with forms, approval logic, a database, and an interface. Who it’s for: Non-technical teams that want to build their own approval apps without developers. Zite stands out because it builds an entire app around your approval process . It creates the database that stores requests, the forms that capture them, the approval logic that routes them, and the interface where users interact with the workflow. In my testing, I described a vendor portal with tiered approvals, based on contract value. Zite generated the apps and the conditional routing logic (contracts over $10K go to finance, under $10K to department heads for approval) in a few minutes. What I liked most about Zite is that the approval logic shows up as a flowchart . You can see each step, which service it’s calling (like Slack or Airtable), and how data flows from one step to the next. If the app stops working, you can replay a run, inspect inputs and outputs, and see exactly where it failed, then ask Zite to fix that step. You don’t have to dig through AI‑generated code, which is perfect for non-technical users. Key features Approval workflows from plain English: You describe what you want (“add a manager approval step and send a Slack update”), and Zite generates the workflow for you instead of making you wire triggers and actions manually. Visual approval flows: The approval process is represented as a flowchart, so you can see each st\n\n---\n\nSOURCE_ID: c266247c-93d2-42ee-852f-2adb92378f20\nTITLE: Best Approval Flow Software for Companies in 2025\nCANONICAL_URL: https://blog.jestor.com/best-approval-flow-software-for-companies-in-2025\nDOMAIN: blog.jestor.com\nQUERY_FAMILY: quick_scan\nSOURCE_TIER: 3\nRETRIEVED_TEXT:\nBest Approval Flow Software for Companies in 2025 Try it now Product Pricing Best Approval Flow Software for Companies in 2025 Approvals are at the core of every business. Whether it’s expense requests, supplier payments, contract reviews, or compliance checks , approval flows ensure that only the right people authorize critical decisions. In 2025, businesses can no longer rely on email threads or spreadsheets to track approvals. Instead, companies are turning to approval flow software — platforms that provide structure, automation, and visibility. This article explores the best approval flow software for companies in 2025 , highlighting their strengths, weaknesses, and ideal use cases. Why approval flow software matters in 2025 Implementing approval flow software helps companies: Reduce fraud and errors – by enforcing validation rules and hierarchies. Ensure compliance – particularly in finance, HR, and procurement. Improve transparency – with full audit trails and activity logs. Automate repetitive approvals – saving time for managers and teams. Scale operations – adapting workflows as the company grows. Best approval flow software in 2025 1. Jestor Jestor is a no-code/low-code platform that allows companies to design flexible, scalable approval flows without coding. Key features : Create custom multi-level approvals (by value, department, cost center, or vendor). Automate conditional flows (e.g., expenses over $5,000 require CFO approval). Replace spreadsheets with a centralized, secure database. Real-time dashboards for visibility and auditing. Native integrations with ERPs (Conta Azul, Omie, SAP, Totvs), CRMs, and communication platforms. Why it stands out : unlike many tools, Jestor is designed for mission-critical processes , making it ideal for finance, HR, operations, and compliance. 2. Pipefy Pipefy is a workflow automation tool with strong approval flow functionality. Pros : Easy-to-use, visual pipeline interface. Good for finance and procurement approvals. Affordable for small and mid-sized companies. Cons : limited scalability for complex enterprise workflows. 3. Kissflow Kissflow is a simple workflow and approval platform. Pros : Quick setup for approval processes. Budget-friendly for smaller teams. Works well for straightforward HR and finance approvals. Cons : lacks the depth required for complex business-critical operations. 4. Power Automate (Microsoft) Power Automate integrates approval workflows within the Microsoft ecosystem. Pros : Works natively with Outlook, Teams, and Dynamics ERP. Automated approval notifications in Microsoft tools. Cons : less intuitive for non-technical users, best for companies already using Microsoft extensively. 5. Approve.com Approve.com (now part of Tipalti) focuses on procurement and finance approvals. Pros : Purpose-built for procurement workflows. Strong integration with payment and expense systems. Cons : less flexible outside finance and procurement use cases. Quick comparison Platform Key strength Best for Jestor Custom no-code approvals Companies replacing spreadsheets in critical ops Pipefy Visual workflows SMEs needing structured approvals Kissflow Simple and affordable Small to medium businesses Power Automate Microsoft ecosystem Enterprises using Microsoft/Dynamics Approve.com Procurement-focused Finance and purchasing teams Which approval flow software is right for you? For scalable, business-critical approvals → Jestor . For simple and visual workflows → Pipefy. For budget-c",
+        "targetRegion": "United States and global English-speaking markets",
+        "groundingMode": "disabled",
+        "opportunityId": "40dae80e-a368-413a-9a37-a0c59092313a",
+        "sourceCatalog": [
+          {
+            "url": "https://github.com/neozhu/workflow",
+            "title": "ApprovalFlow - GitHub",
+            "domain": "github.com",
+            "excerpt": "GitHub - neozhu/workflow: an efficient system for managing approval workflows. It handles visitor requests, contractor applications, and digital exit permits, streamlining operations and promoting transparency. · GitHub Skip to content Navigation Menu Toggle navigation Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry New Integrate external tools DEVELOPER WORKFLOWS Actions Automate any",
+            "provider": "duckduckgo",
+            "sourceId": "a214a37b-2353-45b2-9fe8-c7e2bc3fdb12",
+            "publisher": "ApprovalFlow",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan",
+            "sourceClass": "secondary",
+            "retrievalDate": "2026-07-25",
+            "extractionMethod": "retrieval_cache"
+          },
+          {
+            "url": "https://flowdence.io/blog/posts/approvalflow-vs-comala-vs-appfox",
+            "title": "ApprovalFlow vs Comala vs AppFox for Confluence",
+            "domain": "flowdence.io",
+            "excerpt": "ApprovalFlow vs Comala vs AppFox for Confluence | Flowdence Blog Skip to content Flowdence Blog Posts Tags Docs About svg]:stroke-accent md:size-8\"> Flowdence main site svg]:stroke-accent md:size-8\"> Archives svg]:stroke-accent md:size-8\"> Search svg]:stroke-accent md:size-8 relative\" title=\"Toggles light & dark\" aria-label=\"auto\" aria-live=\"polite\" data-header-icon=\"theme\"> Go back ApprovalFlow vs Comala vs AppFox for Confluence 24 Feb, 2026 | This guide is for Confluence admins, compliance own",
+            "provider": "duckduckgo",
+            "sourceId": "94ebada0-3696-4de1-8cf7-68a722e040cf",
+            "publisher": "ApprovalFlow vs Comala vs AppFox for Confluence",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan",
+            "sourceClass": "secondary",
+            "retrievalDate": "2026-07-25",
+            "extractionMethod": "retrieval_cache"
+          },
+          {
+            "url": "https://approvalflow.net/features.html",
+            "title": "ApprovalFlow | Product Features",
+            "domain": "approvalflow.net",
+            "excerpt": "ApprovalFlow | Product Features Skip to main content Loading... Home Features Support Support enquiry Videos FAQ User guide Core Claims guide Blog Contact Us Schedule a Demo! Product features Home Product features ApprovalFlow has an intuitive document review workflow ApprovalFlow offers an end-to-end digital workflow to review, approve and manage promotional materials and documents. 01 Start your review Upload your document and any supporting materials. Give it a title and any other basic info ",
+            "provider": "duckduckgo",
+            "sourceId": "8fdabc51-2bd9-409a-9098-b2a27b11a401",
+            "publisher": "ApprovalFlow",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan",
+            "sourceClass": "secondary",
+            "retrievalDate": "2026-07-25",
+            "extractionMethod": "retrieval_cache"
+          },
+          {
+            "url": "https://marker.io/blog/review-and-approval-software",
+            "title": "Review and Approval Software: 17 Tools Compared - Marker.io",
+            "domain": "marker.io",
+            "excerpt": "Review and Approval Software: 17 Tools Compared Introducing Website Monitoring (beta) → surface website issues automatically Features Features Product Tour Learn the basics of what Marker.io does. Widget Capture website feedback instantly. Session Replay Record and watch user sessions on your site. Data Masking Hide personal data in screenshots and replays. Workspace Analytics Monitor performance analytics with actionable insights. AI features & MCP AI Translation, AI Magic Rewrite, and AI Title",
+            "provider": "duckduckgo",
+            "sourceId": "ed3b4ee8-dd75-44b5-abac-cfe291d382ce",
+            "publisher": "Review and Approval Software: 17 Tools Compared",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan",
+            "sourceClass": "secondary",
+            "retrievalDate": "2026-07-25",
+            "extractionMethod": "retrieval_cache"
+          },
+          {
+            "url": "https://productive.io/blog/workflow-approval-software",
+            "title": "Top 10 Workflow Approval Software (Paid & Free) 2026 Review",
+            "domain": "productive.io",
+            "excerpt": "Top 10 Workflow Approval Software (Paid & Free) 2026 Review Skip to main content Product Resourcing Resource Planning Time Tracking Time Off Management '#0699EC' fill='none'/> Projects Project Management Gantt Charts Docs Sales CRM AI Notetaker New Financials Budgeting & Profitability Invoicing Forecasting Expense Management Revenue Recognition Scenario Builder Platform Agents New Integrations Skills New Reporting Automations Pricing Industries Agency Run projects, budgets, and resources in one ",
+            "provider": "duckduckgo",
+            "sourceId": "cab66a6b-f478-40be-b287-422aedd67c4f",
+            "publisher": "Top 10 Workflow Approval Software (Paid & Free) 2026 Review",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan",
+            "sourceClass": "secondary",
+            "retrievalDate": "2026-07-25",
+            "extractionMethod": "retrieval_cache"
+          },
+          {
+            "url": "https://worldmetrics.org/best/proof-approval-software",
+            "title": "Top 10 Best Proof Approval Software | 2026 Edition",
+            "domain": "worldmetrics.org",
+            "excerpt": "Top 10 Best Proof Approval Software | 2026 Edition Proprietary research & verified data Services Custom Market Research Tailored research from €5,000 Industry Reports Ready-made reports from €499 Software Advisory Vendor selection from €2,500 Market Data All topics AI In Industry Technology Digital Media Entertainment Events Medical Conditions Disorders Safety Accidents Mental Health Psychology Marketing Advertising Education Learning Manufacturing Engineering Social Issues Societal Trends View ",
+            "provider": "duckduckgo",
+            "sourceId": "ba1e97d5-54bb-4c28-bbb3-533d57aa185c",
+            "publisher": "Top 10 Best Proof Approval Software",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan",
+            "sourceClass": "secondary",
+            "retrievalDate": "2026-07-25",
+            "extractionMethod": "retrieval_cache"
+          },
+          {
+            "url": "https://www.zite.com/blog/approval-workflow-software",
+            "title": "I Tested The 11 Best Approval Workflow Software Tools in 2026",
+            "domain": "www.zite.com",
+            "excerpt": "I Tested The 11 Best Approval Workflow Software Tools in 2026 Product Apps Design, build, and deploy web applications Databases Forms to create and update responses Solutions By use case Apps Sites Dashboards Portals Internal Tools Calculators AI Apps Link in Bio Resources Company Marketplace Explore Templates & Apps Careers Join our Team Help Center View FAQs & Guides Enterprise Pricing Sign in Create account Blog Apps I Tested The 11 Best Approval Workflow Software Tools in 2026 Table of conte",
+            "provider": "duckduckgo",
+            "sourceId": "dd722fd1-89cd-428d-b6fc-4a3208d042ca",
+            "publisher": "I Tested The 11 Best Approval Workflow Software Tools in 2026",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan",
+            "sourceClass": "secondary",
+            "retrievalDate": "2026-07-25",
+            "extractionMethod": "retrieval_cache"
+          },
+          {
+            "url": "https://blog.jestor.com/best-approval-flow-software-for-companies-in-2025",
+            "title": "Best Approval Flow Software for Companies in 2025",
+            "domain": "blog.jestor.com",
+            "excerpt": "Best Approval Flow Software for Companies in 2025 Try it now Product Pricing Best Approval Flow Software for Companies in 2025 Approvals are at the core of every business. Whether it’s expense requests, supplier payments, contract reviews, or compliance checks , approval flows ensure that only the right people authorize critical decisions. In 2025, businesses can no longer rely on email threads or spreadsheets to track approvals. Instead, companies are turning to approval flow software — platfor",
+            "provider": "duckduckgo",
+            "sourceId": "c266247c-93d2-42ee-852f-2adb92378f20",
+            "publisher": "Best Approval Flow Software for Companies in 2025",
+            "sourceTier": 3,
+            "queryFamily": "quick_scan",
+            "sourceClass": "secondary",
+            "retrievalDate": "2026-07-25",
+            "extractionMethod": "retrieval_cache"
+          }
+        ],
+        "targetCustomer": "Small GitHub-based software agencies and software consultancies",
+        "groundingDegraded": false
+      },
+      "output_meta": {
+        "coverageGaps": [
+          "insufficient problem evidence",
+          "Tier 1/2 evidence missing"
+        ],
+        "extractedClaims": 4,
+        "specialistAssessments": 0
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:50:10.048942+00:00",
+      "updated_at": "2026-07-25T12:50:16.571739+00:00",
+      "completed_at": "2026-07-25T12:50:16.571739+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "f0bb97ec-c799-4db9-bfe3-2ee811476f52|0|validate_normalize|0|0|"
+    },
+    {
+      "id": "8bd61f70-1cb6-44b1-b06b-3ec65b13058d",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage": "analyze_score",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": "6b5c584b-c34d-46ff-9ef5-8841f969b1e3",
+      "claimed_by": "worker-808aa588",
+      "claimed_at": "2026-07-25T12:50:16.58104+00:00",
+      "visible_after": "2026-07-25T12:52:46.58104+00:00",
+      "input_meta": {
+        "mode": "quick_scan",
+        "opportunityId": "40dae80e-a368-413a-9a37-a0c59092313a",
+        "adversarialResult": {
+          "outcome": "NoStrongDisproof",
+          "severity": "None",
+          "objection": "Competitors may offer more complex automation or broader platform integration.",
+          "sourceIds": [
+            "94ebada0-3696-4de1-8cf7-68a722e040cf"
+          ],
+          "evidence_ids": [
+            "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+          ]
+        },
+        "allowedEvidenceIds": [
+          "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+          "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+          "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+          "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+        ]
+      },
+      "output_meta": {
+        "total": 38.9,
+        "scoreId": "d5873c72-6740-4811-819b-1829af50c7b1",
+        "verdict": "Avoid",
+        "gateReason": null,
+        "adversarialDowngrade": false
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:50:16.571739+00:00",
+      "updated_at": "2026-07-25T12:50:16.747795+00:00",
+      "completed_at": "2026-07-25T12:50:16.747795+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "f0bb97ec-c799-4db9-bfe3-2ee811476f52|0|analyze_score|0|0|"
+    },
+    {
+      "id": "7e6279db-7608-4e88-8104-45263fdfaba0",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage": "generate_report",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": "8bd61f70-1cb6-44b1-b06b-3ec65b13058d",
+      "claimed_by": "worker-6eaf887a",
+      "claimed_at": "2026-07-25T12:50:16.757741+00:00",
+      "visible_after": "2026-07-25T12:52:46.757741+00:00",
+      "input_meta": {
+        "mode": "quick_scan",
+        "total": 38.9,
+        "scoreId": "d5873c72-6740-4811-819b-1829af50c7b1",
+        "verdict": "Avoid",
+        "confidence": 65,
+        "chartDatasets": [
+          {
+            "chart_key": "opportunity-factor-breakdown",
+            "chart_type": "radar",
+            "source_data": {
+              "values": {
+                "mvpSpeed": 57,
+                "founderFit": 25,
+                "painSeverity": 24.3,
+                "competitionGap": 71,
+                "regulatoryRisk": 10,
+                "purchaseUrgency": 24.3,
+                "willingnessToPay": 10,
+                "buyerReachability": 32,
+                "retentionPotential": 20,
+                "distributionClarity": 59.5,
+                "speedToFirstRevenue": 21.1,
+                "platformDependencyRisk": 23.4
+              }
+            },
+            "supporting_evidence_ids": [
+              "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+              "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+              "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+              "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+              "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+              "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+              "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+              "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+              "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+              "456d6aaa-6d80-4f11-bb81-1b0d42a88589",
+              "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+              "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+              "509dd39a-f183-4a59-aeb6-2f0b5eeabd66"
+            ]
+          },
+          {
+            "chart_key": "evidence-balance",
+            "chart_type": "pie",
+            "source_data": {
+              "negative": 1,
+              "positive": 3
+            },
+            "supporting_evidence_ids": [
+              "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+              "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+              "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+              "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+            ]
+          },
+          {
+            "chart_key": "source-quality-distribution",
+            "chart_type": "bar",
+            "source_data": {
+              "byTier": {
+                "t1": 0,
+                "t2": 0,
+                "t3": 4,
+                "t4": 0
+              }
+            },
+            "supporting_evidence_ids": [
+              "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+              "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+              "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+              "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+            ]
+          },
+          {
+            "chart_key": "evidence_coverage",
+            "chart_type": "bar",
+            "source_data": {
+              "byFamily": {
+                "solution": 4
+              },
+              "bySignal": {
+                "Pain": 1,
+                "Risk": 1,
+                "Demand": 2
+              }
+            },
+            "supporting_evidence_ids": [
+              "509dd39a-f183-4a59-aeb6-2f0b5eeabd66",
+              "37c421b3-f7f2-4abd-bf78-cf1747f886ec",
+              "4baeb504-507a-4f39-ad41-4fd7a06623f1",
+              "456d6aaa-6d80-4f11-bb81-1b0d42a88589"
+            ]
+          }
+        ],
+        "opportunityId": "40dae80e-a368-413a-9a37-a0c59092313a",
+        "adversarialDowngrade": false,
+        "deterministicVerdict": "Avoid"
+      },
+      "output_meta": {
+        "total": 38.9,
+        "verdict": "Avoid",
+        "reportId": "f6643aac-794b-4678-be4c-ae39d0f6dd97",
+        "reportVersionId": "150f822a-724d-40f3-98fe-7f202c02a51c"
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:50:16.747795+00:00",
+      "updated_at": "2026-07-25T12:50:19.448617+00:00",
+      "completed_at": "2026-07-25T12:50:19.448617+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "f0bb97ec-c799-4db9-bfe3-2ee811476f52|0|generate_report|0|0|"
+    },
+    {
+      "id": "48719aee-c4d7-4ad6-8ac8-b8d9160959ee",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage": "generate_exports",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": "7e6279db-7608-4e88-8104-45263fdfaba0",
+      "claimed_by": "worker-914feb1f",
+      "claimed_at": "2026-07-25T12:50:19.455556+00:00",
+      "visible_after": "2026-07-25T12:52:49.455556+00:00",
+      "input_meta": {
+        "total": 38.9,
+        "scoreId": "d5873c72-6740-4811-819b-1829af50c7b1",
+        "verdict": "Avoid",
+        "reportId": "f6643aac-794b-4678-be4c-ae39d0f6dd97",
+        "opportunityId": "40dae80e-a368-413a-9a37-a0c59092313a",
+        "reportVersionId": "150f822a-724d-40f3-98fe-7f202c02a51c"
+      },
+      "output_meta": {
+        "formats": [
+          "pdf",
+          "markdown",
+          "csv",
+          "json"
+        ],
+        "exportCount": 4
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:50:19.448617+00:00",
+      "updated_at": "2026-07-25T12:50:19.58472+00:00",
+      "completed_at": "2026-07-25T12:50:19.58472+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "f0bb97ec-c799-4db9-bfe3-2ee811476f52|0|generate_exports|0|0|"
+    },
+    {
+      "id": "9d6315b3-a5a2-4448-9ee5-6d316ea25518",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage": "complete",
+      "status": "completed",
+      "attempt_count": 1,
+      "max_attempts": 3,
+      "stage_iteration": 0,
+      "batch_index": 0,
+      "batch_size": 0,
+      "job_purpose": "stage",
+      "parent_job_id": "48719aee-c4d7-4ad6-8ac8-b8d9160959ee",
+      "claimed_by": "worker-cec8e95a",
+      "claimed_at": "2026-07-25T12:50:19.591751+00:00",
+      "visible_after": "2026-07-25T12:52:49.591751+00:00",
+      "input_meta": {},
+      "output_meta": {
+        "totalCost": 0.001203675,
+        "evidenceCount": 4,
+        "providerCalls": 9,
+        "synthesisCalls": 3,
+        "sourcesAccepted": 8,
+        "externalSearchCalls": 4,
+        "groundedCallsAttempted": 0,
+        "groundedCallsCompleted": 0,
+        "groundedCallsQuotaBlocked": 0
+      },
+      "error_class": null,
+      "error_message": null,
+      "created_at": "2026-07-25T12:50:19.58472+00:00",
+      "updated_at": "2026-07-25T12:50:19.638779+00:00",
+      "completed_at": "2026-07-25T12:50:19.638779+00:00",
+      "research_cycle": 0,
+      "shard_key": null,
+      "logical_key": "f0bb97ec-c799-4db9-bfe3-2ee811476f52|0|complete|0|0|"
+    }
+  ],
+  "stages": [
+    {
+      "id": "9ee07b10-2f43-4f0e-a958-ec2cb1a4c938",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage_name": "Queued",
+      "status": "Queued",
+      "error_message": null,
+      "started_at": "2026-07-25T12:50:04.431048+00:00",
+      "completed_at": "2026-07-25T12:50:04.431048+00:00",
+      "created_at": "2026-07-25T12:50:04.431048+00:00",
+      "updated_at": "2026-07-25T12:50:04.431048+00:00",
+      "progress_detail": "Preparing research"
+    },
+    {
+      "id": "f6930e1d-1a05-4c53-8949-56fed5f21018",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage_name": "Searching",
+      "status": "Searching",
+      "error_message": null,
+      "started_at": "2026-07-25T12:50:06.14+00:00",
+      "completed_at": "2026-07-25T12:50:06.14+00:00",
+      "created_at": "2026-07-25T12:50:06.141332+00:00",
+      "updated_at": "2026-07-25T12:50:06.141332+00:00",
+      "progress_detail": "Initializing hybrid Gemini pipeline..."
+    },
+    {
+      "id": "0d66f60c-5734-4470-aa78-e8d7bbdbcc79",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage_name": "Searching",
+      "status": "Searching",
+      "error_message": null,
+      "started_at": "2026-07-25T12:50:06.203+00:00",
+      "completed_at": "2026-07-25T12:50:06.203+00:00",
+      "created_at": "2026-07-25T12:50:06.20444+00:00",
+      "updated_at": "2026-07-25T12:50:06.20444+00:00",
+      "progress_detail": "Preparing external source discovery"
+    },
+    {
+      "id": "565bd882-0cdb-45e0-8bb9-4e130bb54596",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage_name": "Searching",
+      "status": "Searching",
+      "error_message": null,
+      "started_at": "2026-07-25T12:50:06.264+00:00",
+      "completed_at": "2026-07-25T12:50:06.264+00:00",
+      "created_at": "2026-07-25T12:50:06.265379+00:00",
+      "updated_at": "2026-07-25T12:50:06.265379+00:00",
+      "progress_detail": "Discovering and directly retrieving public evidence"
+    },
+    {
+      "id": "8611094f-ef42-427b-bc17-0732188263fc",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage_name": "Normalizing",
+      "status": "Normalizing",
+      "error_message": null,
+      "started_at": "2026-07-25T12:50:10.071+00:00",
+      "completed_at": "2026-07-25T12:50:10.071+00:00",
+      "created_at": "2026-07-25T12:50:10.07226+00:00",
+      "updated_at": "2026-07-25T12:50:10.07226+00:00",
+      "progress_detail": "Validating and normalizing attributable evidence"
+    },
+    {
+      "id": "8703898d-304a-4dac-84a2-404b5e9af629",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage_name": "Scoring",
+      "status": "Scoring",
+      "error_message": null,
+      "started_at": "2026-07-25T12:50:16.593+00:00",
+      "completed_at": "2026-07-25T12:50:16.593+00:00",
+      "created_at": "2026-07-25T12:50:16.594284+00:00",
+      "updated_at": "2026-07-25T12:50:16.594284+00:00",
+      "progress_detail": "Computing deterministic score and building charts..."
+    },
+    {
+      "id": "efa8f49d-93f6-46f3-bfb9-93aa7755598a",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage_name": "Generating",
+      "status": "Generating",
+      "error_message": null,
+      "started_at": "2026-07-25T12:50:16.773+00:00",
+      "completed_at": "2026-07-25T12:50:16.773+00:00",
+      "created_at": "2026-07-25T12:50:16.773893+00:00",
+      "updated_at": "2026-07-25T12:50:16.773893+00:00",
+      "progress_detail": "Generating Quick Scan"
+    },
+    {
+      "id": "7797ae6c-42e2-40c3-b2ba-8779ae8530f2",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage_name": "Generating",
+      "status": "Generating",
+      "error_message": null,
+      "started_at": "2026-07-25T12:50:19.47+00:00",
+      "completed_at": "2026-07-25T12:50:19.47+00:00",
+      "created_at": "2026-07-25T12:50:19.471602+00:00",
+      "updated_at": "2026-07-25T12:50:19.471602+00:00",
+      "progress_detail": "Creating pdf, markdown, csv, json exports"
+    },
+    {
+      "id": "f147e44c-21bf-44d9-bb29-2b6c6c16f79f",
+      "run_id": "f0bb97ec-c799-4db9-bfe3-2ee811476f52",
+      "stage_name": "Completed",
+      "status": "Completed",
+      "error_message": null,
+      "started_at": "2026-07-25T12:50:19.638779+00:00",
+      "completed_at": "2026-07-25T12:50:19.638779+00:00",
+      "created_at": "2026-07-25T12:50:19.638779+00:00",
+      "updated_at": "2026-07-25T12:50:19.638779+00:00",
+      "progress_detail": "Research complete"
+    }
+  ]
+}

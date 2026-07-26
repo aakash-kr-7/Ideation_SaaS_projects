@@ -1,5 +1,12 @@
 import { getEnv } from "./environment.ts";
 import { canonicalizeUrl } from "./evidence-boosters.ts";
+import {
+  assessSemanticRelevance,
+  classifyPageAuthority,
+  type CanonicalResearchBrief,
+  type PageAuthority,
+  type RelevanceAssessment,
+} from "./research-brief.ts";
 
 export interface ResearchPack {
   key: string;
@@ -21,6 +28,12 @@ export interface RetrievedSource extends SourceCandidate {
   text: string;
   sourceTier: number;
   domain: string;
+  publisher: string;
+  sourceClass: "primary" | "secondary" | "community" | "official" | "commercial";
+  extractionMethod: "direct_http" | "retrieval_cache" | "firecrawl";
+  retrievalDate: string;
+  relevance: RelevanceAssessment;
+  authority: PageAuthority;
 }
 
 type Fetcher = typeof fetch;
@@ -28,22 +41,56 @@ type Fetcher = typeof fetch;
 export function buildResearchPacks(
   run: { idea_name: string; idea_description: string; target_customer: string; target_region?: string },
   mode: string,
+  brief?: CanonicalResearchBrief,
 ): ResearchPack[] {
-  const concept = significantTerms(`${run.idea_name} ${run.idea_description}`).slice(0, 7).join(" ");
-  const buyer = significantTerms(run.target_customer).slice(0, 5).join(" ");
+  const concept = brief
+    ? significantTerms(`${brief.exactProductProposition} ${brief.directCompetitorCategory}`).slice(0, 8).join(" ")
+    : significantTerms(`${run.idea_name} ${run.idea_description}`).slice(0, 7).join(" ");
+  const buyer = significantTerms(brief?.targetBuyer || run.target_customer).slice(0, 6).join(" ");
+  const workflow = significantTerms(brief?.workflowChanged || run.idea_description).slice(0, 7).join(" ");
+  const approvalAudit = /approval|sign-?off|audit trail/i.test(`${brief?.exactProductProposition || ""} ${brief?.directCompetitorCategory || ""}`);
   if (mode === "full_validation") {
-    return [
-      { key: "problem_demand", query: `${concept} ${buyer} pain workflow demand`, focus: "problem, pain, demand, workflows and buyer language" },
-      { key: "competition_pricing", query: `${concept} alternatives competitors pricing software`, focus: "competition, alternatives, official pricing and switching friction" },
-      { key: "market_gtm", query: `${concept} ${buyer} market segments willingness to pay GTM`, focus: "market context, segments, willingness to pay and go-to-market" },
-      { key: "risk_disconfirmation", query: `${concept} failure complaints risks adoption`, focus: "risks, failed alternatives, negative evidence and disconfirmation" },
+    return approvalAudit ? [
+      { key: "customer_pain", query: `"customer sign-off" "audit trail" ${buyer} pain disputes`, focus: "direct customer pain and dispute consequences in the specified workflow" },
+      { key: "buyer_behavior", query: `"client approval" ${buyer} workaround email spreadsheet behavior`, focus: "observable buyer/user behaviour and current workarounds" },
+      { key: "segments", query: `"client approval workflow" agency professional services segments`, focus: "buyer segments and jobs to be done" },
+      { key: "alternatives", query: `"customer sign-off" alternatives email e-signature online proofing`, focus: "current alternatives and switching friction" },
+      { key: "competitor_official", query: `"client approval" "audit trail" software features`, focus: "official competitor product pages and documentation" },
+      { key: "pricing_official", query: `"client approval" online proofing software pricing plans`, focus: "official pricing and packaging pages" },
+      { key: "documentation", query: `"approval history" "client approval" documentation`, focus: "product documentation establishing approval and audit-trail capabilities" },
+      { key: "reviews_complaints", query: `"client approval" software reviews complaints`, focus: "customer reviews, discussions, failed alternatives, and complaints" },
+      { key: "case_studies", query: `"client sign-off" agency case study approval`, focus: "case studies with applicable workflow outcomes" },
+      { key: "willingness_to_pay", query: `"client approval" paid plan pricing agency`, focus: "buyer behaviour and willingness-to-pay evidence" },
+      { key: "market_regulatory_gtm", query: `${concept} ${workflow} regulation records agency buyers`, focus: "applicable market, regulatory, and go-to-market context" },
+      { key: "contradiction", query: `"client approval software" unnecessary email enough complaint`, focus: "proposition-specific negative evidence, redundancy, and adoption objections" },
+    ] : [
+      { key: "customer_pain", query: `${concept} ${buyer} pain workflow complaints`, focus: "direct customer pain and consequences" },
+      { key: "buyer_behavior", query: `${concept} ${buyer} workaround behavior demand`, focus: "observable buyer behaviour and workarounds" },
+      { key: "segments", query: `${concept} ${buyer} segments jobs to be done`, focus: "buyer segments and jobs to be done" },
+      { key: "alternatives", query: `${concept} alternatives current process switching`, focus: "current alternatives and switching friction" },
+      { key: "competitor_official", query: `${concept} competitors official product features`, focus: "official competitor product pages" },
+      { key: "pricing_official", query: `${concept} software pricing plans`, focus: "official pricing and packaging pages" },
+      { key: "documentation", query: `${concept} documentation workflow`, focus: "official product documentation" },
+      { key: "reviews_complaints", query: `${concept} reviews complaints failed alternatives`, focus: "customer reviews, complaints, and failed alternatives" },
+      { key: "case_studies", query: `${concept} ${buyer} case study outcomes`, focus: "case studies with applicable outcomes" },
+      { key: "willingness_to_pay", query: `${concept} ${buyer} paid pilot purchase pricing`, focus: "willingness-to-pay and buyer commitment" },
+      { key: "market_regulatory_gtm", query: `${concept} ${workflow} market regulation buyers`, focus: "applicable market, regulatory, and GTM context" },
+      { key: "contradiction", query: `${concept} unnecessary failure adoption objection`, focus: "proposition-specific negative evidence" },
     ];
   }
-  return [{
-    key: "quick_scan",
-    query: `${concept} ${buyer} alternatives pricing demand complaints`,
-    focus: "problem demand, alternatives, pricing and disconfirming evidence",
-  }];
+  return approvalAudit ? [
+    { key: "customer_pain", query: `"customer sign-off" "approval history" ${buyer} disputes`, focus: "direct pain and demand in the specified buyer workflow" },
+    { key: "competitor_official", query: `"client approval" "audit trail" software`, focus: "official competitor and alternative sources" },
+    { key: "pricing_official", query: `"client approval" online proofing pricing`, focus: "verified public pricing and packaging" },
+    { key: "buyer_voice", query: `"client approval" agency review complaint email`, focus: "direct buyer/user evidence and current alternatives" },
+    { key: "negative_evidence", query: `"customer sign-off" software unnecessary complaint`, focus: "negative, contradictory, and failed-alternative evidence" },
+  ] : [
+    { key: "customer_pain", query: `${concept} ${buyer} pain demand`, focus: "direct pain and demand" },
+    { key: "competitor_official", query: `${concept} competitors official product`, focus: "official competitor and alternative sources" },
+    { key: "pricing_official", query: `${concept} pricing plans`, focus: "verified public pricing and packaging" },
+    { key: "buyer_voice", query: `${concept} ${buyer} review complaint workaround`, focus: "direct buyer/user evidence and current alternatives" },
+    { key: "negative_evidence", query: `${concept} unnecessary failure complaint`, focus: "negative, contradictory, and failed-alternative evidence" },
+  ];
 }
 
 export async function discoverCandidates(args: {
@@ -94,12 +141,13 @@ export async function retrieveCandidates(args: {
   candidates: SourceCandidate[];
   db: any;
   limit: number;
+  brief: CanonicalResearchBrief;
   fetcher?: Fetcher;
 }): Promise<{ accepted: RetrievedSource[]; rejected: Record<string, number>; pagesAttempted: number }> {
   const fetcher = args.fetcher ?? fetch;
   const accepted: RetrievedSource[] = [];
   const rejected: Record<string, number> = {};
-  const chosen = diversifyAndRank(args.candidates).slice(0, args.limit);
+  const chosen = balancedRank(args.candidates, args.limit);
   for (const candidate of chosen) {
     const canonical = canonicalizeUrl(candidate.url);
     if (!canonical) {
@@ -120,14 +168,33 @@ export async function retrieveCandidates(args: {
           continue;
         }
         await writeCache(args.db, canonical, firecrawl.text, firecrawl.contentType);
-        accepted.push(toRetrieved(candidate, canonical, firecrawl.text));
+        const relevance = assessSemanticRelevance(args.brief, `${candidate.title}\n${candidate.snippet}\n${firecrawl.text}`, candidate.queryFamily);
+        const authority = classifyPageAuthority({ url: canonical, title: candidate.title, text: firecrawl.text, provider: candidate.provider, relevanceScore: relevance.score });
+        if (relevance.acceptanceDecision !== "accepted_core") {
+          const reason = relevance.acceptanceDecision === "quarantined_context" ? "semantic_adjacent_quarantined" : "semantic_out_of_scope";
+          reject(reason);
+          await audit(args.db, args.runId, candidate, canonical, "rejected", reason, relevance, authority);
+          continue;
+        }
+        accepted.push(toRetrieved(candidate, canonical, firecrawl.text, "firecrawl", relevance, authority));
         await logExternalUsage(args.db, args.runId, "firecrawl", "page_fetch_fallback", "success", started, false, true);
       } else {
         if (!cached) await writeCache(args.db, canonical, fetched.text, fetched.contentType);
-        accepted.push(toRetrieved(candidate, canonical, fetched.text));
+        const relevance = assessSemanticRelevance(args.brief, `${candidate.title}\n${candidate.snippet}\n${fetched.text}`, candidate.queryFamily);
+        const authority = classifyPageAuthority({ url: canonical, title: candidate.title, text: fetched.text, provider: candidate.provider, relevanceScore: relevance.score });
+        if (relevance.acceptanceDecision !== "accepted_core") {
+          const reason = relevance.acceptanceDecision === "quarantined_context" ? "semantic_adjacent_quarantined" : "semantic_out_of_scope";
+          reject(reason);
+          await audit(args.db, args.runId, candidate, canonical, "rejected", reason, relevance, authority);
+          continue;
+        }
+        accepted.push(toRetrieved(candidate, canonical, fetched.text, cached ? "retrieval_cache" : "direct_http", relevance, authority));
         await logExternalUsage(args.db, args.runId, cached ? "retrieval_cache" : "direct_http", "page_fetch", "success", started, false, true);
       }
-      await audit(args.db, args.runId, candidate, canonical, "accepted", null);
+      const latest = accepted.at(-1);
+      if (latest?.canonicalUrl === canonical) {
+        await audit(args.db, args.runId, candidate, canonical, "accepted", null, latest.relevance, latest.authority);
+      }
     } catch (error) {
       const reason = /timeout/i.test(safeMessage(error)) ? "timeout" : "fetch_error";
       reject(reason);
@@ -301,7 +368,16 @@ async function writeCache(db: any, canonicalUrl: string, text: string, contentTy
   }, { onConflict: "canonical_url" });
 }
 
-async function audit(db: any, runId: string, candidate: SourceCandidate, canonicalUrl: string | null, disposition: string, reason: string | null) {
+async function audit(
+  db: any,
+  runId: string,
+  candidate: SourceCandidate,
+  canonicalUrl: string | null,
+  disposition: string,
+  reason: string | null,
+  relevance?: RelevanceAssessment,
+  authority?: PageAuthority,
+) {
   await db.from("source_retrieval_audit").insert({
     run_id: runId,
     query_family: candidate.queryFamily,
@@ -311,6 +387,14 @@ async function audit(db: any, runId: string, candidate: SourceCandidate, canonic
     disposition,
     rejection_reason: reason,
     relevance_score: candidate.score,
+    deterministic_relevance_score: relevance?.score ?? null,
+    relevance_class: relevance?.classification ?? null,
+    matched_brief_dimensions: relevance?.matchedDimensions ?? [],
+    mismatch_reasons: relevance?.mismatchReasons ?? [],
+    acceptance_decision: relevance?.acceptanceDecision ?? null,
+    page_type: authority?.pageType ?? null,
+    source_tier: authority?.sourceTier ?? null,
+    source_tier_reason: authority?.reason ?? null,
     source_domain: canonicalUrl ? new URL(canonicalUrl).hostname : null,
   });
 }
@@ -354,11 +438,67 @@ export async function logExternalUsage(
   });
 }
 
-function toRetrieved(candidate: SourceCandidate, canonicalUrl: string, text: string): RetrievedSource {
+function toRetrieved(
+  candidate: SourceCandidate,
+  canonicalUrl: string,
+  text: string,
+  extractionMethod: RetrievedSource["extractionMethod"],
+  relevance: RelevanceAssessment,
+  authority: PageAuthority,
+): RetrievedSource {
   const domain = new URL(canonicalUrl).hostname.toLowerCase();
-  const official = candidate.provider === "github" || candidate.provider === "wikipedia"
-    || /\/pricing(?:\/|$|\?)/i.test(canonicalUrl);
-  return { ...candidate, url: canonicalUrl, canonicalUrl, text, domain, sourceTier: official ? 2 : 3 };
+  const community = candidate.provider === "hacker_news";
+  const sourceClass: RetrievedSource["sourceClass"] = authority.pageType === "official_pricing"
+    ? "commercial"
+    : ["official_documentation", "regulatory", "market_research"].includes(authority.pageType)
+    ? "primary"
+    : community
+    ? "community"
+    : authority.pageType === "official_product"
+    ? "official"
+    : "secondary";
+  return {
+    ...candidate,
+    url: canonicalUrl,
+    canonicalUrl,
+    text,
+    domain,
+    publisher: publisherFrom(candidate.title, domain),
+    sourceTier: authority.sourceTier,
+    sourceClass,
+    extractionMethod,
+    retrievalDate: new Date().toISOString().slice(0, 10),
+    relevance,
+    authority,
+  };
+}
+
+function balancedRank(candidates: SourceCandidate[], limit: number) {
+  const diversified = diversifyAndRank(candidates);
+  const byFamily = new Map<string, SourceCandidate[]>();
+  for (const candidate of diversified) {
+    byFamily.set(candidate.queryFamily, [...(byFamily.get(candidate.queryFamily) || []), candidate]);
+  }
+  const result: SourceCandidate[] = [];
+  let round = 0;
+  while (result.length < limit) {
+    let added = false;
+    for (const family of byFamily.values()) {
+      const candidate = family[round];
+      if (candidate && result.length < limit) {
+        result.push(candidate);
+        added = true;
+      }
+    }
+    if (!added) break;
+    round++;
+  }
+  return result;
+}
+
+function publisherFrom(title: string, domain: string) {
+  const normalized = title.replace(/\s*[|–—-]\s*[^|–—-]+$/, "").trim();
+  return normalized && normalized.length <= 160 ? normalized : domain;
 }
 
 function diversifyAndRank(candidates: SourceCandidate[]) {

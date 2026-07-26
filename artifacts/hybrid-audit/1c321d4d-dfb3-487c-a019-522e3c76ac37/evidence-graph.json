@@ -1,0 +1,234 @@
+{
+  "nodes": [
+    {
+      "id": "f816c562-72ac-4582-a0e5-61bb664bf4a9",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "node_type": "opportunity",
+      "node_key": "df763ef9-aac8-44d3-8529-5cf044a05754",
+      "label": "Validated opportunity",
+      "attributes": {
+        "mode": "quick_scan"
+      },
+      "created_at": "2026-07-26T06:35:06.678014+00:00"
+    },
+    {
+      "id": "ed985fce-6def-4f6d-af06-08928b504fdc",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "node_type": "source",
+      "node_key": "d23db4af-dfa9-4b42-bc79-ed570fcd1f41",
+      "label": "Agency Approval Workflows: Complete Guide | CampaignSwift",
+      "attributes": {
+        "url": "https://campaignswift.com/blog/agency-approval-workflows",
+        "tier": 2,
+        "domain": "campaignswift.com"
+      },
+      "created_at": "2026-07-26T06:35:06.683073+00:00"
+    },
+    {
+      "id": "d8dee3e0-cdde-4d48-9fde-5d8b258865cf",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "node_type": "claim",
+      "node_key": "911c51f1-31be-4220-b02a-b28b18e5d8a4",
+      "label": "Agency Approval Workflows: Complete Guide | CampaignSwift",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Demand",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-26T06:35:06.687997+00:00"
+    },
+    {
+      "id": "4e506d69-d995-4a5f-884e-e81c9e81a445",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "node_type": "source",
+      "node_key": "14c78455-872c-480a-b697-c43306820f9b",
+      "label": "Best Client Review and Approval Software for Agencies 2026",
+      "attributes": {
+        "url": "https://quantumbyte.ai/articles/best-client-review-and-approval-software-for-agencies-2026",
+        "tier": 2,
+        "domain": "quantumbyte.ai"
+      },
+      "created_at": "2026-07-26T06:35:06.698336+00:00"
+    },
+    {
+      "id": "6fb334be-5359-4439-956e-1803481afd71",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "node_type": "claim",
+      "node_key": "0c241289-0680-4364-a790-6f6d1514a475",
+      "label": "Best Client Review and Approval Software for Agencies 2026",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Pain",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-26T06:35:06.704422+00:00"
+    },
+    {
+      "id": "c751fe0c-6e07-4ced-a80a-dd6f7b68592a",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "node_type": "source",
+      "node_key": "ff9f4d91-49cb-4a39-8400-3da8b2eb6606",
+      "label": "Client Approval Audit Trail Template | Red Falcon HQ",
+      "attributes": {
+        "url": "https://www.redfalconhq.com/resources/client-approval-audit-trail-template",
+        "tier": 2,
+        "domain": "www.redfalconhq.com"
+      },
+      "created_at": "2026-07-26T06:35:06.714461+00:00"
+    },
+    {
+      "id": "8447d477-bd30-4a7a-8970-98e7c01aeda3",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "node_type": "claim",
+      "node_key": "b6bee561-aaf6-4c46-bc60-05353899386b",
+      "label": "Client Approval Audit Trail Template | Red Falcon HQ",
+      "attributes": {
+        "strength": "Medium",
+        "signalType": "Demand",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-26T06:35:06.719356+00:00"
+    },
+    {
+      "id": "8b37eee4-aedd-452b-b62f-65ceecc2996f",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "node_type": "source",
+      "node_key": "ca863d22-e6ae-49e8-b0b2-1466718f2822",
+      "label": "What Is Client Approval Software? | Approval Studio",
+      "attributes": {
+        "url": "https://approval.studio/blog/client-approval-software-guide",
+        "tier": 3,
+        "domain": "approval.studio"
+      },
+      "created_at": "2026-07-26T06:35:06.728196+00:00"
+    },
+    {
+      "id": "87159d10-31fc-4846-bf0f-4f337048467f",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "node_type": "claim",
+      "node_key": "da5b1bb1-335d-4cfc-bac5-cc5876676a27",
+      "label": "What Is Client Approval Software? | Approval Studio",
+      "attributes": {
+        "strength": "High",
+        "signalType": "Demand",
+        "disconfirming": false
+      },
+      "created_at": "2026-07-26T06:35:06.733709+00:00"
+    }
+  ],
+  "edges": [
+    {
+      "id": "24cf5f33-dfec-4081-99c9-0bfad68cc75a",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "from_node_id": "ed985fce-6def-4f6d-af06-08928b504fdc",
+      "to_node_id": "d8dee3e0-cdde-4d48-9fde-5d8b258865cf",
+      "relation": "supports",
+      "evidence_ids": [
+        "911c51f1-31be-4220-b02a-b28b18e5d8a4"
+      ],
+      "created_at": "2026-07-26T06:35:06.692613+00:00"
+    },
+    {
+      "id": "09ab3463-5ef5-4a0a-b6b5-3b1d655ceb9a",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "from_node_id": "d8dee3e0-cdde-4d48-9fde-5d8b258865cf",
+      "to_node_id": "f816c562-72ac-4582-a0e5-61bb664bf4a9",
+      "relation": "informs",
+      "evidence_ids": [
+        "911c51f1-31be-4220-b02a-b28b18e5d8a4"
+      ],
+      "created_at": "2026-07-26T06:35:06.692613+00:00"
+    },
+    {
+      "id": "26ae5948-d3e1-4f47-9f2c-853f7d23d489",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "from_node_id": "4e506d69-d995-4a5f-884e-e81c9e81a445",
+      "to_node_id": "6fb334be-5359-4439-956e-1803481afd71",
+      "relation": "supports",
+      "evidence_ids": [
+        "0c241289-0680-4364-a790-6f6d1514a475"
+      ],
+      "created_at": "2026-07-26T06:35:06.709377+00:00"
+    },
+    {
+      "id": "d40243ad-5303-4744-b88b-4db79bcd8130",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "from_node_id": "6fb334be-5359-4439-956e-1803481afd71",
+      "to_node_id": "f816c562-72ac-4582-a0e5-61bb664bf4a9",
+      "relation": "informs",
+      "evidence_ids": [
+        "0c241289-0680-4364-a790-6f6d1514a475"
+      ],
+      "created_at": "2026-07-26T06:35:06.709377+00:00"
+    },
+    {
+      "id": "e43a1b27-5893-4423-be11-f3dc850d8b55",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "from_node_id": "c751fe0c-6e07-4ced-a80a-dd6f7b68592a",
+      "to_node_id": "8447d477-bd30-4a7a-8970-98e7c01aeda3",
+      "relation": "supports",
+      "evidence_ids": [
+        "b6bee561-aaf6-4c46-bc60-05353899386b"
+      ],
+      "created_at": "2026-07-26T06:35:06.723821+00:00"
+    },
+    {
+      "id": "7e74947e-b6c9-427c-9bde-10d9a2c479a5",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "from_node_id": "8447d477-bd30-4a7a-8970-98e7c01aeda3",
+      "to_node_id": "f816c562-72ac-4582-a0e5-61bb664bf4a9",
+      "relation": "informs",
+      "evidence_ids": [
+        "b6bee561-aaf6-4c46-bc60-05353899386b"
+      ],
+      "created_at": "2026-07-26T06:35:06.723821+00:00"
+    },
+    {
+      "id": "a0179df2-f0fd-41e6-914e-b64e69e6efa5",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "from_node_id": "8b37eee4-aedd-452b-b62f-65ceecc2996f",
+      "to_node_id": "87159d10-31fc-4846-bf0f-4f337048467f",
+      "relation": "supports",
+      "evidence_ids": [
+        "da5b1bb1-335d-4cfc-bac5-cc5876676a27"
+      ],
+      "created_at": "2026-07-26T06:35:06.738713+00:00"
+    },
+    {
+      "id": "cbb76544-bcd1-4e47-9521-538d5d498aa3",
+      "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+      "from_node_id": "87159d10-31fc-4846-bf0f-4f337048467f",
+      "to_node_id": "f816c562-72ac-4582-a0e5-61bb664bf4a9",
+      "relation": "informs",
+      "evidence_ids": [
+        "da5b1bb1-335d-4cfc-bac5-cc5876676a27"
+      ],
+      "created_at": "2026-07-26T06:35:06.738713+00:00"
+    }
+  ],
+  "confidence": {
+    "run_id": "1c321d4d-dfb3-487c-a019-522e3c76ac37",
+    "band": "Moderate",
+    "score": 0.62,
+    "reasons": [
+      "4 independent domains",
+      "4 semantically accepted evidence items",
+      "0 unresolved evidence disagreements",
+      "average source authority 69%",
+      "average semantic relevance 100%",
+      "buyer-specific evidence 100%",
+      "tier distribution {\"2\":3,\"3\":1}"
+    ],
+    "created_at": "2026-07-26T06:35:06.667689+00:00",
+    "updated_at": "2026-07-26T06:35:09.377+00:00",
+    "deductions": [
+      "No Tier 1/primary page supports the dossier."
+    ],
+    "scoring_confidence": 52,
+    "report_completeness": 55,
+    "completeness_reasons": [
+      "2/5 required evidence families covered",
+      "4/6 structural report checks passed"
+    ]
+  }
+}
