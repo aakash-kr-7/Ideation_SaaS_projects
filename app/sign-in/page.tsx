@@ -141,6 +141,21 @@ function SignInCard() {
         setLoading(false);
         return;
       }
+      // Attempt to sign in immediately.
+      // If confirmations are disabled (e.g. local dev), this establishes the session.
+      // If confirmations are enabled (production), it fails with "Email not confirmed", which is fine.
+      // If the account already existed (enumeration protection), it fails with "Invalid credentials", which we swallow.
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (signInError) {
+        if (!signInError.message.includes("Email not confirmed") && !signInError.message.includes("Invalid login credentials")) {
+           setError("Auto-login failed: " + signInError.message);
+           setLoading(false);
+           return;
+        }
+      }
+
       localStorage.setItem("shouldbuild-verify-email", email);
       localStorage.setItem("shouldbuild-auth-redirect", redirectTo);
       router.push(`/auth/verify?next=${encodeURIComponent(redirectTo)}`);

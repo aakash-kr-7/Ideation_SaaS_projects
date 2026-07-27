@@ -4,6 +4,12 @@
  * This function serves two purposes:
  * 1. Polling fallback: invokes the research worker when pending jobs exist
  *    (handles cases where self-trigger fails)
+/**
+ * Scheduled polling function: processes pending research jobs and recovers stale claims.
+ *
+ * This function serves two purposes:
+ * 1. Polling fallback: invokes the research worker when pending jobs exist
+ *    (handles cases where self-trigger fails)
  * 2. Stale recovery: reclaims jobs that were claimed but never completed
  *    past their visibility timeout
  *
@@ -13,11 +19,26 @@
 import { createClient } from "@supabase/supabase-js";
 import { countPendingJobs, recoverStaleJobs, attemptSelfTrigger } from "../_shared/research/job-queue.ts";
 
+// Scheduler is invoked server-to-server by pg_cron or an external cron.
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
+
+/** Timing-safe comparison to prevent timing attacks on secret tokens. */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  const encoder = new TextEncoder();
+  const bufA = encoder.encode(a);
+  const bufB = encoder.encode(b);
+  if (bufA.byteLength !== bufB.byteLength) return false;
+  let result = 0;
+  for (let i = 0; i < bufA.byteLength; i++) {
+    result |= bufA[i] ^ bufB[i];
+  }
+  return result === 0;
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -25,10 +46,11 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-    if (!serviceRoleKey || authHeader !== `Bearer ${serviceRoleKey}`) {
+    if (!serviceRoleKey || !token || !timingSafeEqual(token, serviceRoleKey)) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

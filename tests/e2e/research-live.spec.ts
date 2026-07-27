@@ -13,14 +13,12 @@ const proofDir = path.resolve("artifacts/browser/reveal-proof");
 const runs: Record<string, string> = {};
 let account: { email: string; password: string; userId: string };
 
-async function signIn(page: Page) {
+async function signIn(page: Page, credentials = account) {
   await page.goto("/sign-in");
-  await page.getByLabel("Email", { exact: true }).fill(account.email);
-  await page.getByLabel("Password", { exact: true }).fill(account.password);
+  await page.getByLabel("Email", { exact: true }).fill(credentials.email);
+  await page.getByLabel("Password", { exact: true }).fill(credentials.password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await page.waitForTimeout(1_000);
-  await page.goto("/dashboard");
-  await expect(page).not.toHaveURL(/\/sign-in/);
+  await page.waitForURL((url) => url.pathname.includes("/dashboard") || url.pathname.includes("/onboarding"), { timeout: 30000 });
   if (page.url().includes("/onboarding")) {
     await page.getByRole("button", { name: "Skip for now", exact: true }).click();
     await page.waitForURL((url) => !url.pathname.startsWith("/onboarding"));
@@ -110,7 +108,7 @@ async function submitAndComplete(page: Page, mode: "quick_scan" | "full_validati
 
   await page.goto(`/research/${runId}/results`);
   await expect(page.getByRole("heading", { name: `Approval evidence workspace — ${label}`, exact: true })).toBeVisible();
-  await expect(page.getByText("Report completeness", { exact: true })).toBeVisible();
+  await expect(page.getByText("Report completeness", { exact: true }).first()).toBeVisible();
   await expect(page.locator(".report-recommendation")).toContainText("Founder action:");
   await expect(page.locator(".report-recommendation")).toContainText("Success threshold:");
   await expect(page.locator(".report-recommendation")).toContainText("Failure threshold:");
@@ -210,6 +208,11 @@ test.describe.serial("real authenticated customer research journeys", () => {
       buildProof: "../expected-build.json",
       preservedAt: new Date().toISOString(),
     }, null, 2));
+    if (account?.userId) {
+      const { data: membership } = await admin.from("team_members").select("team_id").eq("user_id", account.userId).maybeSingle();
+      if (membership?.team_id) await admin.rpc("cleanup_isolated_test_team", { p_team_id: membership.team_id });
+      await admin.auth.admin.deleteUser(account.userId);
+    }
   });
 
   test("Quick Scan completes through the authenticated browser path", async ({ page }) => {
@@ -230,5 +233,112 @@ test.describe.serial("real authenticated customer research journeys", () => {
       .toBeGreaterThan(new Set((quickEvidence || []).map((item: any) => item.source_domain)).size);
     expect(new Set((fullEvidence || []).map((item: any) => item.evidence_topic).filter(Boolean)).size)
       .toBeGreaterThan(new Set((quickEvidence || []).map((item: any) => item.evidence_topic).filter(Boolean)).size);
+  });
+
+  test("report history and comparison are explicit authenticated browser journeys", async ({ page }) => {
+    await signIn(page);
+    await page.goto("/dashboard");
+    await expect(page.getByRole("group", { name: "Filter report history" })).toBeVisible();
+    await page.getByRole("button", { name: "Full Validation", exact: true }).click();
+    await expect(page.locator(`.report-history-list a[href="/research/${runs.full_validation}/results"]`)).toBeVisible();
+    await page.getByRole("button", { name: "All", exact: true }).click();
+    await expect(page.locator(`.report-history-list a[href="/research/${runs.quick_scan}/results"]`)).toBeVisible();
+
+    await page.goto("/compare");
+    await expect(page.getByText("Compare your ideas side by side", { exact: true })).toBeVisible();
+    await expect(page.getByRole("row", { name: /Overall score/ })).toBeVisible();
+    await expect(page.getByRole("columnheader")).toHaveCount(3);
+    await expect(page.getByRole("note")).toContainText("Different research depth");
+  });
+
+  test("user cancellation and launch/cancel retries settle one credit exactly once", async ({ page }) => {
+    await signIn(page);
+    const oversized = await page.request.post("/api/research/start", {
+      headers: { "content-type": "application/json" },
+      data: "x".repeat(1_048_577),
+    });
+    expect(oversized.status()).toBe(413);
+    const idempotencyKey = crypto.randomUUID();
+    const body = {
+      ideaName: "Retry-safe cancellation proof",
+      ideaDescription: "A browser-created research run used to prove idempotent launch and user-initiated cancellation.",
+      targetCustomer: "Operations teams",
+      marketType: "B2B",
+      targetRegion: "Global",
+      assumptions: { industry: "Operations software" },
+      mode: "quick_scan",
+      idempotencyKey,
+    };
+    const responses = await Promise.all([
+      page.request.post("/api/research/start", { data: body }),
+      page.request.post("/api/research/start", { data: body }),
+      page.request.post("/api/research/start", { data: body }),
+    ]);
+    expect(responses.every((response) => response.status() === 202)).toBe(true);
+    const payloads = await Promise.all(responses.map((response) => response.json()));
+    const retryRunIds = new Set(payloads.map((payload) => payload.id));
+    expect(retryRunIds.size).toBe(1);
+    const runId = payloads[0].id;
+
+    const [{ count: runCount }, { data: reservations }] = await Promise.all([
+      admin.from("research_runs").select("id", { count: "exact", head: true }).eq("idempotency_key", idempotencyKey),
+      admin.from("credit_reservations").select("id,status,credit_cost").eq("run_id", runId),
+    ]);
+    expect(runCount).toBe(1);
+    expect(reservations).toHaveLength(1);
+    expect(reservations?.[0]).toMatchObject({ status: "reserved", credit_cost: 1 });
+
+    await page.goto(`/research/${runId}/progress`);
+    await page.getByRole("button", { name: "Cancel research", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Research cancelled" }).first()).toBeVisible();
+    const retryCancels = await Promise.all([
+      page.request.post(`/api/research/${runId}/cancel`),
+      page.request.post(`/api/research/${runId}/cancel`),
+      page.request.post(`/api/research/${runId}/cancel`),
+    ]);
+    expect(retryCancels.every((response) => [200, 409].includes(response.status()))).toBe(true);
+    const [{ data: run }, { data: reservation }, { count: reservationCount }] = await Promise.all([
+      admin.from("research_runs").select("status,credit_state").eq("id", runId).single(),
+      admin.from("credit_reservations").select("status,finalized_at").eq("run_id", runId).single(),
+      admin.from("credit_reservations").select("id", { count: "exact", head: true }).eq("run_id", runId),
+    ]);
+    expect(run).toMatchObject({ status: "Cancelled", credit_state: "restored" });
+    expect(reservation?.status).toBe("restored");
+    expect(reservation?.finalized_at).toBeTruthy();
+    expect(reservationCount).toBe(1);
+    runs.cancelled = runId;
+  });
+
+  test("cross-account report access is rejected through the production browser session", async ({ page }) => {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const credentials = {
+      email: `cross-account-${suffix}@example.test`,
+      password: `CrossAccount!9${crypto.randomUUID()}`,
+    };
+    const { data, error } = await admin.auth.admin.createUser({
+      ...credentials,
+      email_confirm: true,
+      user_metadata: { full_name: `cross-account-${suffix}` },
+    });
+    if (error || !data.user) throw error ?? new Error("Unable to create cross-account browser user.");
+    await admin.rpc("bootstrap_onboarding_account", {
+      p_user_id: data.user.id,
+      p_email: credentials.email,
+      p_full_name: `Cross Account ${suffix}`,
+    });
+    await admin.from("users").update({ onboarding_completed: true }).eq("id", data.user.id);
+    const secondContext = await page.context().browser()!.newContext();
+    const secondPage = await secondContext.newPage();
+    try {
+      await signIn(secondPage, { ...credentials, userId: data.user.id });
+      const apiResponse = await secondPage.request.get(`/api/research/${runs.full_validation}`);
+      expect([403, 404]).toContain(apiResponse.status());
+      const routeResponse = await secondPage.goto(`/research/${runs.full_validation}/results`);
+      expect([200, 404]).toContain(routeResponse?.status());
+      await expect(secondPage.locator("body")).not.toContainText("Approval evidence workspace");
+    } finally {
+      await secondContext.close();
+      await admin.auth.admin.deleteUser(data.user.id);
+    }
   });
 });

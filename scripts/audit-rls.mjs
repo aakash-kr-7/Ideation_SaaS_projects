@@ -66,15 +66,27 @@ try {
   const attackerDownload = await attacker.storage.from("exports").download(storagePath);
   if (!attackerDownload.error) throw new Error("Cross-tenant Storage download was allowed");
   await service.storage.from("exports").remove([storagePath]);
-  const assetPath = `${victimId}/rls-owner-asset.txt`;
-  const ownerAssetUpload = await victim.storage.from("user-assets").upload(assetPath, "owner asset", { contentType: "text/plain", upsert: true });
+  const assetPath = `${victimId}/rls-owner-asset.png`;
+  const ownerAssetUpload = await victim.storage.from("user-assets").upload(assetPath, "owner asset", { contentType: "image/png", upsert: true });
   if (ownerAssetUpload.error) throw new Error(`Owner-path asset upload failed: ${ownerAssetUpload.error.message}`);
   const attackerAssetDownload = await attacker.storage.from("user-assets").download(assetPath);
   if (!attackerAssetDownload.error) throw new Error("Cross-tenant user-assets download was allowed");
-  const attackerAssetUpload = await attacker.storage.from("user-assets").upload(`${victimId}/attacker.txt`, "forbidden", { contentType: "text/plain" });
+  const attackerAssetUpload = await attacker.storage.from("user-assets").upload(`${victimId}/attacker.png`, "forbidden", { contentType: "image/png" });
   if (!attackerAssetUpload.error) throw new Error("Cross-tenant user-assets upload was allowed");
   const ownerAssetDownload = await victim.storage.from("user-assets").download(assetPath);
   if (ownerAssetDownload.error) throw new Error(`Owner could not read user asset: ${ownerAssetDownload.error.message}`);
+  const disallowedMime = await victim.storage.from("user-assets").upload(`${victimId}/forbidden.exe`, "not executable", { contentType: "application/octet-stream" });
+  if (!disallowedMime.error) throw new Error("Public-edge Storage upload accepted a disallowed MIME type");
+  const oversizedAsset = await victim.storage.from("user-assets").upload(
+    `${victimId}/oversized.png`,
+    new Uint8Array(10_485_761),
+    { contentType: "image/png" },
+  );
+  if (!oversizedAsset.error) throw new Error("Public-edge Storage upload exceeded the 10 MB bucket limit");
+  const { data: assetBucket, error: assetBucketError } = await service.storage.getBucket("user-assets");
+  if (assetBucketError || Number(assetBucket?.file_size_limit) !== 10_485_760) {
+    throw new Error(`user-assets edge limit is not 10 MB: ${assetBucketError?.message || assetBucket?.file_size_limit}`);
+  }
   await victim.storage.from("user-assets").remove([assetPath]);
 
   const ownerProgress = await victim.rpc("get_research_progress_snapshot", { p_run_id: run.id });
@@ -99,7 +111,7 @@ try {
   attacker.realtime.disconnect();
   if (victimEvents < 1 || attackerEvents !== 0) throw new Error(`Realtime tenant isolation failed: ${JSON.stringify({ victimEvents, attackerEvents })}`);
 
-  const internalTables = ["source_registry", "public_retrieval_cache", "gemini_cache", "api_usage_logs", "research_jobs", "research_job_attempts", "research_pipeline_metrics", "research_pipeline_cursors", "evidence_graph_nodes", "evidence_graph_edges", "research_briefs", "evidence_contradictions", "operational_alerts"];
+  const internalTables = ["source_registry", "public_retrieval_cache", "gemini_cache", "api_usage_logs", "research_jobs", "research_job_attempts", "research_pipeline_metrics", "research_pipeline_cursors", "evidence_graph_nodes", "evidence_graph_edges", "research_briefs", "evidence_contradictions", "operational_alerts", "edge_rate_limit_windows"];
   for (const table of internalTables) {
     const authenticated = await attacker.from(table).select("*").limit(1);
     if (!authenticated.error) throw new Error(`Authenticated client retained Data API access to internal table ${table}`);
@@ -150,7 +162,23 @@ try {
     for (const [column, value] of Object.entries(fixture.key)) cleanup = cleanup.eq(column, value);
     await must(cleanup, `clean up ${fixture.table}`);
   }
-  console.log(JSON.stringify({ tenantOwnerRead: "PASS", crossTenantRead: "PASS", crossTenantWrite: "PASS", tenantMatrix: "PASS", tenantTableCount: tenantMatrix.length, exportsStorageIsolation: "PASS", userAssetsOwnerPathIsolation: "PASS", customerResearchRpcs: "PASS", specialistIsolation: "covered by tenant-scoped immutable report_versions payload", realtimeIsolation: "PASS", realtimeOwnerEvents: victimEvents, realtimeCrossTenantEvents: attackerEvents, internalTablesServiceOnly: "PASS", internalCacheCrudDeniedForAnonAndAuthenticated: "PASS", internalTableCount: internalTables.length }, null, 2));
+  const anonymousLimiter = await createClient(url, anonKey, { auth: { persistSession: false } }).rpc("consume_edge_rate_limit", {
+    p_scope_hash: "a".repeat(64), p_limit: 2, p_window_seconds: 60,
+  });
+  if (!anonymousLimiter.error) throw new Error("Anonymous client could invoke the service-only distributed rate limiter");
+  const limiterKey = crypto.randomUUID().replaceAll("-", "").padEnd(64, "0");
+  const limiterResults = [];
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const result = await service.rpc("consume_edge_rate_limit", {
+      p_scope_hash: limiterKey, p_limit: 2, p_window_seconds: 60,
+    });
+    if (result.error) throw result.error;
+    limiterResults.push(result.data?.[0]?.allowed);
+  }
+  if (JSON.stringify(limiterResults) !== JSON.stringify([true, true, false])) {
+    throw new Error(`Distributed limiter was not atomic: ${JSON.stringify(limiterResults)}`);
+  }
+  console.log(JSON.stringify({ tenantOwnerRead: "PASS", crossTenantRead: "PASS", crossTenantWrite: "PASS", tenantMatrix: "PASS", tenantTableCount: tenantMatrix.length, exportsStorageIsolation: "PASS", userAssetsOwnerPathIsolation: "PASS", publicEdgeUploadLimits: "PASS", distributedRateLimiting: "PASS", customerResearchRpcs: "PASS", specialistIsolation: "covered by tenant-scoped immutable report_versions payload", realtimeIsolation: "PASS", realtimeOwnerEvents: victimEvents, realtimeCrossTenantEvents: attackerEvents, internalTablesServiceOnly: "PASS", internalCacheCrudDeniedForAnonAndAuthenticated: "PASS", internalTableCount: internalTables.length }, null, 2));
 } finally {
   for (const teamId of cleanupTeamIds) await service.rpc("cleanup_isolated_test_team", { p_team_id: teamId });
   await service.auth.admin.deleteUser(attackerId);

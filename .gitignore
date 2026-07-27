@@ -55,7 +55,9 @@ supabase/.temp/
 supabase/.branches/
 supabase/.cache/
 
-# Local artifacts and exports
+# Generated verification artifacts and local exports
+artifacts/
+trace_unzip/
 exports/
 tmp/
 temp/
@@ -65,5 +67,8 @@ temp/
 *.sqlite
 *.sqlite3
 *.sql.dump
+
+# Local runtime diagnostics
+debug.log
 
 .agents

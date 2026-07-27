@@ -142,7 +142,8 @@ export class GeminiClient implements GeminiGenerator {
         return { text, parsed, groundingSources };
       } catch (error) {
         lastError = error;
-        const message = error instanceof Error ? error.message : String(error);
+        let message = error instanceof Error ? error.message : String(error);
+        if (/Too Many Requests/i.test(message) && !/429/.test(message)) message = `429 Too Many Requests: ${message}`;
         const quota = parseGeminiQuotaError(message);
         const errorClass = quota ? "quota" : classifyError(message);
         await this.logUsage(args, model, interactionId, attempt, started, new Date(), "failed", 0, 0, 0, false, errorClass, message, quota);

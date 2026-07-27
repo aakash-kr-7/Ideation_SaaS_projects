@@ -7,18 +7,39 @@ import { createProductionDependencies } from "../_shared/research/dependencies.t
 import { costBudgetForRun, reconcileUsageMetrics } from "../_shared/research/pipeline-utils.ts";
 import { getGeminiModelConfig } from "../_shared/research/gemini.ts";
 
+// Workers are invoked server-to-server. Browsers must not call this endpoint.
+// Restrict CORS to deny cross-origin browser requests.
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+/** Timing-safe comparison to prevent timing attacks on secret tokens. */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  const encoder = new TextEncoder();
+  const bufA = encoder.encode(a);
+  const bufB = encoder.encode(b);
+  if (bufA.byteLength !== bufB.byteLength) return false;
+  // Deno and modern runtimes support crypto.subtle.timingSafeEqual
+  // Fallback to constant-time comparison
+  let result = 0;
+  for (let i = 0; i < bufA.byteLength; i++) {
+    result |= bufA[i] ^ bufB[i];
+  }
+  return result === 0;
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const authHeader = req.headers.get("Authorization");
-    const webhookSecret = Deno.env.get("WEBHOOK_SECRET");
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const authorized = (webhookSecret && authHeader === `Bearer ${webhookSecret}`) || (serviceRoleKey && authHeader === `Bearer ${serviceRoleKey}`);
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    const webhookSecret = Deno.env.get("WEBHOOK_SECRET") ?? "";
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const authorized =
+      (webhookSecret && token && timingSafeEqual(token, webhookSecret)) ||
+      (serviceRoleKey && token && timingSafeEqual(token, serviceRoleKey));
     if (!authorized) return jsonResponse({ error: "Unauthorized" }, 401);
 
     const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", serviceRoleKey ?? "");

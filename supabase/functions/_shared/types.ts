@@ -402,6 +402,8 @@ export type Database = {
       }
       competitors: {
         Row: {
+          classification: string
+          comparability: Json
           created_at: string
           evidence_ids: string[]
           gap: string
@@ -415,6 +417,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          classification?: string
+          comparability?: Json
           created_at?: string
           evidence_ids?: string[]
           gap: string
@@ -428,6 +432,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          classification?: string
+          comparability?: Json
           created_at?: string
           evidence_ids?: string[]
           gap?: string
@@ -681,26 +687,38 @@ export type Database = {
       evidence_confidence_results: {
         Row: {
           band: string
+          completeness_reasons: Json
           created_at: string
+          deductions: Json
           reasons: Json
+          report_completeness: number | null
           run_id: string
           score: number
+          scoring_confidence: number | null
           updated_at: string
         }
         Insert: {
           band: string
+          completeness_reasons?: Json
           created_at?: string
+          deductions?: Json
           reasons?: Json
+          report_completeness?: number | null
           run_id: string
           score: number
+          scoring_confidence?: number | null
           updated_at?: string
         }
         Update: {
           band?: string
+          completeness_reasons?: Json
           created_at?: string
+          deductions?: Json
           reasons?: Json
+          report_completeness?: number | null
           run_id?: string
           score?: number
+          scoring_confidence?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -708,6 +726,75 @@ export type Database = {
             foreignKeyName: "evidence_confidence_results_run_id_fkey"
             columns: ["run_id"]
             isOneToOne: true
+            referencedRelation: "research_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evidence_contradictions: {
+        Row: {
+          challenging_evidence_ids: string[]
+          contradiction_status: string | null
+          created_at: string
+          geography_applicability: string | null
+          id: string
+          opportunity_id: string
+          proposition: string | null
+          relationship: string
+          resolution_note: string | null
+          resolution_status: string
+          run_id: string
+          segment_applicability: string | null
+          supporting_evidence_ids: string[]
+          tested_claim: string
+          unresolved_implication: string | null
+        }
+        Insert: {
+          challenging_evidence_ids?: string[]
+          contradiction_status?: string | null
+          created_at?: string
+          geography_applicability?: string | null
+          id?: string
+          opportunity_id: string
+          proposition?: string | null
+          relationship: string
+          resolution_note?: string | null
+          resolution_status: string
+          run_id: string
+          segment_applicability?: string | null
+          supporting_evidence_ids?: string[]
+          tested_claim: string
+          unresolved_implication?: string | null
+        }
+        Update: {
+          challenging_evidence_ids?: string[]
+          contradiction_status?: string | null
+          created_at?: string
+          geography_applicability?: string | null
+          id?: string
+          opportunity_id?: string
+          proposition?: string | null
+          relationship?: string
+          resolution_note?: string | null
+          resolution_status?: string
+          run_id?: string
+          segment_applicability?: string | null
+          supporting_evidence_ids?: string[]
+          tested_claim?: string
+          unresolved_implication?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_contradictions_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_contradictions_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
             referencedRelation: "research_runs"
             referencedColumns: ["id"]
           },
@@ -805,6 +892,7 @@ export type Database = {
       }
       evidence_items: {
         Row: {
+          acceptance_decision: string | null
           associated_claim_ids: string[]
           author: string | null
           canonical_url: string
@@ -816,9 +904,11 @@ export type Database = {
           currency: string | null
           disconfirming: boolean
           evidence_family: string | null
+          evidence_topic: string | null
           excluded: boolean
           exclusion_reason: string | null
           extraction_method: string
+          gemini_relevance_score: number | null
           geography: string | null
           id: string
           independent_domain_count: number
@@ -826,11 +916,15 @@ export type Database = {
           market_size_figure: string | null
           market_size_metric: string | null
           market_size_source_qualified: boolean
+          matched_brief_dimensions: string[]
+          mismatch_reasons: string[]
           named_entities: string[]
           numeric_value: number | null
           opportunity_id: string | null
           pain_point: string | null
           publisher: string
+          relevance_class: string | null
+          relevance_score: number | null
           relevant_excerpt: string
           research_pass: number | null
           research_query_id: string | null
@@ -854,6 +948,7 @@ export type Database = {
           verified: boolean
         }
         Insert: {
+          acceptance_decision?: string | null
           associated_claim_ids?: string[]
           author?: string | null
           canonical_url: string
@@ -865,9 +960,11 @@ export type Database = {
           currency?: string | null
           disconfirming?: boolean
           evidence_family?: string | null
+          evidence_topic?: string | null
           excluded?: boolean
           exclusion_reason?: string | null
           extraction_method: string
+          gemini_relevance_score?: number | null
           geography?: string | null
           id?: string
           independent_domain_count?: number
@@ -875,11 +972,15 @@ export type Database = {
           market_size_figure?: string | null
           market_size_metric?: string | null
           market_size_source_qualified?: boolean
+          matched_brief_dimensions?: string[]
+          mismatch_reasons?: string[]
           named_entities?: string[]
           numeric_value?: number | null
           opportunity_id?: string | null
           pain_point?: string | null
           publisher: string
+          relevance_class?: string | null
+          relevance_score?: number | null
           relevant_excerpt: string
           research_pass?: number | null
           research_query_id?: string | null
@@ -903,6 +1004,7 @@ export type Database = {
           verified?: boolean
         }
         Update: {
+          acceptance_decision?: string | null
           associated_claim_ids?: string[]
           author?: string | null
           canonical_url?: string
@@ -914,9 +1016,11 @@ export type Database = {
           currency?: string | null
           disconfirming?: boolean
           evidence_family?: string | null
+          evidence_topic?: string | null
           excluded?: boolean
           exclusion_reason?: string | null
           extraction_method?: string
+          gemini_relevance_score?: number | null
           geography?: string | null
           id?: string
           independent_domain_count?: number
@@ -924,11 +1028,15 @@ export type Database = {
           market_size_figure?: string | null
           market_size_metric?: string | null
           market_size_source_qualified?: boolean
+          matched_brief_dimensions?: string[]
+          mismatch_reasons?: string[]
           named_entities?: string[]
           numeric_value?: number | null
           opportunity_id?: string | null
           pain_point?: string | null
           publisher?: string
+          relevance_class?: string | null
+          relevance_score?: number | null
           relevant_excerpt?: string
           research_pass?: number | null
           research_query_id?: string | null
@@ -1237,6 +1345,110 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      numeric_claim_validations: {
+        Row: {
+          claim_type: string
+          created_at: string
+          evidence_item_id: string | null
+          extracted_source_value: string
+          id: string
+          methodology_status: string
+          narrative_value: string
+          normalized_value: Json | null
+          reason: string | null
+          run_id: string
+          source_url: string
+          status: string
+        }
+        Insert: {
+          claim_type: string
+          created_at?: string
+          evidence_item_id?: string | null
+          extracted_source_value: string
+          id?: string
+          methodology_status?: string
+          narrative_value: string
+          normalized_value?: Json | null
+          reason?: string | null
+          run_id: string
+          source_url: string
+          status: string
+        }
+        Update: {
+          claim_type?: string
+          created_at?: string
+          evidence_item_id?: string | null
+          extracted_source_value?: string
+          id?: string
+          methodology_status?: string
+          narrative_value?: string
+          normalized_value?: Json | null
+          reason?: string | null
+          run_id?: string
+          source_url?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "numeric_claim_validations_evidence_item_id_fkey"
+            columns: ["evidence_item_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "numeric_claim_validations_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "research_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operational_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          details: Json
+          fingerprint: string
+          id: string
+          resolved_at: string | null
+          run_id: string | null
+          severity: string
+          status: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          details?: Json
+          fingerprint: string
+          id?: string
+          resolved_at?: string | null
+          run_id?: string | null
+          severity: string
+          status?: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          details?: Json
+          fingerprint?: string
+          id?: string
+          resolved_at?: string | null
+          run_id?: string | null
+          severity?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operational_alerts_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "research_runs"
             referencedColumns: ["id"]
           },
         ]
@@ -1696,6 +1908,74 @@ export type Database = {
           },
           {
             foreignKeyName: "reports_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: true
+            referencedRelation: "research_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      research_briefs: {
+        Row: {
+          adjacent_out_of_scope_categories: string[]
+          brief: Json
+          business_model: string
+          created_at: string
+          dimension_keywords: Json
+          direct_competitor_category: string
+          end_user: string
+          exact_product_proposition: string
+          expected_outcome: string
+          geography: string
+          industry: string
+          problem_solved: string
+          run_id: string
+          target_buyer: string
+          terminology: string[]
+          updated_at: string
+          workflow_changed: string
+        }
+        Insert: {
+          adjacent_out_of_scope_categories?: string[]
+          brief: Json
+          business_model: string
+          created_at?: string
+          dimension_keywords: Json
+          direct_competitor_category: string
+          end_user: string
+          exact_product_proposition: string
+          expected_outcome: string
+          geography: string
+          industry: string
+          problem_solved: string
+          run_id: string
+          target_buyer: string
+          terminology?: string[]
+          updated_at?: string
+          workflow_changed: string
+        }
+        Update: {
+          adjacent_out_of_scope_categories?: string[]
+          brief?: Json
+          business_model?: string
+          created_at?: string
+          dimension_keywords?: Json
+          direct_competitor_category?: string
+          end_user?: string
+          exact_product_proposition?: string
+          expected_outcome?: string
+          geography?: string
+          industry?: string
+          problem_solved?: string
+          run_id?: string
+          target_buyer?: string
+          terminology?: string[]
+          updated_at?: string
+          workflow_changed?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_briefs_run_id_fkey"
             columns: ["run_id"]
             isOneToOne: true
             referencedRelation: "research_runs"
@@ -2493,43 +2773,67 @@ export type Database = {
       }
       source_retrieval_audit: {
         Row: {
+          acceptance_decision: string | null
           candidate_url: string | null
           canonical_url: string | null
           created_at: string
+          deterministic_relevance_score: number | null
           disposition: string
           id: string
+          matched_brief_dimensions: string[]
+          mismatch_reasons: string[]
+          page_type: string | null
           provider: string
           query_family: string
           rejection_reason: string | null
+          relevance_class: string | null
           relevance_score: number | null
           run_id: string
           source_domain: string | null
+          source_tier: number | null
+          source_tier_reason: string | null
         }
         Insert: {
+          acceptance_decision?: string | null
           candidate_url?: string | null
           canonical_url?: string | null
           created_at?: string
+          deterministic_relevance_score?: number | null
           disposition: string
           id?: string
+          matched_brief_dimensions?: string[]
+          mismatch_reasons?: string[]
+          page_type?: string | null
           provider: string
           query_family: string
           rejection_reason?: string | null
+          relevance_class?: string | null
           relevance_score?: number | null
           run_id: string
           source_domain?: string | null
+          source_tier?: number | null
+          source_tier_reason?: string | null
         }
         Update: {
+          acceptance_decision?: string | null
           candidate_url?: string | null
           canonical_url?: string | null
           created_at?: string
+          deterministic_relevance_score?: number | null
           disposition?: string
           id?: string
+          matched_brief_dimensions?: string[]
+          mismatch_reasons?: string[]
+          page_type?: string | null
           provider?: string
           query_family?: string
           rejection_reason?: string | null
+          relevance_class?: string | null
           relevance_score?: number | null
           run_id?: string
           source_domain?: string | null
+          source_tier?: number | null
+          source_tier_reason?: string | null
         }
         Relationships: [
           {
@@ -2543,21 +2847,32 @@ export type Database = {
       }
       sources: {
         Row: {
+          acceptance_decision: string | null
+          authority_score: number | null
           canonical_url: string | null
           created_at: string
+          directness_score: number | null
           evidence_family: string | null
           excluded: boolean
           extraction_method: string
           id: string
           market_size_qualification_reason: string | null
           market_size_source_qualified: boolean
+          matched_brief_dimensions: string[]
+          mismatch_reasons: string[]
+          page_type: string | null
+          promotional_bias: string | null
           published_at: string | null
           publisher: string
+          query_family: string | null
+          relevance_class: string | null
+          relevance_score: number | null
           retrieval_date: string
           run_id: string
           source_class: string
           source_domain: string | null
           source_tier: number | null
+          source_tier_reason: string | null
           source_type: string
           text_content: string
           title: string
@@ -2565,21 +2880,32 @@ export type Database = {
           url: string
         }
         Insert: {
+          acceptance_decision?: string | null
+          authority_score?: number | null
           canonical_url?: string | null
           created_at?: string
+          directness_score?: number | null
           evidence_family?: string | null
           excluded?: boolean
           extraction_method: string
           id?: string
           market_size_qualification_reason?: string | null
           market_size_source_qualified?: boolean
+          matched_brief_dimensions?: string[]
+          mismatch_reasons?: string[]
+          page_type?: string | null
+          promotional_bias?: string | null
           published_at?: string | null
           publisher: string
+          query_family?: string | null
+          relevance_class?: string | null
+          relevance_score?: number | null
           retrieval_date: string
           run_id: string
           source_class: string
           source_domain?: string | null
           source_tier?: number | null
+          source_tier_reason?: string | null
           source_type: string
           text_content: string
           title: string
@@ -2587,21 +2913,32 @@ export type Database = {
           url: string
         }
         Update: {
+          acceptance_decision?: string | null
+          authority_score?: number | null
           canonical_url?: string | null
           created_at?: string
+          directness_score?: number | null
           evidence_family?: string | null
           excluded?: boolean
           extraction_method?: string
           id?: string
           market_size_qualification_reason?: string | null
           market_size_source_qualified?: boolean
+          matched_brief_dimensions?: string[]
+          mismatch_reasons?: string[]
+          page_type?: string | null
+          promotional_bias?: string | null
           published_at?: string | null
           publisher?: string
+          query_family?: string | null
+          relevance_class?: string | null
+          relevance_score?: number | null
           retrieval_date?: string
           run_id?: string
           source_class?: string
           source_domain?: string | null
           source_tier?: number | null
+          source_tier_reason?: string | null
           source_type?: string
           text_content?: string
           title?: string
@@ -2822,6 +3159,38 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_research_limits: {
+        Row: {
+          provider_spend_per_day_usd: number
+          reports_per_day: number
+          reports_per_user_per_hour: number
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          provider_spend_per_day_usd?: number
+          reports_per_day?: number
+          reports_per_user_per_hour?: number
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          provider_spend_per_day_usd?: number
+          reports_per_day?: number
+          reports_per_user_per_hour?: number
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_research_limits_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: true
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2870,6 +3239,50 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      claim_research_job_for_run: {
+        Args: {
+          p_run_id: string
+          p_visibility_timeout_ms: number
+          p_worker_id: string
+        }
+        Returns: {
+          attempt_count: number
+          batch_index: number
+          batch_size: number
+          claimed_at: string | null
+          claimed_by: string | null
+          completed_at: string | null
+          created_at: string
+          error_class: string | null
+          error_message: string | null
+          id: string
+          input_meta: Json
+          job_purpose: string
+          logical_key: string
+          max_attempts: number
+          output_meta: Json
+          parent_job_id: string | null
+          research_cycle: number
+          run_id: string
+          shard_key: string | null
+          stage: string
+          stage_iteration: number
+          status: string
+          updated_at: string
+          visible_after: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "research_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      cleanup_isolated_test_team: {
+        Args: { p_team_id: string }
+        Returns: boolean
+      }
+      collect_research_operational_alerts: { Args: never; Returns: Json }
       complete_research_job: {
         Args: {
           p_job_id: string
@@ -2884,6 +3297,10 @@ export type Database = {
           p_output_meta?: Json
         }
         Returns: Json
+      }
+      count_pending_research_jobs_for_run: {
+        Args: { p_run_id: string }
+        Returns: number
       }
       create_research_run_with_reservation: {
         Args: {
@@ -2945,6 +3362,14 @@ export type Database = {
         Returns: string
       }
       finalize_research_run: { Args: { p_run_id: string }; Returns: string }
+      get_owned_latest_report: {
+        Args: { p_run_id: string; p_user_id: string }
+        Returns: Json
+      }
+      get_research_activity_detail: {
+        Args: { p_run_id: string }
+        Returns: Json
+      }
       get_research_history_snapshot: { Args: never; Returns: Json }
       get_research_progress_snapshot: {
         Args: { p_run_id: string }
@@ -2986,6 +3411,10 @@ export type Database = {
       }
       recover_stale_research_jobs: {
         Args: { p_stale_threshold_ms?: number }
+        Returns: number
+      }
+      recover_stale_research_jobs_for_run: {
+        Args: { p_run_id: string; p_stale_threshold_ms: number }
         Returns: number
       }
       refresh_monthly_quick_scan: {

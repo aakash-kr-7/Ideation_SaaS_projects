@@ -2,7 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { extname, join, relative } from "node:path";
 
 const root = process.cwd();
-const ignoredDirectories = new Set([".git", ".next", "node_modules"]);
+const ignoredDirectories = new Set([".git", ".next", "node_modules", "artifacts"]);
 const textExtensions = new Set([".css", ".cjs", ".d.ts", ".env", ".example", ".html", ".js", ".json", ".md", ".mjs", ".sql", ".svg", ".toml", ".ts", ".tsx"]);
 const mojibakeMarkers = [
   "\u00c3", "\u00c2", "\u00e2\u20ac", "\u00e2\u2122", "\u00e2\u20ac\u0153",

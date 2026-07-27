@@ -35,7 +35,15 @@
     "test:rls": "node scripts/audit-rls.mjs",
     "test:secrets": "node scripts/check-secret-leaks.mjs",
     "check:deno": "deno check --config supabase/functions/deno.json supabase/functions/research-worker/index.ts supabase/functions/research-scheduler/index.ts",
-    "check": "npm run typecheck && npm run lint && npm run check:text && npm run test:secrets && npm test && npm run check:deno && npm run build"
+    "check": "npm run typecheck && npm run lint && npm run check:text && npm run test:secrets && npm test && npm run check:deno && npm run build",
+    "verify:db": "node scripts/verify-fresh-database.mjs",
+    "verify:upgrade": "node scripts/verify-upgrade-path.mjs",
+    "verify:headers": "node scripts/verify-security-headers.mjs",
+    "verify:auth": "node scripts/verify-auth-flows.mjs",
+    "verify:restore": "node scripts/restore-rehearsal.mjs",
+    "verify:alerts": "node scripts/verify-alert-delivery.mjs",
+    "verify:rollback": "node scripts/rollback-rehearsal.mjs",
+    "release": "node scripts/release.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.12.0",

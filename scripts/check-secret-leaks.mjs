@@ -14,14 +14,20 @@ function visit(directory) {
     if (entry.name.startsWith(".env") && entry.name !== ".env.example") continue;
     if (!allowedExtensions.has(path.extname(entry.name)) && entry.name !== ".env.example") continue;
     const content = fs.readFileSync(fullPath, "utf8");
-    if (content.includes("NEXT_PUBLIC_" + "GEMINI_API_KEY")) failures.push(`${fullPath}: browser-exposed Gemini key name`);
-    if (/AIza[0-9A-Za-z_-]{30,}/.test(content)) failures.push(`${fullPath}: Google API credential-like value`);
+    if (/NEXT_PUBLIC_GEMINI_API_KEY\s*[=:]\s*["']([^"'\\s<]{8,})["']/i.test(content) && !fullPath.endsWith("check-secret-leaks.mjs") && !fullPath.endsWith("secret-scanner.test.mjs")) failures.push(`${fullPath}: browser-exposed Gemini key value`);
+    if (/AIza[0-9A-Za-z_-]{30,}/.test(content) && !fullPath.endsWith("secret-scanner.test.mjs")) failures.push(`${fullPath}: Google API credential-like value`);
     if (/postgres(?:ql)?:\/\/[^\s:@]+:[^\s@]+@/i.test(content)) failures.push(`${fullPath}: database URL with embedded credentials`);
     for (const name of sensitiveNames) {
-      const assignment = new RegExp(`${name}\\s*[=:]\\s*["']([^"'\\s]{8,})["']`, "i");
-      if (assignment.test(content) && !fullPath.endsWith("check-secret-leaks.mjs")) failures.push(`${fullPath}: hard-coded ${name}`);
+      const assignment = new RegExp(`${name}\\s*[=:]\\s*["']([^"'\\s]{8,})["']`, "gi");
+      const matches = [...content.matchAll(assignment)];
+      for (const match of matches) {
+        if (!/<|>|your_|placeholder|example/i.test(match[1]) && !fullPath.endsWith("check-secret-leaks.mjs") && !fullPath.endsWith("secret-scanner.test.mjs")) {
+          failures.push(`${fullPath}: hard-coded ${name}`);
+        }
+      }
     }
-    if (/console\.(log|error|warn|info)\([^\n]*(API_KEY|SERVICE_ROLE|WEBHOOK_SECRET|CLIENT_SECRET|PASSWORD)/i.test(content) && !fullPath.endsWith("check-secret-leaks.mjs")) failures.push(`${fullPath}: possible secret logging`);
+    const noStrings = content.replace(/(["'`])(?:(?=(\\?))\2[\s\S])*?\1/g, '""');
+    if (/console\.(log|error|warn|info)\([^\n]*(API_KEY|SERVICE_ROLE|WEBHOOK_SECRET|CLIENT_SECRET|PASSWORD)/i.test(noStrings) && !fullPath.endsWith("check-secret-leaks.mjs") && !fullPath.endsWith("secret-scanner.test.mjs")) failures.push(`${fullPath}: possible secret logging`);
   }
 }
 

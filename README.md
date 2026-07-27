@@ -30,7 +30,7 @@ npx supabase db reset
 npm run dev
 ```
 
-Populate ignored local environment files; never add real credentials to `.env.example`.
+Populate ignored local environment files; never add real credentials to `.env.example`. See [Environment Variables](./docs/Environment-Variables.md) for the complete variable matrix.
 
 ## Verification
 
@@ -61,4 +61,6 @@ tests/e2e/              browser journey coverage
 docs/                   current operating documentation
 ```
 
-See [Architecture](./docs/Architecture.md), [Pipeline](./docs/Pipeline.md), [Database](./docs/Database.md), [Secrets](./docs/Secrets.md), [Security](./docs/Security.md), and [Deployment](./docs/Deployment.md).
+Generated browser reports, release audits, restore dumps, screenshots, traces, and temporary exports are written under `artifacts/` during verification. They are intentionally ignored and must not be committed.
+
+See [Architecture](./docs/Architecture.md), [Pipeline](./docs/Pipeline.md), [Database](./docs/Database.md), [Secrets](./docs/Secrets.md), [Security](./docs/Security.md), [Deployment Runbook](./docs/Deployment-Runbook.md), and [Monitoring](./docs/Monitoring.md).

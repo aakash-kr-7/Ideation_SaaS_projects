@@ -14,7 +14,11 @@ let userId = "";
 test.describe.serial("account lifecycle and onboarding", () => {
   test.setTimeout(20_000);
   test.afterAll(async () => {
-    if (userId) await admin.auth.admin.deleteUser(userId);
+    if (userId) {
+      const { data: membership } = await admin.from("team_members").select("team_id").eq("user_id", userId).maybeSingle();
+      if (membership?.team_id) await admin.rpc("cleanup_isolated_test_team", { p_team_id: membership.team_id });
+      await admin.auth.admin.deleteUser(userId);
+    }
   });
 
   test("new user registers and completes resumable onboarding without duplicate bootstrap records", async ({ page }) => {
@@ -23,7 +27,28 @@ test.describe.serial("account lifecycle and onboarding", () => {
     await page.getByLabel("Email", { exact: true }).fill(email);
     await page.getByLabel("Password", { exact: true }).fill(password);
     await page.getByRole("button", { name: "Create account", exact: true }).click();
-    await page.waitForURL(/\/(auth\/verify|onboarding)/);
+    await page.waitForURL(/\/auth\/verify/);
+
+    // Local Supabase requires email confirmation. Confirm this isolated fixture,
+    // then continue through the same password sign-in path as a customer who
+    // clicked their verification link.
+    const listed = await admin.auth.admin.listUsers();
+    const user = listed.data.users.find(item => item.email === email);
+    expect(user).toBeTruthy();
+    userId = user!.id;
+    const { error: confirmError } = await admin.auth.admin.updateUserById(userId, { email_confirm: true });
+    expect(confirmError).toBeNull();
+    try {
+      await page.goto("/sign-in?redirectTo=/onboarding");
+    } catch (error) {
+      if (!String(error).includes("ERR_ABORTED")) throw error;
+    }
+    if (!page.url().includes("/onboarding")) {
+      await page.waitForURL(/\/sign-in/, { timeout: 10_000 });
+      await page.getByLabel("Email", { exact: true }).fill(email);
+      await page.getByLabel("Password", { exact: true }).fill(password);
+      await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    }
     await page.waitForURL(/\/onboarding/, { timeout: 15_000 });
 
     await page.getByPlaceholder("Your name").fill("Reveal Journey");
@@ -44,10 +69,6 @@ test.describe.serial("account lifecycle and onboarding", () => {
     await page.getByRole("button", { name: "Finish setup", exact: true }).click();
     await page.waitForURL(/\/dashboard/);
 
-    const listed = await admin.auth.admin.listUsers();
-    const user = listed.data.users.find(item => item.email === email);
-    expect(user).toBeTruthy();
-    userId = user!.id;
     await admin.rpc("bootstrap_user", { p_user_id: userId, p_email: email, p_metadata: { full_name: "Reveal Journey" } });
     const [{ count: profiles }, { count: memberships }, { data: membership }] = await Promise.all([
       admin.from("users").select("id", { count: "exact", head: true }).eq("id", userId),

@@ -4,7 +4,7 @@
 
 1. Name one incident owner and one backup before the reveal.
 2. Run `npm run release:check` against a clean local Supabase reset.
-3. Run `npm run release:live` with live Gemini credentials. Attach `artifacts/browser/reveal-proof/run-ids.json`, screenshots, traces, audit bundles, and checksums to the release candidate.
+3. Run `npm run release:live` with live Gemini credentials. Copy the resulting run IDs, screenshots, traces, audit bundles, and checksums to the release ticket or approved evidence store; `artifacts/` is local, generated, and not committed.
 4. Run `npm run ops:health`. Resolve critical failed-run or stuck-run alerts before release. Record acknowledged provider degradation.
 5. Confirm queue depth, last-24-hour provider cost, available Gemini quota, scheduler response, and workspace credit limits.
 6. Confirm the rollback build and database backup identifiers.

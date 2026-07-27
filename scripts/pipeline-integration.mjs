@@ -9,6 +9,13 @@ if (!url || !anonKey || !serviceKey || !workerToken) throw new Error("SUPABASE_U
 const requested = process.argv[2] || "all";
 const modes = requested === "all" ? ["quick_scan", "full_validation"] : [requested];
 if (modes.some((mode) => !["quick_scan", "full_validation"].includes(mode))) throw new Error("Usage: pipeline-integration.mjs [quick_scan|full_validation|all]");
+const certificationIdea = {
+  name: process.env.PIPELINE_IDEA_NAME || "Canonical pipeline",
+  description: process.env.PIPELINE_IDEA_DESCRIPTION || "A workflow tool that helps small service teams collect approvals and preserve an attributable audit trail.",
+  customer: process.env.PIPELINE_TARGET_CUSTOMER || "Small software and agency teams",
+  marketType: process.env.PIPELINE_MARKET_TYPE || "B2B",
+  region: process.env.PIPELINE_TARGET_REGION || "Global",
+};
 
 const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 const email = process.env.PIPELINE_USER_EMAIL || `pipeline-${crypto.randomUUID()}@example.test`;
@@ -38,9 +45,9 @@ try {
 
 async function reserve(user, projectId, mode, label) {
   const { data, error } = await user.rpc("create_research_run_with_reservation", {
-    p_project_id: projectId, p_idea_name: `${label} ${mode}`,
-    p_idea_description: "A workflow tool that helps small service teams collect approvals and preserve an attributable audit trail.",
-    p_target_customer: "Small software and agency teams", p_market_type: "B2B", p_target_region: "Global",
+    p_project_id: projectId, p_idea_name: `${certificationIdea.name} — ${label} ${mode}`,
+    p_idea_description: certificationIdea.description,
+    p_target_customer: certificationIdea.customer, p_market_type: certificationIdea.marketType, p_target_region: certificationIdea.region,
     p_assumptions: {}, p_mode: mode, p_idempotency_key: crypto.randomUUID(), p_request_id: crypto.randomUUID(),
   });
   if (error) throw error;

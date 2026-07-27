@@ -3,7 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/components/layout/auth-provider";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://shouldbuild.app"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://shouldbuild.app"),
   title: "ShouldBuild — Evidence-backed idea research",
   description: "ShouldBuild searches public web sources and produces cited reports with a deterministic 12-factor score and verdict.",
   alternates: {

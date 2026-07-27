@@ -8,7 +8,7 @@ const baseURL = `http://127.0.0.1:${port}`;
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: /research-live\.spec\.ts/,
+  testMatch: /.*\.spec\.ts/,
   timeout: 20 * 60_000,
   expect: { timeout: 30_000 },
   fullyParallel: false,
