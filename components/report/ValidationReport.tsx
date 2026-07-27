@@ -165,7 +165,7 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
           {tab === "Exports" && <ExportView onExport={exportFile} formats={report.availableExports}/>}
         </div>
         <FinalBlock report={report}/>
-        {report.reportMode === "quick_scan" && !publicMode && <section className="quick-upgrade-card"><div><p className="eyebrow">Need a deeper answer?</p><h3>Run Full Validation using the same idea.</h3><p>Your project, buyer, geography, brief, and saved assumptions will be carried forward. Entitlement is confirmed before a new run is created.</p></div><Link className="button" href={`/research/new?mode=full_validation&upgradeFrom=${runId ?? report.id}`}>Run Full Validation</Link></section>}
+        {report.reportMode === "quick_scan" && !publicMode && <section className="quick-upgrade-card"><div><p className="eyebrow">Ready for a final decision?</p><h3>Upgrade to Full Validation.</h3><p>Your idea and context will be carried forward. We'll run deeper adversarial research, model your MVP, build a GTM plan, and deliver a comprehensive decision dossier.</p></div><Link className="button" href={`/research/new?mode=full_validation&upgradeFrom=${runId ?? report.id}`}>Run Full Validation</Link></section>}
       </div>
     </div>
   </div>;
@@ -565,7 +565,7 @@ function EvidenceCitations({ report, evidenceIds }: { report: ReportType; eviden
 
 function AdversarialView({ report }: { report: ReportType }) {
   return <div className="adversarial-report-view">
-    <section><p className="eyebrow">Adversarial verdict gate</p><h3>{report.adversarialGate?.outcome ?? "Gate incomplete"}</h3><p>{report.adversarialGate?.objection ?? "No adversarial conclusion was persisted."}</p><EvidenceCitations report={report} evidenceIds={report.adversarialGate?.evidence_ids ?? []}/></section>
+    <section><p className="eyebrow">Adversarial verdict gate</p><h3>{report.adversarialGate?.outcome ?? "Gate incomplete"}</h3><p>{report.adversarialGate?.objection ?? "Adversarial analysis is incomplete."}</p><EvidenceCitations report={report} evidenceIds={report.adversarialGate?.evidence_ids ?? []}/></section>
   </div>;
 }
 

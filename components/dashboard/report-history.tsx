@@ -32,7 +32,7 @@ export function ReportHistory({ runs }: { runs: HistoryRun[] }) {
             <span>
               <i><Globe2 size={11}/>{run.sourceCount} accepted sources · {run.independentDomains} independent domains</i>
               {run.durationMs != null && <i><Clock3 size={11}/>{formatDuration(run.durationMs)}</i>}
-              {run.degraded && <i className="history-degraded"><AlertTriangle size={11}/>Degraded provider state</i>}
+              {run.degraded && <i className="history-degraded"><AlertTriangle size={11}/>Limited source access</i>}
               {run.publicReason && <i>{run.publicReason}{run.creditRestored ? " · credit restored" : ""}</i>}
             </span>
           </div>

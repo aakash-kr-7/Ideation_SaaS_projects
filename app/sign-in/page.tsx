@@ -200,9 +200,9 @@ function SignInCard() {
       {view === "sign-in" && (
         <div className="auth-view auth-view-enter">
           <div className="auth-copy">
-            <p className="eyebrow">SHOULDBUILD VALIDATION PLATFORM</p>
+            <p className="eyebrow">SHOULDBUILD</p>
             <h1>Welcome back</h1>
-            <p>Sign in to access your validation reports and research workspace.</p>
+            <p>Sign in to access your validation reports and continue where you left off.</p>
           </div>
 
           {error && <div className="auth-error">{error}</div>}
@@ -279,7 +279,7 @@ function SignInCard() {
           <div className="auth-copy">
             <p className="eyebrow">GET STARTED</p>
             <h1>Create your account</h1>
-            <p>Start validating product ideas with market-backed evidence.</p>
+            <p>Your first Quick Scan is free every month. Start validating in minutes.</p>
           </div>
 
           {error && <div className="auth-error">{error}</div>}
@@ -404,7 +404,7 @@ function SignInCard() {
 
       <small className="auth-footer">
         <LockKeyhole size={13} />
-        Encrypted authentication via Supabase
+        Secure sign-in — your data stays private
       </small>
       <p className="auth-legal">By continuing, you agree to the <Link href="/legal/terms">Terms of Service</Link> and acknowledge the <Link href="/legal/privacy">Privacy Policy</Link>.</p>
     </div>

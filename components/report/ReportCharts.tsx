@@ -65,7 +65,7 @@ function chartData(chart: ReportChartDataset): Datum[] {
 export function ReportCharts({ report, datasets = [] }: { report: ValidationReport; datasets?: ReportChartDataset[] }) {
   const charts = datasets.length ? datasets : fallbackCharts(report);
   return <section className="report-charts" aria-label="Evidence-based charts">
-    <header><p className="eyebrow">Chart desk</p><h3>What the evidence distribution says</h3><p>Each chart is rendered from the persisted report dataset{datasets.length ? "" : " or this frozen sample report's schema-backed evidence"}.</p></header>
+    <header><p className="eyebrow">Chart desk</p><h3>What the evidence distribution says</h3><p>Each chart is rendered from the verified report dataset{datasets.length ? "" : " or this frozen sample report's schema-backed evidence"}.</p></header>
     <div className="report-chart-grid">
       {charts.slice(0, report.reportMode === "quick_scan" ? 4 : 6).map((chart) => {
         const data = chartData(chart);
@@ -76,8 +76,8 @@ export function ReportCharts({ report, datasets = [] }: { report: ValidationRepo
             {data.slice(0, 12).map((item) => <div className="chart-bar" key={item.label}>
               <span title={item.label}>{titleFor(item.label)}</span><i><b style={{ width: `${Math.max(4, (item.value / max) * 100)}%` }} /></i><strong>{item.value}</strong>
             </div>)}
-          </div> : <p className="chart-empty">{String(chart.sourceData.reason ?? "No chartable evidence was persisted for this report.")}</p>}
-          <p className="chart-source-explanation">{String(chart.chartConfig.sourceExplanation ?? "Derived from persisted structured report data.")}</p>
+          </div> : <p className="chart-empty">{String(chart.sourceData.reason ?? "No chartable evidence was found for this report.")}</p>}
+          <p className="chart-source-explanation">{String(chart.chartConfig.sourceExplanation ?? "Derived from verified structured report data.")}</p>
           {data.length > 0 && <details><summary>Accessible values</summary><table><tbody>{data.map((item) => <tr key={item.label}><th>{titleFor(item.label)}</th><td>{item.value}</td></tr>)}</tbody></table></details>}
         </figure>;
       })}

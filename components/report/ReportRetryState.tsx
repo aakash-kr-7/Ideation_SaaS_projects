@@ -15,7 +15,7 @@ export function ReportRetryState({ reason }: { reason: string }) {
     <section className="empty-state" role="status" aria-live="polite">
       <RefreshCw size={24} aria-hidden="true" />
       <h2>Your completed report is being made available</h2>
-      <p>The immutable report is safe. This page will retry automatically.</p>
+      <p>The evidence-backed report is safely stored. This page will retry automatically.</p>
       <button type="button" className="btn-secondary" onClick={() => router.refresh()}>
         Retry now
       </button>

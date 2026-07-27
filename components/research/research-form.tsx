@@ -26,14 +26,14 @@ const markets: MarketType[] = [
 const modePresentation = {
   quick_scan: {
     icon: SearchCheck,
-    bestFor: "Best for filtering ideas before spending more.",
-    included: ["12-factor score and verdict", "Concise evidence screen", "Risks, pricing direction, and next actions", "Clickable citations and branded PDF"],
-    excluded: ["No broad evidence-booster coverage", "No detailed MVP or go-to-market report"],
+    bestFor: "The fast decision checkpoint.",
+    included: ["12-factor score and verdict", "Core evidence screen with clickable citations", "Risks, pricing direction, and next actions", "PDF, Markdown, CSV, and JSON exports"],
+    excluded: ["No deep competitor or GTM analysis", "No MVP scope or go-to-market report"],
   },
   full_validation: {
     icon: Telescope,
-    bestFor: "Best before committing meaningful time or money.",
-    included: ["Deeper grounded research packs", "Selective evidence boosters and adversarial analysis", "MVP, pricing, risk, and GTM artifacts", "PDF, Markdown, CSV, and JSON exports"],
+    bestFor: "The comprehensive dossier. Essential before writing code, raising money, or hiring.",
+    included: ["Deep adversarial research across more evidence dimensions", "Competitor analysis, pricing strategy, risk, and GTM plan", "MVP scope, build estimate, and 12-factor score", "PDF, Markdown, CSV, and JSON exports"],
     excluded: ["No guaranteed outcome", "Market sizing only when verifiably cited"],
   },
 } as const;
@@ -114,14 +114,14 @@ export function ResearchForm({
   return <form onSubmit={submit} className="research-form">
     <section className={`form-section ${revealUpClass}`} style={getStaggerDelay(0)}>
       <div>
-        <p className="eyebrow">Your idea</p>
+        <p className="eyebrow">Your idea brief</p>
         <h2>What do you want to validate?</h2>
-        <p>Describe the product, buyer, and problem precisely. These details are preserved if you later move from Quick Scan to Full Validation.</p>
+        <p>Describe the product, buyer, and problem as specifically as you can. The more precise the brief, the stronger the evidence search.</p>
       </div>
       <div className="field-grid">
         <label className="field full"><span>Idea name</span><input name="ideaName" defaultValue={initialValues.ideaName} placeholder="e.g. Appointment recovery assistant for salons" required /></label>
         <label className="field full"><span>What does it do?</span><textarea name="ideaDescription" defaultValue={initialValues.ideaDescription} placeholder="Describe the workflow, problem, and intended outcome." required /></label>
-        <label className="field"><span>Customer <small>Optional</small></span><input name="targetCustomer" defaultValue={initialValues.targetCustomer === "Not specified" ? "" : initialValues.targetCustomer} placeholder="e.g. Independent salons with repeat bookings" /></label>
+        <label className="field"><span>Target customer <small>Optional</small></span><input name="targetCustomer" defaultValue={initialValues.targetCustomer === "Not specified" ? "" : initialValues.targetCustomer} placeholder="e.g. Independent salons with repeat bookings" /></label>
         <label className="field"><span>Geography <small>Optional</small></span><input name="targetRegion" defaultValue={initialValues.targetRegion ?? "Global"} /></label>
         <label className="field full"><span>Industry <small>Optional</small></span><input name="industry" defaultValue={initialValues.assumptions?.industry} placeholder="e.g. Beauty and personal care" /></label>
         <label className="field full"><span>Market type</span><select name="marketType" defaultValue={initialValues.marketType ?? "B2B"}>{markets.map((market) => <option key={market}>{market}</option>)}</select></label>
@@ -130,9 +130,9 @@ export function ResearchForm({
 
     <section className={`form-section ${revealUpClass}`} style={getStaggerDelay(1)}>
       <div>
-        <p className="eyebrow">Decision assumptions</p>
-        <h2>What constraints should the report preserve?</h2>
-        <p>These remain attached to the run and carry into a deeper validation.</p>
+        <p className="eyebrow">Your constraints</p>
+        <h2>What constraints should the report respect?</h2>
+        <p>These carry forward if you later run a deeper validation on the same idea.</p>
       </div>
       <div className="field-grid">
         <label className="field"><span>Revenue target</span><select name="revenueTarget" defaultValue={initialValues.assumptions?.revenueTarget ?? "$5k MRR"}><option>$1k MRR</option><option>$5k MRR</option><option>$10k MRR</option><option>Venture-scale</option></select></label>
@@ -145,10 +145,10 @@ export function ResearchForm({
 
     <section className={`form-section mode-section ${revealUpClass}`} style={getStaggerDelay(2)}>
       <div className="mode-heading-row">
-        <div><p className="eyebrow">Report type</p><h2>Choose the depth of this decision.</h2></div>
-        <div className="credit-balance"><WalletCards size={16} /><span><b>{creditSnapshot ? creditSnapshot.paid_credits : "Unavailable"}</b> paid credits</span><small>{creditSnapshot ? (creditSnapshot.free_quick_scans_remaining ? "Monthly Quick Scan available" : "Monthly Quick Scan used") : "Entitlement status unavailable"}</small></div>
+        <div><p className="eyebrow">Report type</p><h2>Choose your validation depth.</h2></div>
+        <div className="credit-balance"><WalletCards size={16} /><span><b>{creditSnapshot ? creditSnapshot.paid_credits : "Unavailable"}</b> paid credits</span><small>{creditSnapshot ? (creditSnapshot.free_quick_scans_remaining ? "Free Quick Scan available this month" : "Monthly Quick Scan used") : "Credit status unavailable"}</small></div>
       </div>
-      <div className="grounding-readiness" role="status"><ShieldAlert size={15} /><span><b>Provider readiness is checked securely at launch.</b> If optional grounding is quota-limited, the live room will show the persisted degraded state and external retrieval fallback.</span></div>
+      <div className="grounding-readiness" role="status"><ShieldAlert size={15} /><span><b>Source availability is checked when your validation starts.</b> If any research provider is unavailable, the system automatically falls back to alternative sources.</span></div>
       <div className="mode-grid production-mode-grid">
         {(["quick_scan", "full_validation"] as const).map((reportMode) => {
           const config = getReportModeConfig(reportMode);
@@ -175,12 +175,12 @@ export function ResearchForm({
 
     <footer className="form-footer production-form-footer">
       <div>
-        {error ? <p className="form-error" role="alert"><ShieldAlert size={15} />{error}</p> : <p><b>{selected.label} selected.</b> {selected.creditCost} {selected.creditCost === 1 ? "credit" : "credits"} will be reserved securely when the run starts.</p>}
+        {error ? <p className="form-error" role="alert"><ShieldAlert size={15}/>{error}</p> : <p><b>{selected.label} selected.</b> {selected.creditCost} {selected.creditCost === 1 ? "credit" : "credits"} will be reserved when the run starts.</p>}
       </div>
       {available ? <button className={`button ${motion.buttonBase} ${submitting ? "is-loading" : ""}`} type="submit" disabled={submitting}>
-        {submitting ? <><Loader2 className="animate-spin" size={17} /> Reserving credit…</> : <>Run {selected.label} <ArrowRight size={17} /></>}
+        {submitting ? <><Loader2 className="animate-spin" size={17}/> Starting your validation…</> : <>Start {selected.label} <ArrowRight size={17}/></>}
       </button> : <button className={`button ${motion.buttonBase}`} type="button" disabled title="Paid checkout is not available yet">
-        {creditSnapshot ? `${selected.label} unavailable` : "Entitlement unavailable"}
+        {creditSnapshot ? `${selected.label} unavailable` : "Credit status unavailable"}
       </button>}
     </footer>
   </form>;

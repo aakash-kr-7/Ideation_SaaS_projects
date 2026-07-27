@@ -124,36 +124,36 @@ export default async function DashboardPage() {
             <div className="empty-state-icon">
               <SearchCheck size={28} />
             </div>
-            <h2>Welcome to ShouldBuild</h2>
+            <h2>Your first validation is one step away.</h2>
             <p>
-              Describe your first product idea and get a cited, market-backed verdict.
-              We&apos;ll analyze buyer pain, competition, pricing, risks, and give you a concrete next step.
+              Describe your idea, tell us who the buyer is, and ShouldBuild will search real public sources,
+              challenge your assumptions, and deliver a cited verdict in minutes.
             </p>
             <div className="empty-state-steps">
               <div>
                 <span>1</span>
                 <div>
                   <b>Describe your idea</b>
-                  <small>Who is the buyer? What pain does it solve?</small>
+                  <small>Who is the buyer? What workflow pain does it solve?</small>
                 </div>
               </div>
               <div>
                 <span>2</span>
                 <div>
-                  <b>We analyze the market</b>
-                  <small>Evidence from public web sources returned by configured research providers</small>
+                  <b>We search for real evidence</b>
+                  <small>Real public sources, adversarial analysis, and contradiction detection</small>
                 </div>
               </div>
               <div>
                 <span>3</span>
                 <div>
                   <b>Get your verdict</b>
-                  <small>Build Now, Validate First, Niche Down, or Avoid</small>
+                  <small>Build Now, Validate First, Niche Down, or Avoid — with citations</small>
                 </div>
               </div>
             </div>
             <Link className={`button ${motion.buttonBase}`} href="/research/new">
-              Validate your first idea <ArrowRight size={15} />
+              Validate my first idea <ArrowRight size={15} />
             </Link>
           </div>
         </section>
@@ -184,7 +184,7 @@ export default async function DashboardPage() {
             <StatCard icon={FileText} label="Ideas validated" value={String(completedRuns.length).padStart(2, "0")} detail={`${completedRuns.length} completed`}/>
             <StatCard icon={Gauge} label="Average score" value={String(averageScore)} detail="Across all validations"/>
             <StatCard icon={Bookmark} label="In progress" value={String(openInvestigations).padStart(2, "0")} detail="Being analyzed now"/>
-            <StatCard icon={Rocket} label="Ready to build" value={String(readyCount).padStart(2, "0")} detail="Passed validation"/>
+            <StatCard icon={Rocket} label="Passed validation" value={String(readyCount).padStart(2, "0")} detail="Build now or validate first"/>
           </section>
 
           {hasCompleted && <ScoreGuide score={averageScore}/>}

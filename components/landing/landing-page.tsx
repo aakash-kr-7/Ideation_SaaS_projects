@@ -33,12 +33,23 @@ export function LandingPage() {
           "@context": "https://schema.org",
           "@type": "SoftwareApplication",
           "name": "ShouldBuild",
+          "description": "Evidence-backed startup idea validation — cited sources, adversarial analysis, and a clear build or avoid verdict.",
+          "url": "https://shouldbuild.app",
           "applicationCategory": "BusinessApplication",
           "offers": {
             "@type": "Offer",
             "price": "0",
-            "priceCurrency": "USD"
-          }
+            "priceCurrency": "USD",
+            "description": "Free monthly Quick Scan"
+          },
+          "featureList": [
+            "12-factor scoring with verdict",
+            "Cited public-source evidence",
+            "Adversarial contradiction analysis",
+            "Competitor and pricing analysis",
+            "Evidence Confidence rating",
+            "Exportable decision reports"
+          ]
         })
       }}
     />
@@ -56,7 +67,7 @@ export function LandingPage() {
           href={authEntryUrl("/dashboard", "register")}
           style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
         >
-          Get started <ArrowRight size={15}/>
+          Run a Free Quick Scan <ArrowRight size={15}/>
         </Link>
       </div>
     </header>
@@ -64,37 +75,37 @@ export function LandingPage() {
       {/* ── HERO ── */}
       <section className="bs-hero">
         <div className="bs-hero-copy">
-          <p className="bs-kicker"><Radar size={14}/> Market validation for builders</p>
-          <h1>Don't guess. Run an adversarial<br/><span>market validation.</span></h1>
-          <p>ShouldBuild tests your idea against real market signals, weighs evidence quality, and actively searches for reasons the opportunity may fail. Start with a rapid screen, then go deeper only when the evidence justifies it.</p>
+          <p className="bs-kicker"><Radar size={14}/> Evidence-backed idea validation</p>
+          <h1>Stop building on assumptions.<br/><span>Validate before you invest.</span></h1>
+          <p>Don't waste months building what the market doesn't want. ShouldBuild searches real public sources, analyzes competitors, and delivers a definitive build or avoid verdict — so you can commit with confidence.</p>
           <div className="bs-actions">
             <Link
               className="bs-btn bs-btn-bright" 
               href={authEntryUrl("/research/new?mode=quick_scan", "register")}
               style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
             >
-              Run your free Quick Scan <ArrowRight size={16}/>
+              Validate My Idea Free <ArrowRight size={16}/>
             </Link>
-            <Link className="bs-link" href="/sample-report?mode=full_validation">See a Full Validation <ChevronRight size={15}/></Link>
+            <Link className="bs-link" href="/sample-report?mode=full_validation">View a Sample Full Validation <ChevronRight size={15}/></Link>
           </div>
-          <small><ShieldCheck size={14}/> Public-source research · Cited report claims · No sample fallback in real reports</small>
+          <small><ShieldCheck size={14}/> Real source citations · Adversarial contradiction analysis · No fabricated evidence</small>
         </div>
         <MemoPreview/>
       </section>
 
       <section className="bs-report-types" aria-labelledby="report-types-title">
         <div className="bs-section-head">
-          <p className="bs-kicker">Two levels of evidence</p>
-          <h2 id="report-types-title">Screen quickly. Investigate deeply when it matters.</h2>
+          <p className="bs-kicker">Two levels of research</p>
+          <h2 id="report-types-title">One scan to filter. One report to decide.</h2>
         </div>
         <div className="bs-report-type-grid">
-          <article><Gauge size={22}/><p className="eyebrow">1 credit · one free monthly</p><h3>Quick Scan</h3><p>A rapid evidence-backed screen to determine whether an idea deserves deeper research.</p><ul><li>Concise score, verdict, and evidence signals</li><li>Best for filtering ideas before investing more</li></ul></article>
-          <article className="featured"><Shield size={22}/><p className="eyebrow">3 credits · flagship report</p><h3>Full Validation</h3><p>Deeper grounded research with attributable evidence, adversarial analysis, MVP scope, pricing logic, and launch direction.</p><ul><li>Broader evidence and explicit objections</li><li>Best before committing meaningful time or money</li></ul></article>
+          <article><Gauge size={22}/><p className="eyebrow">1 credit · free monthly</p><h3>Quick Scan</h3><p>The fast decision checkpoint. Is there real demand? Real competition? Obvious risk? Quick Scan answers the question before you invest another day thinking about it.</p><ul><li>12-factor score, verdict, and core evidence</li><li>Ideal for filtering ideas before committing time</li></ul></article>
+          <article className="featured"><Shield size={22}/><p className="eyebrow">3 credits · complete research</p><h3>Full Validation</h3><p>The comprehensive decision dossier. Essential before you write a line of code, raise money, or hire. Deep adversarial research, competitor mapping, pricing strategy, and a go-to-market plan grounded in cited evidence.</p><ul><li>Broader evidence, explicit objections, and contradiction analysis</li><li>Essential before committing meaningful time or money</li></ul></article>
         </div>
       </section>
 
       {/* ── SIGNAL STRIP ── */}
-      <div className="bs-signal-strip-label">Examples of public platforms that search results may reference</div>
+      <div className="bs-signal-strip-label">Evidence gathered from real public sources — not AI invention</div>
       <section className="bs-signal-strip">
         <div>
           {marqueeSignals.map((signal, i) => (
@@ -115,16 +126,16 @@ export function LandingPage() {
       <section className="bs-value" id="how">
         <div className="bs-section-head">
           <p className="bs-kicker">What Full Validation adds</p>
-          <h2>Go from evidence screen to a decision-ready build brief.</h2>
-          <p>Quick Scan covers the score, verdict, core evidence, risks, pricing direction, and next actions. Full Validation adds deeper evidence-backed sections and all export formats.</p>
+          <h2>From evidence screen to a decision you can defend.</h2>
+          <p>Quick Scan gives you the score, verdict, core evidence, risks, and next actions. Full Validation goes deeper on every dimension — with citations to back each conclusion.</p>
         </div>
         <div className="bs-value-grid">
-          <Value icon={Users} title="Buyer pain analysis" text="Review public evidence about the problem and identify what still needs direct buyer confirmation."/>
-          <Value icon={Target} title="Competition breakdown" text="See who you're up against, what they charge, where the gaps are, and what you can exploit."/>
-          <Value icon={DollarSign} title="Pricing direction" text="Assess cited pricing and willingness-to-pay signals, then validate the recommendation with a real purchase decision."/>
-          <Value icon={AlertTriangle} title="Risk assessment" text="See the risks before they cost you weeks. Market, execution, platform, and distribution."/>
-          <Value icon={Zap} title="MVP scope" text="Review a proposed first scope and explicit exclusions, then validate them before implementation."/>
-          <Value icon={Rocket} title="Launch direction" text="Get evidence-informed channels, outreach language, and success criteria to test with potential customers."/>
+          <Value icon={Users} title="Buyer pain analysis" text="Understand what customers are actually complaining about in public — and what that tells you about willingness to pay."/>
+          <Value icon={Target} title="Competitor breakdown" text="See who you're up against, what they charge, where they're weak, and what gap you can realistically own."/>
+          <Value icon={DollarSign} title="Pricing direction" text="Cited pricing signals and willingness-to-pay evidence — not guesswork. Validated against real market behaviour."/>
+          <Value icon={AlertTriangle} title="Risk assessment" text="Market, execution, platform, and distribution risks — surfaced before they become expensive problems."/>
+          <Value icon={Zap} title="MVP scope" text="A proposed first build scope with explicit exclusions — so you know what to build and what to skip."/>
+          <Value icon={Rocket} title="Go-to-market direction" text="Evidence-informed acquisition channels, outreach language, and a week-one experiment — not generic advice."/>
         </div>
       </section>
 
@@ -132,13 +143,13 @@ export function LandingPage() {
       <section className="bs-proof">
         <div className="bs-section-head">
           <p className="bs-kicker">The methodology</p>
-          <h2>Built to try and prove itself wrong.</h2>
-          <p>We don't just look for people agreeing with your idea. The pipeline is actively adversarial, searching for existing workarounds and reasons not to build before finalizing a 12-factor score.</p>
+          <h2>Designed to challenge your assumptions, not confirm them.</h2>
+          <p>Most tools look for reasons to say yes. ShouldBuild is engineered to look for reasons to say no — before you spend months building something the market doesn't want.</p>
         </div>
         <div className="bs-loop">
-          <Brief number="01" title="Multi-Pass Research" text="The engine runs broad, targeted, and explicitly disconfirming search passes across forums, competitor sites, and directories."/>
-          <Brief number="02" title="Source Tiering" text="Not all signals are equal. We weight willingness-to-pay evidence higher than discussion-only evidence."/>
-          <Brief number="03" title="Adversarial Verdict Gate" text="Before finalizing the score, the system actively challenges its own conclusion to prevent confirmation bias, delivering a cited report."/>
+          <Brief number="01" title="Multi-Pass Evidence Search" text="The research engine runs broad, targeted, and explicitly disconfirming search passes across forums, competitor sites, review platforms, and directories."/>
+          <Brief number="02" title="Source Quality Weighting" text="Not all signals are equal. Willingness-to-pay evidence is weighted higher than discussion-only signals. Tier-1 sources are prioritised."/>
+          <Brief number="03" title="Adversarial Verdict Gate" text="Before finalising the score, the system actively challenges its own conclusion — looking for contradictions and counterevidence — then cites everything."/>
         </div>
       </section>
 
@@ -146,15 +157,15 @@ export function LandingPage() {
       <section className="bs-value">
         <div className="bs-section-head">
           <p className="bs-kicker">The verdict system</p>
-          <h2>Get the build, validate, niche down, or avoid verdict.</h2>
-          <p>Every report ends with a clear recommendation based on the evidence. No vague "it depends." A decision you can act on.</p>
+          <h2>Build, validate, niche down, or walk away — with reasons.</h2>
+          <p>Every report ends with a clear, evidence-based recommendation. Not "it depends." A decision you can act on today.</p>
         </div>
         <div className="bs-verdicts">
-          <VerdictCard cls="build" title="Build Now" desc="Strong signals across the board. Start building with confidence."/>
-          <VerdictCard cls="validate" title="Validate First" desc="Promising, but key assumptions need testing before you commit."/>
-          <VerdictCard cls="niche" title="Niche Down" desc="Opportunity exists, but narrow your focus to a specific buyer segment."/>
-          <VerdictCard cls="weak" title="Weak Signal" desc="Not enough evidence yet. Dig deeper before making a decision."/>
-          <VerdictCard cls="avoid" title="Avoid" desc="Red flags outweigh the opportunity. Redirect your energy."/>
+          <VerdictCard cls="build" title="Build Now" desc="Strong signals across demand, competition, and pricing. The evidence supports moving forward."/>
+          <VerdictCard cls="validate" title="Validate First" desc="Promising signals, but key assumptions need direct buyer confirmation before you commit."/>
+          <VerdictCard cls="niche" title="Niche Down" desc="Opportunity exists — but not at this scope. Narrow the buyer or use case to find a viable entry point."/>
+          <VerdictCard cls="weak" title="Weak Signal" desc="Not enough evidence to proceed confidently. The report tells you exactly what's missing."/>
+          <VerdictCard cls="avoid" title="Avoid" desc="Red flags outweigh the opportunity. Redirect your energy — the report explains why."/>
         </div>
       </section>
 
@@ -162,8 +173,8 @@ export function LandingPage() {
       <section className="bs-showcase" id="report">
         <div className="bs-section-head">
           <p className="bs-kicker">Inside the report</p>
-          <h2>Every conclusion has evidence. Every score is explainable.</h2>
-          <p>Not a wall of AI-generated text. A structured decision document where evidence, interpretation, and risks are separate and inspectable.</p>
+          <h2>Every conclusion has a source. Every score is explainable.</h2>
+          <p>Not a wall of AI-generated text. A structured decision document where evidence, interpretation, contradictions, and risks are clearly separated — and every claim links to its original source.</p>
         </div>
         <MemoPreview expanded/>
         <Link className="bs-btn bs-btn-outline" href="/sample-report?mode=full_validation">Read the full sample report <ArrowRight size={15}/></Link>
@@ -172,14 +183,14 @@ export function LandingPage() {
       {/* ── WHAT THIS IS NOT ── */}
       <section className="bs-value">
         <div className="bs-section-head">
-          <p className="bs-kicker">Limitations</p>
-          <h2>What ShouldBuild is not.</h2>
-          <p>A credible tool knows its limits. We use data to kill bad ideas quickly, not magic to predict the future.</p>
+          <p className="bs-kicker">Honest about the limits</p>
+          <h2>What ShouldBuild is — and isn't.</h2>
+          <p>Trust comes from knowing exactly what a tool can and can't do. Here's where ShouldBuild ends and your judgment begins.</p>
         </div>
         <div className="bs-verdicts">
-          <VerdictCard cls="weak" title="Not a replacement for customers" desc="ShouldBuild structures market evidence into a verdict, but you still need to talk to real buyers to close them."/>
-          <VerdictCard cls="avoid" title="Not an 'AI generator'" desc="We do not hallucinate business plans. Every claim in a ShouldBuild report is tied to cited, verifiable source material."/>
-          <VerdictCard cls="niche" title="Not an execution guarantee" desc="The report surfaces evidence, uncertainty, and a recommended next test. It cannot prove the market will respond."/>
+          <VerdictCard cls="weak" title="Not a replacement for customers" desc="ShouldBuild structures market evidence into a verdict. You still need to talk to real buyers — the report tells you what to ask."/>
+          <VerdictCard cls="avoid" title="Not an AI idea generator" desc="Every claim in a ShouldBuild report links to a cited, verifiable public source. We do not invent market data."/>
+          <VerdictCard cls="niche" title="Not a guarantee" desc="The report surfaces evidence, gaps, and a recommended next experiment. Markets are uncertain — this reduces that uncertainty."/>
         </div>
       </section>
 
@@ -187,28 +198,28 @@ export function LandingPage() {
       <section id="pricing" className="bs-pricing">
         <div>
           <p className="bs-kicker">Pricing</p>
-          <h2>Start with the monthly Quick Scan entitlement.</h2>
-          <p>One Quick Scan entitlement is available each calendar month. Paid checkout and subscriptions are not available yet.</p>
+          <h2>Start free. Go deeper when the evidence justifies it.</h2>
+          <p>One Quick Scan is available each calendar month. Paid credit purchase is not active yet — see the pricing page for current access details.</p>
         </div>
         <div className="bs-price-row">
-          <span className="active">Quick Scan<b>Available</b><small>1 entitlement each calendar month</small></span>
-          <span>Full Validation<b>Unavailable</b><small>Paid credit purchase is not connected</small></span>
-          <span>Pro<b>Not launched</b><small>Plan terms are not finalized</small></span>
+          <span className="active">Quick Scan<b>Free monthly</b><small>1 run included every calendar month</small></span>
+          <span>Full Validation<b>Coming soon</b><small>Paid credit purchase in progress</small></span>
+          <span>Pro plan<b>Not launched</b><small>Terms not yet finalised</small></span>
         </div>
-        <Link className="bs-btn bs-btn-bright" href="/pricing">See current report access <ArrowRight size={15}/></Link>
-        <small className="pricing-disclosure">No checkout or payment collection is active.</small>
+        <Link className="bs-btn bs-btn-bright" href="/pricing">See current access details <ArrowRight size={15}/></Link>
+        <small className="pricing-disclosure">No payment or checkout is active at this time.</small>
       </section>
 
       {/* ── FINAL CTA ── */}
       <section className="bs-final">
-        <p className="bs-kicker">Ready to validate?</p>
-        <h2>Your next idea deserves<br/>better than a guess.</h2>
+        <p className="bs-kicker">Stop building on assumptions.</p>
+        <h2>Your next idea deserves<br/>evidence, not a guess.</h2>
         <Link
           className="bs-btn bs-btn-bright" 
           href={authEntryUrl("/research/new?mode=quick_scan", "register")}
           style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
         >
-          Run your free Quick Scan <ArrowRight size={16}/>
+          Validate My Idea Free <ArrowRight size={16}/>
         </Link>
       </section>
     </main>

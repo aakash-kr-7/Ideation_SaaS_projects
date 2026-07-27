@@ -40,9 +40,9 @@ type ProgressSnapshot = {
 
 const TERMINAL = new Set<ResearchStatus>(["Completed", "Failed", "Cancelled"]);
 const STAGE_LABELS: Record<string, string> = {
-  plan: "Research plan", grounded_research: "Gemini grounded research", evidence_boosters: "Evidence boosters",
-  validate_normalize: "Gemini synthesis", analyze_score: "Evidence scoring", generate_report: "Report generation",
-  generate_exports: "Export generation", complete: "Completion",
+  plan: "Research plan", grounded_research: "Source discovery", evidence_boosters: "Evidence gathering",
+  validate_normalize: "Evidence review", analyze_score: "Scoring", generate_report: "Report writing",
+  generate_exports: "Export generation", complete: "Complete",
 };
 const REJECTION_LABELS: Record<string, string> = {
   invalid_url: "Invalid or unsafe URL", empty_or_unextractable: "No usable page content",
@@ -123,7 +123,7 @@ export function ResearchProgress({ id }: { id: string }) {
     } finally { setCancelling(false); }
   };
 
-  if (!snapshot) return <section className="research-room-loading" aria-live="polite" aria-busy="true"><LoaderCircle className="spin" /><p>{requestError || "Loading persisted research activity…"}</p></section>;
+  if (!snapshot) return <section className="research-room-loading" aria-live="polite" aria-busy="true"><LoaderCircle className="spin" /><p>{requestError || "Loading research status…"}</p></section>;
 
   const config = getReportModeConfig(snapshot.mode);
   const active = !TERMINAL.has(snapshot.status);
@@ -141,9 +141,9 @@ export function ResearchProgress({ id }: { id: string }) {
     <section className="research-room-hero">
       <div className="research-room-pulse" aria-hidden="true"><Telescope size={24} /><i /><i /></div>
       <div>
-        <p className="eyebrow">{config.label.toUpperCase()} · LIVE RESEARCH ROOM</p>
+        <p className="eyebrow">{config.label.toUpperCase()} · LIVE RESEARCH</p>
         <h1>{snapshot.progressDetail}</h1>
-        <p className="research-room-message">This workspace reflects persisted pipeline events. You can close it safely and return later.</p>
+        <p className="research-room-message">You can close this page safely. Research continues in the background — return any time to check progress.</p>
         {snapshot.brief && <p className="research-room-objective"><b>Research objective:</b> {snapshot.brief.product} for {snapshot.brief.buyer}, focused on {snapshot.brief.workflow}.</p>}
       </div>
       <span className="research-room-stage">
@@ -173,26 +173,26 @@ export function ResearchProgress({ id }: { id: string }) {
 
     {(snapshot.metrics.groundingDegraded || (snapshot.metrics.degradedProviders?.length ?? 0) > 0) && <section className="research-degraded" role="status">
       <AlertTriangle size={17} />
-      <div><b>Grounding or retrieval is degraded</b><p>{snapshot.metrics.groundedCallsQuotaBlocked ? "Grounding quota was unavailable; configured external retrieval is carrying the evidence pass." : "One or more configured providers are unavailable; the pipeline is using persisted fallback paths."}</p></div>
+      <div><b>Some sources unavailable</b><p>{snapshot.metrics.groundedCallsQuotaBlocked ? "A search provider reached its limit — the system automatically switched to alternative sources to continue." : "One or more search providers are temporarily unavailable. Research is continuing with alternative sources."}</p></div>
     </section>}
     {longRunning && <section className="research-long-running" role="status"><Clock3 size={16} /><span>This stage has had no persisted transition for {elapsedLabel(snapshot.lastProgressAt)}. The polling fallback remains active.</span></section>}
 
     <section className="research-room-grid">
       <aside className="research-pass-panel">
-        <PanelHeading kicker="Pipeline" title="Stage ledger" trailing={`${completedTasks}/${snapshot.tasks.length}`} />
+        <PanelHeading kicker="Pipeline" title="Research stages" trailing={`${completedTasks}/${snapshot.tasks.length}`} />
         <div className="research-pass-list">
           {snapshot.tasks.length ? snapshot.tasks.map((task, index) => <article key={task.id} className={task.id === currentTask?.id ? "pass-running" : ""}>
             <div className="research-pass-index"><span>{String(index + 1).padStart(2, "0")}</span>{task.status === "completed" ? <CheckCircle2 size={14} /> : <CircleDashed size={14} />}</div>
             <div className="research-pass-copy">
               <div className="research-pass-title"><h3>{labelStage(task.stage)}</h3><span>{task.status}</span></div>
-              <p>{task.purpose === "stage" ? "Canonical pipeline task" : task.purpose.replaceAll("_", " ")}</p>
+              <p>{task.purpose === "stage" ? "Research stage task" : task.purpose.replaceAll("_", " ")}</p>
               <div className="research-pass-stats">
                 {task.batchSize > 0 && <span>batch {task.batchIndex + 1} · {task.batchSize} items</span>}
                 <span>attempt {task.attempt}/{task.maxAttempts}</span>
                 <span>{elapsedLabel(task.createdAt, task.completedAt)}</span>
               </div>
             </div>
-          </article>) : <p className="research-empty-state">The first durable task has not been persisted yet.</p>}
+          </article>) : <p className="research-empty-state">Research is starting up…</p>}
         </div>
       </aside>
 
@@ -212,11 +212,11 @@ export function ResearchProgress({ id }: { id: string }) {
               <div className="source-activity-body">
                 <div><b>{domain}</b><span>{humanize(item.queryFamily)}</span></div>
                 {item.url ? <a href={item.url} target="_blank" rel="noreferrer" title={item.url}>{item.url}</a> : <p>URL unavailable</p>}
-                <small>{status === "rejected" ? item.mismatchReasons?.[0] ?? REJECTION_LABELS[item.rejectionReason ?? ""] ?? "Did not meet relevance or retrieval requirements" : status === "quarantined" ? item.mismatchReasons?.[0] ?? "Adjacent context quarantined from core scoring" : status === "accepted" ? `Accepted as ${humanize(item.relevanceClass) || "relevant"} evidence` : "Page discovered and fetching for evaluation"}</small>
+                <small>{status === "rejected" ? item.mismatchReasons?.[0] ?? REJECTION_LABELS[item.rejectionReason ?? ""] ?? "Did not meet relevance or retrieval requirements" : status === "quarantined" ? item.mismatchReasons?.[0] ?? "Evidence quarantined from core scoring" : status === "accepted" ? `Accepted as ${humanize(item.relevanceClass) || "relevant"} evidence` : "Source discovered — evaluating now"}</small>
               </div>
               <span className={`source-status status-${status}`}>{status === "accepted" ? <CheckCircle2 size={13} /> : status === "rejected" || status === "quarantined" ? <XCircle size={13} /> : <LoaderCircle size={13} />}{humanize(status)}</span>
             </article>;
-          }) : <p className="research-empty-state">No source discovery event has been persisted yet.</p>}
+          }) : <p className="research-empty-state">Searching for sources. This may take a moment.</p>}
         </div>
 
         <PanelHeading kicker="Evidence" title="Accepted findings" trailing={`${acceptedEvidence.length} items`} />
@@ -229,7 +229,7 @@ export function ResearchProgress({ id }: { id: string }) {
               <footer><span className="evidence-source-line">{source?.url ? <a href={source.url} target="_blank" rel="noreferrer">{evidence.sourceDomain ?? source.title}</a> : evidence.sourceDomain ?? "Source pending"}</span><span className="corroboration-chip">{evidence.strength} quality</span></footer>
             </article>;
           })}
-          {!acceptedEvidence.length && <p className="research-empty-state">Evidence appears here only after it is persisted and accepted.</p>}
+          {!acceptedEvidence.length && <p className="research-empty-state">Evidence will appear here as sources are reviewed and accepted.</p>}
         </div>
       </section>
 
@@ -242,13 +242,13 @@ export function ResearchProgress({ id }: { id: string }) {
         </section>
         <section className="checker-board">
           <h3>Production outputs</h3>
-          <article><BarChart3 size={15} /><div><b>Charts</b><small>{snapshot.reportState.chartsPrepared} persisted datasets prepared</small></div></article>
-          <article><FileCheck2 size={15} /><div><b>Exports</b><small>{snapshot.reportState.exportsPrepared} stored exports prepared</small></div></article>
-          <article><Telescope size={15} /><div><b>Gemini synthesis</b><small>{snapshot.metrics.synthesisCalls ?? 0} persisted synthesis calls completed</small></div></article>
+          <article><BarChart3 size={15} /><div><b>Charts</b><small>{snapshot.reportState.chartsPrepared} chart datasets ready</small></div></article>
+          <article><FileCheck2 size={15} /><div><b>Exports</b><small>{snapshot.reportState.exportsPrepared} exports prepared</small></div></article>
+          <article><Telescope size={15} /><div><b>Evidence synthesis</b><small>{snapshot.metrics.synthesisCalls ?? 0} synthesis calls completed</small></div></article>
           <article><ShieldCheck size={15} /><div><b>Specialist reviews</b><small>{snapshot.specialists?.length ? `${snapshot.specialists.filter((item) => item.status === "Complete").length}/${snapshot.specialists.length} evidence reviews complete` : "Waiting for evidence-bound reviews"}</small></div></article>
         </section>
         {!!snapshot.contradictions?.length && <section className="corroboration-board"><h3>Proposition challenges</h3>{snapshot.contradictions.slice(0, 3).map((item) => <article key={item.id}><div><p>{item.claim}</p><b>{humanize(item.resolution)}</b></div><small>{item.supportingCount} supporting · {item.challengingCount} challenging · {item.relationship}</small></article>)}</section>}
-        {snapshot.confidence.band && <section className="citation-card"><ShieldCheck size={18} /><div><h3>Evidence Confidence: {snapshot.confidence.band}</h3><p>Persisted confidence score {snapshot.confidence.score ?? "—"}</p></div></section>}
+        {snapshot.confidence.band && <section className="citation-card"><ShieldCheck size={18} /><div><h3>Evidence Confidence: {snapshot.confidence.band}</h3><p>Confidence score: {snapshot.confidence.score ?? "—"}</p></div></section>}
       </aside>
     </section>
 
