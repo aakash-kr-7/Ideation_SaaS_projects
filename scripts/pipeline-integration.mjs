@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 const url = process.env.SUPABASE_URL?.replace(/\/$/, "");
 const anonKey = process.env.SUPABASE_ANON_KEY;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const workerToken = serviceKey;
+const workerToken = process.env.WEBHOOK_SECRET || serviceKey;
 if (!url || !anonKey || !serviceKey || !workerToken) throw new Error("SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, and worker authentication are required.");
 const requested = process.argv[2] || "all";
 const modes = requested === "all" ? ["quick_scan", "full_validation"] : [requested];

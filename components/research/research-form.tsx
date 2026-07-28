@@ -74,7 +74,7 @@ export function ResearchForm({
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!available) return;
+    if (!available || submitting) return;
     setSubmitting(true);
     setError("");
     try {
@@ -175,7 +175,7 @@ export function ResearchForm({
 
     <footer className="form-footer production-form-footer">
       <div>
-        {error ? <p className="form-error" role="alert"><ShieldAlert size={15}/>{error}</p> : <p><b>{selected.label} selected.</b> {selected.creditCost} {selected.creditCost === 1 ? "credit" : "credits"} will be reserved when the run starts.</p>}
+        {error ? <p className="form-error" role="alert"><ShieldAlert size={15}/>{error}</p> : <p><b>{selected.label} selected.</b> {selected.creditCost} {selected.creditCost === 1 ? "credit" : "credits"} will be used when the run starts.</p>}
       </div>
       {available ? <button className={`button ${motion.buttonBase} ${submitting ? "is-loading" : ""}`} type="submit" disabled={submitting}>
         {submitting ? <><Loader2 className="animate-spin" size={17}/> Starting your validation…</> : <>Start {selected.label} <ArrowRight size={17}/></>}

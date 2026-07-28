@@ -175,7 +175,7 @@ export function ResearchProgress({ id }: { id: string }) {
       <AlertTriangle size={17} />
       <div><b>Some sources unavailable</b><p>{snapshot.metrics.groundedCallsQuotaBlocked ? "A search provider reached its limit — the system automatically switched to alternative sources to continue." : "One or more search providers are temporarily unavailable. Research is continuing with alternative sources."}</p></div>
     </section>}
-    {longRunning && <section className="research-long-running" role="status"><Clock3 size={16} /><span>This stage has had no persisted transition for {elapsedLabel(snapshot.lastProgressAt)}. The polling fallback remains active.</span></section>}
+    {longRunning && <section className="research-long-running" role="status"><Clock3 size={16} /><span>This stage is taking longer than usual ({elapsedLabel(snapshot.lastProgressAt)}). Research is still running in the background.</span></section>}
 
     <section className="research-room-grid">
       <aside className="research-pass-panel">
@@ -253,9 +253,9 @@ export function ResearchProgress({ id }: { id: string }) {
     </section>
 
     <section className="research-observability" aria-label="Provider and connection status">
-      <div><span>Connection</span><b>{connection === "realtime" ? "Realtime connected" : connection === "polling" ? "Realtime unavailable · polling fallback active" : "Connecting · polling active"}</b></div>
-      <div><span>Grounding</span><b>{snapshot.metrics.groundingMode ?? "Not reported"}{snapshot.metrics.groundingDegraded ? " · degraded" : ""}</b></div>
-      <div><span>Current task</span><b>{currentTask ? `${labelStage(currentTask.stage)} · attempt ${currentTask.attempt}/${currentTask.maxAttempts}` : snapshot.status}</b></div>
+      <div><span>Connection</span><b>{connection === "realtime" ? "Live updates" : connection === "polling" ? "Background syncing" : "Connecting…"}</b></div>
+      <div><span>Source Mode</span><b>{snapshot.metrics.groundingMode ?? "Standard search"}{snapshot.metrics.groundingDegraded ? " · capacity adjusted" : ""}</b></div>
+      <div><span>Current task</span><b>{currentTask ? `${labelStage(currentTask.stage)}` : snapshot.status}</b></div>
     </section>
 
     {requestError && <p className="progress-error" role="alert">{requestError}</p>}

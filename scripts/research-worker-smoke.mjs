@@ -7,9 +7,14 @@ try {
   const unauthorized = await fetch(endpoint, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
   if (unauthorized.status !== 401) throw new Error(`Worker auth boundary failed: expected 401, got ${unauthorized.status}`);
 
+  const webhookSecret = process.env.WEBHOOK_SECRET;
+  if (!webhookSecret) throw new Error("WEBHOOK_SECRET is required");
+  const badAuth = await fetch(endpoint, { method: "POST", headers: { authorization: `Bearer wrong_secret`, "content-type": "application/json" }, body: JSON.stringify({ trigger: "isolated-smoke", runId: smoke.runId }) });
+  if (badAuth.status !== 401) throw new Error(`Worker auth boundary failed: expected 401, got ${badAuth.status} for wrong secret`);
+
   const response = await fetch(endpoint, {
     method: "POST",
-    headers: { authorization: `Bearer ${smoke.serviceKey}`, "content-type": "application/json" },
+    headers: { authorization: `Bearer ${webhookSecret}`, "content-type": "application/json" },
     body: JSON.stringify({ trigger: "isolated-smoke", runId: smoke.runId }),
   });
   const payload = await response.json();

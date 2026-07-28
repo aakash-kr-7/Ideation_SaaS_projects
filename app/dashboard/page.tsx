@@ -114,7 +114,7 @@ export default async function DashboardPage() {
     action: run.opportunity?.verdict === "Build now" ? "Start building" : "Test next"
   }));
 
-  return <AppShell title="Dashboard" action={<Link className={`button button-small violet-button ${motion.buttonBase}`} href="/research/new">Validate idea <ArrowRight size={15}/></Link>}>
+  return <AppShell title="Dashboard" action={<Link className={`button button-small ${motion.buttonBase}`} href="/research/new">Validate idea <ArrowRight size={15}/></Link>}>
     <div className="page-content command-center" data-tour="dashboard-canvas">
 
       {/* ─── EMPTY STATE ─── */}
@@ -153,7 +153,7 @@ export default async function DashboardPage() {
               </div>
             </div>
             <Link className={`button ${motion.buttonBase}`} href="/research/new">
-              Validate my first idea <ArrowRight size={15} />
+              Validate idea <ArrowRight size={15} />
             </Link>
           </div>
         </section>

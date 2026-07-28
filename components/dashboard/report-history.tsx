@@ -13,6 +13,15 @@ type HistoryRun = {
 };
 const filters: Array<[HistoryFilter, string]> = [["all", "All"], ["quick", "Quick Scan"], ["full", "Full Validation"], ["completed", "Completed"], ["failed", "Failed"], ["progress", "In progress"]];
 
+function humanizeStatus(status: string) {
+  if (status === "in_progress") return "In progress";
+  return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, " ");
+}
+
+function formatDate(isoString: string) {
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(isoString));
+}
+
 export function ReportHistory({ runs }: { runs: HistoryRun[] }) {
   const [filter, setFilter] = useState<HistoryFilter>("all");
   const visible = filterReportHistory(runs, filter);
@@ -28,7 +37,7 @@ export function ReportHistory({ runs }: { runs: HistoryRun[] }) {
           <span className={`report-mode-badge ${run.mode}`}>{config.label}</span>
           <div className="report-history-copy">
             <b>{run.ideaName}</b>
-            <small>{run.status}{run.completedAt ? ` · completed ${new Date(run.completedAt).toLocaleDateString()}` : ` · started ${new Date(run.createdAt).toLocaleDateString()}`}</small>
+            <small>{humanizeStatus(run.status)}{run.completedAt ? ` · completed ${formatDate(run.completedAt)}` : ` · started ${formatDate(run.createdAt)}`}</small>
             <span>
               <i><Globe2 size={11}/>{run.sourceCount} accepted sources · {run.independentDomains} independent domains</i>
               {run.durationMs != null && <i><Clock3 size={11}/>{formatDuration(run.durationMs)}</i>}

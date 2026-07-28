@@ -49,7 +49,10 @@ async function submitAndComplete(page: Page, mode: "quick_scan" | "full_validati
   await page.getByLabel("Industry", { exact: false }).fill("Professional services software");
   await page.screenshot({ path: path.join(proofDir, `${slug}-launch.png`), fullPage: true });
 
-  await page.getByRole("button", { name: `Run ${label}`, exact: true }).click();
+  const startButton = page.getByRole("button", { name: new RegExp(`Start ${label}`) });
+  await expect(startButton).toBeVisible();
+  await expect(startButton).toBeEnabled();
+  await startButton.click();
   await page.waitForURL(/\/research\/([0-9a-f-]{36})\/progress/);
   const runId = page.url().match(/\/research\/([0-9a-f-]{36})\/progress/)?.[1];
   if (!runId) throw new Error("Submitted run ID was not present in the progress URL.");

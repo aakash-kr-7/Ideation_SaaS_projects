@@ -63,7 +63,7 @@ export function LandingPage() {
       <div>
         <Link href={authEntryUrl("/dashboard")}>Sign in</Link>
         <Link
-          className="bs-btn bs-btn-bright" 
+          className="button" 
           href={authEntryUrl("/dashboard", "register")}
           style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
         >
@@ -80,7 +80,7 @@ export function LandingPage() {
           <p>Don't waste months building what the market doesn't want. ShouldBuild searches real public sources, analyzes competitors, and delivers a definitive build or avoid verdict — so you can commit with confidence.</p>
           <div className="bs-actions">
             <Link
-              className="bs-btn bs-btn-bright" 
+              className="button" 
               href={authEntryUrl("/research/new?mode=quick_scan", "register")}
               style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
             >
@@ -177,7 +177,7 @@ export function LandingPage() {
           <p>Not a wall of AI-generated text. A structured decision document where evidence, interpretation, contradictions, and risks are clearly separated — and every claim links to its original source.</p>
         </div>
         <MemoPreview expanded/>
-        <Link className="bs-btn bs-btn-outline" href="/sample-report?mode=full_validation">Read the full sample report <ArrowRight size={15}/></Link>
+        <Link className="button ghost" href="/sample-report?mode=full_validation">Read the full sample report <ArrowRight size={15}/></Link>
       </section>
 
       {/* ── WHAT THIS IS NOT ── */}
@@ -206,7 +206,7 @@ export function LandingPage() {
           <span>Full Validation<b>Coming soon</b><small>Paid credit purchase in progress</small></span>
           <span>Pro plan<b>Not launched</b><small>Terms not yet finalised</small></span>
         </div>
-        <Link className="bs-btn bs-btn-bright" href="/pricing">See current access details <ArrowRight size={15}/></Link>
+        <Link className="button" href="/pricing">See current access details <ArrowRight size={15}/></Link>
         <small className="pricing-disclosure">No payment or checkout is active at this time.</small>
       </section>
 
@@ -215,7 +215,7 @@ export function LandingPage() {
         <p className="bs-kicker">Stop building on assumptions.</p>
         <h2>Your next idea deserves<br/>evidence, not a guess.</h2>
         <Link
-          className="bs-btn bs-btn-bright" 
+          className="button" 
           href={authEntryUrl("/research/new?mode=quick_scan", "register")}
           style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
         >

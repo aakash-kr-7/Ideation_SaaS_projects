@@ -233,6 +233,16 @@ function categoryFor(signal: string) {
 }
 
 function CompetitorView({ report }: { report: ReportType }) {
+  if (!report.opportunity.competitors?.length) {
+    return <div className="report-callout" style={{ margin: '20px' }}>
+      <div>
+        <p className="eyebrow">Competitive analysis</p>
+        <h3>No competitors identified</h3>
+        <p>No direct competitors were discovered or mapped during this run.</p>
+      </div>
+    </div>;
+  }
+
   return <div className="competitor-table-wrap">
     <table className="competitor-table">
       <thead>
@@ -522,6 +532,17 @@ function SpecialistView({ report }: { report: ReportType }) {
   const specialists = report.specialistAssessments ?? [];
   const decisionSpecialists = new Map((report.decisionProduct?.specialistOutputs ?? []).map((item) => [item.name, item]));
   const insights = report.fullValidationInsights;
+  
+  if (specialists.length === 0) {
+    return <div className="report-callout" style={{ margin: '20px' }}>
+      <div>
+        <p className="eyebrow">Evidence-bound specialist desk</p>
+        <h3>Awaiting specialist review</h3>
+        <p>No specialist assessments have been generated for this run.</p>
+      </div>
+    </div>;
+  }
+
   return <div className="specialist-assessments">
     <section className="report-callout">
       <div>
@@ -539,9 +560,9 @@ function SpecialistView({ report }: { report: ReportType }) {
         <ul>{(decision?.keyFindings ?? specialist.findings).map((finding) => <li key={finding}>{finding}</li>)}</ul>
         {decision && <dl>
           <div><dt>Confidence</dt><dd>{decision.confidence}</dd></div>
-          <div><dt>Brief dimensions</dt><dd>{decision.relevantBriefDimensions.join("; ") || "Not established"}</dd></div>
+          <div><dt>Brief dimensions</dt><dd>{decision.relevantBriefDimensions.length ? decision.relevantBriefDimensions.join(", ") : "Not established"}</dd></div>
           <div><dt>Opposing evidence</dt><dd>{decision.opposingEvidenceIds.length ? <EvidenceCitations report={report} evidenceIds={decision.opposingEvidenceIds}/> : "None resolved"}</dd></div>
-          <div><dt>Unresolved gaps</dt><dd>{decision.unresolvedGaps.join("; ") || "None recorded"}</dd></div>
+          <div><dt>Unresolved gaps</dt><dd>{decision.unresolvedGaps.length ? decision.unresolvedGaps.map(g => <div key={g} style={{marginBottom: '4px'}}>• {g}</div>) : "None recorded"}</dd></div>
           <div><dt>Decision implication</dt><dd>{decision.decisionImplication}</dd></div>
         </dl>}
         <small>{specialist.evidenceIds.length} linked evidence item{specialist.evidenceIds.length === 1 ? "" : "s"}</small>
