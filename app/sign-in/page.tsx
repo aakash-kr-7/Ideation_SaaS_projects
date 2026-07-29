@@ -20,9 +20,11 @@ import {
   ShieldCheck,
   Sparkles,
   Target,
+  X,
   Zap,
 } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
+import { LandingPage } from "@/components/landing/landing-page";
 import { createClient } from "@/lib/supabase/client";
 import { errorMessage } from "@/lib/supabase/relations";
 import { authCallbackUrl, safeAuthRedirect } from "@/lib/auth-redirect";
@@ -313,14 +315,19 @@ function SignInCard() {
 
   return (
     <div className="auth-card">
-      <div className="auth-mobile-brand"><Brand /></div>
+      <div className="auth-modal-brandbar">
+        <Brand />
+        <Link className="auth-modal-close" href="/" aria-label="Close sign in">
+          <X size={16} />
+        </Link>
+      </div>
 
       {view === "sign-in" && (
         <div className="auth-view auth-view-enter">
           <div className="auth-copy">
-            <p className="eyebrow">YOUR DECISION ROOM</p>
-            <h1>Welcome back</h1>
-            <p>Your evidence is waiting. Sign in and pick up the decision before the momentum disappears.</p>
+            <p className="eyebrow">SECURE SIGN IN</p>
+            <h1>Welcome back.</h1>
+            <p>Sign in to continue to your ShouldBuild workspace.</p>
           </div>
 
           {error && <div className="auth-error">{error}</div>}
@@ -343,7 +350,6 @@ function SignInCard() {
                 placeholder="you@example.com"
                 required
                 autoComplete="email"
-                autoFocus
               />
             </label>
             <label className="auth-field">
@@ -373,13 +379,13 @@ function SignInCard() {
             <button className="button auth-submit" type="submit" disabled={loading}>
               {loading
                 ? <><LoaderCircle className="animate-spin" size={15} /> Signing in…</>
-                : <>Enter my workspace <ArrowRight size={15} /></>}
+                : <>Sign in to ShouldBuild <ArrowRight size={15} /></>}
             </button>
           </form>
 
           <p className="auth-switch">
-            New to ShouldBuild?{" "}
-            <button type="button" onClick={() => switchView("register")}>Run your first scan</button>
+            New here?{" "}
+            <button type="button" onClick={() => switchView("register")}>Create a workspace</button>
           </p>
         </div>
       )}
@@ -387,9 +393,9 @@ function SignInCard() {
       {view === "register" && (
         <div className="auth-view auth-view-enter">
           <div className="auth-copy">
-            <p className="eyebrow">ONE SMART DECISION AWAY</p>
-            <h1>Create your account</h1>
-            <p>Give your best idea a fair trial—not a blind commitment. Your first Quick Scan is included.</p>
+            <p className="eyebrow">CREATE AN ACCOUNT</p>
+            <h1>Your workspace.</h1>
+            <p>Keep your ideas, evidence, and decisions in one private place.</p>
           </div>
 
           {error && <div className="auth-error">{error}</div>}
@@ -410,7 +416,6 @@ function SignInCard() {
                 onChange={(event) => setFullName(event.target.value)}
                 placeholder="Your name"
                 autoComplete="name"
-                autoFocus
               />
             </label>
             <label className="auth-field">
@@ -446,21 +451,16 @@ function SignInCard() {
                 </button>
               </div>
             </label>
-            <div className="auth-password-requirements">
-              <small className={password.length >= 6 ? "met" : ""}>6+ characters</small>
-              <small className={/[a-z]/.test(password) ? "met" : ""}>Lowercase</small>
-              <small className={/[A-Z]/.test(password) ? "met" : ""}>Uppercase</small>
-              <small className={/[0-9]/.test(password) ? "met" : ""}>Digit</small>
-            </div>
+            <small className="auth-password-note">6+ characters with upper, lower, and a number.</small>
             <button className="button auth-submit" type="submit" disabled={loading}>
               {loading
                 ? <><LoaderCircle className="animate-spin" size={15} /> Creating account…</>
-                : <>Reveal my first verdict <ArrowRight size={15} /></>}
+                : <>Create my workspace <ArrowRight size={15} /></>}
             </button>
           </form>
 
           <p className="auth-switch">
-            Already have a workspace?{" "}
+            Already have an account?{" "}
             <button type="button" onClick={() => switchView("sign-in")}>Sign in</button>
           </p>
         </div>
@@ -473,8 +473,8 @@ function SignInCard() {
               <ArrowLeft size={14} /> Back to sign in
             </button>
             <p className="eyebrow">WORKSPACE RECOVERY</p>
-            <h1>Reset your password</h1>
-            <p>Enter your email and we&apos;ll send you a secure link back to your decisions.</p>
+            <h1>Reset password.</h1>
+            <p>We&apos;ll email you a secure reset link.</p>
           </div>
 
           {error && <div className="auth-error">{error}</div>}
@@ -490,7 +490,6 @@ function SignInCard() {
                 placeholder="you@example.com"
                 required
                 autoComplete="email"
-                autoFocus
               />
             </label>
             <button className="button auth-submit" type="submit" disabled={loading}>
@@ -507,41 +506,42 @@ function SignInCard() {
         </div>
       )}
 
-      <small className="auth-footer">
-        <LockKeyhole size={13} />
-        Secure authentication · No card required
-      </small>
-      <p className="auth-legal">
-        By continuing, you agree to the <Link href="/legal/terms">Terms of Service</Link> and acknowledge the{" "}
-        <Link href="/legal/privacy">Privacy Policy</Link>.
-      </p>
+      <div className="auth-trust-line">
+        <span><LockKeyhole size={12} /> Secure sign in</span>
+        <i />
+        <span>Private workspace</span>
+      </div>
+      {view === "register" && (
+        <p className="auth-legal">
+          Continuing means you accept our <Link href="/legal/terms">Terms</Link> and <Link href="/legal/privacy">Privacy Policy</Link>.
+        </p>
+      )}
     </div>
   );
 }
 
 export default function SignInPage() {
   return (
-    <main className="auth-page auth-experience">
-      <div className="auth-shell">
-        <AuthStory />
-        <section className="auth-panel">
-          <div className="auth-panel-ambient" aria-hidden="true" />
-          <Suspense fallback={
-            <div className="auth-card auth-card-loading">
-              <div>
-                <LoaderCircle className="animate-spin" size={30} />
-                <span>Opening your decision room…</span>
-              </div>
-            </div>
-          }>
-            <SignInCard />
-          </Suspense>
-          <div className="auth-panel-note">
-            <Sparkles size={13} />
-            <span>One good “not yet” can save a season of work.</span>
-          </div>
-        </section>
+    <div className="auth-page auth-experience auth-modal-page">
+      <div className="auth-site-backdrop" aria-hidden="true" inert>
+        <LandingPage />
       </div>
-    </main>
+      <div className="auth-modal-scrim" aria-hidden="true" />
+      <div className="auth-legacy-story-hidden" aria-hidden="true">
+        <AuthStory />
+      </div>
+      <section className="auth-modal-layer" aria-label="Sign in to ShouldBuild">
+        <Suspense fallback={
+          <div className="auth-card auth-card-loading">
+            <div>
+              <LoaderCircle className="animate-spin" size={28} />
+              <span>Preparing secure sign in…</span>
+            </div>
+          </div>
+        }>
+          <SignInCard />
+        </Suspense>
+      </section>
+    </div>
   );
 }
