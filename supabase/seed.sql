@@ -36,3 +36,6 @@ on conflict (domain) do update set
   cache_ttl_seconds = excluded.cache_ttl_seconds,
   enabled = excluded.enabled,
   updated_at = now();
+
+-- Re-apply code-owned routing contracts after deterministic seed upserts.
+select public.apply_source_registry_curation();

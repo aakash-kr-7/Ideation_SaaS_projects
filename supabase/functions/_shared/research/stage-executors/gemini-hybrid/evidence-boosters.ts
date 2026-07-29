@@ -5,8 +5,8 @@ import { costBudgetForRun } from "../../pipeline-utils.ts";
 import {
   discoverCandidates,
   discoverOfficialSitemapCandidates,
-  retrieveCandidates,
   type ResearchPack,
+  retrieveCandidates,
   type SourceCandidate,
 } from "../../external-retrieval.ts";
 import type { CanonicalResearchBrief } from "../../research-brief.ts";
@@ -27,14 +27,17 @@ import {
 } from "../../quick-scan-reliability.ts";
 import {
   evaluateFullValidationCoverage,
-  selectConditionalPacks,
   type FullValidationCoverage,
+  selectConditionalPacks,
 } from "../../full-validation-research-strategy.ts";
 import {
   persistFullValidationPackStatus,
 } from "../../full-validation-reliability.ts";
+import { RESEARCH_REVIEW_BUDGETS } from "../../source-router.ts";
 
-export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<StageResult> {
+export async function executeHybridEvidenceBoosters(
+  ctx: StageContext,
+): Promise<StageResult> {
   const { runId, db, inputMeta, startedAt, config } = ctx;
   const opportunityId = String(inputMeta.opportunityId || "");
   const mode = String(inputMeta.mode || "quick_scan");
@@ -46,10 +49,16 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
     target_customer?: string;
     market_type?: string;
   };
-  const researchBrief = inputMeta.researchBrief as CanonicalResearchBrief | undefined;
-  const packs = Array.isArray(inputMeta.researchPacks) ? inputMeta.researchPacks as ResearchPack[] : [];
+  const researchBrief = inputMeta.researchBrief as
+    | CanonicalResearchBrief
+    | undefined;
+  const packs = Array.isArray(inputMeta.researchPacks)
+    ? inputMeta.researchPacks as ResearchPack[]
+    : [];
   const groundingSources = Array.isArray(inputMeta.groundingSources)
-    ? inputMeta.groundingSources as Array<{ url?: string; title?: string; queryFamily?: string }>
+    ? inputMeta.groundingSources as Array<
+      { url?: string; title?: string; queryFamily?: string }
+    >
     : [];
   const competitorSeeds = Array.isArray(inputMeta.competitorSeeds)
     ? inputMeta.competitorSeeds as Array<{
@@ -62,13 +71,27 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
       ? inputMeta.attemptedGroundedPackKeys.map(String)
       : [],
   );
-  if (!opportunityId || !packs.length || !researchBrief) return stageFailed("permanent", "External retrieval requires an opportunity, canonical research brief, and focused query families.");
+  if (!opportunityId || !packs.length || !researchBrief) {
+    return stageFailed(
+      "permanent",
+      "External retrieval requires an opportunity, canonical research brief, and focused query families.",
+    );
+  }
 
   try {
-    await updateState(runId, "Searching", 50, "Discovering and directly retrieving public evidence", db);
-    const technical = /software|developer|security|cyber|api|saas|technical/i.test(
-      `${runInput.idea_name || ""} ${runInput.idea_description || ""} ${runInput.target_customer || ""} ${runInput.market_type || ""}`,
+    await updateState(
+      runId,
+      "Searching",
+      50,
+      "Discovering and directly retrieving public evidence",
+      db,
     );
+    const technical = /software|developer|security|cyber|api|saas|technical/i
+      .test(
+        `${runInput.idea_name || ""} ${runInput.idea_description || ""} ${
+          runInput.target_customer || ""
+        } ${runInput.market_type || ""}`,
+      );
     const discovery = await discoverCandidates({ runId, packs, db, technical });
     let externalSearchCalls = discovery.externalSearchCalls;
     const sitemapCandidatesRaw = competitorSeeds.length
@@ -86,15 +109,25 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
           : "full_alternatives_competitors",
       }))
       : sitemapCandidatesRaw;
-    externalSearchCalls += sitemapCandidates.length ? Math.min(4, competitorSeeds.length) : 0;
-    const groundedCandidates: SourceCandidate[] = groundingSources.flatMap((source, index) => source.url ? [{
-      title: source.title || source.url,
-      url: source.url,
-      snippet: "",
-      provider: "gemini_grounding",
-      queryFamily: source.queryFamily || packs[Math.min(index, packs.length - 1)]?.key || "grounding",
-      score: 100 - index,
-    }] : []);
+    externalSearchCalls += sitemapCandidates.length
+      ? Math.min(4, competitorSeeds.length)
+      : 0;
+    const groundedCandidates: SourceCandidate[] = groundingSources.flatMap((
+      source,
+      index,
+    ) =>
+      source.url
+        ? [{
+          title: source.title || source.url,
+          url: source.url,
+          snippet: "",
+          provider: "gemini_grounding",
+          queryFamily: source.queryFamily ||
+            packs[Math.min(index, packs.length - 1)]?.key || "grounding",
+          score: 100 - index,
+        }]
+        : []
+    );
     const seededCandidates: SourceCandidate[] = competitorSeeds.flatMap((
       seed,
       index,
@@ -102,26 +135,28 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
       if (!seed.canonicalHomepage) return [];
       const homepage = seed.canonicalHomepage.replace(/\/+$/, "");
       return [{
-          title: seed.candidateName || seed.canonicalHomepage,
-          url: seed.canonicalHomepage,
-          snippet:
-            "Curated category candidate requiring live verification; no pricing or positioning is assumed.",
-          provider: "competitor_seed",
-          queryFamily: mode === "full_validation"
-            ? "full_alternatives_competitors"
-            : "quick_pricing_wtp_reachability",
-          score: 105 - index,
-        }, {
-          title: `${seed.candidateName || seed.canonicalHomepage} pricing verification attempt`,
-          url: `${homepage}/pricing`,
-          snippet:
-            "Deterministic live pricing-page attempt; no price or plan is assumed unless page text validates it.",
-          provider: "competitor_seed_pricing_attempt",
-          queryFamily: mode === "full_validation"
-            ? "full_pricing_wtp_procurement"
-            : "quick_pricing_wtp_reachability",
-          score: 104 - index,
-        }];
+        title: seed.candidateName || seed.canonicalHomepage,
+        url: seed.canonicalHomepage,
+        snippet:
+          "Curated category candidate requiring live verification; no pricing or positioning is assumed.",
+        provider: "competitor_seed",
+        queryFamily: mode === "full_validation"
+          ? "full_alternatives_competitors"
+          : "quick_pricing_wtp_reachability",
+        score: 105 - index,
+      }, {
+        title: `${
+          seed.candidateName || seed.canonicalHomepage
+        } pricing verification attempt`,
+        url: `${homepage}/pricing`,
+        snippet:
+          "Deterministic live pricing-page attempt; no price or plan is assumed unless page text validates it.",
+        provider: "competitor_seed_pricing_attempt",
+        queryFamily: mode === "full_validation"
+          ? "full_pricing_wtp_procurement"
+          : "quick_pricing_wtp_reachability",
+        score: 104 - index,
+      }];
     });
     let allCandidates = [
       ...groundedCandidates,
@@ -130,24 +165,35 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
       ...discovery.candidates,
     ];
     if (allCandidates.length) {
-      await db.from("source_retrieval_audit").insert(allCandidates.map((candidate) => ({
-        run_id: runId,
-        query_family: candidate.queryFamily,
-        provider: candidate.provider,
-        candidate_url: candidate.url,
-        disposition: "discovered",
-        relevance_score: candidate.score,
-      })));
+      await db.from("source_retrieval_audit").insert(
+        allCandidates.map((candidate) => ({
+          run_id: runId,
+          query_family: candidate.queryFamily,
+          provider: candidate.provider,
+          candidate_url: candidate.url,
+          disposition: "discovered",
+          relevance_score: candidate.score,
+        })),
+      );
     }
     let retrieval = await retrieveCandidates({
       runId,
       candidates: allCandidates,
       db,
-      limit: mode === "full_validation" ? 36 : 16,
+      // Quick Scan remains 16 + one bounded repair (24 maximum). Full
+      // Validation reserves 16 of its 75-review ceiling for two repairs.
+      limit: mode === "full_validation"
+        ? RESEARCH_REVIEW_BUDGETS.full_validation - 16
+        : 16,
       brief: researchBrief,
     });
-    const initialPricing = extractValidatedPricingObservations(retrieval.accepted);
-    const initialCoverage = evaluateQuickScanCoverage(retrieval.accepted, initialPricing);
+    const initialPricing = extractValidatedPricingObservations(
+      retrieval.accepted,
+    );
+    const initialCoverage = evaluateQuickScanCoverage(
+      retrieval.accepted,
+      initialPricing,
+    );
     const conditionalCallTrigger: string[] = mode === "quick_scan"
       ? [...initialCoverage.repairTriggers]
       : [];
@@ -161,9 +207,19 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
       groundingMode !== "disabled" &&
       !groundingDegraded
     ) {
-      const repairPack = buildCoverageRepairPack(researchBrief, initialCoverage);
-      if (competitorSeeds.length && initialCoverage.repairTriggers.includes("no_live_verified_competitor")) {
-        repairPack.query += ` ${competitorSeeds.map((seed) => `"${seed.candidateName}" ${seed.canonicalHomepage}`).join(" ")}`;
+      const repairPack = buildCoverageRepairPack(
+        researchBrief,
+        initialCoverage,
+      );
+      if (
+        competitorSeeds.length &&
+        initialCoverage.repairTriggers.includes("no_live_verified_competitor")
+      ) {
+        repairPack.query += ` ${
+          competitorSeeds.map((seed) =>
+            `"${seed.candidateName}" ${seed.canonicalHomepage}`
+          ).join(" ")
+        }`;
       }
       const repairStartedAt = Date.now();
       try {
@@ -184,14 +240,15 @@ Different-angle query: ${repairPack.query}
 Return attributable findings only. State when a gap remains unresolved.`,
         });
         repairGroundingText = repairResult.text;
-        const repairGroundedCandidates: SourceCandidate[] = repairResult.groundingSources.map((source, index) => ({
-          title: source.title || source.url,
-          url: source.url,
-          snippet: "",
-          provider: "gemini_grounding",
-          queryFamily: repairPack.key,
-          score: 110 - index,
-        }));
+        const repairGroundedCandidates: SourceCandidate[] = repairResult
+          .groundingSources.map((source, index) => ({
+            title: source.title || source.url,
+            url: source.url,
+            snippet: "",
+            provider: "gemini_grounding",
+            queryFamily: repairPack.key,
+            score: 110 - index,
+          }));
         const repairDiscovery = await discoverCandidates({
           runId,
           packs: [repairPack],
@@ -200,16 +257,21 @@ Return attributable findings only. State when a gap remains unresolved.`,
         });
         repairDiscoveryAttempted = true;
         externalSearchCalls += repairDiscovery.externalSearchCalls;
-        const repairCandidates = [...repairGroundedCandidates, ...repairDiscovery.candidates];
+        const repairCandidates = [
+          ...repairGroundedCandidates,
+          ...repairDiscovery.candidates,
+        ];
         if (repairCandidates.length) {
-          await db.from("source_retrieval_audit").insert(repairCandidates.map((candidate) => ({
-            run_id: runId,
-            query_family: candidate.queryFamily,
-            provider: candidate.provider,
-            candidate_url: candidate.url,
-            disposition: "discovered",
-            relevance_score: candidate.score,
-          })));
+          await db.from("source_retrieval_audit").insert(
+            repairCandidates.map((candidate) => ({
+              run_id: runId,
+              query_family: candidate.queryFamily,
+              provider: candidate.provider,
+              candidate_url: candidate.url,
+              disposition: "discovered",
+              relevance_score: candidate.score,
+            })),
+          );
         }
         const repairRetrieval = await retrieveCandidates({
           runId,
@@ -218,12 +280,18 @@ Return attributable findings only. State when a gap remains unresolved.`,
           limit: 8,
           brief: researchBrief,
         });
-        const existingUrls = new Set(retrieval.accepted.map((source) => source.canonicalUrl));
-        const added = repairRetrieval.accepted.filter((source) => !existingUrls.has(source.canonicalUrl));
+        const existingUrls = new Set(
+          retrieval.accepted.map((source) => source.canonicalUrl),
+        );
+        const added = repairRetrieval.accepted.filter((source) =>
+          !existingUrls.has(source.canonicalUrl)
+        );
         repairAddedEvidence = added.length;
         retrieval = {
           accepted: [...retrieval.accepted, ...added],
-          pagesAttempted: retrieval.pagesAttempted + repairRetrieval.pagesAttempted,
+          pagesAttempted: retrieval.pagesAttempted +
+            repairRetrieval.pagesAttempted,
+          pagesFetched: retrieval.pagesFetched + repairRetrieval.pagesFetched,
           rejected: mergeCounts(retrieval.rejected, repairRetrieval.rejected),
         };
         allCandidates = [...allCandidates, ...repairCandidates];
@@ -235,9 +303,13 @@ Return attributable findings only. State when a gap remains unresolved.`,
           conditionalCallTrigger,
           sourcesDiscovered: repairResult.groundingSources.length,
           sourcesAccepted: added.length,
-          independentEvidenceGroupsAdded: evaluateQuickScanCoverage(added).independentGroups.length,
-          evidenceFamiliesAdded: unique(added.map((source) => source.queryFamily)),
-          pricingClaimsValidated: extractValidatedPricingObservations(added).length,
+          independentEvidenceGroupsAdded:
+            evaluateQuickScanCoverage(added).independentGroups.length,
+          evidenceFamiliesAdded: unique(
+            added.map((source) => source.queryFamily),
+          ),
+          pricingClaimsValidated:
+            extractValidatedPricingObservations(added).length,
           durationMs: Date.now() - repairStartedAt,
           metadata: { query: repairPack.query },
         });
@@ -253,14 +325,18 @@ Return attributable findings only. State when a gap remains unresolved.`,
           conditionalCallTrigger,
           durationMs: Date.now() - repairStartedAt,
           quotaFailure: repairQuotaFailure,
-          metadata: { error: error instanceof Error ? error.message : String(error) },
+          metadata: {
+            error: error instanceof Error ? error.message : String(error),
+          },
         });
         if (mode === "quick_scan") {
           await persistQuickScanPackStatus(db, {
             runId,
             packKey: "quick_coverage_repair",
             status: packFailure,
-            failureReason: error instanceof Error ? error.message : String(error),
+            failureReason: error instanceof Error
+              ? error.message
+              : String(error),
             metadata: { triggers: conditionalCallTrigger },
           });
           return stageFailed(
@@ -274,7 +350,10 @@ Return attributable findings only. State when a gap remains unresolved.`,
           error instanceof Error ? error.message : String(error),
         );
         if (action === "fail") {
-          return stageFailed("permanent", "Required conditional coverage repair was unavailable.");
+          return stageFailed(
+            "permanent",
+            "Required conditional coverage repair was unavailable.",
+          );
         }
       }
     }
@@ -285,7 +364,10 @@ Return attributable findings only. State when a gap remains unresolved.`,
       (groundingMode === "disabled" || groundingDegraded ||
         repairQuotaFailure)
     ) {
-      const repairPack = buildCoverageRepairPack(researchBrief, initialCoverage);
+      const repairPack = buildCoverageRepairPack(
+        researchBrief,
+        initialCoverage,
+      );
       if (
         competitorSeeds.length &&
         initialCoverage.repairTriggers.includes("no_live_verified_competitor")
@@ -336,6 +418,7 @@ Return attributable findings only. State when a gap remains unresolved.`,
         accepted: [...retrieval.accepted, ...added],
         pagesAttempted: retrieval.pagesAttempted +
           repairRetrieval.pagesAttempted,
+        pagesFetched: retrieval.pagesFetched + repairRetrieval.pagesFetched,
         rejected: mergeCounts(retrieval.rejected, repairRetrieval.rejected),
       };
       allCandidates = [...allCandidates, ...repairCandidates];
@@ -350,9 +433,9 @@ Return attributable findings only. State when a gap remains unresolved.`,
         sourcesAccepted: added.length,
         independentEvidenceGroupsAdded:
           evaluateQuickScanCoverage(added).independentGroups.length,
-        evidenceFamiliesAdded: unique(added.map((source) =>
-          source.queryFamily
-        )),
+        evidenceFamiliesAdded: unique(
+          added.map((source) => source.queryFamily),
+        ),
         pricingClaimsValidated:
           extractValidatedPricingObservations(added).length,
         durationMs: Date.now() - repairStartedAt,
@@ -429,6 +512,8 @@ Specialist query: ${repairPack.query}`,
             accepted: [...retrieval.accepted, ...added],
             pagesAttempted: retrieval.pagesAttempted +
               repairRetrieval.pagesAttempted,
+            pagesFetched: retrieval.pagesFetched +
+              repairRetrieval.pagesFetched,
             rejected: mergeCounts(retrieval.rejected, repairRetrieval.rejected),
           };
           allCandidates = [...allCandidates, ...candidates];
@@ -463,13 +548,17 @@ Specialist query: ${repairPack.query}`,
             durationMs: Date.now() - repairStartedAt,
           });
         } catch (error) {
-          const quota = error instanceof GeminiRequestError ? error.quota : null;
+          const quota = error instanceof GeminiRequestError
+            ? error.quota
+            : null;
           const failure = classifyPackFailure(error, quota);
           await persistFullValidationPackStatus(db, {
             runId,
             packKey: repairPack.key,
             status: failure,
-            failureReason: error instanceof Error ? error.message : String(error),
+            failureReason: error instanceof Error
+              ? error.message
+              : String(error),
             conditionalTrigger: repairPack.conditionalTrigger,
             startedAt: new Date(repairStartedAt).toISOString(),
           });
@@ -519,6 +608,9 @@ Specialist query: ${repairPack.query}`,
       promotionalBias: string;
       sourceTierReason: string;
       retrievedText: string;
+      publishedOrUpdatedDate: string | null;
+      extractionLimitations: string[];
+      hostileTextDetected: boolean;
     }> = [];
     if (mode === "quick_scan") {
       for (const [rawReason, count] of Object.entries(retrieval.rejected)) {
@@ -541,7 +633,9 @@ Specialist query: ${repairPack.query}`,
         url: source.canonicalUrl,
         canonical_url: source.canonicalUrl,
         source_domain: source.domain,
-        source_type: source.provider === "gemini_grounding" ? "GeminiGroundedRetrieved" : "ExternalRetrieved",
+        source_type: source.provider === "gemini_grounding"
+          ? "GeminiGroundedRetrieved"
+          : "ExternalRetrieved",
         text_content: source.text,
         source_tier: source.sourceTier,
         publisher: source.publisher,
@@ -561,7 +655,13 @@ Specialist query: ${repairPack.query}`,
         query_family: source.queryFamily,
         excluded: false,
       }, { onConflict: "run_id,url" }).select("id").single();
-      if (error || !persisted) throw new Error(`Retrieved source persistence failed: ${error?.message || "missing row"}`);
+      if (error || !persisted) {
+        throw new Error(
+          `Retrieved source persistence failed: ${
+            error?.message || "missing row"
+          }`,
+        );
+      }
       sourceCatalog.push({
         sourceId: persisted.id,
         url: source.canonicalUrl,
@@ -586,6 +686,9 @@ Specialist query: ${repairPack.query}`,
         promotionalBias: source.authority.promotionalBias,
         sourceTierReason: source.authority.reason,
         retrievedText: source.text,
+        publishedOrUpdatedDate: source.publishedOrUpdatedDate || null,
+        extractionLimitations: source.extractionLimitations || [],
+        hostileTextDetected: Boolean(source.hostileTextDetected),
       });
       dossierEntries.push(`SOURCE_ID: ${persisted.id}
 TITLE: ${source.title || source.domain}
@@ -601,11 +704,18 @@ RETRIEVED_TEXT:
 ${source.text.slice(0, mode === "full_validation" ? 1_400 : 3_000)}`);
     }
 
-    const finalPricing = extractValidatedPricingObservations(retrieval.accepted);
+    const finalPricing = extractValidatedPricingObservations(
+      retrieval.accepted,
+    );
     if (mode === "quick_scan" || mode === "full_validation") {
-      await db.from("validated_pricing_observations").delete().eq("run_id", runId);
+      await db.from("validated_pricing_observations").delete().eq(
+        "run_id",
+        runId,
+      );
       for (const observation of finalPricing) {
-        const source = sourceCatalog.find((item) => item.url === observation.sourceUrl);
+        const source = sourceCatalog.find((item) =>
+          item.url === observation.sourceUrl
+        );
         await db.from("validated_pricing_observations").insert({
           run_id: runId,
           source_id: source?.sourceId || null,
@@ -633,9 +743,11 @@ ${source.text.slice(0, mode === "full_validation" ? 1_400 : 3_000)}`);
       )
       : [];
     if (mode === "quick_scan") {
-      for (const pack of packs.slice(0, 3).filter((item) =>
-        attemptedGroundedPackKeys.has(item.key)
-      )) {
+      for (
+        const pack of packs.slice(0, 3).filter((item) =>
+          attemptedGroundedPackKeys.has(item.key)
+        )
+      ) {
         const acceptedForPack = retrieval.accepted.filter((source) =>
           source.queryFamily === pack.key
         );
@@ -694,7 +806,9 @@ ${source.text.slice(0, mode === "full_validation" ? 1_400 : 3_000)}`);
         const seedDomain = safeDomain(seed.canonicalHomepage || "");
         const discovered = sourceCatalog.some((source) =>
           (seedDomain && source.domain.replace(/^www\./, "") === seedDomain) ||
-          source.title.toLowerCase().includes(String(seed.candidateName || "").toLowerCase())
+          source.title.toLowerCase().includes(
+            String(seed.candidateName || "").toLowerCase(),
+          )
         );
         if (discovered) {
           await db.from("competitors").update({
@@ -705,6 +819,11 @@ ${source.text.slice(0, mode === "full_validation" ? 1_400 : 3_000)}`);
       }
     }
     if (mode === "full_validation") {
+      const { data: retrievalAudit } = await db.from("source_retrieval_audit")
+        .select(
+          "query_family,disposition,candidate_url,canonical_url,deterministic_relevance_score",
+        )
+        .eq("run_id", runId);
       for (const pack of packs) {
         const acceptedForPack = retrieval.accepted.filter((source) =>
           source.queryFamily === pack.key
@@ -713,6 +832,24 @@ ${source.text.slice(0, mode === "full_validation" ? 1_400 : 3_000)}`);
           acceptedForPack,
           researchBrief,
         );
+        const auditForPack = (retrievalAudit || []).filter((row: any) =>
+          row.query_family === pack.key
+        );
+        const discoveredForPack = new Set(
+          auditForPack.filter((row: any) => row.disposition === "discovered")
+            .map((row: any) => row.candidate_url),
+        ).size;
+        const reviewedForPack = new Set(
+          auditForPack.filter((row: any) =>
+            ["accepted", "rejected"].includes(row.disposition)
+          ).map((row: any) => row.canonical_url || row.candidate_url),
+        ).size;
+        const fetchedForPack = new Set(
+          auditForPack.filter((row: any) =>
+            row.disposition === "accepted" ||
+            row.deterministic_relevance_score !== null
+          ).map((row: any) => row.canonical_url || row.candidate_url),
+        ).size;
         await persistFullValidationPackStatus(db, {
           runId,
           packKey: pack.key,
@@ -723,6 +860,15 @@ ${source.text.slice(0, mode === "full_validation" ? 1_400 : 3_000)}`);
               source.queryFamily === pack.key
             ).length,
             validated: true,
+          },
+          funnel: {
+            sourcesDiscovered: discoveredForPack,
+            sourcesReviewed: reviewedForPack,
+            sourcesFetched: fetchedForPack,
+            independentEvidenceGroups:
+              packCoverage.independentEvidenceGroups.length,
+            directOfficialSources: packCoverage.primaryOfficialCount,
+            challengingFindings: packCoverage.challengingEvidenceCount,
           },
         });
         await persistResearchCallMetric(db, {
@@ -766,11 +912,15 @@ ${source.text.slice(0, mode === "full_validation" ? 1_400 : 3_000)}`);
       }
     }
 
-    const independentDomains = new Set(sourceCatalog.map((source) => source.domain)).size;
+    const independentDomains = new Set(sourceCatalog.map((source) =>
+      source.domain
+    )).size;
     await db.from("research_pipeline_metrics").update({
       candidates_discovered: allCandidates.length,
       pages_attempted: retrieval.pagesAttempted,
-      pages_fetched: sourceCatalog.length,
+      pages_fetched: mode === "full_validation"
+        ? retrieval.pagesFetched
+        : sourceCatalog.length,
       sources_accepted: sourceCatalog.length,
       sources_rejected_by_reason: retrieval.rejected,
       independent_domains: independentDomains,
@@ -800,9 +950,14 @@ ${source.text.slice(0, mode === "full_validation" ? 1_400 : 3_000)}`);
     }, {
       candidates_discovered: allCandidates.length,
       pages_attempted: retrieval.pagesAttempted,
-      pages_fetched: sourceCatalog.length,
+      pages_fetched: mode === "full_validation"
+        ? retrieval.pagesFetched
+        : sourceCatalog.length,
       sources_accepted: sourceCatalog.length,
-      sources_rejected: Object.values(retrieval.rejected).reduce((sum, count) => sum + count, 0),
+      sources_rejected: Object.values(retrieval.rejected).reduce(
+        (sum, count) => sum + count,
+        0,
+      ),
       independent_domains: independentDomains,
       duration_ms: Date.now() - startedAt,
     }, {
@@ -812,6 +967,11 @@ ${source.text.slice(0, mode === "full_validation" ? 1_400 : 3_000)}`);
         groundingMode,
         groundingDegraded,
         sourceCatalog,
+        sourcesDiscovered: allCandidates.length,
+        sourcesReviewed: retrieval.pagesAttempted,
+        sourcesFetched: mode === "full_validation"
+          ? retrieval.pagesFetched
+          : sourceCatalog.length,
         researchBrief,
         rejectedEvidenceSummary: retrieval.rejected,
         contradictionObjects,
@@ -836,7 +996,10 @@ ${source.text.slice(0, mode === "full_validation" ? 1_400 : 3_000)}`);
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return stageFailed(/timeout|429|temporar|5\d\d/i.test(message) ? "transient" : "permanent", `External retrieval failed: ${message}`);
+    return stageFailed(
+      /timeout|429|temporar|5\d\d/i.test(message) ? "transient" : "permanent",
+      `External retrieval failed: ${message}`,
+    );
   }
 }
 

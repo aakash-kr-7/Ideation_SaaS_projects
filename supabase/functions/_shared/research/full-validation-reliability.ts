@@ -35,6 +35,16 @@ export async function persistFullValidationPackStatus(
     conditionalTrigger?: string | null;
     startedAt?: string | null;
     metadata?: Record<string, unknown>;
+    funnel?: {
+      sourcesDiscovered?: number;
+      sourcesReviewed?: number;
+      sourcesFetched?: number;
+      findingsAccepted?: number;
+      findingsRejected?: number;
+      independentEvidenceGroups?: number;
+      directOfficialSources?: number;
+      challengingFindings?: number;
+    };
   },
 ) {
   await db.from("full_validation_research_pack_statuses").upsert({
@@ -47,6 +57,14 @@ export async function persistFullValidationPackStatus(
     started_at: input.startedAt || null,
     completed_at: input.status === "skipped" ? null : new Date().toISOString(),
     metadata: input.metadata || {},
+    sources_discovered: input.funnel?.sourcesDiscovered || 0,
+    sources_reviewed: input.funnel?.sourcesReviewed || 0,
+    sources_fetched: input.funnel?.sourcesFetched || 0,
+    findings_accepted: input.funnel?.findingsAccepted || 0,
+    findings_rejected: input.funnel?.findingsRejected || 0,
+    independent_evidence_groups: input.funnel?.independentEvidenceGroups || 0,
+    direct_official_sources: input.funnel?.directOfficialSources || 0,
+    challenging_findings: input.funnel?.challengingFindings || 0,
     updated_at: new Date().toISOString(),
   }, { onConflict: "run_id,pack_key" });
 }

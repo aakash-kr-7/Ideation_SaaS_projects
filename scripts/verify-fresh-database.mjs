@@ -17,7 +17,25 @@ function check(name, passed, detail) {
 const { data: weights, error: weightsError } = await db.from("scoring_weights").select("criterion");
 check("scoring_weights_seeded", !weightsError && weights?.length === 12, `${weights?.length ?? 0} scoring weights (expected 12)`);
 
-const { data: sources, error: sourcesError } = await db.from("source_registry").select("domain");
+const { data: sources, error: sourcesError } = await db.from("source_registry").select(
+  "domain,cannot_establish_claims,routing_pack_keys,query_templates,retrieval_adapter,authority,promotional_bias,storage_restrictions,access_restrictions",
+);
+const { data: routingPacks, error: routingPacksError } = await db.from("source_routing_packs").select("pack_key");
+check("source_routing_packs_seeded", !routingPacksError && routingPacks?.length === 9, `${routingPacks?.length ?? 0} source routing packs (expected 9)`);
+check(
+  "source_registry_routing_curated",
+  !sourcesError && sources?.length >= 8 && sources.every((source) =>
+    source.cannot_establish_claims?.length > 0 &&
+    source.routing_pack_keys?.length > 0 &&
+    Object.keys(source.query_templates || {}).length > 0 &&
+    source.retrieval_adapter &&
+    Number(source.authority) > 0 &&
+    source.promotional_bias &&
+    source.storage_restrictions &&
+    source.access_restrictions
+  ),
+  "all deterministic registry domains have exclusions, packs, templates, adapters, authority/bias, and restrictions",
+);
 check("source_registry_seeded", !sourcesError && sources?.length >= 8, `${sources?.length ?? 0} source registry entries (expected ≥8)`);
 
 // --- RLS on all public tables ---
@@ -55,6 +73,7 @@ const internalTables = [
   "quick_scan_research_pack_statuses", "research_adapter_metrics",
   "full_validation_research_pack_statuses", "research_propositions",
   "research_claim_graph_edges", "full_validation_decisions",
+  "source_routing_packs", "full_validation_investigation_passes",
   "evidence_rejection_diagnostics",
   "research_jobs", "research_job_attempts", "research_pipeline_metrics",
   "research_pipeline_cursors", "evidence_graph_nodes", "evidence_graph_edges",

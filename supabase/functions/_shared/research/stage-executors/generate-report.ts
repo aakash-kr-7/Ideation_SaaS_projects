@@ -87,7 +87,7 @@ export async function executeGenerateReport(
   ] = await Promise.all([
     db.from("evidence_items")
       .select(
-        "id, source_id, excluded, source_tier, snippet, title, signal_type, strength, evidence_family, evidence_topic, pain_point, source_domain, source_class, disconfirming, created_at, relevance_score, relevance_class, matched_brief_dimensions, mismatch_reasons, acceptance_decision, claim_id, canonical_source_id, canonical_domain, source_family, source_authority, evidence_directness, semantic_relevance, independence_key, syndication_group, claim_fingerprint, evidence_role, associated_factor_ids, extraction_confidence, numeric_validation_state, model_classification_metadata, sources(url)",
+        "id, source_id, excluded, source_tier, snippet, title, signal_type, strength, evidence_family, evidence_topic, pain_point, source_domain, source_class, disconfirming, created_at, relevance_score, relevance_class, matched_brief_dimensions, mismatch_reasons, acceptance_decision, claim_id, canonical_source_id, canonical_domain, source_family, source_authority, evidence_directness, semantic_relevance, independence_key, syndication_group, claim_fingerprint, evidence_role, associated_factor_ids, atomic_claim, published_or_updated_at, segment, geography, limitations, proposition_links, hostile_text_detected, extraction_confidence, numeric_validation_state, model_classification_metadata, sources(url)",
       )
       .eq("run_id", runId),
     db.from("research_runs")
@@ -129,7 +129,9 @@ export async function executeGenerateReport(
   // --- Load breakdowns ---
   const { data: breakdowns } = await db
     .from("score_breakdowns")
-    .select("criterion, score, raw_score, evidence_coefficient, effective_score, evidence_state, supporting_evidence_ids, challenging_evidence_ids, confidence_deductions, unresolved_gaps, buyer_segment_applicability, unresolved_assumptions, score_sensitivity, weight, notes, id")
+    .select(
+      "criterion, score, raw_score, evidence_coefficient, effective_score, evidence_state, supporting_evidence_ids, challenging_evidence_ids, confidence_deductions, unresolved_gaps, buyer_segment_applicability, unresolved_assumptions, score_sensitivity, weight, notes, id",
+    )
     .eq("score_id", scoreId);
   const { data: scoreEvidenceRefs } = await db.from("score_evidence_refs")
     .select("score_breakdown_id,evidence_id");
@@ -443,8 +445,7 @@ export async function executeGenerateReport(
         challengingEvidenceIds: row?.challenging_evidence_ids || [],
         confidenceDeductions: row?.confidence_deductions || [],
         unresolvedGaps: row?.unresolved_gaps || [],
-        buyerSegmentApplicability:
-          row?.buyer_segment_applicability || [],
+        buyerSegmentApplicability: row?.buyer_segment_applicability || [],
         unresolvedAssumptions: row?.unresolved_assumptions || [],
         scoreSensitivity: row?.score_sensitivity || {},
       }];
@@ -461,6 +462,8 @@ export async function executeGenerateReport(
     { data: validatedPricingObservations },
     { data: researchPackStatuses },
     { data: fullValidationDecision },
+    { data: investigationPasses },
+    { data: adjudicatedPropositions },
   ] = await Promise.all([
     db.from("adversarial_verdict_gates").select("*").eq("run_id", runId)
       .maybeSingle(),
@@ -503,6 +506,17 @@ export async function executeGenerateReport(
       ? db.from("full_validation_decisions").select("*").eq("run_id", runId)
         .maybeSingle()
       : Promise.resolve({ data: null }),
+    config.mode === "full_validation"
+      ? db.from("full_validation_investigation_passes").select("*").eq(
+        "run_id",
+        runId,
+      ).order("created_at")
+      : Promise.resolve({ data: [] }),
+    config.mode === "full_validation"
+      ? db.from("research_propositions").select(
+        "proposition_key,statement,buyer_segment,burden_status,supporting_evidence_ids,challenging_evidence_ids,missing_evidence,kill_condition",
+      ).eq("run_id", runId).order("created_at")
+      : Promise.resolve({ data: [] }),
   ]);
   const specialistAssessments = (specialistRows || []).map((row: any) => ({
     name: row.agent_name,
@@ -595,6 +609,13 @@ export async function executeGenerateReport(
     .filter((item: any) => item.item_type === "Scope")
     .map((item: any) => String(item.description || "").trim())
     .filter(Boolean);
+  const investigationPass = (investigationPasses || []).reduce(
+    (accumulator: Record<string, any>, row: any) => {
+      accumulator[row.pass_key] = row.output || {};
+      return accumulator;
+    },
+    {},
+  );
   const reportPayload: any = {
     id: runId,
     version: "2.0",
@@ -637,12 +658,21 @@ export async function executeGenerateReport(
         sourceFamily: item.source_family,
         sourceAuthority: Number(item.source_authority || 0),
         evidenceDirectness: Number(item.evidence_directness || 0),
-        semanticRelevance: Number(item.semantic_relevance || item.relevance_score || 0),
+        semanticRelevance: Number(
+          item.semantic_relevance || item.relevance_score || 0,
+        ),
         independenceKey: item.independence_key,
         syndicationGroup: item.syndication_group,
         claimFingerprint: item.claim_fingerprint,
         evidenceRole: item.evidence_role,
         associatedFactorIds: item.associated_factor_ids || [],
+        atomicClaim: item.atomic_claim,
+        publishedOrUpdatedAt: item.published_or_updated_at,
+        buyerSegment: item.segment,
+        geography: item.geography,
+        limitations: item.limitations || [],
+        propositionLinks: item.proposition_links || [],
+        hostileTextDetected: Boolean(item.hostile_text_detected),
         extractionConfidence: Number(item.extraction_confidence || 0),
         numericValidationState: item.numeric_validation_state,
         modelClassificationMetadata: item.model_classification_metadata,
@@ -813,7 +843,13 @@ export async function executeGenerateReport(
       },
       scoring: {
         score: Number(scoreRow.confidence),
-        explanation: `${Object.values(scorecard.factorEvidence).filter((factor: any) => factor.evidenceState !== "ASSUMED").length}/12 deterministic factors have EVIDENCED or SUGGESTIVE states. Score confidence is the weight-adjusted mean of persisted factor coefficients; ${scorecard.scoreBand?.display || "no score band was persisted"}.`,
+        explanation: `${
+          Object.values(scorecard.factorEvidence).filter((factor: any) =>
+            factor.evidenceState !== "ASSUMED"
+          ).length
+        }/12 deterministic factors have EVIDENCED or SUGGESTIVE states. Score confidence is the weight-adjusted mean of persisted factor coefficients; ${
+          scorecard.scoreBand?.display || "no score band was persisted"
+        }.`,
       },
       completeness: {
         score: completeness.score,
@@ -829,79 +865,112 @@ export async function executeGenerateReport(
     evidenceSufficiency: inputMeta.evidenceSufficiency,
     verdictChangeConditions: inputMeta.verdictChangeConditions,
     researchExecution: {
-        maximumGroundedCalls: config.mode === "quick_scan" ? 4 : 10,
-        normalGroundedCallLimit: config.mode === "quick_scan" ? 3 : 8,
-        conditionalGroundedCallLimit: config.mode === "quick_scan" ? 1 : 2,
-        groundedCalls: (researchCallMetrics || []).filter((item: any) =>
+      reviewBudgetMaximum: config.mode === "quick_scan" ? 25 : 75,
+      maximumGroundedCalls: config.mode === "quick_scan" ? 4 : 10,
+      normalGroundedCallLimit: config.mode === "quick_scan" ? 3 : 8,
+      conditionalGroundedCallLimit: config.mode === "quick_scan" ? 1 : 2,
+      groundedCalls:
+        (researchCallMetrics || []).filter((item: any) =>
           item.provider === "gemini" && item.grounded
         ).length,
-        conditionalCallTrigger: [...new Set(
+      conditionalCallTrigger: [
+        ...new Set(
           (researchCallMetrics || []).flatMap((item: any) =>
             item.conditional_call_trigger || []
           ),
-        )],
-        packStatuses: (researchPackStatuses || []).map((item: any) => ({
-          packKey: item.pack_key,
-          status: item.status,
-          acceptedEvidenceCount: item.accepted_evidence_count,
-          failureReason: item.failure_reason,
-        })),
-        adversarialFinding: (contradictions || []).length
-          ? `${(contradictions || []).length} proposition-specific contradiction object(s) passed validation.`
-          : (researchPackStatuses || []).some((item: any) =>
-              ["quick_adversarial", "full_adversarial"].includes(item.pack_key) &&
-              ["completed", "completed_no_evidence"].includes(item.status)
-            )
-          ? "No genuine proposition-specific contradiction passed validation in this scan."
-          : "Adversarial research did not complete, so no claim is made about whether contradictory evidence exists.",
-        calls: (researchCallMetrics || []).map((item: any) => ({
-          callPurpose: item.call_purpose,
-          queryFamily: item.query_family,
-          grounded: item.grounded,
-          conditionalCallTrigger: item.conditional_call_trigger || [],
-          provider: item.provider,
-          model: item.model,
-          promptTokens: item.prompt_tokens,
-          completionTokens: item.completion_tokens,
-          sourcesDiscovered: item.sources_discovered,
-          sourcesAccepted: item.sources_accepted,
-          independentEvidenceGroupsAdded:
-            item.independent_evidence_groups_added,
-          evidenceFamiliesAdded: item.evidence_families_added || [],
-          contradictionsAdded: item.contradictions_added,
-          pricingClaimsValidated: item.pricing_claims_validated,
-          wtpSignalsFound: item.wtp_signals_found,
-          pagesFetched: item.pages_fetched,
-          sourceFamiliesAdded: item.source_families_added,
-          rejectionReasons: item.rejection_reasons || {},
-          providerFailure: item.provider_failure,
-          cacheHits: item.cache_hits,
-          durationMs: item.duration_ms,
-          quotaFailure: item.quota_failure,
-        })),
-      },
-    pricingIntegrity: {
-        verifiedCompetitorPricing: (validatedPricingObservations || []).map((
-          item: any,
-        ) => ({
-          sourceId: item.source_id,
-          sourceUrl: item.source_url,
-          planName: item.plan_name,
-          pricePoint: item.price_point,
-          pricingModel: item.pricing_model,
-          exactExcerpt: item.exact_excerpt,
-          validationState: item.validation_state,
-        })),
-        buyerPaymentEvidenceIds: (evidence || []).filter((item: any) =>
-          item.evidence_topic === "willingness_to_pay" &&
-          !item.excluded
-        ).map((item: any) => item.id),
-        inferredMonetisationPotential: pricing.rationale,
-        missingWtpEvidence: !(evidence || []).some((item: any) =>
-          item.evidence_topic === "willingness_to_pay" &&
-          !item.excluded
         ),
-      },
+      ],
+      packStatuses: (researchPackStatuses || []).map((item: any) => ({
+        packKey: item.pack_key,
+        status: item.status,
+        acceptedEvidenceCount: item.accepted_evidence_count,
+        failureReason: item.failure_reason,
+        sourcesDiscovered: item.sources_discovered,
+        sourcesReviewed: item.sources_reviewed,
+        sourcesFetched: item.sources_fetched,
+        findingsAccepted: item.findings_accepted,
+        findingsRejected: item.findings_rejected,
+        independentEvidenceGroups: item.independent_evidence_groups,
+        directOfficialSources: item.direct_official_sources,
+        challengingFindings: item.challenging_findings,
+      })),
+      funnel: config.mode === "full_validation"
+        ? investigationPass.adjudication?.funnel
+        : undefined,
+      adversarialFinding: (contradictions || []).length
+        ? `${
+          (contradictions || []).length
+        } proposition-specific contradiction object(s) passed validation.`
+        : (researchPackStatuses || []).some((item: any) =>
+            ["quick_adversarial", "full_adversarial"].includes(item.pack_key) &&
+            ["completed", "completed_no_evidence"].includes(item.status)
+          )
+        ? "No genuine proposition-specific contradiction passed validation in this scan."
+        : "Adversarial research did not complete, so no claim is made about whether contradictory evidence exists.",
+      calls: (researchCallMetrics || []).map((item: any) => ({
+        callPurpose: item.call_purpose,
+        queryFamily: item.query_family,
+        grounded: item.grounded,
+        conditionalCallTrigger: item.conditional_call_trigger || [],
+        provider: item.provider,
+        model: item.model,
+        promptTokens: item.prompt_tokens,
+        completionTokens: item.completion_tokens,
+        sourcesDiscovered: item.sources_discovered,
+        sourcesAccepted: item.sources_accepted,
+        independentEvidenceGroupsAdded: item.independent_evidence_groups_added,
+        evidenceFamiliesAdded: item.evidence_families_added || [],
+        contradictionsAdded: item.contradictions_added,
+        pricingClaimsValidated: item.pricing_claims_validated,
+        wtpSignalsFound: item.wtp_signals_found,
+        pagesFetched: item.pages_fetched,
+        sourceFamiliesAdded: item.source_families_added,
+        rejectionReasons: item.rejection_reasons || {},
+        providerFailure: item.provider_failure,
+        cacheHits: item.cache_hits,
+        durationMs: item.duration_ms,
+        quotaFailure: item.quota_failure,
+      })),
+    },
+    adversarialInvestigation: config.mode === "full_validation"
+      ? {
+        prosecution: investigationPass.prosecution,
+        defense: investigationPass.defense,
+        adjudication: investigationPass.adjudication,
+        propositions: (adjudicatedPropositions || []).map((item: any) => ({
+          propositionKey: item.proposition_key,
+          statement: item.statement,
+          buyerSegment: item.buyer_segment,
+          burdenStatus: item.burden_status,
+          supportingEvidenceIds: item.supporting_evidence_ids || [],
+          challengingEvidenceIds: item.challenging_evidence_ids || [],
+          missingEvidence: item.missing_evidence || [],
+          killCondition: item.kill_condition,
+        })),
+      }
+      : undefined,
+    pricingIntegrity: {
+      verifiedCompetitorPricing: (validatedPricingObservations || []).map((
+        item: any,
+      ) => ({
+        sourceId: item.source_id,
+        sourceUrl: item.source_url,
+        planName: item.plan_name,
+        pricePoint: item.price_point,
+        pricingModel: item.pricing_model,
+        exactExcerpt: item.exact_excerpt,
+        validationState: item.validation_state,
+      })),
+      buyerPaymentEvidenceIds: (evidence || []).filter((item: any) =>
+        item.evidence_topic === "willingness_to_pay" &&
+        !item.excluded
+      ).map((item: any) => item.id),
+      inferredMonetisationPotential: pricing.rationale,
+      missingWtpEvidence: !(evidence || []).some((item: any) =>
+        item.evidence_topic === "willingness_to_pay" &&
+        !item.excluded
+      ),
+    },
   };
   const normalizedChartDatasets = chartDatasets.map((item) => ({
     chartKey: item.chartKey || item.chart_key,
@@ -936,12 +1005,16 @@ export async function executeGenerateReport(
         decisionProduct: reportPayload.decisionProduct,
       },
       (evidence || []).filter((item: any) => allowed.has(item.id))
-        .flatMap((item: any) => [String(item.title || ""), String(item.snippet || "")]),
+        .flatMap((
+          item: any,
+        ) => [String(item.title || ""), String(item.snippet || "")]),
     );
     if (placeholderLeakage.length) {
       return stageFailed(
         "permanent",
-        `Quick Scan placeholder integrity gate rejected: ${placeholderLeakage.join(", ")}`,
+        `Quick Scan placeholder integrity gate rejected: ${
+          placeholderLeakage.join(", ")
+        }`,
       );
     }
   }

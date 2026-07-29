@@ -30,13 +30,16 @@ export type FullValidationConditionalTrigger =
   typeof FULL_VALIDATION_CONDITIONAL_TRIGGERS[number];
 
 export type PropositionKind =
-  | "problem_exists"
-  | "problem_frequency"
-  | "alternatives_inadequate"
-  | "budget_control"
-  | "economic_reachability"
-  | "switching_friction"
-  | "operational_feasibility";
+  | "pain_existence"
+  | "pain_frequency"
+  | "buyer_urgency"
+  | "budget_ownership"
+  | "current_spending"
+  | "alternative_inadequacy"
+  | "reachability"
+  | "switching_viability"
+  | "delivery_feasibility"
+  | "founder_advantage";
 
 export interface TestableProposition {
   key: PropositionKind;
@@ -68,52 +71,82 @@ export function decomposeFullValidationPropositions(
   const segment = brief.targetBuyer.trim() || "Unspecified target buyer";
   return [
     {
-      key: "problem_exists",
+      key: "pain_existence",
       statement: `${segment} experiences ${brief.problemSolved}.`,
       buyerSegment: segment,
-      factorIds: ["problemSeverity"],
+      factorIds: ["painSeverity"],
       primaryPackKey: "full_buyer_problem",
     },
     {
-      key: "problem_frequency",
-      statement: `${brief.problemSolved} occurs frequently enough for ${segment} to prioritize a solution.`,
+      key: "pain_frequency",
+      statement:
+        `${brief.problemSolved} occurs frequently enough for ${segment} to prioritize a solution.`,
       buyerSegment: segment,
-      factorIds: ["customerPainFrequency", "purchaseUrgency"],
+      factorIds: ["painSeverity", "retentionPotential"],
       primaryPackKey: "full_buyer_problem",
     },
     {
-      key: "alternatives_inadequate",
-      statement: `Existing alternatives are inadequate for ${segment} in the ${brief.workflowChanged} workflow.`,
+      key: "buyer_urgency",
+      statement:
+        `${segment} treats ${brief.problemSolved} as urgent enough to change behaviour.`,
       buyerSegment: segment,
-      factorIds: ["competitionGap", "differentiationPotential"],
-      primaryPackKey: "full_alternatives_competitors",
+      factorIds: ["purchaseUrgency"],
+      primaryPackKey: "full_buyer_problem",
     },
     {
-      key: "budget_control",
-      statement: `${segment} controls or materially influences budget for this outcome.`,
+      key: "budget_ownership",
+      statement:
+        `${segment} controls or materially influences budget for this outcome.`,
       buyerSegment: segment,
       factorIds: ["willingnessToPay"],
       primaryPackKey: "full_pricing_wtp_procurement",
     },
     {
-      key: "economic_reachability",
-      statement: `${segment} can be reached through identifiable, economically plausible acquisition channels.`,
+      key: "current_spending",
+      statement:
+        `${segment} currently spends money or meaningful staff time addressing this problem.`,
       buyerSegment: segment,
-      factorIds: ["buyerReachability", "goToMarketEase"],
-      primaryPackKey: "full_reachability_acquisition",
+      factorIds: ["willingnessToPay", "speedToFirstRevenue"],
+      primaryPackKey: "full_pricing_wtp_procurement",
     },
     {
-      key: "switching_friction",
-      statement: `Switching friction from current alternatives is manageable for ${segment}.`,
+      key: "alternative_inadequacy",
+      statement:
+        `Existing alternatives are inadequate for ${segment} in the ${brief.workflowChanged} workflow.`,
       buyerSegment: segment,
-      factorIds: ["switchingFriction"],
+      factorIds: ["competitionGap"],
       primaryPackKey: "full_alternatives_competitors",
     },
     {
-      key: "operational_feasibility",
-      statement: `${brief.exactProductProposition} can be built and operated with manageable dependencies and complexity.`,
+      key: "reachability",
+      statement:
+        `${segment} can be reached through identifiable, economically plausible acquisition channels.`,
       buyerSegment: segment,
-      factorIds: ["technicalFeasibility", "buildComplexity", "operationalComplexity"],
+      factorIds: ["buyerReachability", "distributionClarity"],
+      primaryPackKey: "full_reachability_acquisition",
+    },
+    {
+      key: "switching_viability",
+      statement:
+        `Switching friction from current alternatives is manageable for ${segment}.`,
+      buyerSegment: segment,
+      factorIds: ["retentionPotential"],
+      primaryPackKey: "full_alternatives_competitors",
+    },
+    {
+      key: "delivery_feasibility",
+      statement:
+        `${brief.exactProductProposition} can be built and operated with manageable dependencies and complexity.`,
+      buyerSegment: segment,
+      factorIds: ["mvpSpeed", "platformDependencyRisk", "regulatoryRisk"],
+      primaryPackKey: "full_feasibility_operations",
+    },
+    {
+      key: "founder_advantage",
+      statement:
+        `The confirmed founder profile has a relevant capability, access, or distribution advantage for ${segment}.`,
+      buyerSegment: segment,
+      factorIds: ["founderFit"],
       primaryPackKey: "full_feasibility_operations",
     },
   ];
@@ -127,38 +160,56 @@ export function buildFullValidationPacks(
     {
       key: "full_buyer_problem",
       purpose: "buyer_problem",
-      query: `${anchor} pain frequency severity repeated workflow buyer interview complaint workaround`,
-      focus: "buyer segments, direct buyer voice, problem frequency, severity, consequences, behavioural demand, and current workflow",
+      query:
+        `${anchor} pain frequency severity repeated workflow buyer interview complaint workaround`,
+      focus:
+        "buyer segments, direct buyer voice, problem frequency, severity, consequences, behavioural demand, and current workflow",
+      investigationPass: "prosecution",
     },
     {
       key: "full_alternatives_competitors",
       purpose: "alternatives_competitors",
-      query: `${anchor} alternatives competitors official product positioning features complaints switching barriers`,
-      focus: "active alternatives and competitors, verified positioning and features, complaints, switching barriers, and category gaps",
+      query:
+        `${anchor} alternatives competitors official product positioning features complaints switching barriers`,
+      focus:
+        "active alternatives and competitors, verified positioning and features, complaints, switching barriers, and category gaps",
+      investigationPass: "prosecution",
     },
     {
       key: "full_pricing_wtp_procurement",
       purpose: "pricing_wtp",
-      query: `${anchor} official pricing plan paid pilot purchase procurement budget owner contract willingness pay`,
-      focus: "verified pricing, direct willingness-to-pay or purchase behaviour, procurement, budget ownership, and payment constraints",
+      query:
+        `${anchor} official pricing plan paid pilot purchase procurement budget owner contract willingness pay`,
+      focus:
+        "verified pricing, direct willingness-to-pay or purchase behaviour, procurement, budget ownership, and payment constraints",
+      investigationPass: "prosecution",
     },
     {
       key: "full_reachability_acquisition",
       purpose: "reachability",
-      query: `${anchor} association community directory conference channel acquisition sales buyer reach`,
-      focus: "identifiable buyer populations, acquisition channels, sales motion, channel economics, and practical reachability",
+      query:
+        `${anchor} association community directory conference channel acquisition sales buyer reach`,
+      focus:
+        "identifiable buyer populations, acquisition channels, sales motion, channel economics, and practical reachability",
+      investigationPass: "prosecution",
     },
     {
       key: "full_feasibility_operations",
       purpose: "feasibility",
-      query: `"${brief.exactProductProposition}" technical documentation integration dependency operations implementation`,
-      focus: "build feasibility, operational complexity, integrations, dependencies, reliability, support, and implementation constraints",
+      query:
+        `"${brief.exactProductProposition}" technical documentation integration dependency operations implementation`,
+      focus:
+        "build feasibility, operational complexity, integrations, dependencies, reliability, support, and implementation constraints",
+      investigationPass: "prosecution",
     },
     {
       key: "full_adversarial",
       purpose: "adversarial",
-      query: `${anchor} failed abandoned low priority unnecessary free workaround resistance churn regulation reason not build`,
-      focus: "proposition-specific challenging evidence, failure patterns, low urgency, invalidating conditions, and reasons not to build",
+      query:
+        `${anchor} failed abandoned low priority unnecessary free workaround resistance churn regulation reason not build`,
+      focus:
+        "proposition-specific challenging evidence, failure patterns, low urgency, invalidating conditions, and reasons not to build",
+      investigationPass: "defense",
     },
   ];
 }
@@ -167,9 +218,9 @@ export function evaluateFullValidationCoverage(
   sources: RetrievedSource[],
   brief: CanonicalResearchBrief,
 ): FullValidationCoverage {
-  const families = unique(sources.map((source) =>
-    source.sourceClass || source.authority.pageType
-  ));
+  const families = unique(
+    sources.map((source) => source.sourceClass || source.authority.pageType),
+  );
   const groups = unique(sources.map(independenceGroup));
   const primaryOfficial = sources.filter((source) =>
     source.sourceClass === "primary" || source.sourceClass === "official" ||
@@ -191,20 +242,24 @@ export function evaluateFullValidationCoverage(
   );
   const wtp = sources.filter((source) =>
     source.queryFamily === "full_pricing_wtp_procurement" &&
-    /\b(?:paid|purchased|contract|renewed|budget|procure|pilot)\b/i.test(source.text) &&
+    /\b(?:paid|purchased|contract|renewed|budget|procure|pilot)\b/i.test(
+      source.text,
+    ) &&
     !/pricing (?:page|plan|starts)|list price/i.test(source.text)
   );
   const demand = sources.filter((source) =>
     source.queryFamily === "full_buyer_problem" &&
-    /\b(?:repeated|daily|weekly|monthly|hired|bought|adopted|uses|workaround)\b/i.test(source.text)
+    /\b(?:repeated|daily|weekly|monthly|hired|bought|adopted|uses|workaround)\b/i
+      .test(source.text)
   );
   const challenging = sources.filter((source) =>
     source.queryFamily === "full_adversarial" &&
-    /\b(?:failed|abandoned|low priority|unnecessary|resistan|churn|free alternative|good enough|rarely)\b/i.test(source.text)
+    /\b(?:failed|abandoned|low priority|unnecessary|resistan|churn|free alternative|good enough|rarely)\b/i
+      .test(source.text)
   );
-  const domainShare = concentration(sources.map((source) =>
-    canonicalDomain(source.domain)
-  ));
+  const domainShare = concentration(
+    sources.map((source) => canonicalDomain(source.domain)),
+  );
   const presentPacks = new Set(sources.map((source) => source.queryFamily));
   const assumptions: string[] = [];
   const gaps: string[] = [];
@@ -213,12 +268,22 @@ export function evaluateFullValidationCoverage(
   if (!pricing.length) gaps.push("verified pricing");
   if (!wtp.length) gaps.push("direct WTP or purchase behaviour");
   if (!demand.length) gaps.push("behavioural demand");
-  if (!challenging.length) gaps.push("proposition-specific challenging evidence");
+  if (!challenging.length) {
+    gaps.push("proposition-specific challenging evidence");
+  }
   for (const pack of FULL_VALIDATION_PACKS) {
     if (!presentPacks.has(pack)) gaps.push(`coverage for ${pack}`);
   }
-  if (!pricing.length) assumptions.push("Pricing remains an assumption until an official page is validated.");
-  if (!wtp.length) assumptions.push("Willingness to pay remains an assumption until purchase behaviour is found.");
+  if (!pricing.length) {
+    assumptions.push(
+      "Pricing remains an assumption until an official page is validated.",
+    );
+  }
+  if (!wtp.length) {
+    assumptions.push(
+      "Willingness to pay remains an assumption until purchase behaviour is found.",
+    );
+  }
 
   const input = [
     brief.exactProductProposition,
@@ -227,29 +292,46 @@ export function evaluateFullValidationCoverage(
     brief.geography,
   ].join(" ");
   const triggers: FullValidationConditionalTrigger[] = [];
-  if (/\b(?:regulated|regulation|legal|health|medical|finance|financial|insurance|children|privacy|biometric|employment)\b/i.test(input)) {
+  if (
+    /\b(?:regulated|regulation|legal|health|medical|finance|financial|insurance|children|privacy|biometric|employment)\b/i
+      .test(input)
+  ) {
     triggers.push("regulatory_legal_exposure");
   }
-  if (/\b(?:ai|api|developer|software|model|automation|integration|technical|security|data)\b/i.test(input) &&
-      !hasPackEvidence(sources, "full_feasibility_operations")) {
+  if (
+    /\b(?:ai|api|developer|software|model|automation|integration|technical|security|data)\b/i
+      .test(input) &&
+    !hasPackEvidence(sources, "full_feasibility_operations")
+  ) {
     triggers.push("technical_feasibility");
   }
-  if (/\b(?:marketplace|two-sided|buyers and sellers|supply and demand)\b/i.test(input)) {
+  if (
+    /\b(?:marketplace|two-sided|buyers and sellers|supply and demand)\b/i.test(
+      input,
+    )
+  ) {
     triggers.push("marketplace_liquidity");
   }
-  if (brief.geography && !/global|unspecified|not specified/i.test(brief.geography) &&
-      !sources.some((source) =>
-        brief.geography.toLowerCase().split(/[^a-z0-9]+/)
-          .filter((term) => term.length > 2)
-          .some((term) => source.text.toLowerCase().includes(term))
-      )) {
+  if (
+    brief.geography &&
+    !/global|unspecified|not specified/i.test(brief.geography) &&
+    !sources.some((source) =>
+      brief.geography.toLowerCase().split(/[^a-z0-9]+/)
+        .filter((term) => term.length > 2)
+        .some((term) => source.text.toLowerCase().includes(term))
+    )
+  ) {
     triggers.push("geographic_differences");
   }
   if (segmentDisagreement(sources)) triggers.push("segment_disagreement");
   if (!pricing.length || !wtp.length) triggers.push("missing_pricing_wtp");
-  if (domainShare > 0.5 || families.length < 2) triggers.push("source_concentration");
+  if (domainShare > 0.5 || families.length < 2) {
+    triggers.push("source_concentration");
+  }
   if (!challenging.length) triggers.push("unresolved_contradictions");
-  if (gaps.some((gap) => gap.startsWith("coverage for"))) triggers.push("coverage_repair");
+  if (gaps.some((gap) => gap.startsWith("coverage for"))) {
+    triggers.push("coverage_repair");
+  }
   return {
     independentEvidenceGroups: groups,
     sourceFamilies: families,
@@ -289,16 +371,23 @@ export function selectConditionalPacks(
       key: `full_repair_${trigger}`,
       purpose: "coverage_repair" as const,
       query: conditionalQuery(trigger, brief, coverage.unresolvedGaps),
-      focus: `conditional specialist pass for ${trigger}; only unresolved evidence may be added`,
+      focus:
+        `conditional specialist pass for ${trigger}; only unresolved evidence may be added`,
       conditionalTrigger: trigger,
     }));
 }
 
 export function evidenceAppliesToProposition(
   proposition: TestableProposition,
-  evidence: { buyerSegment: string; researchPack: string; factorIds?: string[] },
+  evidence: {
+    buyerSegment: string;
+    researchPack: string;
+    factorIds?: string[];
+  },
 ) {
-  if (normalize(evidence.buyerSegment) !== normalize(proposition.buyerSegment)) {
+  if (
+    normalize(evidence.buyerSegment) !== normalize(proposition.buyerSegment)
+  ) {
     return false;
   }
   return evidence.researchPack === proposition.primaryPackKey ||
@@ -325,31 +414,47 @@ function conditionalQuery(
 ) {
   const base = `"${brief.targetBuyer}" "${brief.workflowChanged}"`;
   const angle: Record<FullValidationConditionalTrigger, string> = {
-    regulatory_legal_exposure: "official regulator law compliance licensing enforcement",
-    technical_feasibility: "official technical documentation limits reliability integration dependency benchmark",
-    marketplace_liquidity: "marketplace cold start liquidity supply demand fill rate disintermediation",
-    geographic_differences: `"${brief.geography}" local regulation pricing adoption channel`,
-    segment_disagreement: "buyer segment comparison different needs frequency budget objections",
-    missing_pricing_wtp: "official pricing paid pilot procurement contract budget purchase renewal",
-    source_concentration: "independent buyer interview industry association government dataset",
-    unresolved_contradictions: "failed abandoned low priority switching resistance free workaround",
+    regulatory_legal_exposure:
+      "official regulator law compliance licensing enforcement",
+    technical_feasibility:
+      "official technical documentation limits reliability integration dependency benchmark",
+    marketplace_liquidity:
+      "marketplace cold start liquidity supply demand fill rate disintermediation",
+    geographic_differences:
+      `"${brief.geography}" local regulation pricing adoption channel`,
+    segment_disagreement:
+      "buyer segment comparison different needs frequency budget objections",
+    missing_pricing_wtp:
+      "official pricing paid pilot procurement contract budget purchase renewal",
+    source_concentration:
+      "independent buyer interview industry association government dataset",
+    unresolved_contradictions:
+      "failed abandoned low priority switching resistance free workaround",
     coverage_repair: gaps.join(" "),
   };
   return `${base} ${angle[trigger]}`;
 }
 
-function hasPackEvidence(sources: RetrievedSource[], pack: FullValidationPackKey) {
+function hasPackEvidence(
+  sources: RetrievedSource[],
+  pack: FullValidationPackKey,
+) {
   return sources.some((source) => source.queryFamily === pack);
 }
 
 function segmentDisagreement(sources: RetrievedSource[]) {
   const segmentMentions = sources.filter((source) =>
     source.queryFamily === "full_buyer_problem" &&
-    /\b(?:enterprise|small business|smb|consumer|freelancer|agency|local)\b/i.test(source.text)
+    /\b(?:enterprise|small business|smb|consumer|freelancer|agency|local)\b/i
+      .test(source.text)
   );
-  return new Set(segmentMentions.map((source) =>
-    source.text.match(/\b(?:enterprise|small business|smb|consumer|freelancer|agency|local)\b/i)?.[0].toLowerCase()
-  ).filter(Boolean)).size > 1;
+  return new Set(
+    segmentMentions.map((source) =>
+      source.text.match(
+        /\b(?:enterprise|small business|smb|consumer|freelancer|agency|local)\b/i,
+      )?.[0].toLowerCase()
+    ).filter(Boolean),
+  ).size > 1;
 }
 
 function hasPrice(value: string) {
@@ -357,7 +462,8 @@ function hasPrice(value: string) {
 }
 
 function independenceGroup(source: RetrievedSource) {
-  const normalized = source.text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const normalized = source.text.toLowerCase().replace(/[^a-z0-9]+/g, " ")
+    .trim();
   const claim = normalized.split(" ").slice(0, 60).join(" ");
   // Independence is claim-origin based, not URL based. Syndicated or copied
   // pages with the same underlying claim therefore remain one group.

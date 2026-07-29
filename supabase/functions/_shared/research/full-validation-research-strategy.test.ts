@@ -3,8 +3,8 @@ import {
   buildFullValidationPacks,
   contradictionMatchesProposition,
   decomposeFullValidationPropositions,
-  evidenceAppliesToProposition,
   evaluateFullValidationCoverage,
+  evidenceAppliesToProposition,
   FULL_VALIDATION_NORMAL_CALL_LIMIT,
   FULL_VALIDATION_REPAIR_CALL_LIMIT,
   selectConditionalPacks,
@@ -65,9 +65,9 @@ function source(overrides: Partial<RetrievedSource>): RetrievedSource {
   };
 }
 
-Deno.test("Full Validation decomposes seven testable buyer-bound propositions", () => {
+Deno.test("Full Validation decomposes ten burden-of-proof buyer-bound propositions", () => {
   const propositions = decomposeFullValidationPropositions(brief);
-  assert(propositions.length === 7, "expected seven propositions");
+  assert(propositions.length === 10, "expected ten propositions");
   assert(
     propositions.every((item) =>
       item.buyerSegment === brief.targetBuyer && item.factorIds.length > 0
@@ -80,7 +80,10 @@ Deno.test("Full Validation plans six non-overlapping normal grounded packs withi
   const packs = buildFullValidationPacks(brief);
   assert(packs.length === 6, "core pack count drifted");
   assert(new Set(packs.map((pack) => pack.key)).size === 6, "packs repeated");
-  assert(packs.length <= FULL_VALIDATION_NORMAL_CALL_LIMIT, "normal call budget exceeded");
+  assert(
+    packs.length <= FULL_VALIDATION_NORMAL_CALL_LIMIT,
+    "normal call budget exceeded",
+  );
   assert(
     groundedCallLimit("optional", "full_validation", packs.length) === 6,
     "Full Validation grounded calls were incorrectly degraded",
@@ -89,41 +92,83 @@ Deno.test("Full Validation plans six non-overlapping normal grounded packs withi
 
 Deno.test("segment-specific evidence never crosses buyer segments", () => {
   const proposition = decomposeFullValidationPropositions(brief)[0];
-  assert(evidenceAppliesToProposition(proposition, {
-    buyerSegment: brief.targetBuyer,
-    researchPack: proposition.primaryPackKey,
-  }), "same-segment evidence did not link");
-  assert(!evidenceAppliesToProposition(proposition, {
-    buyerSegment: "Individual developers",
-    researchPack: proposition.primaryPackKey,
-  }), "cross-segment evidence linked");
+  assert(
+    evidenceAppliesToProposition(proposition, {
+      buyerSegment: brief.targetBuyer,
+      researchPack: proposition.primaryPackKey,
+    }),
+    "same-segment evidence did not link",
+  );
+  assert(
+    !evidenceAppliesToProposition(proposition, {
+      buyerSegment: "Individual developers",
+      researchPack: proposition.primaryPackKey,
+    }),
+    "cross-segment evidence linked",
+  );
 });
 
 Deno.test("contradictions require the same proposition and buyer segment", () => {
   const proposition = decomposeFullValidationPropositions(brief)[1];
-  assert(contradictionMatchesProposition(
-    proposition,
-    { propositionKey: proposition.key, buyerSegment: proposition.buyerSegment },
-    { propositionKey: proposition.key, buyerSegment: proposition.buyerSegment },
-  ), "valid contradiction did not match");
-  assert(!contradictionMatchesProposition(
-    proposition,
-    { propositionKey: proposition.key, buyerSegment: proposition.buyerSegment },
-    { propositionKey: "problem_exists", buyerSegment: proposition.buyerSegment },
-  ), "different proposition matched");
-  assert(!contradictionMatchesProposition(
-    proposition,
-    { propositionKey: proposition.key, buyerSegment: proposition.buyerSegment },
-    { propositionKey: proposition.key, buyerSegment: "Consumers" },
-  ), "different segment matched");
+  assert(
+    contradictionMatchesProposition(
+      proposition,
+      {
+        propositionKey: proposition.key,
+        buyerSegment: proposition.buyerSegment,
+      },
+      {
+        propositionKey: proposition.key,
+        buyerSegment: proposition.buyerSegment,
+      },
+    ),
+    "valid contradiction did not match",
+  );
+  assert(
+    !contradictionMatchesProposition(
+      proposition,
+      {
+        propositionKey: proposition.key,
+        buyerSegment: proposition.buyerSegment,
+      },
+      {
+        propositionKey: "pain_existence",
+        buyerSegment: proposition.buyerSegment,
+      },
+    ),
+    "different proposition matched",
+  );
+  assert(
+    !contradictionMatchesProposition(
+      proposition,
+      {
+        propositionKey: proposition.key,
+        buyerSegment: proposition.buyerSegment,
+      },
+      { propositionKey: proposition.key, buyerSegment: "Consumers" },
+    ),
+    "different segment matched",
+  );
 });
 
 Deno.test("repeated underlying claims across URLs count as one evidence group", () => {
   const text = "The same syndicated underlying claim is repeated verbatim.";
   const coverage = evaluateFullValidationCoverage([
-    source({ url: "https://one.test/a", canonicalUrl: "https://one.test/a", text }),
-    source({ url: "https://two.test/b", canonicalUrl: "https://two.test/b", text }),
-    source({ url: "https://three.test/c", canonicalUrl: "https://three.test/c", text }),
+    source({
+      url: "https://one.test/a",
+      canonicalUrl: "https://one.test/a",
+      text,
+    }),
+    source({
+      url: "https://two.test/b",
+      canonicalUrl: "https://two.test/b",
+      text,
+    }),
+    source({
+      url: "https://three.test/c",
+      canonicalUrl: "https://three.test/c",
+      text,
+    }),
   ], brief);
   assert(
     coverage.independentEvidenceGroups.length === 1,
@@ -178,7 +223,10 @@ Deno.test("competitor and pricing counts require official live evidence", () => 
       },
     }),
   ], brief);
-  assert(coverage.verifiedCompetitorCount === 1, "competitor verification inflated");
+  assert(
+    coverage.verifiedCompetitorCount === 1,
+    "competitor verification inflated",
+  );
   assert(coverage.verifiedPricingCount === 1, "pricing verification inflated");
   assert(coverage.directWtpCount === 0, "list pricing was treated as WTP");
 });
@@ -186,14 +234,37 @@ Deno.test("competitor and pricing counts require official live evidence", () => 
 Deno.test("conditional research is trigger-driven, distinct, and capped at two", () => {
   const coverage = evaluateFullValidationCoverage([], brief);
   const repairs = selectConditionalPacks(brief, coverage);
-  assert(repairs.length === FULL_VALIDATION_REPAIR_CALL_LIMIT, "repair call cap drifted");
-  assert(new Set(repairs.map((pack) => pack.conditionalTrigger)).size === repairs.length, "repair trigger repeated");
-  assert(coverage.triggers.includes("marketplace_liquidity"), "marketplace trigger missing");
-  assert(coverage.triggers.includes("missing_pricing_wtp"), "pricing/WTP trigger missing");
+  assert(
+    repairs.length === FULL_VALIDATION_REPAIR_CALL_LIMIT,
+    "repair call cap drifted",
+  );
+  assert(
+    new Set(repairs.map((pack) => pack.conditionalTrigger)).size ===
+      repairs.length,
+    "repair trigger repeated",
+  );
+  assert(
+    coverage.triggers.includes("marketplace_liquidity"),
+    "marketplace trigger missing",
+  );
+  assert(
+    coverage.triggers.includes("missing_pricing_wtp"),
+    "pricing/WTP trigger missing",
+  );
 });
 
 Deno.test("provider failure remains unavailable while empty completed packs remain no-evidence", () => {
-  assert(classifyPackFailure(new Error("provider unavailable"), null) === "provider_failed", "provider failure misclassified");
-  assert(classifyPackFailure(new Error("request timed out"), null) === "timed_out", "timeout misclassified");
-  assert(packOutcome(0) === "completed_no_evidence", "empty completed pack status wrong");
+  assert(
+    classifyPackFailure(new Error("provider unavailable"), null) ===
+      "provider_failed",
+    "provider failure misclassified",
+  );
+  assert(
+    classifyPackFailure(new Error("request timed out"), null) === "timed_out",
+    "timeout misclassified",
+  );
+  assert(
+    packOutcome(0) === "completed_no_evidence",
+    "empty completed pack status wrong",
+  );
 });

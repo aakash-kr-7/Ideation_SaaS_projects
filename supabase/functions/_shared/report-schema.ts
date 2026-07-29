@@ -25,7 +25,8 @@ export const evidenceSchema = z.object({
   evidenceFamily: z.enum(["problem", "solution"]).optional(),
   researchPass: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
   researchQueryId: z.string().uuid().nullable().optional(),
-  sourceTier: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).optional(),
+  sourceTier: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)])
+    .optional(),
   sourceTierReason: z.string().nullable().optional(),
   excluded: z.boolean().optional(),
   disconfirming: z.boolean().optional(),
@@ -34,7 +35,12 @@ export const evidenceSchema = z.object({
   independentDomainCount: z.number().int().nonnegative().optional(),
   evidenceTopic: z.string().optional(),
   relevanceScore: z.number().min(0).max(1).optional(),
-  relevanceClass: z.enum(["directly_relevant", "contextually_relevant", "adjacent", "out_of_scope"]).optional(),
+  relevanceClass: z.enum([
+    "directly_relevant",
+    "contextually_relevant",
+    "adjacent",
+    "out_of_scope",
+  ]).optional(),
   matchedBriefDimensions: z.array(z.string()).optional(),
   mismatchReasons: z.array(z.string()).optional(),
   acceptanceDecision: z.string().optional(),
@@ -50,9 +56,23 @@ export const evidenceSchema = z.object({
   claimFingerprint: z.string().optional(),
   evidenceRole: z.enum(["supporting", "challenging"]).optional(),
   associatedFactorIds: z.array(z.string()).optional(),
+  atomicClaim: z.string().nullable().optional(),
+  publishedOrUpdatedAt: z.string().nullable().optional(),
+  buyerSegment: z.string().nullable().optional(),
+  geography: z.string().nullable().optional(),
+  limitations: z.array(z.string()).optional(),
+  propositionLinks: z.array(z.string()).optional(),
+  hostileTextDetected: z.boolean().optional(),
   extractionConfidence: z.number().min(0).max(1).optional(),
-  numericValidationState: z.enum(["verified", "flagged", "rejected", "not_applicable", "not_checked"]).optional(),
-  modelClassificationMetadata: z.record(z.string(), z.unknown()).nullable().optional(),
+  numericValidationState: z.enum([
+    "verified",
+    "flagged",
+    "rejected",
+    "not_applicable",
+    "not_checked",
+  ]).optional(),
+  modelClassificationMetadata: z.record(z.string(), z.unknown()).nullable()
+    .optional(),
 });
 export const competitorSchema = z.object({
   id: z.string(),
@@ -62,7 +82,12 @@ export const competitorSchema = z.object({
   target: z.string(),
   strength: z.string(),
   gap: z.string(),
-  classification: z.enum(["direct", "adjacent", "substitute", "workflow_workaround"]).default("adjacent"),
+  classification: z.enum([
+    "direct",
+    "adjacent",
+    "substitute",
+    "workflow_workaround",
+  ]).default("adjacent"),
   comparability: z.object({
     targetBuyer: z.boolean(),
     workflow: z.boolean(),
@@ -121,19 +146,46 @@ export const mvpPlanSchema = z.object({
 const scoreNumber = () => z.number().min(0).max(100);
 const weightNumber = () => z.number().min(0);
 const criterionScoreShape = {
-  painSeverity: scoreNumber(), purchaseUrgency: scoreNumber(), willingnessToPay: scoreNumber(), buyerReachability: scoreNumber(),
-  mvpSpeed: scoreNumber(), competitionGap: scoreNumber(), retentionPotential: scoreNumber(), platformDependencyRisk: scoreNumber(),
-  regulatoryRisk: scoreNumber(), founderFit: scoreNumber(), distributionClarity: scoreNumber(), speedToFirstRevenue: scoreNumber(),
+  painSeverity: scoreNumber(),
+  purchaseUrgency: scoreNumber(),
+  willingnessToPay: scoreNumber(),
+  buyerReachability: scoreNumber(),
+  mvpSpeed: scoreNumber(),
+  competitionGap: scoreNumber(),
+  retentionPotential: scoreNumber(),
+  platformDependencyRisk: scoreNumber(),
+  regulatoryRisk: scoreNumber(),
+  founderFit: scoreNumber(),
+  distributionClarity: scoreNumber(),
+  speedToFirstRevenue: scoreNumber(),
 } satisfies Record<ScoringCriterion, z.ZodNumber>;
 const criterionStringShape = {
-  painSeverity: z.string().min(1), purchaseUrgency: z.string().min(1), willingnessToPay: z.string().min(1), buyerReachability: z.string().min(1),
-  mvpSpeed: z.string().min(1), competitionGap: z.string().min(1), retentionPotential: z.string().min(1), platformDependencyRisk: z.string().min(1),
-  regulatoryRisk: z.string().min(1), founderFit: z.string().min(1), distributionClarity: z.string().min(1), speedToFirstRevenue: z.string().min(1),
+  painSeverity: z.string().min(1),
+  purchaseUrgency: z.string().min(1),
+  willingnessToPay: z.string().min(1),
+  buyerReachability: z.string().min(1),
+  mvpSpeed: z.string().min(1),
+  competitionGap: z.string().min(1),
+  retentionPotential: z.string().min(1),
+  platformDependencyRisk: z.string().min(1),
+  regulatoryRisk: z.string().min(1),
+  founderFit: z.string().min(1),
+  distributionClarity: z.string().min(1),
+  speedToFirstRevenue: z.string().min(1),
 } satisfies Record<ScoringCriterion, z.ZodString>;
 const criterionWeightShape = {
-  painSeverity: weightNumber(), purchaseUrgency: weightNumber(), willingnessToPay: weightNumber(), buyerReachability: weightNumber(),
-  mvpSpeed: weightNumber(), competitionGap: weightNumber(), retentionPotential: weightNumber(), platformDependencyRisk: weightNumber(),
-  regulatoryRisk: weightNumber(), founderFit: weightNumber(), distributionClarity: weightNumber(), speedToFirstRevenue: weightNumber(),
+  painSeverity: weightNumber(),
+  purchaseUrgency: weightNumber(),
+  willingnessToPay: weightNumber(),
+  buyerReachability: weightNumber(),
+  mvpSpeed: weightNumber(),
+  competitionGap: weightNumber(),
+  retentionPotential: weightNumber(),
+  platformDependencyRisk: weightNumber(),
+  regulatoryRisk: weightNumber(),
+  founderFit: weightNumber(),
+  distributionClarity: weightNumber(),
+  speedToFirstRevenue: weightNumber(),
 } satisfies Record<ScoringCriterion, z.ZodNumber>;
 const verdictSchema = z.enum([
   "Build Now",
@@ -261,13 +313,22 @@ export const narrativeCitationsSchema = z.object({
 export const specialistAssessmentSchema = z.object({
   name: z.enum(["competition", "market", "pricing", "risk", "demand", "gtm"]),
   status: z.enum(["Complete", "Incomplete"]),
-  direction: z.enum(["Supports opportunity", "Mixed evidence", "Challenges opportunity", "Insufficient evidence"]),
+  direction: z.enum([
+    "Supports opportunity",
+    "Mixed evidence",
+    "Challenges opportunity",
+    "Insufficient evidence",
+  ]),
   assessment: z.string().min(1),
   findings: z.array(z.string()),
   evidenceIds: z.array(z.string().uuid()).default([]),
-  sourceCitations: z.array(z.object({ sourceId: z.string().uuid(), url: z.string().url() })).default([]),
+  sourceCitations: z.array(
+    z.object({ sourceId: z.string().uuid(), url: z.string().url() }),
+  ).default([]),
   opposingEvidenceIds: z.array(z.string().uuid()).default([]),
-  confidence: z.enum(["High", "Moderate", "Low", "Insufficient"]).default("Insufficient"),
+  confidence: z.enum(["High", "Moderate", "Low", "Insufficient"]).default(
+    "Insufficient",
+  ),
   relevantBriefDimensions: z.array(z.string()).default([]),
   unresolvedGaps: z.array(z.string()).default([]),
 });
@@ -277,30 +338,48 @@ export const fullValidationInsightsSchema = z.object({
     jobsToBeDone: z.array(z.string()).min(1),
     evidenceSourceUrls: z.array(z.string().url()).default([]),
     evidenceIds: z.array(z.string().uuid()).default([]),
-    sourceCitations: z.array(z.object({ sourceId: z.string().uuid(), url: z.string().url() })).default([]),
+    sourceCitations: z.array(
+      z.object({ sourceId: z.string().uuid(), url: z.string().url() }),
+    ).default([]),
   })).default([]),
   willingnessToPay: z.object({
-    finding: z.string().default("Insufficient public willingness-to-pay evidence."),
-    strength: z.enum(["Strong", "Moderate", "Weak", "Insufficient"]).default("Insufficient"),
+    finding: z.string().default(
+      "Insufficient public willingness-to-pay evidence.",
+    ),
+    strength: z.enum(["Strong", "Moderate", "Weak", "Insufficient"]).default(
+      "Insufficient",
+    ),
     evidenceSourceUrls: z.array(z.string().url()).default([]),
     evidenceIds: z.array(z.string().uuid()).default([]),
   }),
   marketContext: z.object({
     summary: z.string(),
     metrics: z.array(z.object({
-      label: z.string(), value: z.string(), sourceUrl: z.string().url(), evidenceId: z.string().uuid().nullable(),
-      numericValidation: z.record(z.string(), z.unknown()).nullable().optional(),
+      label: z.string(),
+      value: z.string(),
+      sourceUrl: z.string().url(),
+      evidenceId: z.string().uuid().nullable(),
+      numericValidation: z.record(z.string(), z.unknown()).nullable()
+        .optional(),
     })).default([]),
   }),
   gtmFindings: z.array(z.object({
     finding: z.string(),
     evidenceSourceUrls: z.array(z.string().url()).default([]),
     evidenceIds: z.array(z.string().uuid()).default([]),
-    sourceCitations: z.array(z.object({ sourceId: z.string().uuid(), url: z.string().url() })).default([]),
+    sourceCitations: z.array(
+      z.object({ sourceId: z.string().uuid(), url: z.string().url() }),
+    ).default([]),
   })).default([]),
 });
 export const decisionStatementSchema = z.object({
-  kind: z.enum(["Fact", "Inference", "Hypothesis", "Recommendation", "MissingEvidence"]),
+  kind: z.enum([
+    "Fact",
+    "Inference",
+    "Hypothesis",
+    "Recommendation",
+    "MissingEvidence",
+  ]),
   text: z.string().min(1),
   evidenceIds: z.array(z.string().uuid()).default([]),
   sourceUrls: z.array(z.string().url()).default([]),
@@ -383,7 +462,8 @@ export const validationReportSchema = z.object({
   citationValidation: citationValidationReportSchema.optional(),
   decisionIntegrity: decisionIntegritySchema.optional(),
   narrativeCitations: narrativeCitationsSchema.optional(),
-  specialistAssessments: z.array(specialistAssessmentSchema).length(6).optional(),
+  specialistAssessments: z.array(specialistAssessmentSchema).length(6)
+    .optional(),
   fullValidationInsights: fullValidationInsightsSchema.optional(),
   fullValidationDecision: z.record(z.string(), z.unknown()).optional(),
   evidenceGaps: z.array(z.string()).default([]),
@@ -437,7 +517,12 @@ export const validationReportSchema = z.object({
     assumedFactors: z.array(z.string()),
     missingEvidenceFamilies: z.array(z.string()),
     sourceConcentration: z.number().min(0).max(1),
-    overallEvidenceConfidence: z.enum(["High", "Moderate", "Low", "Insufficient"]),
+    overallEvidenceConfidence: z.enum([
+      "High",
+      "Moderate",
+      "Low",
+      "Insufficient",
+    ]),
     mostImportantLimitation: z.string().min(1),
   }).optional(),
   verdictChangeConditions: z.object({
@@ -447,6 +532,7 @@ export const validationReportSchema = z.object({
     downgradeCondition: z.string().min(1),
   }).optional(),
   researchExecution: z.object({
+    reviewBudgetMaximum: z.number().int().positive().optional(),
     maximumGroundedCalls: z.number().int().min(0).max(10),
     normalGroundedCallLimit: z.number().int().min(0).max(8).optional(),
     conditionalGroundedCallLimit: z.number().int().min(0).max(2).optional(),
@@ -464,7 +550,25 @@ export const validationReportSchema = z.object({
       ]),
       acceptedEvidenceCount: z.number().int().nonnegative(),
       failureReason: z.string().nullable().optional(),
+      sourcesDiscovered: z.number().int().nonnegative().optional(),
+      sourcesReviewed: z.number().int().nonnegative().optional(),
+      sourcesFetched: z.number().int().nonnegative().optional(),
+      findingsAccepted: z.number().int().nonnegative().optional(),
+      findingsRejected: z.number().int().nonnegative().optional(),
+      independentEvidenceGroups: z.number().int().nonnegative().optional(),
+      directOfficialSources: z.number().int().nonnegative().optional(),
+      challengingFindings: z.number().int().nonnegative().optional(),
     })).default([]),
+    funnel: z.object({
+      sourcesDiscovered: z.number().int().nonnegative(),
+      sourcesReviewed: z.number().int().nonnegative(),
+      sourcesFetched: z.number().int().nonnegative(),
+      findingsAccepted: z.number().int().nonnegative(),
+      findingsRejected: z.number().int().nonnegative(),
+      independentEvidenceGroups: z.number().int().nonnegative(),
+      directOrOfficialSources: z.number().int().nonnegative(),
+      challengingFindings: z.number().int().nonnegative(),
+    }).optional(),
     adversarialFinding: z.string().min(1),
     calls: z.array(z.object({
       callPurpose: z.string(),
@@ -490,6 +594,26 @@ export const validationReportSchema = z.object({
       durationMs: z.number().int().nonnegative(),
       quotaFailure: z.boolean(),
     })),
+  }).optional(),
+  adversarialInvestigation: z.object({
+    prosecution: z.record(z.string(), z.unknown()).optional(),
+    defense: z.record(z.string(), z.unknown()).optional(),
+    adjudication: z.record(z.string(), z.unknown()).optional(),
+    propositions: z.array(z.object({
+      propositionKey: z.string(),
+      statement: z.string(),
+      buyerSegment: z.string(),
+      burdenStatus: z.enum([
+        "met",
+        "contested",
+        "unmet",
+        "insufficient_evidence",
+      ]),
+      supportingEvidenceIds: z.array(z.string().uuid()),
+      challengingEvidenceIds: z.array(z.string().uuid()),
+      missingEvidence: z.array(z.string()),
+      killCondition: z.string().nullable(),
+    })).default([]),
   }).optional(),
   pricingIntegrity: z.object({
     verifiedCompetitorPricing: z.array(z.object({
@@ -566,11 +690,21 @@ export interface ValidationReport {
   strongestNegativeEvidenceId?: string;
   decisionProduct?: z.infer<typeof decisionProductSchema>;
   contradictions: z.infer<typeof validationReportSchema.shape.contradictions>;
-  researchAvailabilityState?: z.infer<typeof validationReportSchema.shape.researchAvailabilityState>;
-  evidenceSufficiency?: z.infer<typeof validationReportSchema.shape.evidenceSufficiency>;
-  verdictChangeConditions?: z.infer<typeof validationReportSchema.shape.verdictChangeConditions>;
-  researchExecution?: z.infer<typeof validationReportSchema.shape.researchExecution>;
-  pricingIntegrity?: z.infer<typeof validationReportSchema.shape.pricingIntegrity>;
+  researchAvailabilityState?: z.infer<
+    typeof validationReportSchema.shape.researchAvailabilityState
+  >;
+  evidenceSufficiency?: z.infer<
+    typeof validationReportSchema.shape.evidenceSufficiency
+  >;
+  verdictChangeConditions?: z.infer<
+    typeof validationReportSchema.shape.verdictChangeConditions
+  >;
+  researchExecution?: z.infer<
+    typeof validationReportSchema.shape.researchExecution
+  >;
+  pricingIntegrity?: z.infer<
+    typeof validationReportSchema.shape.pricingIntegrity
+  >;
 }
 
 // Database-specific schema constraints for Server Actions inputs
