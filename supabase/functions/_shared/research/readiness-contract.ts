@@ -87,15 +87,18 @@ export interface ScoreChangeContract {
 }
 
 export interface VerificationCardPayload {
-  version: 1;
+  version: 2;
   ideaName: string;
+  title: string;
   score: { value: number; range: string };
   verdict: string;
   evidenceConfidence: string;
   independentEvidenceGroups: number;
   currentAsOf: string;
   immutableReportLink: string;
+  immutableVerificationUrl: string;
   methodologyLink: string;
+  interpretation: "decision_readiness_not_success_probability";
 }
 
 const UPWARD_EVIDENCE: Record<Criterion, string> = {
@@ -380,12 +383,15 @@ export function buildVerificationCardPayload(input: {
   independentEvidenceGroups: number;
   currentAsOf: string;
   immutableReportLink: string;
+  immutableVerificationUrl?: string;
   methodologyLink?: string;
 }): VerificationCardPayload {
+  const score = clamp(input.score);
   return {
-    version: 1,
+    version: 2,
     ideaName: input.ideaName,
-    score: { value: clamp(input.score), range: input.scoreRange },
+    title: `ShouldBuild ${score}`,
+    score: { value: score, range: input.scoreRange },
     verdict: input.verdict,
     evidenceConfidence: input.evidenceConfidence,
     independentEvidenceGroups: Math.max(
@@ -394,7 +400,10 @@ export function buildVerificationCardPayload(input: {
     ),
     currentAsOf: input.currentAsOf.slice(0, 10),
     immutableReportLink: input.immutableReportLink,
+    immutableVerificationUrl: input.immutableVerificationUrl ||
+      input.immutableReportLink,
     methodologyLink: input.methodologyLink ||
       "/methodology/shouldbuild-readiness-score",
+    interpretation: "decision_readiness_not_success_probability",
   };
 }

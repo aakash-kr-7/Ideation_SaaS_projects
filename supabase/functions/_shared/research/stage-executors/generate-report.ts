@@ -29,6 +29,7 @@ import {
   competitorIntegrityPresentation,
   findPlaceholderLeakage,
 } from "../evidence-integrity.ts";
+import { buildShareableVerificationCard } from "../evidence-freshness.ts";
 
 export async function executeGenerateReport(
   ctx: StageContext,
@@ -87,7 +88,7 @@ export async function executeGenerateReport(
   ] = await Promise.all([
     db.from("evidence_items")
       .select(
-        "id, source_id, excluded, source_tier, snippet, title, signal_type, strength, evidence_family, evidence_topic, pain_point, source_domain, source_class, disconfirming, created_at, relevance_score, relevance_class, matched_brief_dimensions, mismatch_reasons, acceptance_decision, claim_id, canonical_source_id, canonical_domain, source_family, source_authority, evidence_directness, semantic_relevance, independence_key, syndication_group, claim_fingerprint, evidence_role, associated_factor_ids, atomic_claim, published_or_updated_at, segment, geography, limitations, proposition_links, hostile_text_detected, extraction_confidence, numeric_validation_state, model_classification_metadata, sources(url)",
+        "id, source_id, excluded, source_tier, snippet, title, signal_type, strength, evidence_family, evidence_topic, pain_point, source_domain, source_class, disconfirming, created_at, relevance_score, relevance_class, matched_brief_dimensions, mismatch_reasons, acceptance_decision, claim_id, canonical_source_id, canonical_domain, source_family, source_authority, evidence_directness, semantic_relevance, independence_key, syndication_group, claim_fingerprint, evidence_role, associated_factor_ids, atomic_claim, published_or_updated_at, retrieved_at, revalidation_due_at, content_hash, content_hash_scope, freshness_policy_key, freshness_state, last_material_change_at, source_etag, source_last_modified, segment, geography, limitations, proposition_links, hostile_text_detected, extraction_confidence, numeric_validation_state, model_classification_metadata, sources(url)",
       )
       .eq("run_id", runId),
     db.from("research_runs")
@@ -616,11 +617,64 @@ export async function executeGenerateReport(
     },
     {},
   );
+  const reportVersionId = crypto.randomUUID();
+  const currentAsOf = new Date().toISOString().slice(0, 10);
+  const staleEvidenceCount = (evidence || []).filter((item: any) =>
+    allowed.has(item.id) &&
+    ["stale", "revalidation_due"].includes(item.freshness_state)
+  ).length;
+  const unknownVintageCount = (evidence || []).filter((item: any) =>
+    allowed.has(item.id) && item.freshness_state === "unknown_date"
+  ).length;
+  const staleEvidenceWarning = staleEvidenceCount || unknownVintageCount
+    ? [
+      ...(staleEvidenceCount
+        ? [`${staleEvidenceCount} accepted evidence item${
+          staleEvidenceCount === 1 ? " is" : "s are"
+        } stale or due for revalidation.`]
+        : []),
+      ...(unknownVintageCount
+        ? [`${unknownVintageCount} accepted evidence item${
+          unknownVintageCount === 1 ? " has" : "s have"
+        } no attributable publication/update date.`]
+        : []),
+    ].join(" ")
+    : null;
+  const publicOrigin = (
+    Deno.env.get("SHOULDBUILD_PUBLIC_ORIGIN") ||
+    Deno.env.get("NEXT_PUBLIC_SITE_URL") ||
+    "https://tryshouldbuild.netlify.app"
+  ).replace(/\/+$/, "");
+  const immutableVerificationUrl =
+    `${publicOrigin}/verify/${reportVersionId}`;
+  const scoreIdentityCard = buildShareableVerificationCard({
+    score: Number(scoreRow.total),
+    verdict: String(scoreRow.verdict),
+    evidenceConfidence: String(
+      fullValidationDecision?.evidence_confidence || effectiveConfidence.band,
+    ),
+    independentEvidenceGroups: new Set(
+      (evidence || []).filter((item: any) => allowed.has(item.id)).map((
+        item: any,
+      ) =>
+        item.independence_key || item.syndication_group ||
+        item.claim_fingerprint || item.canonical_source_id || item.source_id
+      ),
+    ).size,
+    currentAsOf,
+    immutableVerificationUrl,
+  });
   const reportPayload: any = {
     id: runId,
     version: "2.0",
     reportMode: config.mode,
     generatedAt: new Date().toISOString(),
+    currentAsOf,
+    staleEvidenceWarning,
+    reportDelta: null,
+    verificationCard: config.mode === "full_validation"
+      ? scoreIdentityCard
+      : undefined,
     executiveSummary,
     methodology,
     opportunity: {
@@ -668,6 +722,15 @@ export async function executeGenerateReport(
         associatedFactorIds: item.associated_factor_ids || [],
         atomicClaim: item.atomic_claim,
         publishedOrUpdatedAt: item.published_or_updated_at,
+        retrievedAt: item.retrieved_at,
+        revalidationDueAt: item.revalidation_due_at,
+        contentHash: item.content_hash,
+        contentHashScope: item.content_hash_scope,
+        freshnessPolicyKey: item.freshness_policy_key,
+        freshnessState: item.freshness_state,
+        lastMaterialChangeAt: item.last_material_change_at,
+        sourceEtag: item.source_etag,
+        sourceLastModified: item.source_last_modified,
         buyerSegment: item.segment,
         geography: item.geography,
         limitations: item.limitations || [],
@@ -777,7 +840,7 @@ export async function executeGenerateReport(
         scoreContract: fullValidationDecision.score_contract,
         rollups: fullValidationDecision.readiness_rollups,
         scoreChange: fullValidationDecision.score_change_contract,
-        verificationCard: fullValidationDecision.verification_card,
+        verificationCard: scoreIdentityCard,
         decisionContract: fullValidationDecision.decision_contract,
         founderActionPlan: fullValidationDecision.founder_action_plan,
         optionalGroqReview: fullValidationDecision.optional_groq_review,
@@ -1054,10 +1117,13 @@ export async function executeGenerateReport(
   const { data: version, error: versionError } = await db
     .from("report_versions")
     .insert({
+      id: reportVersionId,
       report_id: report.id,
       version_number: 1,
       report_mode: config.mode,
       payload: validatedReport.data,
+      current_as_of: currentAsOf,
+      version_reason: "initial",
       adversarial_gate: adversarialGate || null,
       citation_validation: citationValidation,
       reasoning_flags: [],
@@ -1072,6 +1138,22 @@ export async function executeGenerateReport(
       "permanent",
       `Report version insert failed: ${versionError?.message}`,
     );
+  }
+  if (config.mode === "full_validation" && version?.id) {
+    const { error: verificationCardError } = await db.from(
+      "report_verification_cards",
+    ).insert({
+      report_version_id: version.id,
+      public_id: version.id,
+      payload: scoreIdentityCard,
+      current_as_of: currentAsOf,
+    });
+    if (verificationCardError) {
+      return stageFailed(
+        "permanent",
+        `Verification card persistence failed: ${verificationCardError.message}`,
+      );
+    }
   }
 
   // --- Persist chart datasets linked to the report version ---

@@ -429,3 +429,15 @@ entrypoint = "./functions/research-worker/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/research-worker/*.html" ]
+
+[functions.research-scheduler]
+enabled = true
+verify_jwt = false
+import_map = "./functions/research-scheduler/deno.json"
+entrypoint = "./functions/research-scheduler/index.ts"
+
+[functions.report-refresh-worker]
+enabled = true
+verify_jwt = false
+import_map = "./functions/report-refresh-worker/deno.json"
+entrypoint = "./functions/report-refresh-worker/index.ts"

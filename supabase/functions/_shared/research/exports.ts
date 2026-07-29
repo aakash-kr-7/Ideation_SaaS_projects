@@ -266,9 +266,12 @@ function decisionProductMarkdown(payload: unknown) {
 }
 
 function fullValidationDecisionMarkdown(payload: unknown) {
-  const decision = (integrityPayload(payload) as any).fullValidationDecision;
+  const report = integrityPayload(payload) as any;
+  const decision = report.fullValidationDecision;
   const verdict = decision?.verdictStructure;
   if (!verdict) return "";
+  const card = report.verificationCard || decision.verificationCard;
+  const delta = report.reportDelta;
   return `## Full Validation decision
 
 - Recommended segment: ${
@@ -281,6 +284,33 @@ function fullValidationDecisionMarkdown(payload: unknown) {
 - Upgrade condition: ${verdict.upgradeCondition}
 - Downgrade condition: ${verdict.downgradeCondition}
 - Kill condition: ${verdict.killCondition}
+- Current as of: ${report.currentAsOf || card?.currentAsOf || "Not recorded"}
+- Stale evidence warning: ${report.staleEvidenceWarning || "None"}
+
+### Verification card
+
+- ${card?.title || "ShouldBuild score identity unavailable"}
+- Verdict: ${card?.verdict || verdict.verdict}
+- Evidence Confidence: ${card?.evidenceConfidence || verdict.evidenceConfidence}
+- Independent evidence groups: ${card?.independentEvidenceGroups ?? "Not recorded"}
+- Immutable verification URL: ${card?.immutableVerificationUrl || "Not recorded"}
+- Interpretation: decision readiness, not probability of success
+
+### Changes since previous version
+
+- Score movement: ${
+    delta
+      ? `${delta.scoreMovement.previous} to ${delta.scoreMovement.current} (${delta.scoreMovement.delta >= 0 ? "+" : ""}${delta.scoreMovement.delta})`
+      : "Initial version; no previous report."
+  }
+- Verdict movement: ${
+    delta
+      ? `${delta.verdictMovement.previous} to ${delta.verdictMovement.current}`
+      : "Initial version; no previous report."
+  }
+- Changed sources: ${delta?.changedSources?.length ?? 0}
+- Affected propositions: ${delta?.affectedPropositions?.join(", ") || "None"}
+- Affected factors: ${delta?.affectedFactors?.join(", ") || "None"}
 
 ### Segment rankings
 ${

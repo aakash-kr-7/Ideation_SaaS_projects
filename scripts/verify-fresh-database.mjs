@@ -37,6 +37,20 @@ check(
   "all deterministic registry domains have exclusions, packs, templates, adapters, authority/bias, and restrictions",
 );
 check("source_registry_seeded", !sourcesError && sources?.length >= 8, `${sources?.length ?? 0} source registry entries (expected ≥8)`);
+const { data: freshnessPolicies, error: freshnessPoliciesError } = await db
+  .from("evidence_freshness_policies")
+  .select("policy_key,max_age_days,revalidation_interval_days,visible_vintage");
+check(
+  "evidence_freshness_policies_seeded",
+  !freshnessPoliciesError &&
+    freshnessPolicies?.length === 6 &&
+    freshnessPolicies.every((policy) =>
+      policy.max_age_days > 0 &&
+      policy.revalidation_interval_days > 0 &&
+      policy.visible_vintage
+    ),
+  `${freshnessPolicies?.length ?? 0} configurable freshness policies (expected 6)`,
+);
 
 // --- RLS on all public tables ---
 // --- RLS on all public tables ---
@@ -74,6 +88,10 @@ const internalTables = [
   "full_validation_research_pack_statuses", "research_propositions",
   "research_claim_graph_edges", "full_validation_decisions",
   "source_routing_packs", "full_validation_investigation_passes",
+  "evidence_freshness_policies", "report_refresh_runs",
+  "evidence_source_refresh_checks", "report_version_deltas",
+  "report_verification_cards", "report_refresh_schedules",
+  "report_refresh_requests",
   "evidence_rejection_diagnostics",
   "research_jobs", "research_job_attempts", "research_pipeline_metrics",
   "research_pipeline_cursors", "evidence_graph_nodes", "evidence_graph_edges",
@@ -114,6 +132,10 @@ const rpcs = [
   { name: "get_owned_latest_report", serviceOnly: true },
   { name: "get_research_progress_snapshot", serviceOnly: false },
   { name: "get_research_activity_detail", serviceOnly: false },
+  { name: "persist_changed_report_refresh", serviceOnly: true },
+  { name: "persist_changed_report_refresh_with_artifacts", serviceOnly: true },
+  { name: "complete_report_refresh_no_change", serviceOnly: true },
+  { name: "opt_in_founder_outcome_checkpoints", serviceOnly: false },
 ];
 
 for (const rpc of rpcs) {

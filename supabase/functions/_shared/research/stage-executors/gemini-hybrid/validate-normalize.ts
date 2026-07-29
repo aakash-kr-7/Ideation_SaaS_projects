@@ -34,6 +34,11 @@ import {
   buildAtomicExtractionBatches,
   type DecisionPropositionKey,
 } from "../../adversarial-investigation.ts";
+import {
+  deriveEvidenceFreshness,
+  resolveFreshnessPolicyKey,
+  sha256Content,
+} from "../../evidence-freshness.ts";
 
 const EVIDENCE_TOPICS = [
   "customer_pain",
@@ -1384,6 +1389,22 @@ export async function executeHybridValidateNormalize(
     > = [];
     for (const claim of validClaims) {
       const sourceMeta = allowedSources.get(claim.sourceId)!;
+      const freshnessPolicyKey = resolveFreshnessPolicyKey({
+        evidenceTopic: claim.evidenceTopic,
+        sourceClass: sourceMeta.sourceClass,
+        sourceFamily: sourceMeta.queryFamily,
+        canonicalUrl: sourceMeta.url,
+      });
+      const retrievedAt = new Date(sourceMeta.retrievalDate).toISOString();
+      const contentHash = await sha256Content(
+        `${claim.title}\n${claim.snippet}`,
+      );
+      const freshness = deriveEvidenceFreshness({
+        policyKey: freshnessPolicyKey,
+        publishedOrUpdatedAt: sourceMeta.publishedOrUpdatedDate,
+        retrievedAt,
+        lastMaterialChangeAt: sourceMeta.publishedOrUpdatedDate,
+      });
       sourceRecords.push({
         id: sourceMeta.sourceId,
         url: sourceMeta.url,
@@ -1471,6 +1492,13 @@ export async function executeHybridValidateNormalize(
           },
           atomic_claim: claim.title,
           published_or_updated_at: sourceMeta.publishedOrUpdatedDate,
+          freshness_policy_key: freshness.policyKey,
+          retrieved_at: freshness.retrievedAt,
+          revalidation_due_at: freshness.revalidationDueAt,
+          content_hash: contentHash,
+          content_hash_scope: "accepted_claim_excerpt_sha256",
+          freshness_state: freshness.freshnessState,
+          last_material_change_at: freshness.lastMaterialChangeAt,
           limitations: unique([
             ...sourceMeta.extractionLimitations,
             ...claim.mismatchReasons,

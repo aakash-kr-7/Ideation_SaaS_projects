@@ -58,6 +58,28 @@ export const evidenceSchema = z.object({
   associatedFactorIds: z.array(z.string()).optional(),
   atomicClaim: z.string().nullable().optional(),
   publishedOrUpdatedAt: z.string().nullable().optional(),
+  retrievedAt: z.string().optional(),
+  revalidationDueAt: z.string().optional(),
+  contentHash: z.string().min(32).optional(),
+  contentHashScope: z.string().optional(),
+  freshnessPolicyKey: z.enum([
+    "competitor_pricing_features",
+    "regulation",
+    "community",
+    "official_statistics",
+    "foundational_research",
+    "default",
+  ]).optional(),
+  freshnessState: z.enum([
+    "fresh",
+    "aging",
+    "revalidation_due",
+    "stale",
+    "unknown_date",
+  ]).optional(),
+  lastMaterialChangeAt: z.string().nullable().optional(),
+  sourceEtag: z.string().nullable().optional(),
+  sourceLastModified: z.string().nullable().optional(),
   buyerSegment: z.string().nullable().optional(),
   geography: z.string().nullable().optional(),
   limitations: z.array(z.string()).optional(),
@@ -452,6 +474,8 @@ export const validationReportSchema = z.object({
   version: z.enum(["1.0", "2.0"]),
   reportMode: reportModeSchema.default("full_validation"),
   generatedAt: z.string(),
+  currentAsOf: z.string().optional(),
+  staleEvidenceWarning: z.string().nullable().optional(),
   executiveSummary: z.string(),
   opportunity: opportunitySchema,
   methodology: z.string(),
@@ -466,6 +490,45 @@ export const validationReportSchema = z.object({
     .optional(),
   fullValidationInsights: fullValidationInsightsSchema.optional(),
   fullValidationDecision: z.record(z.string(), z.unknown()).optional(),
+  verificationCard: z.object({
+    version: z.literal(2),
+    title: z.string().regex(/^ShouldBuild \d+(?:\.\d+)?$/),
+    verdict: z.string().min(1),
+    evidenceConfidence: z.string().min(1),
+    independentEvidenceGroups: z.number().int().nonnegative(),
+    currentAsOf: z.string(),
+    immutableVerificationUrl: z.string().url(),
+    methodologyUrl: z.string().url().or(z.string().startsWith("/")),
+    interpretation: z.literal("decision_readiness_not_success_probability"),
+  }).optional(),
+  reportDelta: z.object({
+    currentAsOf: z.string(),
+    staleEvidenceWarning: z.string().nullable(),
+    changedSources: z.array(z.object({
+      sourceId: z.string(),
+      canonicalUrl: z.string().url(),
+      changeKind: z.enum([
+        "competitor_price_changed",
+        "competitor_feature_removed",
+        "regulation_changed",
+        "material_content_changed",
+      ]),
+    })),
+    affectedPropositions: z.array(z.string()),
+    affectedFactors: z.array(z.string()),
+    scoreMovement: z.object({
+      previous: z.number(),
+      current: z.number(),
+      delta: z.number(),
+      changed: z.boolean(),
+    }),
+    verdictMovement: z.object({
+      previous: z.string(),
+      current: z.string(),
+      changed: z.boolean(),
+    }),
+    materialChanges: z.array(z.string()),
+  }).nullable().optional(),
   evidenceGaps: z.array(z.string()).default([]),
   limitations: z.array(z.string()).default([]),
   reportSections: z.array(z.string()).default([]),
@@ -668,6 +731,8 @@ export interface ValidationReport {
   version: "1.0" | "2.0";
   reportMode: z.infer<typeof reportModeSchema>;
   generatedAt: string;
+  currentAsOf?: string;
+  staleEvidenceWarning?: string | null;
   executiveSummary: string;
   opportunity: ReportOpportunity;
   methodology: string;

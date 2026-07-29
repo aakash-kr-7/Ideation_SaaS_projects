@@ -34,6 +34,13 @@ try {
   const { data: version } = await requiredInsert(service, "report_versions", { report_id: report.id, version_number: 1, report_mode: "quick_scan", market_sizing: { reason: "No qualified market sizing in this isolation fixture." }, payload: { privateIdea: "tenant-only", specialists: [{ name: "risk", finding: "private" }] } });
   const { data: chart } = await requiredInsert(service, "report_chart_datasets", { report_version_id: version.id, run_id: run.id, chart_key: "private-chart", chart_type: "bar", sha256: "rls-chart", source_data: { values: [1] } });
   const { data: reportExport } = await requiredInsert(service, "report_exports", { report_version_id: version.id, format: "json", storage_path: `${victimId}/private.json`, byte_size: 7, sha256: "rls-export" });
+  const { data: outcomeCheckpoint } = await requiredInsert(service, "founder_outcome_checkpoints", {
+    report_id: report.id,
+    user_id: victimId,
+    opted_in: true,
+    checkpoint_day: 30,
+    checkpoint_due_at: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+  });
 
   const victim = createClient(url, anonKey, { auth: { persistSession: false } });
   const attacker = createClient(url, anonKey, { auth: { persistSession: false } });
@@ -52,6 +59,7 @@ try {
     ["opportunities", "id", opportunity.id], ["opportunity_scores", "id", score.id],
     ["reports", "id", report.id], ["report_versions", "id", version.id],
     ["report_chart_datasets", "id", chart.id], ["report_exports", "id", reportExport.id],
+    ["founder_outcome_checkpoints", "id", outcomeCheckpoint.id],
   ];
   for (const [table, column, value] of tenantMatrix) {
     const ownerResult = await victim.from(table).select("*").eq(column, value);
@@ -59,6 +67,94 @@ try {
     const attackerResult = await attacker.from(table).select("*").eq(column, value);
     if (attackerResult.error || attackerResult.data?.length !== 0) throw new Error(`Cross-tenant data was exposed from ${table}`);
   }
+
+  const { data: changedRefresh } = await requiredInsert(service, "report_refresh_runs", {
+    report_id: report.id,
+    base_version_id: version.id,
+    status: "running",
+    cited_sources_targeted: 1,
+    decision_critical_sources_targeted: 1,
+    sources_checked: 1,
+  });
+  const refreshedVersionId = crypto.randomUUID();
+  const refreshDelta = {
+    currentAsOf: new Date().toISOString().slice(0, 10),
+    staleEvidenceWarning: null,
+    changedSources: [{
+      sourceId: source.id,
+      canonicalUrl: source.canonical_url,
+      changeKind: "material_content_changed",
+    }],
+    affectedPropositions: ["pain_existence"],
+    affectedFactors: ["painSeverity"],
+    scoreMovement: { previous: 50, current: 50, delta: 0, changed: false },
+    verdictMovement: { previous: "Validate First", current: "Validate First", changed: false },
+    materialChanges: ["Fixture source changed without moving the score."],
+  };
+  const refreshCard = {
+    version: 2,
+    title: "ShouldBuild 50",
+    verdict: "Validate First",
+    evidenceConfidence: "Low",
+    independentEvidenceGroups: 1,
+    currentAsOf: refreshDelta.currentAsOf,
+    immutableVerificationUrl: `https://example.invalid/api/verify/${refreshedVersionId}`,
+    methodologyUrl: "/methodology/shouldbuild-readiness-score",
+    interpretation: "decision_readiness_not_success_probability",
+  };
+  const changedResult = await service.rpc("persist_changed_report_refresh_with_artifacts", {
+    p_refresh_run_id: changedRefresh.id,
+    p_report_id: report.id,
+    p_base_version_id: version.id,
+    p_new_version_id: refreshedVersionId,
+    p_payload: { ...version.payload, currentAsOf: refreshDelta.currentAsOf, reportDelta: refreshDelta, verificationCard: refreshCard },
+    p_delta: refreshDelta,
+    p_verification_card: refreshCard,
+    p_current_as_of: refreshDelta.currentAsOf,
+    p_exports: [{
+      format: "json",
+      storagePath: `${victimId}/refresh-v2.json`,
+      byteSize: 2,
+      sha256: "refresh-export-sha",
+    }],
+    p_charts: [{
+      runId: run.id,
+      chartKey: "refresh-factor-chart",
+      chartType: "bar",
+      sourceData: { values: [50] },
+      chartConfig: {},
+      supportingEvidenceIds: [evidence.id],
+      sha256: "refresh-chart-sha",
+    }],
+    p_evidence_updates: [],
+    p_source_updates: [],
+    p_score_update: {
+      id: score.id,
+      total: 50,
+      confidence: 50,
+      verdict: "Validate First",
+    },
+    p_breakdowns: [],
+  });
+  if (changedResult.error || changedResult.data !== refreshedVersionId) throw new Error(`Atomic changed refresh persistence failed: ${changedResult.error?.message || changedResult.data}`);
+  const { data: persistedDelta, error: persistedDeltaError } = await service.from("report_version_deltas").select("report_version_id,score_delta").eq("report_version_id", refreshedVersionId).single();
+  const { data: persistedCard, error: persistedCardError } = await service.from("report_verification_cards").select("report_version_id,payload").eq("report_version_id", refreshedVersionId).single();
+  const { data: refreshedArtifacts, error: refreshedArtifactsError } = await service.from("report_exports").select("format").eq("report_version_id", refreshedVersionId);
+  const { data: refreshedCharts, error: refreshedChartsError } = await service.from("report_chart_datasets").select("chart_key").eq("report_version_id", refreshedVersionId);
+  if (persistedDeltaError || persistedCardError || refreshedArtifactsError || refreshedChartsError || persistedDelta?.score_delta !== 0 || persistedCard?.payload?.title !== "ShouldBuild 50" || refreshedArtifacts?.length !== 1 || refreshedCharts?.length !== 1) throw new Error("Refresh delta/card/artifact persistence is incomplete");
+  const { data: noChangeRefresh } = await requiredInsert(service, "report_refresh_runs", {
+    report_id: report.id,
+    base_version_id: refreshedVersionId,
+    status: "running",
+  });
+  const noChangeResult = await service.rpc("complete_report_refresh_no_change", {
+    p_refresh_run_id: noChangeRefresh.id,
+    p_sources_checked: 1,
+    p_successful_no_change_checks: 1,
+  });
+  if (noChangeResult.error) throw new Error(`No-change refresh completion failed: ${noChangeResult.error.message}`);
+  const { data: completedNoChange } = await service.from("report_refresh_runs").select("status,llm_calls,created_version_id").eq("id", noChangeRefresh.id).single();
+  if (completedNoChange?.status !== "no_change" || completedNoChange.llm_calls !== 0 || completedNoChange.created_version_id !== null) throw new Error("No-change refresh created work or a version");
 
   const storagePath = `${victimId}/rls-private.txt`;
   const upload = await service.storage.from("exports").upload(storagePath, "private tenant export", { contentType: "text/plain", upsert: true });
@@ -111,7 +207,7 @@ try {
   attacker.realtime.disconnect();
   if (victimEvents < 1 || attackerEvents !== 0) throw new Error(`Realtime tenant isolation failed: ${JSON.stringify({ victimEvents, attackerEvents })}`);
 
-  const internalTables = ["source_registry", "public_retrieval_cache", "gemini_cache", "api_usage_logs", "research_jobs", "research_job_attempts", "research_pipeline_metrics", "research_pipeline_cursors", "research_call_metrics", "validated_pricing_observations", "quick_scan_research_pack_statuses", "research_adapter_metrics", "evidence_rejection_diagnostics", "evidence_graph_nodes", "evidence_graph_edges", "research_briefs", "evidence_contradictions", "operational_alerts", "edge_rate_limit_windows"];
+  const internalTables = ["source_registry", "source_routing_packs", "evidence_freshness_policies", "public_retrieval_cache", "gemini_cache", "api_usage_logs", "research_jobs", "research_job_attempts", "research_pipeline_metrics", "research_pipeline_cursors", "research_call_metrics", "validated_pricing_observations", "quick_scan_research_pack_statuses", "full_validation_research_pack_statuses", "research_adapter_metrics", "full_validation_investigation_passes", "report_refresh_runs", "evidence_source_refresh_checks", "report_version_deltas", "report_verification_cards", "report_refresh_schedules", "report_refresh_requests", "evidence_rejection_diagnostics", "evidence_graph_nodes", "evidence_graph_edges", "research_briefs", "evidence_contradictions", "operational_alerts", "edge_rate_limit_windows"];
   for (const table of internalTables) {
     const authenticated = await attacker.from(table).select("*").limit(1);
     if (!authenticated.error) throw new Error(`Authenticated client retained Data API access to internal table ${table}`);

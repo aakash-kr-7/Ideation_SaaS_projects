@@ -855,6 +855,48 @@ export type Database = {
           },
         ]
       }
+      evidence_freshness_policies: {
+        Row: {
+          aging_threshold: number
+          created_at: string
+          enabled: boolean
+          evidence_families: string[]
+          label: string
+          max_age_days: number
+          policy_key: string
+          revalidation_interval_days: number
+          updated_at: string
+          use_expected_next_release: boolean
+          visible_vintage: boolean
+        }
+        Insert: {
+          aging_threshold: number
+          created_at?: string
+          enabled?: boolean
+          evidence_families?: string[]
+          label: string
+          max_age_days: number
+          policy_key: string
+          revalidation_interval_days: number
+          updated_at?: string
+          use_expected_next_release?: boolean
+          visible_vintage?: boolean
+        }
+        Update: {
+          aging_threshold?: number
+          created_at?: string
+          enabled?: boolean
+          evidence_families?: string[]
+          label?: string
+          max_age_days?: number
+          policy_key?: string
+          revalidation_interval_days?: number
+          updated_at?: string
+          use_expected_next_release?: boolean
+          visible_vintage?: boolean
+        }
+        Relationships: []
+      }
       evidence_graph_edges: {
         Row: {
           created_at: string
@@ -959,6 +1001,8 @@ export type Database = {
           claim_id: string | null
           cluster_key: string | null
           confidence: number
+          content_hash: string | null
+          content_hash_scope: string | null
           contradicting_count: number
           created_at: string
           currency: string | null
@@ -969,8 +1013,11 @@ export type Database = {
           evidence_topic: string | null
           excluded: boolean
           exclusion_reason: string | null
+          expected_next_release_at: string | null
           extraction_confidence: number | null
           extraction_method: string
+          freshness_policy_key: string | null
+          freshness_state: string | null
           gemini_relevance_score: number | null
           geography: string | null
           hostile_text_detected: boolean
@@ -978,6 +1025,7 @@ export type Database = {
           independence_key: string | null
           independent_domain_count: number
           independent_source_count: number
+          last_material_change_at: string | null
           limitations: string[]
           market_size_figure: string | null
           market_size_metric: string | null
@@ -999,6 +1047,8 @@ export type Database = {
           research_pass: number | null
           research_query_id: string | null
           retrieval_date: string
+          retrieved_at: string | null
+          revalidation_due_at: string | null
           run_id: string
           segment: string | null
           semantic_relevance: number | null
@@ -1007,8 +1057,10 @@ export type Database = {
           source_authority: number | null
           source_class: string
           source_domain: string | null
+          source_etag: string | null
           source_family: string | null
           source_id: string | null
+          source_last_modified: string | null
           source_tier: number | null
           source_title: string
           strength: string
@@ -1034,6 +1086,8 @@ export type Database = {
           claim_id?: string | null
           cluster_key?: string | null
           confidence?: number
+          content_hash?: string | null
+          content_hash_scope?: string | null
           contradicting_count?: number
           created_at?: string
           currency?: string | null
@@ -1044,8 +1098,11 @@ export type Database = {
           evidence_topic?: string | null
           excluded?: boolean
           exclusion_reason?: string | null
+          expected_next_release_at?: string | null
           extraction_confidence?: number | null
           extraction_method: string
+          freshness_policy_key?: string | null
+          freshness_state?: string | null
           gemini_relevance_score?: number | null
           geography?: string | null
           hostile_text_detected?: boolean
@@ -1053,6 +1110,7 @@ export type Database = {
           independence_key?: string | null
           independent_domain_count?: number
           independent_source_count?: number
+          last_material_change_at?: string | null
           limitations?: string[]
           market_size_figure?: string | null
           market_size_metric?: string | null
@@ -1074,6 +1132,8 @@ export type Database = {
           research_pass?: number | null
           research_query_id?: string | null
           retrieval_date: string
+          retrieved_at?: string | null
+          revalidation_due_at?: string | null
           run_id: string
           segment?: string | null
           semantic_relevance?: number | null
@@ -1082,8 +1142,10 @@ export type Database = {
           source_authority?: number | null
           source_class: string
           source_domain?: string | null
+          source_etag?: string | null
           source_family?: string | null
           source_id?: string | null
+          source_last_modified?: string | null
           source_tier?: number | null
           source_title: string
           strength: string
@@ -1109,6 +1171,8 @@ export type Database = {
           claim_id?: string | null
           cluster_key?: string | null
           confidence?: number
+          content_hash?: string | null
+          content_hash_scope?: string | null
           contradicting_count?: number
           created_at?: string
           currency?: string | null
@@ -1119,8 +1183,11 @@ export type Database = {
           evidence_topic?: string | null
           excluded?: boolean
           exclusion_reason?: string | null
+          expected_next_release_at?: string | null
           extraction_confidence?: number | null
           extraction_method?: string
+          freshness_policy_key?: string | null
+          freshness_state?: string | null
           gemini_relevance_score?: number | null
           geography?: string | null
           hostile_text_detected?: boolean
@@ -1128,6 +1195,7 @@ export type Database = {
           independence_key?: string | null
           independent_domain_count?: number
           independent_source_count?: number
+          last_material_change_at?: string | null
           limitations?: string[]
           market_size_figure?: string | null
           market_size_metric?: string | null
@@ -1149,6 +1217,8 @@ export type Database = {
           research_pass?: number | null
           research_query_id?: string | null
           retrieval_date?: string
+          retrieved_at?: string | null
+          revalidation_due_at?: string | null
           run_id?: string
           segment?: string | null
           semantic_relevance?: number | null
@@ -1157,8 +1227,10 @@ export type Database = {
           source_authority?: number | null
           source_class?: string
           source_domain?: string | null
+          source_etag?: string | null
           source_family?: string | null
           source_id?: string | null
+          source_last_modified?: string | null
           source_tier?: number | null
           source_title?: string
           strength?: string
@@ -1178,6 +1250,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sources"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_items_freshness_policy_key_fkey"
+            columns: ["freshness_policy_key"]
+            isOneToOne: false
+            referencedRelation: "evidence_freshness_policies"
+            referencedColumns: ["policy_key"]
           },
           {
             foreignKeyName: "evidence_items_opportunity_id_fkey"
@@ -1243,6 +1322,90 @@ export type Database = {
           },
         ]
       }
+      evidence_source_refresh_checks: {
+        Row: {
+          affected_claim_ids: string[]
+          affected_factors: string[]
+          affected_propositions: string[]
+          canonical_url: string
+          change_kind: string | null
+          check_method: string
+          checked_at: string
+          cited: boolean
+          decision_critical: boolean
+          http_status: number | null
+          id: string
+          material_change: boolean
+          observed_content_hash: string | null
+          observed_etag: string | null
+          observed_last_modified: string | null
+          previous_content_hash: string | null
+          previous_etag: string | null
+          previous_last_modified: string | null
+          refresh_run_id: string
+          source_id: string | null
+        }
+        Insert: {
+          affected_claim_ids?: string[]
+          affected_factors?: string[]
+          affected_propositions?: string[]
+          canonical_url: string
+          change_kind?: string | null
+          check_method: string
+          checked_at?: string
+          cited?: boolean
+          decision_critical?: boolean
+          http_status?: number | null
+          id?: string
+          material_change?: boolean
+          observed_content_hash?: string | null
+          observed_etag?: string | null
+          observed_last_modified?: string | null
+          previous_content_hash?: string | null
+          previous_etag?: string | null
+          previous_last_modified?: string | null
+          refresh_run_id: string
+          source_id?: string | null
+        }
+        Update: {
+          affected_claim_ids?: string[]
+          affected_factors?: string[]
+          affected_propositions?: string[]
+          canonical_url?: string
+          change_kind?: string | null
+          check_method?: string
+          checked_at?: string
+          cited?: boolean
+          decision_critical?: boolean
+          http_status?: number | null
+          id?: string
+          material_change?: boolean
+          observed_content_hash?: string | null
+          observed_etag?: string | null
+          observed_last_modified?: string | null
+          previous_content_hash?: string | null
+          previous_etag?: string | null
+          previous_last_modified?: string | null
+          refresh_run_id?: string
+          source_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_source_refresh_checks_refresh_run_id_fkey"
+            columns: ["refresh_run_id"]
+            isOneToOne: false
+            referencedRelation: "report_refresh_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_source_refresh_checks_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feature_limits: {
         Row: {
           created_at: string
@@ -1280,6 +1443,74 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: true
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      founder_outcome_checkpoints: {
+        Row: {
+          abandonment_reason: string | null
+          checkpoint_day: number
+          checkpoint_due_at: string
+          created_at: string
+          declared_milestone_reached: boolean | null
+          first_revenue: boolean | null
+          id: string
+          idea_abandoned: boolean | null
+          interviews_completed: number | null
+          mvp_launched: boolean | null
+          opted_in: boolean
+          paid_commitments: number | null
+          report_id: string
+          retained_customers: number | null
+          submitted_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          abandonment_reason?: string | null
+          checkpoint_day: number
+          checkpoint_due_at: string
+          created_at?: string
+          declared_milestone_reached?: boolean | null
+          first_revenue?: boolean | null
+          id?: string
+          idea_abandoned?: boolean | null
+          interviews_completed?: number | null
+          mvp_launched?: boolean | null
+          opted_in?: boolean
+          paid_commitments?: number | null
+          report_id: string
+          retained_customers?: number | null
+          submitted_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          abandonment_reason?: string | null
+          checkpoint_day?: number
+          checkpoint_due_at?: string
+          created_at?: string
+          declared_milestone_reached?: boolean | null
+          first_revenue?: boolean | null
+          id?: string
+          idea_abandoned?: boolean | null
+          interviews_completed?: number | null
+          mvp_launched?: boolean | null
+          opted_in?: boolean
+          paid_commitments?: number | null
+          report_id?: string
+          retained_customers?: number | null
+          submitted_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "founder_outcome_checkpoints_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
             referencedColumns: ["id"]
           },
         ]
@@ -2229,56 +2460,345 @@ export type Database = {
           },
         ]
       }
+      report_refresh_requests: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          refresh_run_id: string | null
+          report_id: string
+          requested_by: string | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          refresh_run_id?: string | null
+          report_id: string
+          requested_by?: string | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          refresh_run_id?: string | null
+          report_id?: string
+          requested_by?: string | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_refresh_requests_refresh_run_id_fkey"
+            columns: ["refresh_run_id"]
+            isOneToOne: false
+            referencedRelation: "report_refresh_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_refresh_requests_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_refresh_runs: {
+        Row: {
+          base_version_id: string
+          cited_sources_targeted: number
+          completed_at: string | null
+          created_version_id: string | null
+          decision_critical_sources_targeted: number
+          error_message: string | null
+          id: string
+          llm_calls: number
+          material_changes: number
+          report_id: string
+          sources_checked: number
+          started_at: string
+          status: string
+          successful_no_change_checks: number
+        }
+        Insert: {
+          base_version_id: string
+          cited_sources_targeted?: number
+          completed_at?: string | null
+          created_version_id?: string | null
+          decision_critical_sources_targeted?: number
+          error_message?: string | null
+          id?: string
+          llm_calls?: number
+          material_changes?: number
+          report_id: string
+          sources_checked?: number
+          started_at?: string
+          status: string
+          successful_no_change_checks?: number
+        }
+        Update: {
+          base_version_id?: string
+          cited_sources_targeted?: number
+          completed_at?: string | null
+          created_version_id?: string | null
+          decision_critical_sources_targeted?: number
+          error_message?: string | null
+          id?: string
+          llm_calls?: number
+          material_changes?: number
+          report_id?: string
+          sources_checked?: number
+          started_at?: string
+          status?: string
+          successful_no_change_checks?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_refresh_runs_base_version_id_fkey"
+            columns: ["base_version_id"]
+            isOneToOne: false
+            referencedRelation: "report_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_refresh_runs_created_version_id_fkey"
+            columns: ["created_version_id"]
+            isOneToOne: false
+            referencedRelation: "report_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_refresh_runs_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_refresh_schedules: {
+        Row: {
+          cadence_days: number
+          created_at: string
+          enabled: boolean
+          last_refresh_run_id: string | null
+          last_refresh_status: string | null
+          next_refresh_at: string | null
+          report_id: string
+          updated_at: string
+        }
+        Insert: {
+          cadence_days?: number
+          created_at?: string
+          enabled?: boolean
+          last_refresh_run_id?: string | null
+          last_refresh_status?: string | null
+          next_refresh_at?: string | null
+          report_id: string
+          updated_at?: string
+        }
+        Update: {
+          cadence_days?: number
+          created_at?: string
+          enabled?: boolean
+          last_refresh_run_id?: string | null
+          last_refresh_status?: string | null
+          next_refresh_at?: string | null
+          report_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_refresh_schedules_last_refresh_run_id_fkey"
+            columns: ["last_refresh_run_id"]
+            isOneToOne: false
+            referencedRelation: "report_refresh_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_refresh_schedules_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: true
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_verification_cards: {
+        Row: {
+          created_at: string
+          current_as_of: string
+          payload: Json
+          public_id: string
+          report_version_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_as_of: string
+          payload: Json
+          public_id?: string
+          report_version_id: string
+        }
+        Update: {
+          created_at?: string
+          current_as_of?: string
+          payload?: Json
+          public_id?: string
+          report_version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_verification_cards_report_version_id_fkey"
+            columns: ["report_version_id"]
+            isOneToOne: true
+            referencedRelation: "report_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_version_deltas: {
+        Row: {
+          affected_factors: string[]
+          affected_propositions: string[]
+          changed_sources: Json
+          created_at: string
+          current_as_of: string
+          current_score: number
+          current_verdict: string
+          material_changes: string[]
+          previous_score: number
+          previous_verdict: string
+          previous_version_id: string
+          report_version_id: string
+          score_delta: number
+          stale_evidence_warning: string | null
+        }
+        Insert: {
+          affected_factors?: string[]
+          affected_propositions?: string[]
+          changed_sources?: Json
+          created_at?: string
+          current_as_of: string
+          current_score: number
+          current_verdict: string
+          material_changes?: string[]
+          previous_score: number
+          previous_verdict: string
+          previous_version_id: string
+          report_version_id: string
+          score_delta: number
+          stale_evidence_warning?: string | null
+        }
+        Update: {
+          affected_factors?: string[]
+          affected_propositions?: string[]
+          changed_sources?: Json
+          created_at?: string
+          current_as_of?: string
+          current_score?: number
+          current_verdict?: string
+          material_changes?: string[]
+          previous_score?: number
+          previous_verdict?: string
+          previous_version_id?: string
+          report_version_id?: string
+          score_delta?: number
+          stale_evidence_warning?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_version_deltas_previous_version_id_fkey"
+            columns: ["previous_version_id"]
+            isOneToOne: false
+            referencedRelation: "report_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_version_deltas_report_version_id_fkey"
+            columns: ["report_version_id"]
+            isOneToOne: true
+            referencedRelation: "report_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_versions: {
         Row: {
           adversarial_downgrade: boolean
           adversarial_gate: Json | null
           citation_validation: Json | null
           created_at: string
+          current_as_of: string
           decision_integrity: Json | null
           id: string
           market_sizing: Json | null
           payload: Json
+          previous_version_id: string | null
           reasoning_flags: Json | null
+          report_delta: Json | null
           report_id: string
           report_mode: Database["public"]["Enums"]["report_mode"]
           updated_at: string
           verdict_score_mismatch: boolean
           version_number: number
+          version_reason: string
         }
         Insert: {
           adversarial_downgrade?: boolean
           adversarial_gate?: Json | null
           citation_validation?: Json | null
           created_at?: string
+          current_as_of?: string
           decision_integrity?: Json | null
           id?: string
           market_sizing?: Json | null
           payload: Json
+          previous_version_id?: string | null
           reasoning_flags?: Json | null
+          report_delta?: Json | null
           report_id: string
           report_mode: Database["public"]["Enums"]["report_mode"]
           updated_at?: string
           verdict_score_mismatch?: boolean
           version_number: number
+          version_reason?: string
         }
         Update: {
           adversarial_downgrade?: boolean
           adversarial_gate?: Json | null
           citation_validation?: Json | null
           created_at?: string
+          current_as_of?: string
           decision_integrity?: Json | null
           id?: string
           market_sizing?: Json | null
           payload?: Json
+          previous_version_id?: string | null
           reasoning_flags?: Json | null
+          report_delta?: Json | null
           report_id?: string
           report_mode?: Database["public"]["Enums"]["report_mode"]
           updated_at?: string
           verdict_score_mismatch?: boolean
           version_number?: number
+          version_reason?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "report_versions_previous_version_id_fkey"
+            columns: ["previous_version_id"]
+            isOneToOne: false
+            referencedRelation: "report_versions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "report_versions_report_id_fkey"
             columns: ["report_id"]
@@ -4178,6 +4698,14 @@ export type Database = {
         Returns: boolean
       }
       collect_research_operational_alerts: { Args: never; Returns: Json }
+      complete_report_refresh_no_change: {
+        Args: {
+          p_refresh_run_id: string
+          p_sources_checked: number
+          p_successful_no_change_checks: number
+        }
+        Returns: undefined
+      }
       complete_research_job: {
         Args: {
           p_job_id: string
@@ -4310,6 +4838,66 @@ export type Database = {
       is_team_member: {
         Args: { team_id: string; user_id: string }
         Returns: boolean
+      }
+      opt_in_founder_outcome_checkpoints: {
+        Args: { p_report_id: string }
+        Returns: {
+          abandonment_reason: string | null
+          checkpoint_day: number
+          checkpoint_due_at: string
+          created_at: string
+          declared_milestone_reached: boolean | null
+          first_revenue: boolean | null
+          id: string
+          idea_abandoned: boolean | null
+          interviews_completed: number | null
+          mvp_launched: boolean | null
+          opted_in: boolean
+          paid_commitments: number | null
+          report_id: string
+          retained_customers: number | null
+          submitted_at: string | null
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "founder_outcome_checkpoints"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      persist_changed_report_refresh: {
+        Args: {
+          p_base_version_id: string
+          p_current_as_of: string
+          p_delta: Json
+          p_new_version_id: string
+          p_payload: Json
+          p_refresh_run_id: string
+          p_report_id: string
+          p_verification_card: Json
+        }
+        Returns: string
+      }
+      persist_changed_report_refresh_with_artifacts: {
+        Args: {
+          p_base_version_id: string
+          p_breakdowns: Json
+          p_charts: Json
+          p_current_as_of: string
+          p_delta: Json
+          p_evidence_updates: Json
+          p_exports: Json
+          p_new_version_id: string
+          p_payload: Json
+          p_refresh_run_id: string
+          p_report_id: string
+          p_score_update: Json
+          p_source_updates: Json
+          p_verification_card: Json
+        }
+        Returns: string
       }
       process_pending_research_jobs: { Args: never; Returns: number }
       record_source_registry_extraction: {
@@ -4583,6 +5171,33 @@ export interface EvidenceItem {
   claimFingerprint?: string;
   evidenceRole?: "supporting" | "challenging";
   associatedFactorIds?: string[];
+  atomicClaim?: string | null;
+  publishedOrUpdatedAt?: string | null;
+  retrievedAt?: string;
+  revalidationDueAt?: string;
+  contentHash?: string;
+  contentHashScope?: string;
+  freshnessPolicyKey?:
+    | "competitor_pricing_features"
+    | "regulation"
+    | "community"
+    | "official_statistics"
+    | "foundational_research"
+    | "default";
+  freshnessState?:
+    | "fresh"
+    | "aging"
+    | "revalidation_due"
+    | "stale"
+    | "unknown_date";
+  lastMaterialChangeAt?: string | null;
+  sourceEtag?: string | null;
+  sourceLastModified?: string | null;
+  buyerSegment?: string | null;
+  geography?: string | null;
+  limitations?: string[];
+  propositionLinks?: string[];
+  hostileTextDetected?: boolean;
   extractionConfidence?: number;
   numericValidationState?: "verified" | "flagged" | "rejected" | "not_applicable" | "not_checked";
   modelClassificationMetadata?: Record<string, unknown> | null;
