@@ -6,7 +6,16 @@ const traceableSentence = z.object({
   score_criteria: z.array(z.enum([...CRITERIA])).default([]),
 });
 export const finalJudgeSchema = z.object({
-  written_verdict: z.enum(["Build Now", "Validate First", "Niche Down", "Weak Signal", "Avoid"]),
+  written_verdict: z.enum([
+    "Build Now",
+    "Validate First",
+    "Niche Down",
+    "Weak Signal",
+    "Avoid",
+    "Build",
+    "Reposition",
+    "Do Not Build Yet",
+  ]),
   executive_summary: z.array(traceableSentence).length(2),
   methodology: z.array(traceableSentence).length(1),
 });

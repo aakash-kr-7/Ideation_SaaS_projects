@@ -10,6 +10,21 @@ export interface SecondModelClassification {
   confidence: number;
 }
 
+export interface OptionalGroqAdversarialReview {
+  available: boolean;
+  concerns: Array<{
+    claimFingerprint: string;
+    concern: string;
+    material: boolean;
+  }>;
+  disagreements: Array<{
+    claimFingerprint: string;
+    codeRole: string;
+    groqRole: string;
+  }>;
+  failure?: string;
+}
+
 export async function classifyWithOptionalGroq(args: {
   runId: string;
   db: any;
@@ -178,5 +193,183 @@ export async function classifyWithOptionalGroq(args: {
       },
     });
     return new Map();
+  }
+}
+
+export async function reviewWithOptionalGroq(args: {
+  runId: string;
+  db: any;
+  brief: CanonicalResearchBrief;
+  claims: Array<{
+    fingerprint: string;
+    title: string;
+    snippet: string;
+    codeRole: "supporting" | "challenging";
+  }>;
+  risks: Array<{ category: string; severity: string; description: string }>;
+  fetcher?: typeof fetch;
+}): Promise<OptionalGroqAdversarialReview> {
+  const apiKey = getEnv("GROQ_API_KEY");
+  const enabled = getEnv("GROQ_CLASSIFICATION_ENABLED")?.toLowerCase();
+  if (!apiKey || enabled === "false" || !args.claims.length) {
+    return { available: false, concerns: [], disagreements: [] };
+  }
+  return runOptionalGroqAdversarialReview(args, apiKey, args.fetcher ?? fetch);
+}
+
+export async function runOptionalGroqAdversarialReview(
+  args: {
+    runId: string;
+    db: any;
+    brief: CanonicalResearchBrief;
+    claims: Array<{
+      fingerprint: string;
+      title: string;
+      snippet: string;
+      codeRole: "supporting" | "challenging";
+    }>;
+    risks: Array<{ category: string; severity: string; description: string }>;
+  },
+  apiKey: string,
+  fetcher: typeof fetch,
+): Promise<OptionalGroqAdversarialReview> {
+  const model = getEnv("GROQ_ADVERSARIAL_MODEL") ||
+    getEnv("GROQ_CLASSIFICATION_MODEL") || "llama-3.3-70b-versatile";
+  const startedAt = Date.now();
+  const taskType = "optional_groq_adversarial_review";
+  try {
+    const response = await fetcher(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          temperature: 0,
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content:
+                "Review only supplied evidence and risks as a skeptical second classifier. Do not assign or infer any score, verdict, recommendation, or market size. Return JSON only.",
+            },
+            {
+              role: "user",
+              content: JSON.stringify({
+                canonicalBrief: args.brief,
+                claims: args.claims,
+                risks: args.risks,
+                requiredShape: {
+                  concerns: [{
+                    claimFingerprint: "string",
+                    concern: "string",
+                    material: "boolean",
+                    evidenceRole: "supporting|challenging|mixed|unclear",
+                  }],
+                },
+              }).slice(0, 28_000),
+            },
+          ],
+        }),
+        signal: AbortSignal.timeout(20_000),
+      },
+    );
+    const body = await response.json() as {
+      choices?: Array<{ message?: { content?: string } }>;
+      usage?: { prompt_tokens?: number; completion_tokens?: number };
+      error?: { message?: string };
+    };
+    if (!response.ok) {
+      throw new Error(body.error?.message || `Groq ${response.status}`);
+    }
+    const parsed = JSON.parse(body.choices?.[0]?.message?.content || "{}") as {
+      concerns?: Array<Record<string, unknown>>;
+    };
+    const claims = new Map(args.claims.map((claim) => [
+      claim.fingerprint,
+      claim,
+    ]));
+    const concerns = (parsed.concerns || []).flatMap((item) => {
+      const claimFingerprint = String(item.claimFingerprint || "");
+      const concern = String(item.concern || "").trim();
+      const evidenceRole = String(item.evidenceRole || "unclear");
+      if (
+        !claims.has(claimFingerprint) || !concern ||
+        !["supporting", "challenging", "mixed", "unclear"].includes(
+          evidenceRole,
+        )
+      ) return [];
+      return [{
+        claimFingerprint,
+        concern,
+        material: item.material === true,
+        evidenceRole,
+      }];
+    });
+    const disagreements = concerns.flatMap((item) => {
+      const codeRole = claims.get(item.claimFingerprint)!.codeRole;
+      return item.evidenceRole !== "unclear" &&
+          item.evidenceRole !== "mixed" &&
+          item.evidenceRole !== codeRole
+        ? [{
+          claimFingerprint: item.claimFingerprint,
+          codeRole,
+          groqRole: item.evidenceRole,
+        }]
+        : [];
+    });
+    const durationMs = Date.now() - startedAt;
+    await persistResearchCallMetric(args.db, {
+      runId: args.runId,
+      callPurpose: "optional_second_model_adversarial_review",
+      queryFamily: taskType,
+      grounded: false,
+      provider: "groq",
+      model,
+      sourcesAccepted: args.claims.length,
+      durationMs,
+      metadata: {
+        nonAuthoritative: true,
+        concernsReturned: concerns.length,
+        disagreements: disagreements.length,
+        scoreOrVerdictProvidedToGroq: false,
+      },
+    });
+    return {
+      available: true,
+      concerns: concerns.map((item) => ({
+        claimFingerprint: item.claimFingerprint,
+        concern: item.concern,
+        material: item.material,
+      })),
+      disagreements,
+    };
+  } catch (error) {
+    const failure = error instanceof Error ? error.message : String(error);
+    await persistResearchCallMetric(args.db, {
+      runId: args.runId,
+      callPurpose: "optional_second_model_adversarial_review",
+      queryFamily: taskType,
+      grounded: false,
+      provider: "groq",
+      model,
+      durationMs: Date.now() - startedAt,
+      quotaFailure: /429|quota|resource_exhausted/i.test(failure),
+      providerFailure: "non_blocking_optional_failure",
+      metadata: {
+        nonBlockingFailure: true,
+        scoreOrVerdictProvidedToGroq: false,
+        error: failure,
+      },
+    });
+    return {
+      available: false,
+      concerns: [],
+      disagreements: [],
+      failure,
+    };
   }
 }

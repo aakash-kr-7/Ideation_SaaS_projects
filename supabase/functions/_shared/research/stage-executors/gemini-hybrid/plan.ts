@@ -10,6 +10,14 @@ import {
   persistQuickScanPackStatus,
   researchUnavailableMessage,
 } from "../../quick-scan-reliability.ts";
+import {
+  initializeFullValidationPackStatuses,
+  persistFullValidationPackStatus,
+  persistFullValidationPropositions,
+} from "../../full-validation-reliability.ts";
+import {
+  decomposeFullValidationPropositions,
+} from "../../full-validation-research-strategy.ts";
 
 export async function executeHybridPlan(ctx: StageContext): Promise<StageResult> {
   const { runId, db, startedAt, inputMeta } = ctx;
@@ -80,7 +88,7 @@ export async function executeHybridPlan(ctx: StageContext): Promise<StageResult>
     }
 
     const competitorSeeds = seedsForBrief(researchBrief);
-    if (mode === "quick_scan" && competitorSeeds.candidates.length) {
+    if (competitorSeeds.candidates.length) {
       const { error: seedError } = await db.from("competitors").upsert(
         competitorSeeds.candidates.map((seed) => ({
           opportunity_id: opportunityId,
@@ -118,6 +126,13 @@ export async function executeHybridPlan(ctx: StageContext): Promise<StageResult>
     await ensureMetrics(runId, db);
     if (mode === "quick_scan") {
       await initializeQuickScanPackStatuses(db, runId);
+    } else if (mode === "full_validation") {
+      await initializeFullValidationPackStatuses(db, runId);
+      await persistFullValidationPropositions(
+        db,
+        runId,
+        decomposeFullValidationPropositions(researchBrief),
+      );
     }
     const groundingMode = getGeminiGroundingMode();
     await db.from("research_pipeline_metrics").update({
@@ -157,9 +172,7 @@ export async function executeHybridPlan(ctx: StageContext): Promise<StageResult>
         groundingMode,
         researchBriefPersisted: true,
         competitorSeedCategory: competitorSeeds.categoryId,
-        competitorSeedsLoaded: mode === "quick_scan"
-          ? competitorSeeds.candidates.length
-          : 0,
+        competitorSeedsLoaded: competitorSeeds.candidates.length,
       },
       { duration_ms: Date.now() - startedAt },
       {
@@ -169,9 +182,7 @@ export async function executeHybridPlan(ctx: StageContext): Promise<StageResult>
           groundingMode,
           researchBrief,
           competitorSeedCategory: competitorSeeds.categoryId,
-          competitorSeeds: mode === "quick_scan"
-            ? competitorSeeds.candidates
-            : [],
+          competitorSeeds: competitorSeeds.candidates,
         },
       }
     );
@@ -179,7 +190,7 @@ export async function executeHybridPlan(ctx: StageContext): Promise<StageResult>
     const message = error instanceof Error ? error.message : String(error);
     const dailyQuota = error instanceof GeminiRequestError && error.quota?.dailyExhausted;
     if (
-      mode === "quick_scan" &&
+      (mode === "quick_scan" || mode === "full_validation") &&
       (error instanceof GeminiRequestError ||
         /GEMINI_API_KEY|authentication|unauthorized|forbidden|429|quota|resource_exhausted|timeout|temporar|unavailable|5\d\d/i.test(message))
     ) {
@@ -187,14 +198,25 @@ export async function executeHybridPlan(ctx: StageContext): Promise<StageResult>
         error,
         error instanceof GeminiRequestError ? error.quota : null,
       );
-      await initializeQuickScanPackStatuses(db, runId);
-      await persistQuickScanPackStatus(db, {
-        runId,
-        packKey: "quick_primary_problem_buyer_demand",
-        status: packFailure,
-        failureReason: message,
-        metadata: { failedDuringProviderPreflight: true },
-      });
+      if (mode === "quick_scan") {
+        await initializeQuickScanPackStatuses(db, runId);
+        await persistQuickScanPackStatus(db, {
+          runId,
+          packKey: "quick_primary_problem_buyer_demand",
+          status: packFailure,
+          failureReason: message,
+          metadata: { failedDuringProviderPreflight: true },
+        });
+      } else {
+        await initializeFullValidationPackStatuses(db, runId);
+        await persistFullValidationPackStatus(db, {
+          runId,
+          packKey: "full_buyer_problem",
+          status: packFailure,
+          failureReason: message,
+          metadata: { failedDuringProviderPreflight: true },
+        });
+      }
       return stageFailed(
         "research_unavailable",
         researchUnavailableMessage(packFailure),

@@ -8,11 +8,25 @@ import {
   type WeightRow,
 } from "../../scoring-engine.ts";
 import { updateState } from "../../pipeline-utils.ts";
-import { gateVerdict } from "../../reasoning-integrity.ts";
 import {
   buildEvidenceSufficiencySummary,
   buildVerdictChangeConditions,
 } from "../../evidence-integrity.ts";
+import {
+  applyFullValidationAdversarialGate,
+  buildAlternativeMap,
+  buildEconomicsScenarios,
+  buildFullValidationFactorAnalysis,
+  buildThirtyDayActionPlan,
+  buildVerdictStructure,
+  deterministicDecisionFingerprint,
+  rankBuyerSegments,
+  type EconomicsConstraints,
+  type FullValidationEvidence,
+  type SegmentCandidate,
+  type VerifiedPrice,
+} from "../../full-validation-decision.ts";
+import { reviewWithOptionalGroq } from "../../groq-classifier.ts";
 
 export async function executeHybridAnalyzeScore(
   ctx: StageContext,
@@ -35,7 +49,7 @@ export async function executeHybridAnalyzeScore(
     const { data: evidence } = await db
       .from("evidence_items")
       .select(
-        "id, signal_type, strength, title, snippet, evidence_family, evidence_topic, source_tier, source_id, source_domain, source_class, excluded, disconfirming, independent_source_count, independent_domain_count, created_at, relevance_score, relevance_class, matched_brief_dimensions, acceptance_decision, claim_id, canonical_source_id, canonical_domain, source_family, source_authority, evidence_directness, semantic_relevance, independence_key, syndication_group, claim_fingerprint, evidence_role, associated_factor_ids, extraction_confidence, numeric_validation_state, model_classification_metadata",
+        "id, signal_type, strength, title, snippet, evidence_family, evidence_topic, source_tier, source_id, source_domain, source_class, excluded, disconfirming, independent_source_count, independent_domain_count, created_at, relevance_score, relevance_class, matched_brief_dimensions, acceptance_decision, claim_id, canonical_source_id, canonical_domain, source_family, source_authority, evidence_directness, semantic_relevance, independence_key, syndication_group, claim_fingerprint, evidence_role, associated_factor_ids, extraction_confidence, numeric_validation_state, model_classification_metadata, segment",
       )
       .eq("run_id", runId);
 
@@ -54,6 +68,25 @@ export async function executeHybridAnalyzeScore(
     const { data: launch } = await db.from("launch_plans").select(
       "*, launch_strategies(*)",
     ).eq("opportunity_id", opportunityId).maybeSingle();
+    const { data: mvp } = await db.from("mvp_plans").select(
+      "*, mvp_scope_items(*)",
+    ).eq("opportunity_id", opportunityId).maybeSingle();
+    const { data: run } = await db.from("research_runs").select(
+      "target_customer, assumptions",
+    ).eq("id", runId).single();
+    const { data: briefRow } = await db.from("research_briefs").select(
+      "brief",
+    ).eq("run_id", runId).maybeSingle();
+    const { data: propositions } = mode === "full_validation"
+      ? await db.from("research_propositions").select(
+        "buyer_segment, proposition_key",
+      ).eq("run_id", runId)
+      : { data: [] };
+    const { data: validatedPrices } = mode === "full_validation"
+      ? await db.from("validated_pricing_observations").select(
+        "source_id,source_url,price_point,pricing_model",
+      ).eq("run_id", runId)
+      : { data: [] };
     const { data: weightRows } = await db.from("scoring_weights").select(
       "criterion, weight",
     );
@@ -99,19 +132,172 @@ export async function executeHybridAnalyzeScore(
       weights,
     );
 
-    // --- Apply adversarial gating ---
-    const { effectiveVerdict, adversarialDowngrade, reason: gateReason } =
-      mode === "full_validation"
-        ? gateVerdict(
-          deterministicVerdict,
-          adversarialResult ||
-            { outcome: "InsufficientEvidence", severity: "None" },
+    // --- Full Validation deterministic decision layer ---
+    let effectiveVerdict: string = deterministicVerdict;
+    let adversarialDowngrade = false;
+    let gateReason: string | null = null;
+    let fullValidationDecision: any = null;
+    if (mode === "full_validation") {
+      const acceptedEvidence = (evidence || []) as FullValidationEvidence[];
+      const defaultSegment = String(run?.target_customer || "").trim() ||
+        "Canonical target buyer";
+      const insightSegments = Array.isArray(
+          (inputMeta.fullValidationInsights as any)?.targetSegments,
         )
+        ? (inputMeta.fullValidationInsights as any).targetSegments
+        : [];
+      const segmentCandidates = mergeSegmentCandidates([
+        ...insightSegments.map((item: any) => ({
+          name: String(item.name || "").trim(),
+          evidenceIds: Array.isArray(item.evidenceIds)
+            ? item.evidenceIds.map(String)
+            : [],
+        })),
+        ...(propositions || []).map((item: any) => ({
+          name: String(item.buyer_segment || "").trim(),
+          evidenceIds: [],
+        })),
+        {
+          name: defaultSegment,
+          evidenceIds: acceptedEvidence.filter((item) =>
+            normalizeSegment(item.segment || "") ===
+              normalizeSegment(defaultSegment)
+          ).map((item) => item.id),
+        },
+      ]);
+      const segmentDecision = rankBuyerSegments(
+        segmentCandidates,
+        acceptedEvidence,
+      );
+      const alternativeMap = buildAlternativeMap(
+        (competitors || []).map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          target: item.target,
+          positioning: item.positioning,
+          pricing: item.pricing,
+          strength: item.strength,
+          gap: item.gap,
+          classification: item.classification,
+          verificationStatus: item.verification_status,
+          evidenceIds: item.evidence_ids || [],
+        })),
+        acceptedEvidence,
+      );
+      const constraints = economicsConstraints(run?.assumptions);
+      const verifiedPriceInputs = (validatedPrices || []).flatMap((item: any) =>
+        parseVerifiedPrice(item)
+      );
+      const economicsScenarios = buildEconomicsScenarios({
+        verifiedPrices: verifiedPriceInputs,
+        constraints,
+        evidence: acceptedEvidence,
+        operationalRiskCount: (risks || []).filter((risk: any) =>
+          ["Execution", "Platform"].includes(risk.category) &&
+          risk.severity !== "Low"
+        ).length,
+      });
+      const factorAnalysis = buildFullValidationFactorAnalysis(
+        factors,
+        acceptedEvidence,
+        defaultSegment,
+      );
+      for (const analysis of factorAnalysis) {
+        const factorEvidenceIds = new Set(
+          factors.find((item) => item.criterion === analysis.criterion)
+            ?.evidenceIds || [],
+        );
+        const applicableSegments = segmentCandidates.filter((candidate) =>
+          candidate.evidenceIds.some((id) => factorEvidenceIds.has(id))
+        ).map((candidate) => candidate.name);
+        if (applicableSegments.length) {
+          analysis.buyerSegmentApplicability = applicableSegments;
+        }
+      }
+      const adversarialGate = applyFullValidationAdversarialGate({
+        deterministicVerdict,
+        factors,
+        segmentRankings: segmentDecision.rankings,
+        recommendedSegment: segmentDecision.recommendedSegment,
+        alternatives: alternativeMap,
+        evidence: acceptedEvidence,
+        risks: (risks || []).map((risk: any) => ({
+          category: risk.category,
+          severity: risk.severity,
+          description: risk.description,
+        })),
+        strongObjection: adversarialResult?.outcome === "StrongObjection" &&
+          ["High", "Medium"].includes(adversarialResult?.severity),
+      });
+      effectiveVerdict = adversarialGate.verdict;
+      adversarialDowngrade = adversarialGate.lowered;
+      gateReason = adversarialGate.reasons.join(" ") || null;
+      const evidenceBackedGap = alternativeMap.find((item) =>
+        item.differentiationGap
+      )?.differentiationGap || null;
+      const mvpOutcome = String(mvp?.outcome || "").trim() || null;
+      const recommendedWedge = evidenceBackedGap || mvpOutcome;
+      const verdictStructure = buildVerdictStructure({
+        verdict: adversarialGate.verdict,
+        exactScore: total,
+        scoreRange: scoreBand,
+        evidenceConfidence: evidenceSufficiency.overallEvidenceConfidence,
+        factors,
+        evidence: acceptedEvidence,
+        recommendedSegment: segmentDecision.recommendedSegment,
+        recommendedWedge,
+      });
+      const recruitmentChannel =
+        String(launch?.first_customer_channel || "").trim() || null;
+      const founderActionPlan = buildThirtyDayActionPlan({
+        targetSegment: segmentDecision.recommendedSegment,
+        wedge: recommendedWedge,
+        constraints,
+        recruitmentChannel,
+      });
+      const optionalGroqReview = briefRow?.brief
+        ? await reviewWithOptionalGroq({
+          runId,
+          db,
+          brief: briefRow.brief,
+          claims: acceptedEvidence.map((item) => ({
+            fingerprint: item.claim_fingerprint || item.id,
+            title: item.title,
+            snippet: item.snippet,
+            codeRole: item.evidence_role === "challenging" ||
+                item.disconfirming
+              ? "challenging" as const
+              : "supporting" as const,
+          })),
+          risks: (risks || []).map((risk: any) => ({
+            category: risk.category,
+            severity: risk.severity,
+            description: risk.description,
+          })),
+        })
         : {
-          effectiveVerdict: deterministicVerdict,
-          adversarialDowngrade: false,
-          reason: null,
+          available: false,
+          concerns: [],
+          disagreements: [],
+          failure: "Canonical brief unavailable for optional review.",
         };
+      const deterministicPayload = {
+        factorAnalysis,
+        segmentRankings: segmentDecision.rankings,
+        recommendedSegment: segmentDecision.recommendedSegment,
+        alternativeMap,
+        economicsScenarios,
+        adversarialGate,
+        verdictStructure,
+        founderActionPlan,
+      };
+      fullValidationDecision = {
+        ...deterministicPayload,
+        optionalGroqReview,
+        deterministicFingerprint:
+          deterministicDecisionFingerprint(deterministicPayload),
+      };
+    }
 
     // Scoring confidence measures evidence-bound factor coverage and inherits a
     // hard ceiling from evidence quality. Successful arithmetic alone cannot
@@ -146,6 +332,9 @@ export async function executeHybridAnalyzeScore(
 
     // --- Persist breakdowns ---
     for (const factor of factors) {
+      const fullFactor = fullValidationDecision?.factorAnalysis?.find(
+        (item: any) => item.criterion === factor.criterion,
+      );
       const { data: breakdown } = await db.from("score_breakdowns").upsert({
         score_id: score.id,
         criterion: factor.criterion,
@@ -158,6 +347,15 @@ export async function executeHybridAnalyzeScore(
         challenging_evidence_ids: factor.challengingEvidenceIds,
         confidence_deductions: factor.confidenceDeductions,
         unresolved_gaps: factor.unresolvedGaps,
+        ...(mode === "full_validation"
+          ? {
+            buyer_segment_applicability:
+              fullFactor?.buyerSegmentApplicability || [],
+            unresolved_assumptions:
+              fullFactor?.unresolvedAssumptions || [],
+            score_sensitivity: fullFactor?.scoreSensitivity || {},
+          }
+          : {}),
         notes: factor.note,
         weight: weights.find((w) => w.criterion === factor.criterion)?.weight ||
           1,
@@ -173,6 +371,36 @@ export async function executeHybridAnalyzeScore(
             ignoreDuplicates: true,
           });
         }
+      }
+    }
+    if (mode === "full_validation" && fullValidationDecision) {
+      const { error: decisionError } = await db.from(
+        "full_validation_decisions",
+      ).upsert({
+        run_id: runId,
+        opportunity_id: opportunityId,
+        official_score: total,
+        honest_score_range: scoreBand,
+        evidence_confidence:
+          evidenceSufficiency.overallEvidenceConfidence,
+        official_verdict: effectiveVerdict,
+        factor_analysis: fullValidationDecision.factorAnalysis,
+        segment_rankings: fullValidationDecision.segmentRankings,
+        recommended_segment: fullValidationDecision.recommendedSegment,
+        alternative_map: fullValidationDecision.alternativeMap,
+        economics_scenarios: fullValidationDecision.economicsScenarios,
+        adversarial_gate: fullValidationDecision.adversarialGate,
+        verdict_structure: fullValidationDecision.verdictStructure,
+        founder_action_plan: fullValidationDecision.founderActionPlan,
+        optional_groq_review: fullValidationDecision.optionalGroqReview,
+        deterministic_fingerprint:
+          fullValidationDecision.deterministicFingerprint,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "run_id" });
+      if (decisionError) {
+        throw new Error(
+          `Full Validation decision persistence failed: ${decisionError.message}`,
+        );
       }
     }
 
@@ -358,6 +586,7 @@ export async function executeHybridAnalyzeScore(
         insufficientEvidence: Boolean(inputMeta.insufficientEvidence),
         validationRejections: inputMeta.rejectedClaims || {},
         fullValidationInsights: inputMeta.fullValidationInsights,
+        fullValidationDecision,
       },
     });
   } catch (error: any) {
@@ -366,4 +595,111 @@ export async function executeHybridAnalyzeScore(
       `Analyze and score failed: ${error.message}`,
     );
   }
+}
+
+function mergeSegmentCandidates(
+  values: SegmentCandidate[],
+): SegmentCandidate[] {
+  const merged = new Map<string, SegmentCandidate>();
+  for (const value of values) {
+    const name = value.name.trim();
+    if (!name) continue;
+    const key = normalizeSegment(name);
+    const current = merged.get(key);
+    merged.set(key, {
+      name: current?.name || name,
+      evidenceIds: [
+        ...new Set([
+          ...(current?.evidenceIds || []),
+          ...(value.evidenceIds || []),
+        ]),
+      ],
+    });
+  }
+  return [...merged.values()];
+}
+
+function normalizeSegment(value: string) {
+  return value.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function economicsConstraints(value: unknown): EconomicsConstraints {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const input = value as Record<string, unknown>;
+  return {
+    revenueTarget: positiveNumber(
+      input.revenueTarget ?? input.revenue_target ??
+        input.annualRevenueTarget,
+    ),
+    currency: typeof input.currency === "string" ? input.currency : null,
+    acquisitionCostRange: numericRange(
+      input.acquisitionCostRange ?? input.acquisition_cost_range,
+    ),
+    variableCostRange: numericRange(
+      input.variableCostRange ?? input.variable_cost_range,
+    ),
+    fixedCostRange: numericRange(
+      input.fixedCostRange ?? input.fixed_cost_range,
+    ),
+    maximumValidationBudget: positiveNumber(
+      input.maximumValidationBudget ?? input.maximum_validation_budget,
+    ),
+    assumedPriceRange: numericRange(
+      input.assumedPriceRange ?? input.assumed_price_range,
+    ),
+  };
+}
+
+function parseVerifiedPrice(value: {
+  source_id?: string | null;
+  source_url?: string | null;
+  price_point?: string | null;
+  pricing_model?: string | null;
+}): VerifiedPrice[] {
+  const point = String(value.price_point || "");
+  const numeric = point.match(/\d+(?:[.,]\d{1,2})?/);
+  if (!numeric) return [];
+  const price = Number(numeric[0].replace(",", ""));
+  if (!Number.isFinite(price) || price <= 0) return [];
+  const currency = point.includes("$")
+    ? "USD"
+    : point.includes("€")
+    ? "EUR"
+    : point.includes("£")
+    ? "GBP"
+    : point.includes("₹")
+    ? "INR"
+    : point.match(/\b(?:USD|EUR|GBP|INR)\b/i)?.[0]?.toUpperCase() ||
+      "UNKNOWN";
+  const billingPeriod: VerifiedPrice["billingPeriod"] =
+    /month|\/mo\b/i.test(point)
+      ? "month"
+      : /year|annual|\/yr\b/i.test(point)
+      ? "year"
+      : value.pricing_model === "one_time"
+      ? "one_time"
+      : value.pricing_model === "usage"
+      ? "usage"
+      : "unknown";
+  return [{
+    price,
+    currency,
+    billingPeriod,
+    sourceId: value.source_id || null,
+    sourceUrl: value.source_url || null,
+  }];
+}
+
+function positiveNumber(value: unknown) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : null;
+}
+
+function numericRange(value: unknown): [number, number] | null {
+  if (!Array.isArray(value) || value.length !== 2) return null;
+  const left = positiveNumber(value[0]);
+  const right = positiveNumber(value[1]);
+  return left !== null && right !== null
+    ? [Math.min(left, right), Math.max(left, right)]
+    : null;
 }

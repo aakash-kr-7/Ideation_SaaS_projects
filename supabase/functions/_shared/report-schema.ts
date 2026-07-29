@@ -141,6 +141,9 @@ const verdictSchema = z.enum([
   "Niche Down",
   "Weak Signal",
   "Avoid",
+  "Build",
+  "Reposition",
+  "Do Not Build Yet",
 ]);
 const factorEvidenceSchema = z.object({
   rawScore: scoreNumber(),
@@ -151,6 +154,9 @@ const factorEvidenceSchema = z.object({
   challengingEvidenceIds: z.array(z.string().uuid()).default([]),
   confidenceDeductions: z.array(z.string()).default([]),
   unresolvedGaps: z.array(z.string()).default([]),
+  buyerSegmentApplicability: z.array(z.string()).default([]),
+  unresolvedAssumptions: z.array(z.string()).default([]),
+  scoreSensitivity: z.record(z.string(), z.unknown()).default({}),
 });
 const scoreBandSchema = z.object({
   minimum: z.number().min(0).max(100),
@@ -360,6 +366,7 @@ export const decisionProductSchema = z.object({
   specialistOutputs: z.array(specialistDecisionOutputSchema),
   charts: z.array(decisionChartSchema).min(4),
   fullValidationRecommended: z.boolean().optional(),
+  fullValidationDecision: z.record(z.string(), z.unknown()).optional(),
 });
 export const validationReportSchema = z.object({
   id: z.string(),
@@ -378,6 +385,7 @@ export const validationReportSchema = z.object({
   narrativeCitations: narrativeCitationsSchema.optional(),
   specialistAssessments: z.array(specialistAssessmentSchema).length(6).optional(),
   fullValidationInsights: fullValidationInsightsSchema.optional(),
+  fullValidationDecision: z.record(z.string(), z.unknown()).optional(),
   evidenceGaps: z.array(z.string()).default([]),
   limitations: z.array(z.string()).default([]),
   reportSections: z.array(z.string()).default([]),
@@ -439,8 +447,10 @@ export const validationReportSchema = z.object({
     downgradeCondition: z.string().min(1),
   }).optional(),
   researchExecution: z.object({
-    maximumGroundedCalls: z.number().int().min(0).max(4),
-    groundedCalls: z.number().int().min(0).max(4),
+    maximumGroundedCalls: z.number().int().min(0).max(10),
+    normalGroundedCallLimit: z.number().int().min(0).max(8).optional(),
+    conditionalGroundedCallLimit: z.number().int().min(0).max(2).optional(),
+    groundedCalls: z.number().int().min(0).max(10),
     conditionalCallTrigger: z.array(z.string()),
     packStatuses: z.array(z.object({
       packKey: z.string(),
@@ -471,6 +481,11 @@ export const validationReportSchema = z.object({
       evidenceFamiliesAdded: z.array(z.string()),
       contradictionsAdded: z.number().int().nonnegative(),
       pricingClaimsValidated: z.number().int().nonnegative(),
+      wtpSignalsFound: z.number().int().nonnegative().optional(),
+      pagesFetched: z.number().int().nonnegative().optional(),
+      sourceFamiliesAdded: z.number().int().nonnegative().optional(),
+      rejectionReasons: z.record(z.string(), z.number()).optional(),
+      providerFailure: z.string().nullable().optional(),
       cacheHits: z.number().int().nonnegative(),
       durationMs: z.number().int().nonnegative(),
       quotaFailure: z.boolean(),
@@ -541,6 +556,7 @@ export interface ValidationReport {
   narrativeCitations?: z.infer<typeof narrativeCitationsSchema>;
   specialistAssessments?: z.infer<typeof specialistAssessmentSchema>[];
   fullValidationInsights?: z.infer<typeof fullValidationInsightsSchema>;
+  fullValidationDecision?: Record<string, unknown>;
   evidenceGaps: string[];
   limitations: string[];
   reportSections: string[];
@@ -573,6 +589,9 @@ export const dbValidationVerdictSchema = z.enum([
   "Niche Down",
   "Weak Signal",
   "Avoid",
+  "Build",
+  "Reposition",
+  "Do Not Build Yet",
 ]);
 
 export const dbEvidenceSchema = z.object({

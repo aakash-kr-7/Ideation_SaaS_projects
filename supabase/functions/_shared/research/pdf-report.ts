@@ -135,6 +135,17 @@ type PdfPayload = {
   researchExecution?: {
     packStatuses?: Array<{ packKey?: string; status?: string }>;
   };
+  fullValidationDecision?: {
+    verdictStructure?: {
+      scoreRange?: string;
+      evidenceConfidence?: string;
+      recommendedTargetSegment?: string | null;
+      recommendedProductWedge?: string | null;
+      upgradeCondition?: string;
+      downgradeCondition?: string;
+      killCondition?: string;
+    };
+  };
 };
 
 type CitationLabels = Map<string, string>;
@@ -1052,6 +1063,17 @@ function buildIntegrity(payload: PdfPayload) {
       "F1",
       COLORS.slate,
     );
+  }
+  const full = payload.fullValidationDecision?.verdictStructure;
+  if (full) {
+    page.text("VERDICT CHANGE CONDITIONS", MARGIN, 553, 7, "F2", COLORS.teal);
+    page.wrappedText(
+      `Segment: ${full.recommendedTargetSegment || "Not supported yet"} | Wedge: ${full.recommendedProductWedge || "Not supported yet"} | Range: ${full.scoreRange || "Not recorded"} | Evidence Confidence: ${full.evidenceConfidence || "Not recorded"}`,
+      MARGIN, 575, PAGE_WIDTH - MARGIN * 2, 7, 10, "F1", COLORS.carbon, 3,
+    );
+    page.wrappedText(`Upgrade: ${full.upgradeCondition || "Not recorded"}`, MARGIN, 620, PAGE_WIDTH - MARGIN * 2, 7, 10, "F1", COLORS.tealDark, 3);
+    page.wrappedText(`Downgrade: ${full.downgradeCondition || "Not recorded"}`, MARGIN, 665, PAGE_WIDTH - MARGIN * 2, 7, 10, "F1", COLORS.amber, 3);
+    page.wrappedText(`Kill: ${full.killCondition || "Not recorded"}`, MARGIN, 710, PAGE_WIDTH - MARGIN * 2, 7, 10, "F1", COLORS.red, 3);
   }
   return page;
 }

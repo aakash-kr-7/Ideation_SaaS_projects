@@ -1,6 +1,7 @@
 import { parseGeminiQuotaError } from "./gemini.ts";
 import { groundedCallLimit, groundingFailureAction } from "./grounding-policy.ts";
 import { buildResearchPacks } from "./external-retrieval.ts";
+import { buildCanonicalResearchBrief } from "./research-brief.ts";
 
 function assert(value: unknown, message: string) {
   if (!value) throw new Error(message);
@@ -31,18 +32,24 @@ Deno.test("grounding call budgets are bounded by report mode", () => {
   assert(groundedCallLimit("disabled", "quick_scan", 4) === 0, "disabled mode made a call");
   assert(groundedCallLimit("optional", "quick_scan", 4) === 3, "Quick Scan did not reserve its three decision-purpose calls");
   assert(groundedCallLimit("required", "quick_scan", 5) === 3, "Quick Scan planned more than three pre-repair calls");
-  assert(groundedCallLimit("optional", "full_validation", 4) === 2, "Full optional exceeded two calls");
+  assert(groundedCallLimit("optional", "full_validation", 9) === 8, "Full Validation exceeded eight normal calls");
   assert(groundedCallLimit("required", "full_validation", 4) === 4, "required mode lost packs");
 });
 
-Deno.test("Full Validation deliberately covers twelve distinct evidence families", () => {
-  const packs = buildResearchPacks({
+Deno.test("Full Validation deliberately covers six decision research packs", () => {
+  const input = {
     idea_name: "Auditable RFP assistant",
     idea_description: "Security questionnaire evidence and stale claim detection",
     target_customer: "Cybersecurity proposal teams",
     target_region: "Global",
-  }, "full_validation");
-  assert(packs.length === 12, "Full Validation evidence-family depth drifted");
-  assert(new Set(packs.map((pack) => pack.key)).size === 12, "Full Validation query families are not distinct");
-  assert(packs.some((pack) => pack.key === "pricing_official") && packs.some((pack) => pack.key === "contradiction"), "authority or contradiction pack missing");
+    market_type: "B2B SaaS",
+  };
+  const packs = buildResearchPacks(
+    input,
+    "full_validation",
+    buildCanonicalResearchBrief(input),
+  );
+  assert(packs.length === 6, "Full Validation pack depth drifted");
+  assert(new Set(packs.map((pack) => pack.key)).size === 6, "Full Validation query families are not distinct");
+  assert(packs.some((pack) => pack.key === "full_pricing_wtp_procurement") && packs.some((pack) => pack.key === "full_adversarial"), "pricing or adversarial pack missing");
 });

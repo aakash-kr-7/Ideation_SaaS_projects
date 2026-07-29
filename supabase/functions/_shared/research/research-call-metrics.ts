@@ -8,10 +8,14 @@ export interface ResearchCallMetricInput {
   model?: string | null;
   sourcesDiscovered?: number;
   sourcesAccepted?: number;
+  pagesFetched?: number;
   independentEvidenceGroupsAdded?: number;
   evidenceFamiliesAdded?: string[];
   contradictionsAdded?: number;
   pricingClaimsValidated?: number;
+  wtpSignalsFound?: number;
+  rejectionReasons?: Record<string, number>;
+  providerFailure?: string | null;
   cacheHits?: number;
   durationMs?: number;
   quotaFailure?: boolean;
@@ -50,10 +54,15 @@ export async function persistResearchCallMetric(
     completion_tokens: Number(usage?.completion_tokens || 0),
     sources_discovered: input.sourcesDiscovered || 0,
     sources_accepted: input.sourcesAccepted || 0,
+    pages_fetched: input.pagesFetched || 0,
     independent_evidence_groups_added: input.independentEvidenceGroupsAdded || 0,
     evidence_families_added: input.evidenceFamiliesAdded || [],
+    source_families_added: new Set(input.evidenceFamiliesAdded || []).size,
     contradictions_added: input.contradictionsAdded || 0,
     pricing_claims_validated: input.pricingClaimsValidated || 0,
+    wtp_signals_found: input.wtpSignalsFound || 0,
+    rejection_reasons: input.rejectionReasons || {},
+    provider_failure: input.providerFailure || null,
     cache_hits: input.cacheHits ?? (usage?.cache_status === "hit" ? 1 : 0),
     duration_ms: input.durationMs ?? Number(usage?.duration_ms || 0),
     quota_failure: input.quotaFailure ??

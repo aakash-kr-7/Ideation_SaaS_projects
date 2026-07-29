@@ -25,6 +25,14 @@ import {
   persistQuickScanPackStatus,
   researchUnavailableMessage,
 } from "../../quick-scan-reliability.ts";
+import {
+  evaluateFullValidationCoverage,
+  selectConditionalPacks,
+  type FullValidationCoverage,
+} from "../../full-validation-research-strategy.ts";
+import {
+  persistFullValidationPackStatus,
+} from "../../full-validation-reliability.ts";
 
 export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<StageResult> {
   const { runId, db, inputMeta, startedAt, config } = ctx;
@@ -63,13 +71,21 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
     );
     const discovery = await discoverCandidates({ runId, packs, db, technical });
     let externalSearchCalls = discovery.externalSearchCalls;
-    const sitemapCandidates = mode === "quick_scan" && competitorSeeds.length
+    const sitemapCandidatesRaw = competitorSeeds.length
       ? await discoverOfficialSitemapCandidates({
         runId,
         seeds: competitorSeeds,
         db,
       })
       : [];
+    const sitemapCandidates = mode === "full_validation"
+      ? sitemapCandidatesRaw.map((candidate) => ({
+        ...candidate,
+        queryFamily: /pricing|plans/i.test(candidate.url)
+          ? "full_pricing_wtp_procurement"
+          : "full_alternatives_competitors",
+      }))
+      : sitemapCandidatesRaw;
     externalSearchCalls += sitemapCandidates.length ? Math.min(4, competitorSeeds.length) : 0;
     const groundedCandidates: SourceCandidate[] = groundingSources.flatMap((source, index) => source.url ? [{
       title: source.title || source.url,
@@ -91,7 +107,9 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
           snippet:
             "Curated category candidate requiring live verification; no pricing or positioning is assumed.",
           provider: "competitor_seed",
-          queryFamily: "quick_pricing_wtp_reachability",
+          queryFamily: mode === "full_validation"
+            ? "full_alternatives_competitors"
+            : "quick_pricing_wtp_reachability",
           score: 105 - index,
         }, {
           title: `${seed.candidateName || seed.canonicalHomepage} pricing verification attempt`,
@@ -99,7 +117,9 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
           snippet:
             "Deterministic live pricing-page attempt; no price or plan is assumed unless page text validates it.",
           provider: "competitor_seed_pricing_attempt",
-          queryFamily: "quick_pricing_wtp_reachability",
+          queryFamily: mode === "full_validation"
+            ? "full_pricing_wtp_procurement"
+            : "quick_pricing_wtp_reachability",
           score: 104 - index,
         }];
     });
@@ -109,10 +129,6 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
       ...sitemapCandidates,
       ...discovery.candidates,
     ];
-    if (!allCandidates.length && mode === "full_validation") {
-      return stageFailed("transient", "External discovery returned no candidate URLs.");
-    }
-
     if (allCandidates.length) {
       await db.from("source_retrieval_audit").insert(allCandidates.map((candidate) => ({
         run_id: runId,
@@ -130,10 +146,6 @@ export async function executeHybridEvidenceBoosters(ctx: StageContext): Promise<
       limit: mode === "full_validation" ? 36 : 16,
       brief: researchBrief,
     });
-    if (!retrieval.accepted.length && mode === "full_validation") {
-      return stageFailed("transient", "Direct retrieval produced no usable public source content.");
-    }
-
     const initialPricing = extractValidatedPricingObservations(retrieval.accepted);
     const initialCoverage = evaluateQuickScanCoverage(retrieval.accepted, initialPricing);
     const conditionalCallTrigger: string[] = mode === "quick_scan"
@@ -351,6 +363,138 @@ Return attributable findings only. State when a gap remains unresolved.`,
       });
     }
 
+    let fullValidationCoverage: FullValidationCoverage | null = null;
+    const fullConditionalPacks: ResearchPack[] = [];
+    if (mode === "full_validation") {
+      const initialFullCoverage = evaluateFullValidationCoverage(
+        retrieval.accepted,
+        researchBrief,
+      );
+      const selectedRepairs = selectConditionalPacks(
+        researchBrief,
+        initialFullCoverage,
+      );
+      for (const repairPack of selectedRepairs) {
+        fullConditionalPacks.push(repairPack);
+        const repairStartedAt = Date.now();
+        await persistFullValidationPackStatus(db, {
+          runId,
+          packKey: repairPack.key,
+          status: "skipped",
+          conditionalTrigger: repairPack.conditionalTrigger,
+          startedAt: new Date(repairStartedAt).toISOString(),
+          metadata: { inProgress: true },
+        });
+        try {
+          const gemini = ctx.dependencies.createGemini();
+          const budget = await costBudgetForRun(runId, db, config);
+          const result = await gemini.generate({
+            runId,
+            taskType: `grounded_${repairPack.key}`,
+            useGrounding: true,
+            budget,
+            db,
+            systemInstruction:
+              "Perform one bounded specialist repair using Google Search grounding. Search only for the named unresolved gap, use a materially different query family, preserve buyer-segment boundaries, cite sources, and do not repeat evidence already present. Return no finding when the gap remains unresolved.",
+            prompt: `Canonical brief: ${JSON.stringify(researchBrief)}
+Conditional trigger: ${repairPack.conditionalTrigger}
+Unresolved gaps: ${initialFullCoverage.unresolvedGaps.join("; ")}
+Specialist query: ${repairPack.query}`,
+          });
+          const candidates: SourceCandidate[] = result.groundingSources.map((
+            source,
+            index,
+          ) => ({
+            title: source.title || source.url,
+            url: source.url,
+            snippet: "",
+            provider: "gemini_grounding",
+            queryFamily: repairPack.key,
+            score: 120 - index,
+          }));
+          const repairRetrieval = await retrieveCandidates({
+            runId,
+            candidates,
+            db,
+            limit: 8,
+            brief: researchBrief,
+          });
+          const existingUrls = new Set(
+            retrieval.accepted.map((source) => source.canonicalUrl),
+          );
+          const added = repairRetrieval.accepted.filter((source) =>
+            !existingUrls.has(source.canonicalUrl)
+          );
+          retrieval = {
+            accepted: [...retrieval.accepted, ...added],
+            pagesAttempted: retrieval.pagesAttempted +
+              repairRetrieval.pagesAttempted,
+            rejected: mergeCounts(retrieval.rejected, repairRetrieval.rejected),
+          };
+          allCandidates = [...allCandidates, ...candidates];
+          const addedCoverage = evaluateFullValidationCoverage(
+            added,
+            researchBrief,
+          );
+          await persistFullValidationPackStatus(db, {
+            runId,
+            packKey: repairPack.key,
+            status: packOutcome(added.length),
+            acceptedEvidenceCount: added.length,
+            conditionalTrigger: repairPack.conditionalTrigger,
+            startedAt: new Date(repairStartedAt).toISOString(),
+            metadata: { groundedSourcesDiscovered: candidates.length },
+          });
+          await persistResearchCallMetric(db, {
+            runId,
+            callPurpose: repairPack.focus,
+            queryFamily: `grounded_${repairPack.key}`,
+            grounded: true,
+            conditionalCallTrigger: [String(repairPack.conditionalTrigger)],
+            sourcesDiscovered: candidates.length,
+            sourcesAccepted: added.length,
+            pagesFetched: repairRetrieval.pagesAttempted,
+            independentEvidenceGroupsAdded:
+              addedCoverage.independentEvidenceGroups.length,
+            evidenceFamiliesAdded: addedCoverage.sourceFamilies,
+            wtpSignalsFound: addedCoverage.directWtpCount,
+            pricingClaimsValidated: addedCoverage.verifiedPricingCount,
+            rejectionReasons: repairRetrieval.rejected,
+            durationMs: Date.now() - repairStartedAt,
+          });
+        } catch (error) {
+          const quota = error instanceof GeminiRequestError ? error.quota : null;
+          const failure = classifyPackFailure(error, quota);
+          await persistFullValidationPackStatus(db, {
+            runId,
+            packKey: repairPack.key,
+            status: failure,
+            failureReason: error instanceof Error ? error.message : String(error),
+            conditionalTrigger: repairPack.conditionalTrigger,
+            startedAt: new Date(repairStartedAt).toISOString(),
+          });
+          await persistResearchCallMetric(db, {
+            runId,
+            callPurpose: repairPack.focus,
+            queryFamily: `grounded_${repairPack.key}`,
+            grounded: true,
+            conditionalCallTrigger: [String(repairPack.conditionalTrigger)],
+            quotaFailure: Boolean(quota),
+            providerFailure: failure,
+            durationMs: Date.now() - repairStartedAt,
+          });
+          return stageFailed(
+            "research_unavailable",
+            researchUnavailableMessage(failure),
+          );
+        }
+      }
+      fullValidationCoverage = evaluateFullValidationCoverage(
+        retrieval.accepted,
+        researchBrief,
+      );
+    }
+
     const sourceCatalog: Array<{
       sourceId: string;
       url: string;
@@ -457,10 +601,8 @@ RETRIEVED_TEXT:
 ${source.text.slice(0, mode === "full_validation" ? 1_400 : 3_000)}`);
     }
 
-    const finalPricing = mode === "quick_scan"
-      ? extractValidatedPricingObservations(retrieval.accepted)
-      : [];
-    if (mode === "quick_scan") {
+    const finalPricing = extractValidatedPricingObservations(retrieval.accepted);
+    if (mode === "quick_scan" || mode === "full_validation") {
       await db.from("validated_pricing_observations").delete().eq("run_id", runId);
       for (const observation of finalPricing) {
         const source = sourceCatalog.find((item) => item.url === observation.sourceUrl);
@@ -562,6 +704,67 @@ ${source.text.slice(0, mode === "full_validation" ? 1_400 : 3_000)}`);
         }
       }
     }
+    if (mode === "full_validation") {
+      for (const pack of packs) {
+        const acceptedForPack = retrieval.accepted.filter((source) =>
+          source.queryFamily === pack.key
+        );
+        const packCoverage = evaluateFullValidationCoverage(
+          acceptedForPack,
+          researchBrief,
+        );
+        await persistFullValidationPackStatus(db, {
+          runId,
+          packKey: pack.key,
+          status: packOutcome(acceptedForPack.length),
+          acceptedEvidenceCount: acceptedForPack.length,
+          metadata: {
+            groundedSourcesDiscovered: groundingSources.filter((source) =>
+              source.queryFamily === pack.key
+            ).length,
+            validated: true,
+          },
+        });
+        await persistResearchCallMetric(db, {
+          runId,
+          callPurpose: pack.purpose || pack.focus,
+          queryFamily: `grounded_${pack.key}`,
+          grounded: true,
+          sourcesDiscovered: groundingSources.filter((source) =>
+            source.queryFamily === pack.key
+          ).length,
+          sourcesAccepted: acceptedForPack.length,
+          pagesFetched: acceptedForPack.length,
+          independentEvidenceGroupsAdded:
+            packCoverage.independentEvidenceGroups.length,
+          evidenceFamiliesAdded: packCoverage.sourceFamilies,
+          contradictionsAdded: pack.key === "full_adversarial"
+            ? packCoverage.challengingEvidenceCount
+            : 0,
+          pricingClaimsValidated: pack.key === "full_pricing_wtp_procurement"
+            ? packCoverage.verifiedPricingCount
+            : 0,
+          wtpSignalsFound: pack.key === "full_pricing_wtp_procurement"
+            ? packCoverage.directWtpCount
+            : 0,
+          rejectionReasons: retrieval.rejected,
+        });
+      }
+      for (const seed of competitorSeeds) {
+        const seedDomain = safeDomain(seed.canonicalHomepage || "");
+        const verified = sourceCatalog.some((source) =>
+          (seedDomain && source.domain.replace(/^www\./, "") === seedDomain) &&
+          ["official_product", "official_documentation", "official_pricing"]
+            .includes(source.pageType)
+        );
+        if (verified) {
+          await db.from("competitors").update({
+            verification_status: "discovered_candidate",
+            updated_at: new Date().toISOString(),
+          }).eq("opportunity_id", opportunityId).eq("name", seed.candidateName);
+        }
+      }
+    }
 
     const independentDomains = new Set(sourceCatalog.map((source) => source.domain)).size;
     await db.from("research_pipeline_metrics").update({
@@ -589,6 +792,11 @@ ${source.text.slice(0, mode === "full_validation" ? 1_400 : 3_000)}`);
       repairQuotaFailure,
       validatedPricingClaims: finalPricing.length,
       coverage,
+      fullValidationCoverage,
+      fullConditionalPacks: fullConditionalPacks.map((pack) => ({
+        key: pack.key,
+        trigger: pack.conditionalTrigger,
+      })),
     }, {
       candidates_discovered: allCandidates.length,
       pages_attempted: retrieval.pagesAttempted,
@@ -611,6 +819,11 @@ ${source.text.slice(0, mode === "full_validation" ? 1_400 : 3_000)}`);
         factorEvidenceStates: coverage?.factorEvidenceStates || [],
         missingEvidence: coverage?.missingEvidence || [],
         sourceConcentration: coverage?.sourceConcentration || null,
+        fullValidationCoverage,
+        fullConditionalPacks: fullConditionalPacks.map((pack) => ({
+          key: pack.key,
+          trigger: pack.conditionalTrigger,
+        })),
         conditionalCallTrigger,
         repairAddedEvidence,
         repairGroundingSummary: repairGroundingText

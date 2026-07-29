@@ -7,12 +7,15 @@ import {
   type PageAuthority,
   type RelevanceAssessment,
 } from "./research-brief.ts";
+import { buildFullValidationPacks } from "./full-validation-research-strategy.ts";
 
 export interface ResearchPack {
   key: string;
   query: string;
   focus: string;
-  purpose?: "primary" | "adversarial" | "pricing_wtp" | "coverage_repair";
+  purpose?: "primary" | "adversarial" | "pricing_wtp" | "coverage_repair" |
+    "buyer_problem" | "alternatives_competitors" | "reachability" | "feasibility";
+  conditionalTrigger?: string;
 }
 
 export interface SourceCandidate {
@@ -48,40 +51,10 @@ export function buildResearchPacks(
   mode: string,
   brief?: CanonicalResearchBrief,
 ): ResearchPack[] {
-  const concept = brief
-    ? significantTerms(`${brief.exactProductProposition} ${brief.directCompetitorCategory}`).slice(0, 8).join(" ")
-    : significantTerms(`${run.idea_name} ${run.idea_description}`).slice(0, 7).join(" ");
-  const buyer = significantTerms(brief?.targetBuyer || run.target_customer).slice(0, 6).join(" ");
-  const workflow = significantTerms(brief?.workflowChanged || run.idea_description).slice(0, 7).join(" ");
   const approvalAudit = /approval|sign-?off|audit trail/i.test(`${brief?.exactProductProposition || ""} ${brief?.directCompetitorCategory || ""}`);
   if (mode === "full_validation") {
-    return approvalAudit ? [
-      { key: "customer_pain", query: `"customer sign-off" "audit trail" ${buyer} pain disputes`, focus: "direct customer pain and dispute consequences in the specified workflow" },
-      { key: "buyer_behavior", query: `"client approval" ${buyer} workaround email spreadsheet behavior`, focus: "observable buyer/user behaviour and current workarounds" },
-      { key: "segments", query: `"client approval workflow" agency professional services segments`, focus: "buyer segments and jobs to be done" },
-      { key: "alternatives", query: `"customer sign-off" alternatives email e-signature online proofing`, focus: "current alternatives and switching friction" },
-      { key: "competitor_official", query: `"client approval" "audit trail" software features`, focus: "official competitor product pages and documentation" },
-      { key: "pricing_official", query: `"client approval" online proofing software pricing plans`, focus: "official pricing and packaging pages" },
-      { key: "documentation", query: `"approval history" "client approval" documentation`, focus: "product documentation establishing approval and audit-trail capabilities" },
-      { key: "reviews_complaints", query: `"client approval" software reviews complaints`, focus: "customer reviews, discussions, failed alternatives, and complaints" },
-      { key: "case_studies", query: `"client sign-off" agency case study approval`, focus: "case studies with applicable workflow outcomes" },
-      { key: "willingness_to_pay", query: `"client approval" paid plan pricing agency`, focus: "buyer behaviour and willingness-to-pay evidence" },
-      { key: "market_regulatory_gtm", query: `${concept} ${workflow} regulation records agency buyers`, focus: "applicable market, regulatory, and go-to-market context" },
-      { key: "contradiction", query: `"client approval software" unnecessary email enough complaint`, focus: "proposition-specific negative evidence, redundancy, and adoption objections" },
-    ] : [
-      { key: "customer_pain", query: `${concept} ${buyer} pain workflow complaints`, focus: "direct customer pain and consequences" },
-      { key: "buyer_behavior", query: `${concept} ${buyer} workaround behavior demand`, focus: "observable buyer behaviour and workarounds" },
-      { key: "segments", query: `${concept} ${buyer} segments jobs to be done`, focus: "buyer segments and jobs to be done" },
-      { key: "alternatives", query: `${concept} alternatives current process switching`, focus: "current alternatives and switching friction" },
-      { key: "competitor_official", query: `${concept} competitors official product features`, focus: "official competitor product pages" },
-      { key: "pricing_official", query: `${concept} software pricing plans`, focus: "official pricing and packaging pages" },
-      { key: "documentation", query: `${concept} documentation workflow`, focus: "official product documentation" },
-      { key: "reviews_complaints", query: `${concept} reviews complaints failed alternatives`, focus: "customer reviews, complaints, and failed alternatives" },
-      { key: "case_studies", query: `${concept} ${buyer} case study outcomes`, focus: "case studies with applicable outcomes" },
-      { key: "willingness_to_pay", query: `${concept} ${buyer} paid pilot purchase pricing`, focus: "willingness-to-pay and buyer commitment" },
-      { key: "market_regulatory_gtm", query: `${concept} ${workflow} market regulation buyers`, focus: "applicable market, regulatory, and GTM context" },
-      { key: "contradiction", query: `${concept} unnecessary failure adoption objection`, focus: "proposition-specific negative evidence" },
-    ];
+    if (!brief) throw new Error("Full Validation requires a canonical research brief.");
+    return buildFullValidationPacks(brief);
   }
   const compactConcept = significantTerms(
     brief?.exactProductProposition || `${run.idea_name} ${run.idea_description}`,

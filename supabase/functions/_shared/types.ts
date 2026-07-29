@@ -4002,7 +4002,10 @@ export type EngineVerdict =
   | "Validate First"
   | "Niche Down"
   | "Weak Signal"
-  | "Avoid";
+  | "Avoid"
+  | "Build"
+  | "Reposition"
+  | "Do Not Build Yet";
 export type ScoringCriterion =
   | "painSeverity"
   | "purchaseUrgency"
@@ -4078,6 +4081,7 @@ export interface EvidenceItem {
   painPoint?: string;
   independentSourceCount?: number;
   independentDomainCount?: number;
+  evidenceTopic?: string;
   acceptanceDecision?: string;
   claimId?: string;
   canonicalSourceId?: string | null;

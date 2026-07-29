@@ -13,8 +13,18 @@ import { getStaggerDelay, motion, revealUpClass } from "@/lib/motion";
 import { getReportModeConfig } from "@/lib/report-modes";
 import { countEvidenceSources, REPORT_TABS, type ReportTab } from "@/lib/report-mode-ui";
 import { ReportCharts, type ReportChartDataset } from "@/components/report/ReportCharts";
+import { FullValidationReportExperience } from "@/components/report/FullValidationReportExperience";
 
-export function ValidationReport({ report, scorecard, publicMode = false, runId, chartDatasets }: { report: ReportType; scorecard?: ReportType["opportunity"]["scorecard"]; publicMode?: boolean; runId?: string; chartDatasets?: ReportChartDataset[] }) {
+type ValidationReportProps = { report: ReportType; scorecard?: ReportType["opportunity"]["scorecard"]; publicMode?: boolean; runId?: string; chartDatasets?: ReportChartDataset[] };
+
+export function ValidationReport(props: ValidationReportProps) {
+  if (props.report.reportMode === "full_validation" && props.report.fullValidationDecision) {
+    return <FullValidationReportExperience {...props}/>;
+  }
+  return <QuickScanReport {...props}/>;
+}
+
+function QuickScanReport({ report, scorecard, publicMode = false, runId, chartDatasets }: ValidationReportProps) {
   const [tab, setTab] = useState<ReportTab>("Conclusion");
   const [toast, setToast] = useState("");
   const [sourcePreview, setSourcePreview] = useState<EvidenceItem | null>(null);

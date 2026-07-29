@@ -61,6 +61,21 @@ const input = {
         { packKey: "quick_coverage_repair", status: "skipped", acceptedEvidenceCount: 0 },
       ],
     },
+    fullValidationDecision: {
+      verdictStructure: {
+        scoreRange: "70-91",
+        evidenceConfidence: "Low",
+        recommendedTargetSegment: "Independent operators",
+        recommendedProductWedge: "Narrow approval workflow",
+        strongestAssumption: "Paid commitment is unresolved.",
+        upgradeCondition: "Upgrade after two attributable paid commitments.",
+        downgradeCondition: "Downgrade if bundled alternatives satisfy buyers.",
+        killCondition: "Kill after a time-boxed test produces no commitment.",
+      },
+      segmentRankings: [{ segment: "Independent operators", score: 72, rankReason: "Best supported segment." }],
+      economicsScenarios: [{ name: "base", price: null, currency: null, customersRequired: null, grossMarginRange: null, breakEvenCustomers: null }],
+      founderActionPlan: { days: [{ days: "1-5", action: "Recruit qualified buyers." }] },
+    },
     reasoningFlags: [{
       type: "AdversarialObjection",
       severity: "Blocking",
@@ -148,6 +163,11 @@ Deno.test("all export formats carry consistent run facts", () => {
     assert(output.includes("Research Completed") || output.includes("research_completed") || output.includes("RESEARCH COMPLETED"), "research availability missing");
     assert(output.includes("quick_primary") || output.toLowerCase().includes("quick primary"), "research pack status missing");
     assert(output.includes("70") && output.includes("91"), "displayed uncertainty range missing");
+    assert(output.includes("Independent operators"), "segment recommendation missing");
+    assert(output.includes("Narrow approval workflow"), "product wedge missing");
+    assert(output.includes("Upgrade after two attributable paid commitments."), "upgrade condition missing");
+    assert(output.includes("Downgrade if bundled alternatives satisfy buyers."), "downgrade condition missing");
+    assert(output.includes("Kill after a time-boxed test produces no commitment."), "kill condition missing");
   }
   assert(
     outputs[1].includes("[S1] Attributable buyer pain (Buyer interview archive)"),

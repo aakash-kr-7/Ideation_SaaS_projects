@@ -5,7 +5,8 @@ export type GroundingFailureAction = "degrade" | "retry" | "fail";
 export function groundedCallLimit(mode: GeminiGroundingMode, reportMode: string, packCount: number) {
   if (mode === "disabled") return 0;
   if (reportMode === "quick_scan") return Math.min(3, packCount);
-  if (mode === "optional") return reportMode === "full_validation" ? Math.min(2, packCount) : Math.min(1, packCount);
+  if (reportMode === "full_validation") return Math.min(8, packCount);
+  if (mode === "optional") return Math.min(1, packCount);
   return packCount;
 }
 

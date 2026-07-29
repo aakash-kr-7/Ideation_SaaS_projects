@@ -24,6 +24,10 @@ import {
 import { persistResearchCallMetric } from "../../research-call-metrics.ts";
 import { classifyWithOptionalGroq } from "../../groq-classifier.ts";
 import { researchUnavailableMessage } from "../../quick-scan-reliability.ts";
+import {
+  evidenceAppliesToProposition,
+  type TestableProposition,
+} from "../../full-validation-research-strategy.ts";
 
 const EVIDENCE_TOPICS = [
   "customer_pain",
@@ -574,7 +578,8 @@ export async function executeHybridValidateNormalize(
     const sourceIndex = [...allowedSources.values()].map((source) =>
       `${source.sourceId} | ${source.url} | ${source.pageType} | tier ${source.sourceTier} | relevance ${source.relevanceScore}`
     ).join("\n");
-    const evidenceBoundContext = mode === "quick_scan"
+    const evidenceBoundContext =
+      mode === "quick_scan" || mode === "full_validation"
       ? {
         rejectedEvidenceSummary: inputMeta.rejectedEvidenceSummary || {},
         contradictionObjects: inputMeta.contradictionObjects || [],
@@ -583,6 +588,8 @@ export async function executeHybridValidateNormalize(
         factorEvidenceStates: inputMeta.factorEvidenceStates || [],
         missingEvidence: inputMeta.missingEvidence || [],
         sourceConcentration: inputMeta.sourceConcentration || null,
+        fullValidationCoverage: inputMeta.fullValidationCoverage || null,
+        fullConditionalPacks: inputMeta.fullConditionalPacks || [],
       }
       : null;
     const sharedPrompt = `Report mode: ${mode}\nCanonical research brief:\n${
@@ -610,7 +617,7 @@ export async function executeHybridValidateNormalize(
       prompt: sharedPrompt,
       responseSchema: RESPONSE_SCHEMA,
     });
-    if (mode === "quick_scan") {
+    if (mode === "quick_scan" || mode === "full_validation") {
       await persistResearchCallMetric(db, {
         runId,
         callPurpose: "evidence_bound_synthesis",
@@ -639,7 +646,7 @@ export async function executeHybridValidateNormalize(
           "buyer_review",
           "community_discussion",
         ].includes(source.pageType) ||
-        /buyer_behavior|segments|alternatives|competitor|pricing|documentation|reviews|willingness|contradiction|case_studies|market_regulatory_gtm/
+        /buyer_behavior|buyer_problem|segments|alternatives|competitor|pricing|documentation|reviews|willingness|contradiction|adversarial|case_studies|market_regulatory_gtm|reachability|feasibility/
           .test(source.queryFamily)
       ).slice(0, 24);
       const initiallyCovered = new Set(
@@ -1165,7 +1172,7 @@ export async function executeHybridValidateNormalize(
       });
     }
     if (
-      mode === "quick_scan" &&
+      (mode === "quick_scan" || mode === "full_validation") &&
       Array.isArray(inputMeta.validatedPricingObservations)
     ) {
       for (const observation of inputMeta.validatedPricingObservations as Array<
@@ -1244,6 +1251,14 @@ export async function executeHybridValidateNormalize(
         });
       }
     }
+    let persistedPropositions: Array<{
+      id: string;
+      proposition_key: string;
+      statement: string;
+      buyer_segment: string;
+      factor_ids: string[];
+      primary_pack_key: string;
+    }> = [];
     // A synthesis miss is not a research-system failure. Reuse only exact,
     // semantically accepted excerpts from the directly retrieved catalog. This
     // keeps every evidence gate intact while avoiding a false terminal failure
@@ -1307,7 +1322,8 @@ export async function executeHybridValidateNormalize(
     if (insufficientEvidence) {
       parsed = insufficientEvidenceArtifacts(mode);
     }
-    const secondModelClassifications = mode === "quick_scan"
+    const secondModelClassifications =
+      mode === "quick_scan" || mode === "full_validation"
       ? await classifyWithOptionalGroq({
         runId,
         db,
@@ -1423,7 +1439,95 @@ export async function executeHybridValidateNormalize(
         );
       }
     });
-    if (mode === "quick_scan") {
+    if (mode === "full_validation") {
+      const { data: propositionRows, error: propositionError } = await db
+        .from("research_propositions")
+        .select(
+          "id,proposition_key,statement,buyer_segment,factor_ids,primary_pack_key",
+        )
+        .eq("run_id", runId);
+      if (propositionError) {
+        throw new Error(
+          `Proposition graph load failed: ${propositionError.message}`,
+        );
+      }
+      persistedPropositions = propositionRows || [];
+      await db.from("research_claim_graph_edges").delete().eq("run_id", runId);
+      const edgeRows: Array<Record<string, unknown>> = [];
+      validClaims.forEach((claim, index) => {
+        const source = allowedSources.get(claim.sourceId)!;
+        const factorIds = factorIdsForClaim(
+          claim.evidenceTopic,
+          claim.signalType,
+        );
+        const buyerSegment = String(inputMeta.targetCustomer || "").trim();
+        for (const row of persistedPropositions) {
+          const proposition: TestableProposition = {
+            key: row.proposition_key as TestableProposition["key"],
+            statement: row.statement,
+            buyerSegment: row.buyer_segment,
+            factorIds: row.factor_ids,
+            primaryPackKey:
+              row.primary_pack_key as TestableProposition["primaryPackKey"],
+          };
+          if (!evidenceAppliesToProposition(proposition, {
+            buyerSegment,
+            researchPack: source.queryFamily,
+            factorIds,
+          })) continue;
+          for (const factorId of factorIds.filter((factorId) =>
+            proposition.factorIds.includes(factorId)
+          )) {
+            edgeRows.push({
+              run_id: runId,
+              proposition_id: row.id,
+              evidence_id: evidenceItemIds[index],
+              source_id: source.sourceId,
+              buyer_segment: buyerSegment,
+              factor_id: factorId,
+              research_pack: source.queryFamily,
+              evidence_role: claim.disconfirming
+                ? "challenging"
+                : "supporting",
+              source_family: source.queryFamily || claim.evidenceTopic,
+              independence_key: claim.fingerprint,
+            });
+          }
+        }
+      });
+      if (edgeRows.length) {
+        const { error: edgeError } = await db.from("research_claim_graph_edges")
+          .upsert(edgeRows, {
+            onConflict: "proposition_id,evidence_id,factor_id",
+          });
+        if (edgeError) {
+          throw new Error(`Claim graph persistence failed: ${edgeError.message}`);
+        }
+      }
+      for (const proposition of persistedPropositions) {
+        const edges = edgeRows.filter((edge) =>
+          edge.proposition_id === proposition.id
+        );
+        const supporting = edges.some((edge) =>
+          edge.evidence_role === "supporting"
+        );
+        const challenging = edges.some((edge) =>
+          edge.evidence_role === "challenging"
+        );
+        const status = supporting && challenging
+          ? "mixed"
+          : supporting
+          ? "supported"
+          : challenging
+          ? "challenged"
+          : "insufficient_evidence";
+        await db.from("research_propositions").update({
+          status,
+          updated_at: new Date().toISOString(),
+        }).eq("id", proposition.id);
+      }
+    }
+    if (mode === "quick_scan" || mode === "full_validation") {
       const { data: seededCompetitors } = await db.from("competitors")
         .select("id,canonical_homepage,candidate_type,verification_status")
         .eq("opportunity_id", opportunityId)
@@ -1507,7 +1611,9 @@ export async function executeHybridValidateNormalize(
       if (
         title.startsWith("Support for:") ||
         (contradictionSupportSources.has(claim.sourceId) &&
-          sourceFamily === "quick_primary_problem_buyer_demand")
+          sourceFamily !== "quick_adversarial" &&
+          sourceFamily !== "full_adversarial" &&
+          !String(sourceFamily || "").includes("unresolved_contradictions"))
       ) {
         supportingBySource.set(claim.sourceId, [
           ...(supportingBySource.get(claim.sourceId) || []),
@@ -1516,7 +1622,9 @@ export async function executeHybridValidateNormalize(
       } else if (
         title.startsWith("Challenge to:") ||
         (contradictionChallengeSources.has(claim.sourceId) &&
-          sourceFamily === "quick_adversarial" &&
+          (sourceFamily === "quick_adversarial" ||
+            sourceFamily === "full_adversarial" ||
+            String(sourceFamily || "").includes("unresolved_contradictions")) &&
           genuineChallengeLanguage(`${title} ${claim.snippet || ""}`))
       ) {
         challengingBySource.set(claim.sourceId, [
@@ -1544,6 +1652,9 @@ export async function executeHybridValidateNormalize(
         !testedClaim || testedClaim.split(/\s+/).length < 5 || !relationship ||
         !supportingEvidenceIds.length || !challengingEvidenceIds.length
       ) continue;
+      const proposition = mode === "full_validation"
+        ? bestMatchingProposition(testedClaim, persistedPropositions)
+        : null;
       await db.from("evidence_contradictions").insert({
         run_id: runId,
         opportunity_id: opportunityId,
@@ -1562,6 +1673,9 @@ export async function executeHybridValidateNormalize(
         contradiction_status: contradiction.resolutionStatus,
         unresolved_implication:
           String(contradiction.resolutionNote || "").trim() || null,
+        proposition_id: proposition?.id || null,
+        buyer_segment: proposition?.buyer_segment ||
+          String(inputMeta.targetCustomer || "").trim() || null,
       });
       persistedContradictionTotal++;
       if (contradiction.resolutionStatus === "unresolved") {
@@ -1929,7 +2043,7 @@ export async function executeHybridValidateNormalize(
         sourceIds: [],
         evidence_ids: [],
       };
-    if (mode === "quick_scan") {
+    if (mode === "quick_scan" || mode === "full_validation") {
       const diagnostics = aggregateRejectionDiagnostics(rejectedClaims);
       for (const [reason, count] of Object.entries(diagnostics)) {
         await db.from("evidence_rejection_diagnostics").upsert({
@@ -1977,7 +2091,7 @@ export async function executeHybridValidateNormalize(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (
-      mode === "quick_scan" &&
+      (mode === "quick_scan" || mode === "full_validation") &&
       /GEMINI_API_KEY|authentication|unauthorized|forbidden|429|quota|resource_exhausted|timeout|temporar|unavailable|5\d\d|connection|peer closed|tls close/i
         .test(message)
     ) {
@@ -1998,6 +2112,28 @@ export async function executeHybridValidateNormalize(
       `Validation and normalization failed: ${message}`,
     );
   }
+}
+
+function bestMatchingProposition(
+  testedClaim: string,
+  propositions: Array<{
+    id: string;
+    statement: string;
+    buyer_segment: string;
+  }>,
+) {
+  const tested = new Set(
+    testedClaim.toLowerCase().split(/[^a-z0-9]+/).filter((word) =>
+      word.length > 3
+    ),
+  );
+  return propositions
+    .map((proposition) => ({
+      proposition,
+      score: proposition.statement.toLowerCase().split(/[^a-z0-9]+/)
+        .filter((word) => tested.has(word)).length,
+    }))
+    .sort((left, right) => right.score - left.score)[0]?.proposition || null;
 }
 
 export function aggregateRejectionDiagnostics(

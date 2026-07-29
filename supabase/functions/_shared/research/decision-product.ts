@@ -112,6 +112,9 @@ export function buildDecisionProduct(
     fullValidationRecommended: payload.reportMode === "quick_scan"
       ? ["Build Now", "Validate First", "Niche Down"].includes(score.verdict)
       : undefined,
+    fullValidationDecision: payload.reportMode === "full_validation"
+      ? payload.fullValidationDecision
+      : undefined,
   };
 }
 
@@ -177,6 +180,7 @@ function quickSections(payload: any, c: any): Section[] {
 function fullSections(payload: any, c: any): Section[] {
   const o = payload.opportunity;
   const insights = payload.fullValidationInsights || {};
+  const decision = payload.fullValidationDecision || {};
   const specialists = new Map((payload.specialistAssessments || []).map((item: any) => [item.name, item]));
   const statementForSpecialist = (name: string) => {
     const specialist: any = specialists.get(name);
@@ -186,26 +190,29 @@ function fullSections(payload: any, c: any): Section[] {
     section("executive-decision", "Executive decision", c.inference(`${o.scorecard.verdict} at ${o.scorecard.scoreBand?.display || `${round(o.scorecard.total)}/100`}. ${decisionHeadline(o.scorecard.verdict, payload.reportMode)}`, c.evidence)),
     { key: "score-confidence", title: "Score, verdict and confidence", summary: c.confidenceExplanation, statements: scoringStatements(o.scorecard) },
     section("idea-assumptions", "Idea and assumptions", c.hypothesis(o.oneLiner), c.hypothesis(`Assumed buyer: ${o.targetCustomer}. Assumed market: ${o.market}.`)),
-    { key: "segments", title: "Target segments", summary: "Segments surfaced by shared-dossier synthesis.", statements: (insights.targetSegments || []).map((item: any) => c.inference(item.name, evidenceForIds(c.evidence, item.evidenceIds))).concat((insights.targetSegments || []).length ? [] : [missing("No evidence-bound segment was established.")]) },
+    { key: "segments", title: "Target segments", summary: decision.recommendedSegment ? `Recommended initial segment: ${decision.recommendedSegment}.` : "No initial segment cleared the deterministic evidence threshold.", statements: (decision.segmentRankings || []).map((item: any) => c.inference(`${item.segment}: ${item.score}/100, evidence strength ${item.evidenceStrength}. ${item.rankReason}`, evidenceForIds(c.evidence, item.evidenceIds))).concat((decision.segmentRankings || []).length ? [] : [missing("No evidence-bound segment was established.")]) },
     { key: "jobs", title: "Jobs to be done", summary: "Decision-relevant customer jobs.", statements: (insights.targetSegments || []).flatMap((item: any) => (item.jobsToBeDone || []).map((job: string) => c.inference(`${item.name}: ${job}`, evidenceForIds(c.evidence, item.evidenceIds)))).concat((insights.targetSegments || []).length ? [] : [c.hypothesis(jobFrom(o.corePain))]) },
     { key: "problem", title: "Problem severity and frequency", summary: "Frequency is reported only when sourced.", statements: [...take(c.painEvidence, 4).map(c.fact), ...(c.painEvidence.length ? [] : [missing("No accepted direct pain evidence.")]), missing("No reliable frequency estimate was accepted unless explicitly stated above.")] },
     { key: "demand", title: "Demand and behavioural evidence", summary: "Observed signals, not a market-size estimate.", statements: [...take(c.demandEvidence, 4).map(c.fact), statementForSpecialist("demand")] },
-    section("alternatives", "Current alternatives", (o.competitors || []).length ? c.inference((o.competitors || []).map((item: any) => `${item.name} (${String(item.classification || "adjacent").replaceAll("_", " ")}): ${item.positioning}`).join(" "), evidenceForIds(c.evidence, (o.competitors || []).flatMap((item: any) => item.evidenceIds || []))) : missing("Current alternatives were not established.")),
-    { key: "competitors", title: "Competitor deep dives", summary: "Only persisted, source-linked fields are shown; adjacent products are not described as direct incumbents.", statements: (o.competitors || []).map((item: any) => c.inference(`${item.name} — classification: ${String(item.classification || "adjacent").replaceAll("_", " ")}; target: ${item.target}; positioning/features: ${item.positioning}; pricing: ${item.pricing}; strength: ${item.strength}; weakness or complaint: not established unless stated in evidence; opportunity gap: ${item.gap}.`, evidenceForIds(c.evidence, item.evidenceIds))).concat((o.competitors || []).length ? [] : [missing("No competitor deep dive was supportable.")]) },
+    section("alternatives", "Current alternatives", (decision.alternativeMap || []).length ? c.inference((decision.alternativeMap || []).map((item: any) => `${item.name} (${String(item.classification).replaceAll("_", " ")}).`).join(" "), evidenceForIds(c.evidence, (decision.alternativeMap || []).flatMap((item: any) => item.evidenceIds || []))) : missing("Current alternatives were not established.")),
+    { key: "competitors", title: "Competitor deep dives", summary: "Only verified source-linked fields and gaps are shown.", statements: (decision.alternativeMap || []).map((item: any) => c.inference(`${item.name} — ${String(item.classification).replaceAll("_", " ")}; target: ${item.targetSegment || "not verified"}; positioning: ${item.positioning || "not verified"}; pricing: ${item.verifiedPricing || "not verified"}; complaints: ${(item.recurringComplaints || []).join("; ") || "not established"}; switching: ${(item.switchingImplications || []).join("; ") || "not established"}; differentiation gap: ${item.differentiationGap || "not established"}.`, evidenceForIds(c.evidence, item.evidenceIds))).concat((decision.alternativeMap || []).length ? [] : [missing("No competitor deep dive was supportable.")]) },
     section("positioning", "Positioning opportunities", statementForSpecialist("competition")),
-    section("pricing-landscape", "Pricing and packaging landscape", c.pricingEvidence.length ? c.fact(c.pricingEvidence[0]) : missing("No accepted public pricing evidence."), c.hypothesis(`${o.pricing.model}; ${o.pricing.pricePoint}; ${o.pricing.rationale}`)),
+    section("pricing-landscape", "Pricing and packaging landscape", ...((decision.economicsScenarios || []).length ? (decision.economicsScenarios || []).map((item: any) => c.inference(`${item.name}: price ${item.price ?? "unresolved"} ${item.currency || ""}; customers required ${item.customersRequired ?? "unresolved"}; gross margin ${item.grossMarginRange ? `${item.grossMarginRange[0]}–${item.grossMarginRange[1]}%` : "unresolved"}; break-even customers ${item.breakEvenCustomers ?? "unresolved"}; support burden ${item.supportBurden}. Assumptions: ${(item.assumptions || []).join("; ")}`, evidenceForIds(c.evidence, item.evidenceSourceIds))) : [missing("No deterministic economics scenario was available.")])),
     section("wtp", "Willingness-to-pay evidence", insights.willingnessToPay?.evidenceIds?.length ? c.inference(`${insights.willingnessToPay.strength}: ${insights.willingnessToPay.finding}`, evidenceForIds(c.evidence, insights.willingnessToPay.evidenceIds)) : missing("No direct payment, paid-pilot, or purchase-commitment evidence was accepted.")),
     { key: "market-context", title: "Market context", summary: insights.marketContext?.summary || "No market context was established.", statements: (insights.marketContext?.metrics || []).map((metric: any) => ({ kind: "Fact" as const, text: `${metric.label}: ${metric.value}`, evidenceIds: metric.evidenceId ? [metric.evidenceId] : [], sourceUrls: metric.sourceUrl ? [metric.sourceUrl] : [] })).concat((insights.marketContext?.metrics || []).length ? [] : [missing("No source-bound market metric was retained. Market sizing was not invented.")]) },
     section("mvp", "MVP scope", c.recommendation(`${o.mvp.outcome}. Include: ${(o.mvp.scope || []).join("; ")}.`)),
     section("not-build", "What not to build", c.recommendation((o.mvp.exclusions || []).join("; ") || "Keep nonessential scope out until the core workflow is validated.")),
     section("gtm", "GTM channels", statementForSpecialist("gtm"), c.recommendation(`Start with ${o.launch.firstCustomerChannel}.`)),
-    section("first-customers", "First-customer strategy", c.recommendation(primaryFounderAction(c.experiments[0]))),
+    section("first-customers", "First-customer strategy", decision.founderActionPlan ? c.recommendation(`${decision.founderActionPlan.highestValueHypothesis} Recruit ${decision.founderActionPlan.sampleSize} via ${decision.founderActionPlan.recruitmentChannel}; success: ${decision.founderActionPlan.successThreshold}; failure: ${decision.founderActionPlan.failureThreshold}; maximum budget: ${decision.founderActionPlan.maximumBudget.amount} ${decision.founderActionPlan.maximumBudget.currency}.`) : c.recommendation(primaryFounderAction(c.experiments[0]))),
     { key: "risks", title: "Risks", summary: "Persisted risks and their mitigations.", statements: (o.risks || []).map((risk: any) => c.inference(`${risk.severity} ${risk.category}: ${risk.description} Mitigation: ${risk.mitigation}`, evidenceForIds(c.evidence, risk.evidenceIds))) },
     {
       key: "adversarial",
       title: "Adversarial findings",
       summary: "Contradictions test the same proposition-specific claim; unrelated market facts are not paired.",
       statements: [
+        ...(decision.adversarialGate
+          ? [c.inference(`${decision.adversarialGate.verdict}; ${Object.entries(decision.adversarialGate.checks || {}).map(([key, value]) => `${key}: ${value}`).join("; ")}.`, c.evidence)]
+          : []),
         ...((payload.contradictions || []).map((item: any) => c.inference(
           `${item.exactClaimTested} — ${item.relationship} Resolution: ${String(item.resolutionStatus || "unresolved").replaceAll("_", " ")}${item.resolutionNote ? ` (${item.resolutionNote})` : ""}.`,
           evidenceForIds(c.evidence, [...(item.supportingEvidenceIds || []), ...(item.challengingEvidenceIds || [])]),
@@ -328,10 +335,13 @@ function confidenceBandFor(score: number) { return score >= 0.75 ? "High" : scor
 function titleFor(value: string) { return value.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ").replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
 function jobFrom(pain: string) { return pain ? `complete the underlying workflow without ${pain.toLowerCase()}` : "complete the core workflow with less delay and uncertainty"; }
 function decisionHeadline(verdict: string, mode: string) {
+  if (verdict === "Build") return "Evidence supports building the recommended narrow wedge.";
   if (verdict === "Build Now") return "Evidence supports a tightly scoped build.";
   if (verdict === "Validate First") return "Promising signals exist, but the next commitment should be validation.";
   if (verdict === "Niche Down") return "A narrower buyer and workflow are required.";
   if (verdict === "Weak Signal") return "Do not build beyond a cheap demand test.";
+  if (verdict === "Reposition") return "The current wedge is not defensible; test a materially different position.";
+  if (verdict === "Do Not Build Yet") return "The adversarial gate blocks a build until an explicit upgrade condition is met.";
   return mode === "quick_scan" ? "Do not advance to Full Validation until the missing demand or payment signal is found." : "Do not commit to a build; resolve the decisive evidence gaps first.";
 }
 export function primaryFounderAction(experiment: any) {

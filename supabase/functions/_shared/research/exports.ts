@@ -120,7 +120,7 @@ function humanCitations(ids: string[] | undefined, labels: Map<string, string>, 
 }
 function decisionProductMarkdown(payload: unknown) {
   const product = integrityPayload(payload).decisionProduct;
-  if (!product) return "";
+  if (!product) return fullValidationDecisionMarkdown(payload);
   const labels = citationLabels(payload);
   const sections = (product.sections || []).map((section, index) => {
     const statements = (section.statements || []).map((statement) => {
@@ -142,7 +142,32 @@ function decisionProductMarkdown(payload: unknown) {
   const charts = (product.charts || []).map((item) =>
     `- **${item.title || item.key}:** ${item.unavailable ? "Unavailable. " : ""}${item.sourceExplanation} Evidence: ${humanCitations(item.evidenceIds, labels, "none")}; data: ${JSON.stringify(item.sourceData || {})}`
   ).join("\n");
-  return `# Decision dossier\n\n${product.headline || ""}\n\n**Evidence Confidence:** ${product.evidenceConfidence?.band || "Not recorded"}${typeof product.evidenceConfidence?.score === "number" ? ` (${product.evidenceConfidence.score})` : ""} — ${product.evidenceConfidence?.explanation || ""}\n\n${sections}\n\n## Validation experiments\n\n${experiments}\n\n${specialists ? `## Specialist outputs\n\n${specialists}\n\n` : ""}## Chart provenance\n\n${charts}`;
+  return `# Decision dossier\n\n${product.headline || ""}\n\n**Evidence Confidence:** ${product.evidenceConfidence?.band || "Not recorded"}${typeof product.evidenceConfidence?.score === "number" ? ` (${product.evidenceConfidence.score})` : ""} — ${product.evidenceConfidence?.explanation || ""}\n\n${sections}\n\n## Validation experiments\n\n${experiments}\n\n${specialists ? `## Specialist outputs\n\n${specialists}\n\n` : ""}## Chart provenance\n\n${charts}\n\n${fullValidationDecisionMarkdown(payload)}`;
+}
+
+function fullValidationDecisionMarkdown(payload: unknown) {
+  const decision = (integrityPayload(payload) as any).fullValidationDecision;
+  const verdict = decision?.verdictStructure;
+  if (!verdict) return "";
+  return `## Full Validation decision
+
+- Recommended segment: ${verdict.recommendedTargetSegment ?? "Not supported yet"}
+- Recommended wedge: ${verdict.recommendedProductWedge ?? "Not supported yet"}
+- Score range: ${verdict.scoreRange}
+- Evidence Confidence: ${verdict.evidenceConfidence}
+- Strongest assumption: ${verdict.strongestAssumption}
+- Upgrade condition: ${verdict.upgradeCondition}
+- Downgrade condition: ${verdict.downgradeCondition}
+- Kill condition: ${verdict.killCondition}
+
+### Segment rankings
+${(decision.segmentRankings || []).map((item: any, index: number) => `${index + 1}. ${item.segment}: ${item.score} — ${item.rankReason}`).join("\n") || "No supported segment ranking."}
+
+### Scenario economics
+${(decision.economicsScenarios || []).map((item: any) => `- ${item.name}: price ${item.price ?? "unresolved"} ${item.currency ?? ""}; customers ${item.customersRequired ?? "unresolved"}; gross margin ${item.grossMarginRange?.join("–") ?? "unresolved"}; break-even ${item.breakEvenCustomers ?? "unresolved"}`).join("\n")}
+
+### 30-day validation plan
+${(decision.founderActionPlan?.days || []).map((item: any) => `- Days ${item.days}: ${item.action}`).join("\n")}`;
 }
 
 function integrityMarkdown(payload: unknown) {
@@ -250,6 +275,7 @@ export function renderCsv(input: ExportBundleInput) {
     "report_version",
     "research_availability_state",
     "research_pack_statuses_json",
+    "full_validation_decision_json",
   ].map(csvCell).join(",");
   const rows = input.breakdowns.length ? input.breakdowns : [{
     criterion: "",
@@ -289,6 +315,7 @@ export function renderCsv(input: ExportBundleInput) {
         integrity.version || "",
         integrity.researchAvailabilityState || "legacy",
         JSON.stringify(integrity.researchExecution?.packStatuses || []),
+        JSON.stringify((integrity as any).fullValidationDecision || null),
       ].map(csvCell).join(",")
     ),
   ].join("\r\n")}`;

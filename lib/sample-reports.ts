@@ -104,6 +104,28 @@ function buildReport(mode: "quick_scan" | "full_validation"): ValidationReport {
   const topRecommendation = "Validate a narrow WhatsApp confirmation-and-cancellation pilot with a qualified operator segment before building booking-system breadth.";
   const coveredFactors = Object.entries(card.factorEvidence || {}).filter(([, factor]) => factor?.evidenceState !== "ASSUMED").map(([key]) => key);
   const assumedFactors = Object.entries(card.factorEvidence || {}).filter(([, factor]) => factor?.evidenceState === "ASSUMED").map(([key]) => key);
+  const fullValidationDecision = full ? {
+    factorAnalysis: Object.entries(card.factorEvidence || {}).map(([criterion, factor]) => ({
+      criterion, rawScore: factor!.rawScore, effectiveScore: factor!.effectiveScore, evidenceCoefficient: factor!.evidenceCoefficient,
+      evidenceState: factor!.evidenceState, supportingEvidenceIds: factor!.supportingEvidenceIds, challengingEvidenceIds: factor!.challengingEvidenceIds,
+      buyerSegmentApplicability: ["Independent salons"], unresolvedAssumptions: factor!.unresolvedGaps,
+      scoreSensitivity: { lower: Math.max(0, factor!.effectiveScore - Math.round((1-factor!.evidenceCoefficient)*25)), current: factor!.effectiveScore, upper: Math.min(100, factor!.effectiveScore + Math.round((1-factor!.evidenceCoefficient)*25)), explanation: "Frozen sample sensitivity derived from evidence confidence." },
+    })),
+    segmentRankings: [
+      { segment: "Independent salons", score: 71, evidenceStrength: .68, independentEvidenceGroups: 3, metrics: { painSeverity: 78, painFrequency: 70, currentSpending: 58, reachability: 76, switchingFriction: 42, urgency: 68, procurementComplexity: 82 }, evidenceIds: usedEvidence.map(e=>e.id), rankReason: "Ranks first in this frozen sample because reachability and procurement simplicity outweigh weaker direct payment evidence." },
+      { segment: "Small clinics", score: 62, evidenceStrength: .57, independentEvidenceGroups: 2, metrics: { painSeverity: 80, painFrequency: 72, currentSpending: 55, reachability: 58, switchingFriction: 39, urgency: 72, procurementComplexity: 45 }, evidenceIds: usedEvidence.filter(e=>e.signal==="Pain").map(e=>e.id), rankReason: "Ranks lower because privacy and procurement complexity weaken the initial test." },
+    ],
+    recommendedSegment: "Independent salons",
+    alternativeMap: [
+      ...competitors.map(c => ({ id:c.id,name:c.name,classification:"direct_competitor",verified:true,targetSegment:c.target,positioning:c.positioning,verifiedPricing:null,strengths:[c.strength],recurringComplaints:[],switchingImplications:[],differentiationGap:null,evidenceIds:c.evidenceIds })),
+      { id:"manual",name:"Staff calls and messages",classification:"manual_workaround",verified:false,targetSegment:null,positioning:null,verifiedPricing:null,strengths:[],recurringComplaints:[],switchingImplications:[],differentiationGap:null,evidenceIds:[] },
+      { id:"none",name:"Accept occasional no-shows",classification:"do_nothing",verified:false,targetSegment:null,positioning:null,verifiedPricing:null,strengths:[],recurringComplaints:[],switchingImplications:[],differentiationGap:null,evidenceIds:[] },
+    ],
+    economicsScenarios: ["conservative","base","upside"].map(name => ({ name,price:null,currency:null,customersRequired:null,acquisitionCost:null,grossMarginRange:null,breakEvenCustomers:null,supportBurden:"unresolved",assumptions:["No verified standalone price or user-supplied cost constraints exist in this frozen sample."],evidenceSourceIds:[] })),
+    adversarialGate: { verdict:"Validate First",lowered:false,blocked:false,checks:{ problemUrgent:"passed",cheapExistingSolution:"failed",switchingRealistic:"unresolved",buyerReachable:"passed",willingnessToPay:"unresolved",competitionPreservesWedge:"unresolved",dependenciesManageable:"failed",notOptimisticOnly:"passed" },reasons:["Verified incumbents and platform dependency require a paid wedge test."] },
+    verdictStructure: { verdict:"Validate First",score:card.total,scoreRange:card.scoreBand!.display,evidenceConfidence:"Low",strongestSupportingEvidenceId:evidence[0].id,strongestChallengingEvidenceId:evidence[1].id,strongestAssumption:"Standalone willingness to pay remains unverified.",recommendedTargetSegment:"Independent salons",recommendedProductWedge:"WhatsApp confirmation and cancellation handling for salons unwilling to replace their booking system.",upgradeCondition:"Upgrade after two independent salons make attributable paid-pilot commitments.",downgradeCondition:"Downgrade if qualified salons prefer bundled booking-suite reminders.",killCondition:"Kill if a 30-day paid test produces no commitment and buyers report a satisfactory bundled alternative." },
+    founderActionPlan: { highestValueHypothesis:"Independent salons will pay for a narrow WhatsApp confirmation workflow without replacing their booking system.",targetBuyer:"Independent salon owner or manager",recruitmentChannel:"Direct local outreach and salon-owner communities",sampleSize:12,testMethod:"Problem interviews, five concierge trials, and one consistent paid-pilot offer.",durationDays:30,successThreshold:"8/12 confirm recent pain, 3/5 repeat the workflow, and 2 make paid commitments.",failureThreshold:"Fewer than 5/12 report consequential pain or zero paid commitments.",maximumBudget:{amount:500,currency:"USD",assumption:true},decisionUnlocked:"Build the wedge, reposition, or stop.",days:[{days:"1-5",priority:1,action:"Recruit 12 qualified salon operators."},{days:"6-12",priority:2,action:"Run structured problem interviews."},{days:"13-22",priority:3,action:"Deliver five concierge workflow trials."},{days:"23-27",priority:4,action:"Present one consistent paid-pilot offer."},{days:"28-30",priority:5,action:"Apply the predefined decision thresholds."}] },
+  } : undefined;
   const payload = {
     id: `sample-${mode}-v1`, version: "1.0", reportMode: mode, generatedAt,
     executiveSummary: full
@@ -112,6 +134,7 @@ function buildReport(mode: "quick_scan" | "full_validation"): ValidationReport {
     methodology: `Frozen sample assembled with the production report schema and deterministic 12-factor scoring engine. ${new Set(usedEvidence.map(item => item.url)).size} distinct cited sources were used; the figures are illustrative of this frozen report, not live market data.`,
     topRecommendation, strongestPositiveEvidenceId: evidence[0].id, strongestNegativeEvidenceId: evidence[1].id,
     researchAvailabilityState: "research_completed",
+    fullValidationDecision,
     evidenceSufficiency: {
       acceptedEvidenceCount: usedEvidence.length,
       independentEvidenceGroups: usedEvidence.length,

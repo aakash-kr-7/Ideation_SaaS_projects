@@ -6,7 +6,10 @@ import {
   type GeminiGenerator,
   getGeminiGroundingMode,
 } from "../../gemini.ts";
-import { buildResearchPacks } from "../../external-retrieval.ts";
+import {
+  buildResearchPacks,
+  type ResearchPack,
+} from "../../external-retrieval.ts";
 import { groundedCallLimit, groundingFailureAction } from "../../grounding-policy.ts";
 import type { CanonicalResearchBrief } from "../../research-brief.ts";
 import { persistResearchCallMetric } from "../../research-call-metrics.ts";
@@ -17,6 +20,10 @@ import {
   persistQuickScanPackStatus,
   researchUnavailableMessage,
 } from "../../quick-scan-reliability.ts";
+import {
+  initializeFullValidationPackStatuses,
+  persistFullValidationPackStatus,
+} from "../../full-validation-reliability.ts";
 
 export async function executeHybridGroundedResearch(ctx: StageContext): Promise<StageResult> {
   const { runId, db, config, startedAt, inputMeta } = ctx;
@@ -75,6 +82,34 @@ export async function executeHybridGroundedResearch(ctx: StageContext): Promise<
         );
       }
     }
+    if (mode === "full_validation") {
+      await initializeFullValidationPackStatuses(db, runId);
+      if (groundingMode === "disabled") {
+        await persistFullValidationPackStatus(db, {
+          runId,
+          packKey: externalPacks[0]?.key || "full_buyer_problem",
+          status: "provider_failed",
+          failureReason: "Grounded research is disabled.",
+        });
+        return stageFailed(
+          "research_unavailable",
+          researchUnavailableMessage("provider_failed"),
+        );
+      }
+      if (await knownDailyGroundingQuotaFailure(db)) {
+        await persistFullValidationPackStatus(db, {
+          runId,
+          packKey: externalPacks[0]?.key || "full_buyer_problem",
+          status: "quota_blocked",
+          failureReason: "Known daily quota failure; provider call suppressed.",
+          metadata: { circuitBreaker: true },
+        });
+        return stageFailed(
+          "research_unavailable",
+          researchUnavailableMessage("quota_blocked"),
+        );
+      }
+    }
     const groundedPacks = externalPacks.slice(
       0,
       groundedCallLimit(groundingMode as "required" | "optional" | "disabled", mode, externalPacks.length),
@@ -117,6 +152,14 @@ export async function executeHybridGroundedResearch(ctx: StageContext): Promise<
           startedAt: new Date(callStartedAt).toISOString(),
           metadata: { inProgress: true },
         });
+      } else if (mode === "full_validation") {
+        await persistFullValidationPackStatus(db, {
+          runId,
+          packKey: pack.key,
+          status: "skipped",
+          startedAt: new Date(callStartedAt).toISOString(),
+          metadata: { inProgress: true },
+        });
       }
       try {
         const result = await gemini.generate({
@@ -125,7 +168,9 @@ export async function executeHybridGroundedResearch(ctx: StageContext): Promise<
           useGrounding: true,
           budget,
           db,
-          systemInstruction: quickScanGroundingInstruction(pack.purpose),
+          systemInstruction: mode === "full_validation"
+            ? fullValidationGroundingInstruction(pack.purpose)
+            : quickScanGroundingInstruction(pack.purpose),
           prompt: `Research this startup idea for ${pack.focus}.
 Canonical research brief (the semantic boundary; do not drift): ${JSON.stringify(researchBrief)}
 Name: ${run.idea_name}
@@ -159,6 +204,19 @@ Return only evidence about this exact buyer, workflow, problem, and proposition.
               validationPending: result.groundingSources.length > 0,
             },
           });
+        } else if (mode === "full_validation") {
+          await persistFullValidationPackStatus(db, {
+            runId,
+            packKey: pack.key,
+            status: result.groundingSources.length
+              ? "completed"
+              : "completed_no_evidence",
+            startedAt: new Date(callStartedAt).toISOString(),
+            metadata: {
+              groundedSourcesDiscovered: result.groundingSources.length,
+              validationPending: result.groundingSources.length > 0,
+            },
+          });
         }
         if (result.groundingSources.length) {
           results.push({
@@ -167,9 +225,7 @@ Return only evidence about this exact buyer, workflow, problem, and proposition.
             text: result.text,
             groundingSources: result.groundingSources,
           });
-        } else if (groundingMode === "required" && mode !== "quick_scan") {
-          return stageFailed("permanent", `${pack.key} returned no attributable Google Search grounding metadata.`);
-        } else if (mode !== "quick_scan") {
+        } else if (mode !== "quick_scan" && mode !== "full_validation") {
           groundingDegraded = true;
           break;
         }
@@ -183,6 +239,7 @@ Return only evidence about this exact buyer, workflow, problem, and proposition.
           grounded: true,
           durationMs: Date.now() - callStartedAt,
           quotaFailure: Boolean(quota),
+          providerFailure: packFailure,
           metadata: {
             errorClass: error instanceof GeminiRequestError
               ? error.errorClass
@@ -192,6 +249,19 @@ Return only evidence about this exact buyer, workflow, problem, and proposition.
         });
         if (mode === "quick_scan") {
           await persistQuickScanPackStatus(db, {
+            runId,
+            packKey: pack.key,
+            status: packFailure,
+            failureReason: error instanceof Error ? error.message : String(error),
+            startedAt: new Date(callStartedAt).toISOString(),
+          });
+          return stageFailed(
+            "research_unavailable",
+            researchUnavailableMessage(packFailure),
+          );
+        }
+        if (mode === "full_validation") {
+          await persistFullValidationPackStatus(db, {
             runId,
             packKey: pack.key,
             status: packFailure,
@@ -284,7 +354,22 @@ function quickScanGroundingInstruction(purpose?: ResearchPackPurpose) {
   return "Use Google Search grounding for the exact buyer, exact workflow, current alternative, pain frequency and severity, behavioural demand, and category activity. Keep the canonical brief as the semantic boundary, preserve source attribution, and invent nothing.";
 }
 
-type ResearchPackPurpose = "primary" | "adversarial" | "pricing_wtp" | "coverage_repair";
+function fullValidationGroundingInstruction(purpose?: ResearchPackPurpose) {
+  const common =
+    "Use Google Search grounding only. Stay inside the canonical proposition and buyer segment. Separate segments; never transfer evidence between them. Cite every factual statement. Prefer independent primary/official sources and direct buyer voice. Three URLs repeating one underlying claim count as one evidence group. State unresolved gaps; invent nothing.";
+  if (purpose === "adversarial") {
+    return `${common} Seek genuine proposition-specific disconfirmation, failure patterns, low urgency, workarounds, switching resistance, and invalidating conditions.`;
+  }
+  if (purpose === "pricing_wtp") {
+    return `${common} Verify exact current pricing from official pages. Treat list prices only as pricing context; require purchase, contract, paid-pilot, renewal, or procurement behavior for WTP.`;
+  }
+  if (purpose === "alternatives_competitors") {
+    return `${common} Verify active product, target audience, current positioning, pricing, features, complaints, switching barriers, and category gaps. Do not invent weaknesses.`;
+  }
+  return common;
+}
+
+type ResearchPackPurpose = ResearchPack["purpose"];
 
 async function persistGroundingState(
   db: any,

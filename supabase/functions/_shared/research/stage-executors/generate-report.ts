@@ -129,7 +129,7 @@ export async function executeGenerateReport(
   // --- Load breakdowns ---
   const { data: breakdowns } = await db
     .from("score_breakdowns")
-    .select("criterion, score, raw_score, evidence_coefficient, effective_score, evidence_state, supporting_evidence_ids, challenging_evidence_ids, confidence_deductions, unresolved_gaps, weight, notes, id")
+    .select("criterion, score, raw_score, evidence_coefficient, effective_score, evidence_state, supporting_evidence_ids, challenging_evidence_ids, confidence_deductions, unresolved_gaps, buyer_segment_applicability, unresolved_assumptions, score_sensitivity, weight, notes, id")
     .eq("score_id", scoreId);
   const { data: scoreEvidenceRefs } = await db.from("score_evidence_refs")
     .select("score_breakdown_id,evidence_id");
@@ -198,13 +198,7 @@ export async function executeGenerateReport(
           properties: {
             written_verdict: {
               type: "string",
-              enum: [
-                "Build Now",
-                "Validate First",
-                "Niche Down",
-                "Weak Signal",
-                "Avoid",
-              ],
+              enum: [verdict],
             },
             executive_summary: {
               type: "array",
@@ -449,6 +443,10 @@ export async function executeGenerateReport(
         challengingEvidenceIds: row?.challenging_evidence_ids || [],
         confidenceDeductions: row?.confidence_deductions || [],
         unresolvedGaps: row?.unresolved_gaps || [],
+        buyerSegmentApplicability:
+          row?.buyer_segment_applicability || [],
+        unresolvedAssumptions: row?.unresolved_assumptions || [],
+        scoreSensitivity: row?.score_sensitivity || {},
       }];
     })),
     scoreBand: persistedScoreBand,
@@ -461,7 +459,8 @@ export async function executeGenerateReport(
     { data: numericValidations },
     { data: researchCallMetrics },
     { data: validatedPricingObservations },
-    { data: quickScanPackStatuses },
+    { data: researchPackStatuses },
+    { data: fullValidationDecision },
   ] = await Promise.all([
     db.from("adversarial_verdict_gates").select("*").eq("run_id", runId)
       .maybeSingle(),
@@ -496,7 +495,14 @@ export async function executeGenerateReport(
         "run_id",
         runId,
       ).order("created_at")
-      : Promise.resolve({ data: [] }),
+      : db.from("full_validation_research_pack_statuses").select("*").eq(
+        "run_id",
+        runId,
+      ).order("created_at"),
+    config.mode === "full_validation"
+      ? db.from("full_validation_decisions").select("*").eq("run_id", runId)
+        .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
   const specialistAssessments = (specialistRows || []).map((row: any) => ({
     name: row.agent_name,
@@ -728,6 +734,22 @@ export async function executeGenerateReport(
     fullValidationInsights: config.mode === "full_validation"
       ? inputMeta.fullValidationInsights
       : undefined,
+    fullValidationDecision: config.mode === "full_validation" &&
+        fullValidationDecision
+      ? {
+        factorAnalysis: fullValidationDecision.factor_analysis,
+        segmentRankings: fullValidationDecision.segment_rankings,
+        recommendedSegment: fullValidationDecision.recommended_segment,
+        alternativeMap: fullValidationDecision.alternative_map,
+        economicsScenarios: fullValidationDecision.economics_scenarios,
+        adversarialGate: fullValidationDecision.adversarial_gate,
+        verdictStructure: fullValidationDecision.verdict_structure,
+        founderActionPlan: fullValidationDecision.founder_action_plan,
+        optionalGroqReview: fullValidationDecision.optional_groq_review,
+        deterministicFingerprint:
+          fullValidationDecision.deterministic_fingerprint,
+      }
+      : undefined,
     citationValidation,
     narrativeCitations: insufficientEvidence ? undefined : judgeOutput,
     evidenceGaps: runCoverage?.retrieval_coverage_gaps || [],
@@ -801,9 +823,10 @@ export async function executeGenerateReport(
       : "research_completed",
     evidenceSufficiency: inputMeta.evidenceSufficiency,
     verdictChangeConditions: inputMeta.verdictChangeConditions,
-    researchExecution: config.mode === "quick_scan"
-      ? {
-        maximumGroundedCalls: 4,
+    researchExecution: {
+        maximumGroundedCalls: config.mode === "quick_scan" ? 4 : 10,
+        normalGroundedCallLimit: config.mode === "quick_scan" ? 3 : 8,
+        conditionalGroundedCallLimit: config.mode === "quick_scan" ? 1 : 2,
         groundedCalls: (researchCallMetrics || []).filter((item: any) =>
           item.provider === "gemini" && item.grounded
         ).length,
@@ -812,7 +835,7 @@ export async function executeGenerateReport(
             item.conditional_call_trigger || []
           ),
         )],
-        packStatuses: (quickScanPackStatuses || []).map((item: any) => ({
+        packStatuses: (researchPackStatuses || []).map((item: any) => ({
           packKey: item.pack_key,
           status: item.status,
           acceptedEvidenceCount: item.accepted_evidence_count,
@@ -820,8 +843,8 @@ export async function executeGenerateReport(
         })),
         adversarialFinding: (contradictions || []).length
           ? `${(contradictions || []).length} proposition-specific contradiction object(s) passed validation.`
-          : (quickScanPackStatuses || []).some((item: any) =>
-              item.pack_key === "quick_adversarial" &&
+          : (researchPackStatuses || []).some((item: any) =>
+              ["quick_adversarial", "full_adversarial"].includes(item.pack_key) &&
               ["completed", "completed_no_evidence"].includes(item.status)
             )
           ? "No genuine proposition-specific contradiction passed validation in this scan."
@@ -842,14 +865,17 @@ export async function executeGenerateReport(
           evidenceFamiliesAdded: item.evidence_families_added || [],
           contradictionsAdded: item.contradictions_added,
           pricingClaimsValidated: item.pricing_claims_validated,
+          wtpSignalsFound: item.wtp_signals_found,
+          pagesFetched: item.pages_fetched,
+          sourceFamiliesAdded: item.source_families_added,
+          rejectionReasons: item.rejection_reasons || {},
+          providerFailure: item.provider_failure,
           cacheHits: item.cache_hits,
           durationMs: item.duration_ms,
           quotaFailure: item.quota_failure,
         })),
-      }
-      : undefined,
-    pricingIntegrity: config.mode === "quick_scan"
-      ? {
+      },
+    pricingIntegrity: {
         verifiedCompetitorPricing: (validatedPricingObservations || []).map((
           item: any,
         ) => ({
@@ -870,8 +896,7 @@ export async function executeGenerateReport(
           item.evidence_topic === "willingness_to_pay" &&
           !item.excluded
         ),
-      }
-      : undefined,
+      },
   };
   const normalizedChartDatasets = chartDatasets.map((item) => ({
     chartKey: item.chartKey || item.chart_key,

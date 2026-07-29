@@ -29,6 +29,11 @@ try {
   if (signedIn.error) throw signedIn.error;
   const membership = await service.from("team_members").select("team_id").eq("user_id", userId).single();
   if (membership.error) throw membership.error;
+  const creditSeed = await service.from("team_credit_accounts").update({
+    paid_credits: 10,
+    reserved_paid_credits: 0,
+  }).eq("team_id", membership.data.team_id);
+  if (creditSeed.error) throw creditSeed.error;
   const project = await service.from("projects").insert({
     team_id: membership.data.team_id,
     created_by: userId,
@@ -36,7 +41,7 @@ try {
   }).select("id").single();
   if (project.error) throw project.error;
 
-  const reserve = async (suffix) => {
+  const reserve = async (suffix, mode = "quick_scan") => {
     const result = await client.rpc("create_research_run_with_reservation", {
       p_project_id: project.data.id,
       p_idea_name: `Credit ${suffix}`,
@@ -45,7 +50,7 @@ try {
       p_market_type: "B2B",
       p_target_region: "Global",
       p_assumptions: [],
-      p_mode: "quick_scan",
+      p_mode: mode,
       p_idempotency_key: crypto.randomUUID(),
       p_request_id: crypto.randomUUID(),
     });
@@ -118,6 +123,54 @@ try {
     })}`);
   }
 
+  const fullUnavailableRunId = await reserve(
+    "full-validation-unavailable",
+    "full_validation",
+  );
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const result = await service.rpc("terminate_research_run", {
+      p_run_id: fullUnavailableRunId,
+      p_error_class: "research_unavailable",
+      p_error_message: "RESEARCH_UNAVAILABLE: grounded provider failed",
+      p_failed_stage: "grounded_research",
+    });
+    if (result.error) throw result.error;
+  }
+  const [fullUnavailableRun, fullUnavailableReservation, fullUnavailableLedger] =
+    await Promise.all([
+      service.from("research_runs").select(
+        "status,research_outcome,credit_state",
+      ).eq("id", fullUnavailableRunId).single(),
+      service.from("credit_reservations").select("status").eq(
+        "run_id",
+        fullUnavailableRunId,
+      ).single(),
+      service.from("credit_ledger").select("event_type").eq(
+        "run_id",
+        fullUnavailableRunId,
+      ),
+    ]);
+  const fullEvents = (fullUnavailableLedger.data || []).map((row) =>
+    row.event_type
+  );
+  if (
+    fullUnavailableRun.error || fullUnavailableReservation.error ||
+    fullUnavailableLedger.error ||
+    fullUnavailableRun.data.research_outcome !== "research_unavailable" ||
+    fullUnavailableReservation.data.status !== "restored" ||
+    fullEvents.filter((event) => event === "reserve").length !== 1 ||
+    fullEvents.filter((event) => event === "restore").length !== 1 ||
+    fullEvents.includes("consume")
+  ) {
+    throw new Error(`Full Validation unavailable credit invariant failed: ${
+      JSON.stringify({
+        run: fullUnavailableRun.data,
+        reservation: fullUnavailableReservation.data,
+        events: fullEvents,
+      })
+    }`);
+  }
+
   console.log(JSON.stringify({
     result: "PASS",
     unavailable: {
@@ -130,6 +183,12 @@ try {
       runId: completedResearchRunId,
       credit: completedReservation.data.status,
       events: completedEvents,
+    },
+    fullValidationUnavailable: {
+      runId: fullUnavailableRunId,
+      outcome: fullUnavailableRun.data.research_outcome,
+      credit: fullUnavailableReservation.data.status,
+      events: fullEvents,
     },
   }, null, 2));
 } finally {
