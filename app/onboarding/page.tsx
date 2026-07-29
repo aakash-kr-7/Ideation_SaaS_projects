@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, ArrowLeft, Check, User, Briefcase, Target, Rocket, Code, LoaderCircle } from "lucide-react";
+import {
+  Activity, ArrowLeft, ArrowRight, Briefcase, Check, Code, LoaderCircle,
+  Rocket, ShieldCheck, Sparkles, Target, User,
+} from "lucide-react";
 import { Brand } from "@/components/layout/brand";
 import { createClient } from "@/lib/supabase/client";
 import { safeAuthRedirect } from "@/lib/auth-redirect";
@@ -23,37 +26,42 @@ const steps = [
   {
     id: "welcome",
     icon: User,
-    eyebrow: "Let's personalize your experience",
-    title: "What should we call you?",
-    why: "We'll use your name to personalize reports and recommendations.",
+    phase: "Identity",
+    eyebrow: "Calibration 01 / Identity",
+    title: "Put a name on the person making the bet.",
+    why: "Your decision room should feel written for the person who has to act on it. Start with what we should call you.",
   },
   {
     id: "experience",
     icon: Briefcase,
-    eyebrow: "Your background shapes our recommendations",
-    title: "What describes you best?",
-    why: "This adjusts the language and depth of our reports. A first-time founder needs different guidance than a serial entrepreneur.",
+    phase: "Context",
+    eyebrow: "Calibration 02 / Builder context",
+    title: "How do you turn ideas into reality?",
+    why: "We tune the language, scrutiny, and next actions to the way you actually build—not to a generic founder profile.",
   },
   {
     id: "market",
     icon: Target,
-    eyebrow: "Default research settings",
-    title: "What market are you focused on?",
-    why: "Pre-fills your research form so you can validate ideas faster. You can always change it per-idea.",
+    phase: "Market",
+    eyebrow: "Calibration 03 / Market lens",
+    title: "Where should we hunt for signal?",
+    why: "Choose the market you return to most. It becomes your default research lens and keeps every new brief one step ahead.",
   },
   {
     id: "goals",
     icon: Rocket,
-    eyebrow: "Revenue and business model preferences",
-    title: "What are you building toward?",
-    why: "This shapes pricing analysis and revenue path calculations in your reports.",
+    phase: "Ambition",
+    eyebrow: "Calibration 04 / Commercial intent",
+    title: "What would make this worth winning?",
+    why: "A strong idea has to fit the outcome you want. We pressure-test pricing and revenue paths against that ambition.",
   },
   {
     id: "technical",
     icon: Code,
-    eyebrow: "Technical context and region",
-    title: "A few more details to refine your reports.",
-    why: "Your technical level affects MVP scope recommendations. Region shapes launch channel suggestions.",
+    phase: "Execution",
+    eyebrow: "Calibration 05 / Execution reality",
+    title: "Define your unfair constraints.",
+    why: "Your skills, region, and available channels shape what the smartest first move looks like. Make the report fit your reality.",
   },
 ];
 
@@ -149,32 +157,32 @@ export default function OnboardingPage() {
         sessionStorage.removeItem(ONBOARDING_DRAFT_KEY);
       }
     }
-    // Pre-fill name from auth profile
+
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user?.user_metadata?.full_name) {
-        setData(d => ({ ...d, display_name: user.user_metadata.full_name }));
+        setData(current => ({ ...current, display_name: user.user_metadata.full_name }));
       } else if (user?.email) {
-        setData(d => ({ ...d, display_name: user.email!.split("@")[0] }));
+        setData(current => ({ ...current, display_name: user.email!.split("@")[0] }));
       }
     });
   }, []);
 
   const update = <Field extends keyof OnboardingData>(field: Field, value: OnboardingData[Field]) => {
-    setData(d => {
-      const nextData = { ...d, [field]: value };
+    setData(current => {
+      const nextData = { ...current, [field]: value };
       sessionStorage.setItem(ONBOARDING_DRAFT_KEY, JSON.stringify({ step, data: nextData }));
       return nextData;
     });
   };
 
   const toggleChannel = (channel: string) => {
-    setData(d => {
+    setData(current => {
       const nextData = {
-        ...d,
-        launch_channels: d.launch_channels.includes(channel)
-        ? d.launch_channels.filter(c => c !== channel)
-        : [...d.launch_channels, channel],
+        ...current,
+        launch_channels: current.launch_channels.includes(channel)
+          ? current.launch_channels.filter(item => item !== channel)
+          : [...current.launch_channels, channel],
       };
       sessionStorage.setItem(ONBOARDING_DRAFT_KEY, JSON.stringify({ step, data: nextData }));
       return nextData;
@@ -199,10 +207,7 @@ export default function OnboardingPage() {
       const response = await fetch("/api/user/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          onboarding_completed: true,
-        }),
+        body: JSON.stringify({ ...data, onboarding_completed: true }),
       });
       if (!response.ok) {
         const result = await response.json().catch(() => null);
@@ -244,205 +249,186 @@ export default function OnboardingPage() {
 
   const next = () => {
     if (step < steps.length - 1) {
-      setStep(s => {
-        const nextStep = s + 1;
+      setStep(current => {
+        const nextStep = current + 1;
         sessionStorage.setItem(ONBOARDING_DRAFT_KEY, JSON.stringify({ step: nextStep, data }));
         return nextStep;
       });
     } else {
-      finish();
+      void finish();
     }
   };
 
   const prev = () => {
-    if (step > 0) setStep(s => s - 1);
+    if (step > 0) setStep(current => current - 1);
   };
 
   const current = steps[step];
   const Icon = current.icon;
+  const chosenMarket = markets.find(market => market.value === data.preferred_market)?.label;
+  const chosenGoal = revenueGoals.find(goal => goal.value === data.revenue_goal)?.label;
+  const chosenExperience = experienceLevels.find(level => level.value === data.experience_level)?.label;
 
   return (
     <main className="onboarding-page">
       <div className="onboarding-bg" />
+      <div className="onboarding-grid" aria-hidden="true" />
+      <div className="onboarding-orbit onboarding-orbit-one" aria-hidden="true" />
+      <div className="onboarding-orbit onboarding-orbit-two" aria-hidden="true" />
+
       <div className="onboarding-shell">
         <header className="onboarding-header">
           <Brand />
-          <button className="onboarding-skip" onClick={skip} disabled={saving}>
-            Skip for now
-          </button>
+          <div className="onboarding-header-meta">
+            <span><ShieldCheck size={13} /> Private workspace</span>
+            <button className="onboarding-skip" onClick={() => void skip()} disabled={saving}>Use smart defaults</button>
+          </div>
         </header>
 
-        <div className="onboarding-card" key={step}>
-          {saveError && <div className="auth-error" role="alert">{saveError}</div>}
-          <div className="onboarding-card-icon">
-            <Icon size={22} />
-          </div>
-          <p className="eyebrow">{current.eyebrow}</p>
-          <h1>{current.title}</h1>
-          <p className="onboarding-why">{current.why}</p>
+        <div className="onboarding-workspace">
+          <aside className="onboarding-brief">
+            <div className="onboarding-brief-kicker"><Activity size={14} /> Decision lens is calibrating</div>
+            <p className="onboarding-brief-step">0{step + 1} <span>/ 0{steps.length}</span></p>
+            <h2>Before the market judges the idea, calibrate the lens.</h2>
+            <p className="onboarding-brief-copy">
+              Five focused choices turn generic research into a decision system shaped around your ambition, constraints, and way of building.
+            </p>
 
-          <div className="onboarding-fields">
-            {/* Step 0: Name */}
-            {step === 0 && (
-              <label className="onboarding-text-field">
-                <input
-                  type="text"
-                  value={data.display_name}
-                  onChange={e => update("display_name", e.target.value)}
-                  placeholder="Your name"
-                  autoFocus
-                />
-              </label>
-            )}
+            <div className="onboarding-lens">
+              <header>
+                <div><Sparkles size={13} /><span>Your decision lens</span></div>
+                <i>Live</i>
+              </header>
+              <div className="onboarding-lens-row"><span>Builder</span><b>{chosenExperience || data.display_name || "Waiting for context"}</b></div>
+              <div className="onboarding-lens-row"><span>Market</span><b>{chosenMarket || "Open market"}</b></div>
+              <div className="onboarding-lens-row"><span>Target</span><b>{chosenGoal || "Not fixed yet"}</b></div>
+              <div className="onboarding-lens-signal"><span /> Recommendations sharpen as you answer</div>
+            </div>
 
-            {/* Step 1: Experience level */}
-            {step === 1 && (
-              <div className="onboarding-option-grid">
-                {experienceLevels.map(opt => (
-                  <button
-                    key={opt.value}
-                    className={`onboarding-option ${data.experience_level === opt.value ? "selected" : ""}`}
-                    onClick={() => update("experience_level", opt.value)}
-                  >
-                    {data.experience_level === opt.value && <Check size={14} />}
-                    <b>{opt.label}</b>
-                    <small>{opt.desc}</small>
-                  </button>
-                ))}
+            <p className="onboarding-brief-note">
+              No busywork. Every answer changes how a future report frames risk, scope, pricing, or distribution.
+            </p>
+          </aside>
+
+          <section className="onboarding-stage">
+            <div className="onboarding-stage-chrome">
+              <span>Profile calibration</span>
+              <div>{steps.map((_, index) => <i className={index <= step ? "active" : ""} key={index} />)}</div>
+            </div>
+
+            <div className="onboarding-card" key={step}>
+              {saveError && <div className="auth-error" role="alert">{saveError}</div>}
+              <div className="onboarding-card-icon"><Icon size={21} /></div>
+              <p className="eyebrow">{current.eyebrow}</p>
+              <h1>{current.title}</h1>
+              <p className="onboarding-why">{current.why}</p>
+
+              <div className="onboarding-fields">
+                {step === 0 && (
+                  <label className="onboarding-text-field">
+                    <span>What should appear in your decision room?</span>
+                    <input type="text" value={data.display_name} onChange={event => update("display_name", event.target.value)} placeholder="Your name" />
+                    <small>Used only to personalize your workspace and reports.</small>
+                  </label>
+                )}
+
+                {step === 1 && (
+                  <div className="onboarding-option-grid">
+                    {experienceLevels.map(option => (
+                      <button type="button" key={option.value} className={`onboarding-option ${data.experience_level === option.value ? "selected" : ""}`} onClick={() => update("experience_level", option.value)}>
+                        {data.experience_level === option.value && <Check size={14} />}
+                        <b>{option.label}</b><small>{option.desc}</small>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {step === 2 && (
+                  <>
+                    <div className="onboarding-chip-grid">
+                      {markets.map(market => (
+                        <button type="button" key={market.value} className={`onboarding-chip ${data.preferred_market === market.value ? "selected" : ""}`} onClick={() => update("preferred_market", market.value)}>
+                          {data.preferred_market === market.value && <Check size={12} />}{market.label}
+                        </button>
+                      ))}
+                    </div>
+                    <label className="onboarding-text-field onboarding-customer-field">
+                      <span>Who do you most want to understand?</span>
+                      <input type="text" value={data.target_customer_type} onChange={event => update("target_customer_type", event.target.value)} placeholder="e.g. Independent salon owners with repeat bookings" />
+                      <small>Optional. Specific buyers create sharper evidence searches.</small>
+                    </label>
+                  </>
+                )}
+
+                {step === 3 && (
+                  <>
+                    <div className="onboarding-option-grid compact">
+                      {revenueGoals.map(option => (
+                        <button type="button" key={option.value} className={`onboarding-option ${data.revenue_goal === option.value ? "selected" : ""}`} onClick={() => update("revenue_goal", option.value)}>
+                          {data.revenue_goal === option.value && <Check size={14} />}
+                          <b>{option.label}</b><small>{option.desc}</small>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="onboarding-chip-grid onboarding-model-grid">
+                      <p className="onboarding-sub-label">The model you want to make work</p>
+                      {businessModels.map(model => (
+                        <button type="button" key={model.value} className={`onboarding-chip ${data.business_model === model.value ? "selected" : ""}`} onClick={() => update("business_model", model.value)}>
+                          {data.business_model === model.value && <Check size={12} />}{model.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {step === 4 && (
+                  <>
+                    <div className="onboarding-option-grid compact">
+                      {technicalLevels.map(option => (
+                        <button type="button" key={option.value} className={`onboarding-option ${data.technical_level === option.value ? "selected" : ""}`} onClick={() => update("technical_level", option.value)}>
+                          {data.technical_level === option.value && <Check size={14} />}
+                          <b>{option.label}</b><small>{option.desc}</small>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="onboarding-chip-grid onboarding-model-grid">
+                      <p className="onboarding-sub-label">Your home market</p>
+                      {regions.map(region => (
+                        <button type="button" key={region.value} className={`onboarding-chip ${data.region === region.value ? "selected" : ""}`} onClick={() => update("region", region.value)}>
+                          {data.region === region.value && <Check size={12} />}{region.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="onboarding-chip-grid onboarding-model-grid">
+                      <p className="onboarding-sub-label">Channels already within reach <span>Optional</span></p>
+                      {launchChannelOptions.map(channel => (
+                        <button type="button" key={channel.value} className={`onboarding-chip ${data.launch_channels.includes(channel.value) ? "selected" : ""}`} onClick={() => toggleChannel(channel.value)}>
+                          {data.launch_channels.includes(channel.value) && <Check size={12} />}{channel.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
-            )}
+            </div>
 
-            {/* Step 2: Market + Customer type */}
-            {step === 2 && (
-              <>
-                <div className="onboarding-chip-grid">
-                  {markets.map(m => (
-                    <button
-                      key={m.value}
-                      className={`onboarding-chip ${data.preferred_market === m.value ? "selected" : ""}`}
-                      onClick={() => update("preferred_market", m.value)}
-                    >
-                      {data.preferred_market === m.value && <Check size={12} />}
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-                <label className="onboarding-text-field" style={{ marginTop: 16 }}>
-                  <span>Who is your typical target customer?</span>
-                  <input
-                    type="text"
-                    value={data.target_customer_type}
-                    onChange={e => update("target_customer_type", e.target.value)}
-                    placeholder="e.g. Solo freelancers, SMB owners, DevOps engineers"
-                  />
-                </label>
-              </>
-            )}
-
-            {/* Step 3: Revenue + Business Model */}
-            {step === 3 && (
-              <>
-                <div className="onboarding-option-grid compact">
-                  {revenueGoals.map(opt => (
-                    <button
-                      key={opt.value}
-                      className={`onboarding-option ${data.revenue_goal === opt.value ? "selected" : ""}`}
-                      onClick={() => update("revenue_goal", opt.value)}
-                    >
-                      {data.revenue_goal === opt.value && <Check size={14} />}
-                      <b>{opt.label}</b>
-                      <small>{opt.desc}</small>
-                    </button>
-                  ))}
-                </div>
-                <div className="onboarding-chip-grid" style={{ marginTop: 20 }}>
-                  <p className="onboarding-sub-label">Preferred business model</p>
-                  {businessModels.map(m => (
-                    <button
-                      key={m.value}
-                      className={`onboarding-chip ${data.business_model === m.value ? "selected" : ""}`}
-                      onClick={() => update("business_model", m.value)}
-                    >
-                      {data.business_model === m.value && <Check size={12} />}
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {/* Step 4: Technical + Region + Launch Channels */}
-            {step === 4 && (
-              <>
-                <div className="onboarding-option-grid compact">
-                  {technicalLevels.map(opt => (
-                    <button
-                      key={opt.value}
-                      className={`onboarding-option ${data.technical_level === opt.value ? "selected" : ""}`}
-                      onClick={() => update("technical_level", opt.value)}
-                    >
-                      {data.technical_level === opt.value && <Check size={14} />}
-                      <b>{opt.label}</b>
-                      <small>{opt.desc}</small>
-                    </button>
-                  ))}
-                </div>
-                <div className="onboarding-chip-grid" style={{ marginTop: 20 }}>
-                  <p className="onboarding-sub-label">Your region</p>
-                  {regions.map(r => (
-                    <button
-                      key={r.value}
-                      className={`onboarding-chip ${data.region === r.value ? "selected" : ""}`}
-                      onClick={() => update("region", r.value)}
-                    >
-                      {data.region === r.value && <Check size={12} />}
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="onboarding-chip-grid" style={{ marginTop: 20 }}>
-                  <p className="onboarding-sub-label">Preferred launch channels (select any)</p>
-                  {launchChannelOptions.map(ch => (
-                    <button
-                      key={ch.value}
-                      className={`onboarding-chip ${data.launch_channels.includes(ch.value) ? "selected" : ""}`}
-                      onClick={() => toggleChannel(ch.value)}
-                    >
-                      {data.launch_channels.includes(ch.value) && <Check size={12} />}
-                      {ch.label}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="onboarding-progress">
-          {steps.map((_, i) => (
-            <i className={i <= step ? "active" : ""} key={i} />
-          ))}
-        </div>
-
-        <div className="onboarding-actions">
-          {step > 0 && (
-            <button className="button ghost onboarding-back" onClick={prev}>
-              <ArrowLeft size={14} /> Back
-            </button>
-          )}
-          <button
-            className="button onboarding-next"
-            onClick={next}
-            disabled={!canProceed() || saving}
-          >
-            {saving ? (
-              <><LoaderCircle className="animate-spin" size={15} /> Saving…</>
-            ) : step === steps.length - 1 ? (
-              <><Check size={15} /> Finish setup</>
-            ) : (
-              <>Continue <ArrowRight size={15} /></>
-            )}
-          </button>
+            <footer className="onboarding-actions">
+              <div className="onboarding-progress-copy">
+                <span>{current.phase}</span>
+                <small>{step + 1} of {steps.length} calibrated</small>
+              </div>
+              <div className="onboarding-action-buttons">
+                {step > 0 && <button className="button ghost onboarding-back" onClick={prev}><ArrowLeft size={14} /> Back</button>}
+                <button className="button onboarding-next" onClick={next} disabled={!canProceed() || saving}>
+                  {saving
+                    ? <><LoaderCircle className="animate-spin" size={15} /> Saving...</>
+                    : step === steps.length - 1
+                      ? <>Enter my decision room <ArrowRight size={15} /></>
+                      : <>Calibrate next layer <ArrowRight size={15} /></>}
+                </button>
+              </div>
+            </footer>
+          </section>
         </div>
       </div>
     </main>

@@ -77,9 +77,9 @@ export default function SettingsPage() {
     <AppShell title="Settings">
       <div className="page-content settings-page">
         <div className="page-lead">
-          <p className="eyebrow">Settings</p>
-          <h2>Configure your workspace.</h2>
-          <p>Manage your profile, research preferences, and account settings.</p>
+          <p className="eyebrow">Decision system calibration</p>
+          <h2>Make every verdict fit the way you build.</h2>
+          <p>Your market, ambition, technical range, and working context shape what a useful next move looks like.</p>
         </div>
 
         {/* Profile Section */}
@@ -87,8 +87,8 @@ export default function SettingsPage() {
           <div className="settings-section-header">
             <UserRound size={19} />
             <div>
-              <h3>Profile</h3>
-              <p>Your identity and research preferences. These shape your validation reports.</p>
+              <h3>Decision lens</h3>
+              <p>The personal and commercial context carried into every new validation.</p>
             </div>
           </div>
           <div className="settings-form">

@@ -28,5 +28,33 @@ export default async function NewResearchPage({searchParams}:{searchParams:Promi
       };
     }
   }
-  return <AppShell title="Validate idea"><div className="page-content narrow"><div className="page-lead"><p className="eyebrow">{sourceRunId?"Continue the same idea":"New validation"}</p><h2>{query.upgradeFrom?"Run Full Validation without re-entering your brief.":query.retryFrom?"Retry with the same validated brief.":"Choose the right depth before research begins."}</h2><p>Quick Scan is the fast decision checkpoint. Full Validation is the comprehensive decision dossier before you commit meaningful time or money.</p></div><ResearchForm projectId={projectId} defaultMode={query.upgradeFrom?"full_validation":defaultMode} creditSnapshot={creditSnapshot} initialValues={initialValues}/></div></AppShell>
+  const headline=query.upgradeFrom
+    ?"Take the same idea deeper."
+    :query.retryFrom
+      ?"Run the brief again. Keep the learning."
+      :"Put the idea on trial.";
+  const description=query.upgradeFrom
+    ?"Your original brief is already loaded. Upgrade the evidence depth, attack the weak assumptions, and leave with a fuller decision dossier."
+    :query.retryFrom
+      ?"The validated brief is ready. Relaunch the research without rebuilding the context from scratch."
+      :"Brief the market once. ShouldBuild searches for demand, contradiction, competition, pricing pressure, and the next move worth making.";
+
+  return <AppShell title="Validate idea">
+    <div className="page-content research-intake-page">
+      <section className="decision-intake-hero">
+        <div className="decision-intake-copy">
+          <p className="eyebrow">{sourceRunId?"Decision room / Continuing brief":"Decision room / New trial"}</p>
+          <h2>{headline}</h2>
+          <p>{description}</p>
+        </div>
+        <aside className="decision-intake-promise">
+          <span>What comes back</span>
+          <div><b>01</b><p><strong>A verdict</strong><small>Build, validate first, narrow, or walk away.</small></p></div>
+          <div><b>02</b><p><strong>The case behind it</strong><small>Signals, contradictions, risks, and cited sources.</small></p></div>
+          <div><b>03</b><p><strong>Your next move</strong><small>A concrete action that reduces uncertainty.</small></p></div>
+        </aside>
+      </section>
+      <ResearchForm projectId={projectId} defaultMode={query.upgradeFrom?"full_validation":defaultMode} creditSnapshot={creditSnapshot} initialValues={initialValues}/>
+    </div>
+  </AppShell>
 }

@@ -6,7 +6,8 @@ import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   BarChart3, CreditCard, LayoutDashboard, Plus, Search, Settings, Scale,
-  Circle, LogOut, ChevronDown, BookOpen, User, Command, ArrowRight, X
+  Circle, LogOut, ChevronDown, BookOpen, User, Command, ArrowRight, X,
+  ShieldCheck, Sparkles
 } from "lucide-react";
 import { Brand } from "./brand";
 import { LegalFooter } from "./legal-footer";
@@ -23,6 +24,15 @@ const links = [
   { href: "/pricing", label: "Pricing", icon: CreditCard, description: "Plans and validation depth", keywords: "billing plan" },
   { href: "/settings", label: "Settings", icon: Settings, description: "Profile and workspace preferences", keywords: "account profile" },
 ];
+
+const pageContext: Record<string, string> = {
+  "Dashboard": "Your validation pipeline, ranked by what deserves attention next.",
+  "Validate idea": "Brief the market. Pressure-test the assumptions. Earn the next move.",
+  "Compare": "Put competing ideas under the same decision criteria.",
+  "Scoring model": "See exactly what is carrying—or weakening—the verdict.",
+  "Pricing": "Choose the depth of evidence the decision deserves.",
+  "Settings": "Tune the decision system to the way you actually build.",
+};
 
 function isActiveNavigation(href: string, pathname: string) {
   if (href === "/dashboard") {
@@ -140,9 +150,9 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
         <Brand href="/dashboard" />
         <div className="workspace">
           <span className="workspace-mark" aria-hidden="true"><Image src="/brand/shouldbuild-mark.svg" alt="" width={28} height={28}/></span>
-          <div><b>Your ideas</b><small>Validate before you build</small></div>
+          <div><b>Decision room</b><small>Every idea earns its next move</small></div>
         </div>
-        <p className="sidebar-label">NAVIGATION</p>
+        <p className="sidebar-label">DECISION SYSTEM</p>
         <nav className="instrument-nav" aria-label="Main navigation" style={{ "--active-index": activeLinkIndex } as CSSProperties}>
           {activeLinkIndex >= 0 && <span className="nav-active-indicator" aria-hidden="true" />}
           {links.map(({ href, label, icon: Icon, description }, index) => (
@@ -163,10 +173,10 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
           <div className="side-note">
             <Circle size={10} fill="currentColor" />
             {user
-              ? <span><b>Workspace active</b><small>Credits are verified when a report starts</small></span>
-              : <span><b>Explore ShouldBuild</b><small>Sign in to start validating</small></span>}
+              ? <span><b>Private system online</b><small>Your evidence trail stays attached to every verdict</small></span>
+              : <span><b>Explore the system</b><small>Sign in when an idea deserves a real trial</small></span>}
           </div>
-          <p className="sidebar-footnote">SHOULDBUILD · VALIDATE FIRST</p>
+          <p className="sidebar-footnote"><ShieldCheck size={11}/> SHOULDBUILD · VALIDATE FIRST</p>
         </div>
       </aside>
 
@@ -185,13 +195,14 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
               <span />
             </button>
             <div>
-              <p className="eyebrow">{title}</p>
+              <p className="eyebrow"><Sparkles size={11}/> Decision room / {title}</p>
               <h1>{title}</h1>
+              <small>{pageContext[title] ?? "Evidence first. Commitment second."}</small>
             </div>
           </div>
           <div className="header-actions">
             <button className={`quick-nav-trigger ${motion.buttonTight}`} onClick={() => setQuickNavOpen(true)} aria-label="Open quick navigation">
-              <Search size={14}/><span>Quick nav</span><kbd>{mounted && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl"} K</kbd>
+              <Search size={14}/><span>Jump anywhere</span><kbd>{mounted && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl"} K</kbd>
             </button>
             {action}
             {loading ? (
@@ -221,6 +232,7 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
                         {displayName[0].toUpperCase()}
                       </span>
                     )}
+                    <i className="user-presence-dot" aria-hidden="true"/>
                     <span className="user-menu-name">{displayName}</span>
                   </>
                 ) : (
@@ -232,6 +244,7 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
               {menuOpen && mounted && (
                 <div className="user-dropdown" role="menu" aria-label="Profile menu">
                   <div className="user-dropdown-header">
+                    <span><i/> Private decision room</span>
                     <b>{displayName}</b>
                     <small>{user?.email}</small>
                   </div>

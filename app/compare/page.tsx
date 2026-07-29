@@ -26,25 +26,26 @@ export default async function ComparePage() {
       <AppShell title="Compare">
         <div className="page-content">
           <section className="dashboard-empty-state">
-            <div className="empty-state-card">
+            <div className="empty-state-card compare-empty-state">
               <div className="empty-state-icon">
                 <Scale size={28} />
               </div>
-              <h2>Compare your best ideas</h2>
+              <p className="eyebrow">Portfolio judgment</p>
+              <h2>Stop letting the loudest idea win.</h2>
               <p>
-                Validate at least 2 ideas to compare them side by side.
-                You&apos;ll see scores, verdicts, buyer pain, pricing, and build complexity across the same criteria.
+                Put two completed validations under the same lens. Buyer pain, pricing power,
+                distribution, risk, and build complexity become comparable—not merely memorable.
               </p>
               <div className="empty-state-meta">
                 <span className="empty-state-count">
                   <SearchCheck size={14} />
                   {reports.length === 0
-                    ? "No completed validations yet"
-                    : "1 completed validation — need 1 more"}
+                    ? "Two completed decision files unlock the comparison room"
+                    : "One decision file ready · one more unlocks comparison"}
                 </span>
               </div>
               <Link className="button" href="/research/new">
-                Validate {reports.length === 0 ? "your first" : "another"} idea <ArrowRight size={15} />
+                Put {reports.length === 0 ? "the first idea" : "another idea"} on trial <ArrowRight size={15} />
               </Link>
             </div>
           </section>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Check, CircleHelp, Clock3, ShieldAlert } from "lucide-react";
+import { ArrowRight, Check, CircleHelp, Clock3, ShieldAlert, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 
 const reportProducts = [
@@ -31,23 +31,34 @@ const faq = [
 export function PricingPageClient() {
   return <AppShell title="Pricing"><div className="page-content pricing-page production-pricing">
     <header className="pricing-heading pricing-hero">
-      <p className="eyebrow">Validation access</p>
-      <h2>Start free. Go deeper when the evidence justifies it.</h2>
-      <p>One Quick Scan is included every calendar month. Paid credits for Full Validation and additional scans are in progress.</p>
-      <div className="pricing-region-note" role="status"><ShieldAlert size={15}/><b>No charges active</b><span>No payment button on this page will collect money.</span></div>
+      <div className="pricing-hero-copy">
+        <p className="eyebrow">The cost of knowing</p>
+        <h2>Your first decision costs less than the first hour of the wrong build.</h2>
+        <p>Start with a free monthly signal check. Bring out the full dossier when the idea is consequential enough to deserve a harder case.</p>
+        <Link className="button" href="/research/new?mode=quick_scan">Run my free decision filter <ArrowRight size={15}/></Link>
+      </div>
+      <div className="pricing-hero-console">
+        <span><Sparkles size={13}/> ACCESS STATUS</span>
+        <b>Start at zero.</b>
+        <p>One Quick Scan is available every calendar month.</p>
+        <div><span>QUICK SCAN</span><strong>Free monthly</strong></div>
+        <div><span>FULL VALIDATION</span><strong>Checkout pending</strong></div>
+        <small><ShieldAlert size={13}/> No payment control is active today.</small>
+      </div>
     </header>
 
     <section className="pricing-section" aria-labelledby="reports-heading">
-      <div className="pricing-section-head"><div><p className="eyebrow">What each report includes</p><h2 id="reports-heading">Choose the depth your idea deserves</h2></div><small>Credit availability is confirmed before a run starts</small></div>
+      <div className="pricing-section-head"><div><p className="eyebrow">Two burdens of proof</p><h2 id="reports-heading">Match the research depth to the cost of being wrong.</h2></div><small>Credit access is checked before research begins</small></div>
       <div className="plans two-plans one-off-plans">
-        {reportProducts.map((product) => <article className={product.free ? "plan" : "plan featured"} key={product.name}>
+        {reportProducts.map((product, index) => <article className={product.free ? "plan" : "plan featured"} key={product.name}>
+          <span className="plan-index">0{index + 1}</span>
           {!product.free && <span className="popular">DEEPER RESEARCH</span>}
           <p>{product.name.toUpperCase()}</p>
           <h3>{product.free ? "Free every month" : "Paid access — coming soon"}</h3>
           <span>{product.description}</span>
           <small className="credit-label">{product.credits}</small>
           {product.free
-            ? <Link className="button ghost" href="/research/new?mode=quick_scan">Validate My Idea Free</Link>
+            ? <Link className="button ghost" href="/research/new?mode=quick_scan">Run the free filter <ArrowRight size={14}/></Link>
             : <button className="button" type="button" disabled aria-disabled="true"><Clock3 size={15}/> Available when checkout launches</button>}
           <ul>{product.items.map((item) => <li key={item}><Check size={15}/>{item}</li>)}</ul>
         </article>)}
@@ -55,14 +66,14 @@ export function PricingPageClient() {
     </section>
 
     <section className="pricing-section" aria-labelledby="future-access-heading">
-      <div className="pricing-section-head"><div><p className="eyebrow">Coming soon</p><h2 id="future-access-heading">Paid credits and report packs</h2></div></div>
+      <div className="pricing-section-head"><div><p className="eyebrow">Commercial access</p><h2 id="future-access-heading">More depth when the decision earns it.</h2></div></div>
       <div className="billing-note production-billing-note">
-        <Clock3 size={20}/><div><b>Checkout is being built</b><p>Full Validation credits, one-off report packs, Pro subscriptions, and regional pricing are in progress. Commercial terms will be published when payment launches.</p></div>
+        <Clock3 size={20}/><div><b>Checkout is still being built</b><p>Full Validation credits, report packs, subscriptions, and regional pricing will appear here when the commercial system is ready. Until then, nothing on this page can charge you.</p></div>
       </div>
     </section>
 
     <section className="pricing-faq">
-      <p className="eyebrow">Common questions</p><h2>Good to know before you start</h2>
+      <p className="eyebrow">Before you commit</p><h2>No clever fine print. Just the operating reality.</h2>
       <div>{faq.map(([question, answer]) => <article key={question}><CircleHelp size={16}/><div><h3>{question}</h3><p>{answer}</p></div></article>)}</div>
     </section>
   </div></AppShell>;

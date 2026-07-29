@@ -52,21 +52,21 @@ test.describe.serial("account lifecycle and onboarding", () => {
     await page.waitForURL(/\/onboarding/, { timeout: 15_000 });
 
     await page.getByPlaceholder("Your name").fill("Reveal Journey");
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await page.getByRole("button", { name: "Calibrate next layer", exact: true }).click();
     await page.getByRole("button", { name: /Solo founder/ }).click();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await page.getByRole("button", { name: "Calibrate next layer", exact: true }).click();
     await page.getByRole("button", { name: "B2B SaaS", exact: true }).click();
-    await page.getByPlaceholder(/Solo freelancers/).fill("Independent product teams");
+    await page.getByPlaceholder(/Independent salon owners/).fill("Independent product teams");
     await page.reload();
-    await expect(page.getByRole("heading", { name: "What market are you focused on?" })).toBeVisible();
-    await expect(page.getByPlaceholder(/Solo freelancers/)).toHaveValue("Independent product teams");
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Where should we hunt for signal?" })).toBeVisible();
+    await expect(page.getByPlaceholder(/Independent salon owners/)).toHaveValue("Independent product teams");
+    await page.getByRole("button", { name: "Calibrate next layer", exact: true }).click();
     await page.getByRole("button", { name: /\$5k MRR/ }).click();
     await page.getByRole("button", { name: "Subscription", exact: true }).click();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await page.getByRole("button", { name: "Calibrate next layer", exact: true }).click();
     await page.getByRole("button", { name: /Some coding/ }).click();
     await page.getByRole("button", { name: "Global / Remote", exact: true }).click();
-    await page.getByRole("button", { name: "Finish setup", exact: true }).click();
+    await page.getByRole("button", { name: "Enter my decision room", exact: true }).click();
     await page.waitForURL(/\/dashboard/);
 
     await admin.rpc("bootstrap_user", { p_user_id: userId, p_email: email, p_metadata: { full_name: "Reveal Journey" } });

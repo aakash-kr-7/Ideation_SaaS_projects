@@ -20,7 +20,7 @@ async function signIn(page: Page, credentials = account) {
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.waitForURL((url) => url.pathname.includes("/dashboard") || url.pathname.includes("/onboarding"), { timeout: 30000 });
   if (page.url().includes("/onboarding")) {
-    await page.getByRole("button", { name: "Skip for now", exact: true }).click();
+    await page.getByRole("button", { name: "Use smart defaults", exact: true }).click();
     await page.waitForURL((url) => !url.pathname.startsWith("/onboarding"));
   }
 }

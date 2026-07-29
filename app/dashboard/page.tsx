@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Bookmark, FileText, Gauge, Radar, Rocket, SearchCheck, Target } from "lucide-react";
+import { ArrowRight, Bookmark, FileText, Gauge, Radar, Rocket, SearchCheck, ShieldCheck, Target } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { ProjectCard } from "@/components/dashboard/project-card";
@@ -121,40 +121,49 @@ export default async function DashboardPage() {
       {!hasData && (
         <section className="dashboard-empty-state">
           <div className="empty-state-card" data-tour="reports">
-            <div className="empty-state-icon">
-              <SearchCheck size={28} />
+            <div className="dashboard-empty-copy">
+              <div className="empty-state-icon">
+                <SearchCheck size={28} />
+              </div>
+              <p className="eyebrow">Decision room ready</p>
+              <h2>Give your best idea somewhere serious to go.</h2>
+              <p>
+                Name the buyer, describe the painful workflow, and let the market challenge the story
+                before your calendar, capital, or codebase commits to it.
+              </p>
+              <Link className={`button ${motion.buttonBase}`} href="/research/new">
+                Put my idea on trial <ArrowRight size={15} />
+              </Link>
+              <small><ShieldCheck size={13}/> One free Quick Scan available monthly · No card required</small>
             </div>
-            <h2>Your first validation is one step away.</h2>
-            <p>
-              Describe your idea, tell us who the buyer is, and ShouldBuild will search real public sources,
-              challenge your assumptions, and deliver a cited verdict in minutes.
-            </p>
-            <div className="empty-state-steps">
-              <div>
-                <span>1</span>
+            <div className="dashboard-empty-preview" aria-label="What your first report unlocks">
+              <header><span><Radar size={14}/> YOUR FIRST DECISION FILE</span><i>WAITING FOR BRIEF</i></header>
+              <div className="empty-preview-verdict"><span>VERDICT</span><b>Not guessed.<br/>Earned.</b></div>
+              <div className="empty-state-steps">
                 <div>
-                  <b>Describe your idea</b>
-                  <small>Who is the buyer? What workflow pain does it solve?</small>
+                  <span>01</span>
+                  <div>
+                    <b>Expose the buyer pain</b>
+                    <small>Find whether the problem is visible outside your own head.</small>
+                  </div>
+                </div>
+                <div>
+                  <span>02</span>
+                  <div>
+                    <b>Attack the fragile assumptions</b>
+                    <small>See what could break pricing, reach, retention, or scope.</small>
+                  </div>
+                </div>
+                <div>
+                  <span>03</span>
+                  <div>
+                    <b>Leave with the next move</b>
+                    <small>Build, test, narrow, or walk away—with reasons.</small>
+                  </div>
                 </div>
               </div>
-              <div>
-                <span>2</span>
-                <div>
-                  <b>We search for real evidence</b>
-                  <small>Real public sources, adversarial analysis, and contradiction detection</small>
-                </div>
-              </div>
-              <div>
-                <span>3</span>
-                <div>
-                  <b>Get your verdict</b>
-                  <small>Build Now, Validate First, Niche Down, or Avoid — with citations</small>
-                </div>
-              </div>
+              <footer><span/><b>Evidence begins when the brief arrives.</b></footer>
             </div>
-            <Link className={`button ${motion.buttonBase}`} href="/research/new">
-              Validate idea <ArrowRight size={15} />
-            </Link>
           </div>
         </section>
       )}

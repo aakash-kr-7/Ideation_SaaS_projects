@@ -19,8 +19,8 @@ export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }
 
   return <section className="compare-engine">
     <div className="compare-library-note">
-      <b>Compare your ideas side by side</b>
-      <span>Select up to 4 ideas. Canonical score factors are comparable; report depth and evidence coverage may differ.</span>
+      <div><p className="eyebrow">Portfolio decision room</p><h2>Make the strongest case win.</h2></div>
+      <span>Select up to four ideas. Each is held against the same canonical decision factors; research depth and evidence coverage remain visible.</span>
     </div>
     {mixedDepth && <div className="comparison-depth-warning" role="note"><b>Different research depth</b><span>This comparison includes a Quick Scan and a Full Validation. Missing detail in a Quick Scan reflects its narrower evidence scope, not negative evidence.</span></div>}
     
