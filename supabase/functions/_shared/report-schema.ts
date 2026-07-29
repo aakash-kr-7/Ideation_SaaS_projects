@@ -656,6 +656,32 @@ export const createProjectSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
 });
+export const fullValidationDecisionContractSchema = z.object({
+  decisionBeingConsidered: z.string().trim().min(5).max(500),
+  targetMilestone: z.string().trim().min(3).max(300),
+  deadline: z.string().date(),
+  availableTimeHoursPerWeek: z.number().min(1).max(168),
+  availableBudgetAmount: z.number().min(0).max(1_000_000_000),
+  budgetCurrency: z.string().trim().length(3).transform((value) =>
+    value.toUpperCase()
+  ),
+  founderSkills: z.string().trim().min(3).max(500),
+  skillFit: z.enum(["strong", "partial", "gap"]),
+  domainExperience: z.string().trim().min(3).max(500),
+  domainExperienceLevel: z.enum(["deep", "some", "none"]),
+  existingAudience: z.enum([
+    "owned_target_audience",
+    "relevant_network",
+    "none",
+  ]),
+  existingAudienceDetails: z.string().trim().max(500).optional(),
+  buyerAccess: z.enum(["direct", "warm", "cold", "none"]),
+  buyerAccessDetails: z.string().trim().max(500).optional(),
+  platformTolerance: z.enum(["low", "medium", "high"]),
+  regulatoryTolerance: z.enum(["low", "medium", "high"]),
+  abandonmentConditions: z.string().trim().min(5).max(1_000),
+  confirmed: z.literal(true),
+});
 export const startResearchRunSchema = z.object({
   project_id: z.string().uuid(),
   idea_name: z.string().min(1),
@@ -679,7 +705,17 @@ export const startResearchRunSchema = z.object({
     complexityTolerance: z.string().max(100).optional(),
     platformTolerance: z.string().max(100).optional(),
     regulatoryTolerance: z.string().max(100).optional(),
+    decisionContract: fullValidationDecisionContractSchema.optional(),
   }).default({}),
   mode: reportModeSchema,
   idempotency_key: z.string().uuid(),
+}).superRefine((value, context) => {
+  if (value.mode === "full_validation" && !value.assumptions.decisionContract) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["assumptions", "decisionContract"],
+      message:
+        "Full Validation requires a confirmed interpreted decision brief before research can begin.",
+    });
+  }
 });

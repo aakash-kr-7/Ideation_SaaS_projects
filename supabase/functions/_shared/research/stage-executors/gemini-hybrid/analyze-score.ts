@@ -27,6 +27,15 @@ import {
   type VerifiedPrice,
 } from "../../full-validation-decision.ts";
 import { reviewWithOptionalGroq } from "../../groq-classifier.ts";
+import {
+  buildFounderFitFactor,
+  buildScoreChangeContract,
+  buildVerificationCardPayload,
+  countIndependentEvidenceGroups,
+  deriveReadinessRollups,
+  SHOULD_BUILD_SCORE_CONTRACT,
+  type FullValidationDecisionContract,
+} from "../../readiness-contract.ts";
 
 export async function executeHybridAnalyzeScore(
   ctx: StageContext,
@@ -72,7 +81,7 @@ export async function executeHybridAnalyzeScore(
       "*, mvp_scope_items(*)",
     ).eq("opportunity_id", opportunityId).maybeSingle();
     const { data: run } = await db.from("research_runs").select(
-      "target_customer, assumptions",
+      "idea_name, target_customer, assumptions, created_at",
     ).eq("id", runId).single();
     const { data: briefRow } = await db.from("research_briefs").select(
       "brief",
@@ -100,6 +109,11 @@ export async function executeHybridAnalyzeScore(
       .eq("resolution_status", "unresolved");
 
     // --- Compute factors (deterministic, no provider calls) ---
+    const founderContract = mode === "full_validation" &&
+        run?.assumptions && typeof run.assumptions === "object"
+      ? ((run.assumptions as Record<string, unknown>).decisionContract ??
+        null) as FullValidationDecisionContract | null
+      : null;
     const factors = computeFactors({
       evidence: evidence || [],
       risks: risks || [],
@@ -111,6 +125,9 @@ export async function executeHybridAnalyzeScore(
       hasPricingModel: !!pricing,
       launchStrategyCount: launch?.launch_strategies?.length || 0,
       unresolvedContradictionCount: unresolvedContradictionCount || 0,
+      founderFitFactor: mode === "full_validation"
+        ? buildFounderFitFactor(founderContract, risks || [])
+        : undefined,
     });
 
     const weights = (weightRows || []).map((w: any) => ({
@@ -131,6 +148,13 @@ export async function executeHybridAnalyzeScore(
       factors,
       weights,
     );
+    const totalWeight = weights.reduce((sum, row) => sum + row.weight, 0) || 1;
+    const evidenceConfidenceScore = Math.max(0, Math.min(100, Math.round(
+      factors.reduce((sum, factor) =>
+        sum + factor.evidenceCoefficient *
+          (weights.find((row) => row.criterion === factor.criterion)?.weight ||
+            0), 0) / totalWeight * 100,
+    )));
 
     // --- Full Validation deterministic decision layer ---
     let effectiveVerdict: string = deterministicVerdict;
@@ -255,6 +279,26 @@ export async function executeHybridAnalyzeScore(
         constraints,
         recruitmentChannel,
       });
+      const rollups = deriveReadinessRollups(factors, weights);
+      const scoreChange = buildScoreChangeContract({
+        score: total,
+        factors,
+        weights,
+        founderContract,
+      });
+      const independentEvidenceGroups = countIndependentEvidenceGroups(
+        acceptedEvidence,
+      );
+      const verificationCard = buildVerificationCardPayload({
+        ideaName: String(run?.idea_name || "Untitled idea"),
+        score: total,
+        scoreRange: scoreBand.display,
+        verdict: adversarialGate.verdict,
+        evidenceConfidence: evidenceSufficiency.overallEvidenceConfidence,
+        independentEvidenceGroups,
+        currentAsOf: String(run?.created_at || "1970-01-01"),
+        immutableReportLink: `/research/${runId}/results`,
+      });
       const optionalGroqReview = briefRow?.brief
         ? await reviewWithOptionalGroq({
           runId,
@@ -282,6 +326,25 @@ export async function executeHybridAnalyzeScore(
           failure: "Canonical brief unavailable for optional review.",
         };
       const deterministicPayload = {
+        scoreContract: SHOULD_BUILD_SCORE_CONTRACT,
+        rollups,
+        evidenceConfidence: {
+          label: "Evidence Confidence",
+          band: evidenceSufficiency.overallEvidenceConfidence,
+          score: evidenceConfidenceScore,
+          independentEvidenceGroups,
+          separateFromReadinessScore: true,
+        },
+        scoreChange,
+        verificationCard,
+        decisionContract: founderContract
+          ? {
+            ...founderContract,
+            interpretedBrief:
+              (run?.assumptions as Record<string, unknown>)
+                ?.interpretedDecisionBrief || null,
+          }
+          : null,
         factorAnalysis,
         segmentRankings: segmentDecision.rankings,
         recommendedSegment: segmentDecision.recommendedSegment,
@@ -302,13 +365,7 @@ export async function executeHybridAnalyzeScore(
     // Scoring confidence measures evidence-bound factor coverage and inherits a
     // hard ceiling from evidence quality. Successful arithmetic alone cannot
     // produce a high-confidence score.
-    const totalWeight = weights.reduce((sum, row) => sum + row.weight, 0) || 1;
-    const confidence = Math.max(0, Math.min(100, Math.round(
-      factors.reduce((sum, factor) =>
-        sum + factor.evidenceCoefficient *
-          (weights.find((row) => row.criterion === factor.criterion)?.weight || 0),
-      0) / totalWeight * 100,
-    )));
+    const confidence = evidenceConfidenceScore;
 
     // --- Persist score ---
     const { data: score, error: scoreError } = await db
@@ -391,6 +448,11 @@ export async function executeHybridAnalyzeScore(
         economics_scenarios: fullValidationDecision.economicsScenarios,
         adversarial_gate: fullValidationDecision.adversarialGate,
         verdict_structure: fullValidationDecision.verdictStructure,
+        score_contract: fullValidationDecision.scoreContract,
+        readiness_rollups: fullValidationDecision.rollups,
+        score_change_contract: fullValidationDecision.scoreChange,
+        verification_card: fullValidationDecision.verificationCard,
+        decision_contract: fullValidationDecision.decisionContract,
         founder_action_plan: fullValidationDecision.founderActionPlan,
         optional_groq_review: fullValidationDecision.optionalGroqReview,
         deterministic_fingerprint:

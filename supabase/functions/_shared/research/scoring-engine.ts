@@ -95,6 +95,8 @@ export interface ScoringContext {
   hasPricingModel: boolean;
   launchStrategyCount: number;
   unresolvedContradictionCount?: number;
+  /** Confirmed founder inputs supplied by Full Validation. Omitted by Quick Scan. */
+  founderFitFactor?: FactorResult;
 }
 export interface WeightRow {
   criterion: string;
@@ -488,16 +490,13 @@ export function computeFactors(ctx: ScoringContext): FactorResult[] {
       regulatory,
       "Regulatory and compliance risk evidence; this factor is inverted in the weighted total.",
     ),
-    mk(
-      "founderFit",
-      25 +
-        Math.min(
-          45,
-          usableEvidence.filter((e) => (e.source_tier ?? 3) <= 2).length * 7,
-        ),
-      [],
-      "Run-specific evidence access and domain signal coverage; no unsupported founder biography is inferred.",
-    ),
+    ctx.founderFitFactor ??
+      mk(
+        "founderFit",
+        50,
+        [],
+        "No confirmed founder profile was provided; founder fit remains assumed and neutral.",
+      ),
     mk(
       "distributionClarity",
       20 + Math.min(65, weightedDemand * 7 + ctx.launchStrategyCount * 6),

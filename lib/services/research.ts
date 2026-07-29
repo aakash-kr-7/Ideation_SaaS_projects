@@ -5,6 +5,7 @@ import { startResearchRunSchema } from "@/lib/report-schema";
 import { getReportModeConfig } from "@/lib/report-modes";
 import { ResearchRepository } from "@/lib/repositories/research";
 import { publicErrorMessage } from "@/lib/public-errors";
+import { buildInterpretedDecisionBrief } from "@/lib/readiness-contract";
 
 const reservationResultSchema = z.object({
   run_id: z.string().uuid(), run_status: z.string(), report_mode: z.enum(["quick_scan", "full_validation"]),
@@ -32,6 +33,15 @@ function databaseError(error: { message?: string } | null, requestId: string) {
 export const ResearchService = {
   async startResearchRun(input: z.infer<typeof startResearchRunSchema>) {
     const validated = startResearchRunSchema.parse(input);
+    const assumptions = validated.mode === "full_validation" &&
+        validated.assumptions.decisionContract
+      ? {
+        ...validated.assumptions,
+        interpretedDecisionBrief: buildInterpretedDecisionBrief(
+          validated.assumptions.decisionContract,
+        ),
+      }
+      : validated.assumptions;
     const config = getReportModeConfig(validated.mode);
     const requestId = crypto.randomUUID();
     const supabase = await createClient();
@@ -41,7 +51,7 @@ export const ResearchService = {
     const { data, error } = await supabase.rpc("create_research_run_with_reservation", {
       p_project_id: validated.project_id, p_idea_name: validated.idea_name, p_idea_description: validated.idea_description,
       p_target_customer: validated.target_customer, p_market_type: validated.market_type, p_target_region: validated.target_region,
-      p_assumptions: validated.assumptions, p_mode: validated.mode, p_idempotency_key: validated.idempotency_key, p_request_id: requestId,
+      p_assumptions: assumptions, p_mode: validated.mode, p_idempotency_key: validated.idempotency_key, p_request_id: requestId,
     });
     if (error) throw databaseError(error, requestId);
     const reservation = reservationResultSchema.parse(firstRow(data));

@@ -24,6 +24,10 @@ export interface CanonicalResearchBrief {
   adjacentOutOfScopeCategories: string[];
   terminology: string[];
   dimensionKeywords: Record<BriefDimension, string[]>;
+  decisionContext?: {
+    interpretedBrief: string;
+    confirmed: true;
+  };
 }
 
 export interface RelevanceAssessment {
@@ -78,6 +82,21 @@ export function buildCanonicalResearchBrief(run: {
   const proposition = clean(run.idea_description) || clean(run.idea_name);
   const targetCustomer = clean(run.target_customer) || "The buyer named in the submitted idea";
   const assumptions = run.assumptions && typeof run.assumptions === "object" ? run.assumptions : {};
+  const submittedDecisionContract =
+    assumptions.decisionContract &&
+      typeof assumptions.decisionContract === "object"
+      ? assumptions.decisionContract as Record<string, unknown>
+      : null;
+  const interpretedDecisionBrief = clean(
+    String(assumptions.interpretedDecisionBrief || ""),
+  );
+  const decisionContext = submittedDecisionContract?.confirmed === true &&
+      interpretedDecisionBrief
+    ? {
+      interpretedBrief: interpretedDecisionBrief,
+      confirmed: true as const,
+    }
+    : null;
   const isApprovalAudit = hasAny(normalize(`${run.idea_name || ""} ${proposition}`), [...APPROVAL_TERMS, ...AUDIT_TERMS]);
   const targetBuyer = clean(String(assumptions.buyer || "")) || targetCustomer;
   const endUser = clean(String(assumptions.endUser || assumptions.end_user || "")) || targetCustomer;
@@ -136,6 +155,7 @@ export function buildCanonicalResearchBrief(run: {
       expected_outcome: unique([...terms(expectedOutcome), ...(isApprovalAudit ? OUTCOME_TERMS : [])]),
       market_category: unique([...terms(directCompetitorCategory), ...(isApprovalAudit ? ["online proofing", "client approval", "customer sign-off", "approval workflow"] : [])]),
     },
+    ...(decisionContext ? { decisionContext } : {}),
   };
   return brief;
 }

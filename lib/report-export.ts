@@ -96,7 +96,7 @@ ${(full.founderActionPlan?.days ?? []).map((item) => `- Days ${item.days}: ${ite
 **Core pain:** ${o.corePain}  
 **Current workaround:** ${o.currentWorkaround ?? "Not verified in this report."}
 
-## 12-factor score
+## ShouldBuild Readiness Score · official 12-factor score
 
 | Criterion | Raw | Coefficient | Effective | Evidence state | Persisted reasoning |
 |---|---:|---:|---:|---|---|

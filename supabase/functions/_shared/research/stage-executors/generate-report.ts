@@ -744,6 +744,11 @@ export async function executeGenerateReport(
         economicsScenarios: fullValidationDecision.economics_scenarios,
         adversarialGate: fullValidationDecision.adversarial_gate,
         verdictStructure: fullValidationDecision.verdict_structure,
+        scoreContract: fullValidationDecision.score_contract,
+        rollups: fullValidationDecision.readiness_rollups,
+        scoreChange: fullValidationDecision.score_change_contract,
+        verificationCard: fullValidationDecision.verification_card,
+        decisionContract: fullValidationDecision.decision_contract,
         founderActionPlan: fullValidationDecision.founder_action_plan,
         optionalGroqReview: fullValidationDecision.optional_groq_review,
         deterministicFingerprint:

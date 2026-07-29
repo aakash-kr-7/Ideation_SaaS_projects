@@ -100,7 +100,7 @@ function QuickScanReport({ report, scorecard, publicMode = false, runId, chartDa
           {showExactScore && <ScoreBadge score={o.scorecard.total} size="lg" />}
           <div>
             <b>{customerScore}</b>
-            <small>Evidence-adjusted score</small>
+            <small>ShouldBuild Readiness Score</small>
           </div>
         </div>
       </div>
@@ -136,7 +136,7 @@ function QuickScanReport({ report, scorecard, publicMode = false, runId, chartDa
           {showExactScore && <ScoreBadge score={o.scorecard.total} size="lg" />}
           <div>
             <b style={{ fontSize: 16 }}>{customerScore}</b>
-            <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)' }}>{o.scorecard.confidence}% score confidence</p>
+            <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)' }}>{o.scorecard.confidence}% Evidence Confidence · separate from readiness</p>
           </div>
         </div>
         <div className="sidebar-metrics">

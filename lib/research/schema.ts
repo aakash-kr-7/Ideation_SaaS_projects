@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { reportModeSchema } from "@/lib/report-modes";
+import { fullValidationDecisionContractSchema } from "@/lib/report-schema";
 
 export const researchRequestSchema = z.object({
   projectId: z.string().uuid().optional(),
@@ -24,7 +25,17 @@ export const researchRequestSchema = z.object({
     complexityTolerance: z.string().max(100).optional(),
     platformTolerance: z.string().max(100).optional(),
     regulatoryTolerance: z.string().max(100).optional(),
+    decisionContract: fullValidationDecisionContractSchema.optional(),
   }).default({}),
   mode: reportModeSchema,
   idempotencyKey: z.string().uuid(),
+}).superRefine((value, context) => {
+  if (value.mode === "full_validation" && !value.assumptions.decisionContract) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["assumptions", "decisionContract"],
+      message:
+        "Full Validation requires a confirmed interpreted decision brief before research can begin.",
+    });
+  }
 });

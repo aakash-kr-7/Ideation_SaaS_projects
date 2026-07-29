@@ -11,6 +11,10 @@ import { createProject, startResearchRun } from "@/lib/actions/research";
 import type { CreditSnapshot } from "@/lib/services/research";
 import { canLaunchReport, getReportModeConfig } from "@/lib/report-modes";
 import { motion, getStaggerDelay, revealUpClass } from "@/lib/motion";
+import {
+  buildInterpretedDecisionBrief,
+  type FullValidationDecisionContract,
+} from "@/lib/readiness-contract";
 
 const markets: MarketType[] = [
   "B2B", "D2C", "Creator", "Developer Tool", "Local Business",
@@ -22,14 +26,14 @@ const modePresentation = {
     icon: SearchCheck,
     number: "01",
     bestFor: "Find whether this idea earns another hour.",
-    included: ["12-factor opportunity score", "Explicit verdict and decisive signals", "Risks, pricing direction, and next actions", "Clickable citations and portable exports"],
+    included: ["12-factor ShouldBuild Readiness Score", "Explicit verdict and decisive signals", "Risks, pricing direction, and next actions", "Clickable citations and portable exports"],
     excluded: ["No deep competitor or GTM analysis", "No MVP scope or go-to-market report"],
   },
   full_validation: {
     icon: Telescope,
     number: "02",
     bestFor: "Build the case before the team, money, or code commits.",
-    included: ["Deeper adversarial evidence search", "Competitor, pricing, risk, and positioning map", "MVP scope, launch sequence, and 12-factor score", "Clickable citations and portable exports"],
+    included: ["Deeper adversarial evidence search", "Competitor, pricing, risk, and positioning map", "MVP scope, launch sequence, and 12-factor ShouldBuild Readiness Score", "Clickable citations and portable exports"],
     excluded: ["No guaranteed outcome", "Market sizing only when verifiably cited"],
   },
 } as const;
@@ -47,6 +51,7 @@ export interface ResearchFormInitialValues {
     complexityTolerance?: string;
     platformTolerance?: string;
     regulatoryTolerance?: string;
+    decisionContract?: Partial<FullValidationDecisionContract>;
   };
 }
 
@@ -66,8 +71,73 @@ export function ResearchForm({
   const [mode, setMode] = useState<ResearchMode>(defaultMode);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const initialContract = initialValues.assumptions?.decisionContract;
+  const [contractDraft, setContractDraft] = useState({
+    decisionBeingConsidered: initialContract?.decisionBeingConsidered ?? "",
+    targetMilestone: initialContract?.targetMilestone ?? "",
+    deadline: initialContract?.deadline ?? "",
+    availableTimeHoursPerWeek:
+      String(initialContract?.availableTimeHoursPerWeek ?? ""),
+    availableBudgetAmount: String(initialContract?.availableBudgetAmount ?? ""),
+    budgetCurrency: initialContract?.budgetCurrency ?? "",
+    founderSkills: initialContract?.founderSkills ?? "",
+    skillFit: initialContract?.skillFit ?? "",
+    domainExperience: initialContract?.domainExperience ?? "",
+    domainExperienceLevel: initialContract?.domainExperienceLevel ?? "",
+    existingAudience: initialContract?.existingAudience ?? "",
+    existingAudienceDetails: initialContract?.existingAudienceDetails ?? "",
+    buyerAccess: initialContract?.buyerAccess ?? "",
+    buyerAccessDetails: initialContract?.buyerAccessDetails ?? "",
+    platformTolerance: initialContract?.platformTolerance
+      ? initialContract.platformTolerance[0].toUpperCase() +
+        initialContract.platformTolerance.slice(1)
+      :
+      (defaultMode === "quick_scan"
+        ? initialValues.assumptions?.platformTolerance ?? "Low"
+        : ""),
+    regulatoryTolerance: initialContract?.regulatoryTolerance
+      ? initialContract.regulatoryTolerance[0].toUpperCase() +
+        initialContract.regulatoryTolerance.slice(1)
+      :
+      (defaultMode === "quick_scan"
+        ? initialValues.assumptions?.regulatoryTolerance ?? "Low"
+        : ""),
+    abandonmentConditions: initialContract?.abandonmentConditions ?? "",
+  });
+  const [decisionBriefConfirmed, setDecisionBriefConfirmed] = useState(
+    initialContract?.confirmed === true,
+  );
   const selected = getReportModeConfig(mode);
   const available = canLaunchReport(mode, creditSnapshot?.paid_credits ?? 0, creditSnapshot?.free_quick_scans_remaining ?? 0);
+  const setContractValue = (key: keyof typeof contractDraft, value: string) => {
+    setContractDraft((current) => ({ ...current, [key]: value }));
+    setDecisionBriefConfirmed(false);
+  };
+  const contractComplete = Object.entries(contractDraft).every(([key, value]) =>
+    ["existingAudienceDetails", "buyerAccessDetails"].includes(key) ||
+    String(value).trim().length > 0
+  );
+  const interpretedBrief = contractComplete
+    ? buildInterpretedDecisionBrief({
+      ...contractDraft,
+      availableTimeHoursPerWeek:
+        Number(contractDraft.availableTimeHoursPerWeek),
+      availableBudgetAmount: Number(contractDraft.availableBudgetAmount),
+      skillFit:
+        contractDraft.skillFit as FullValidationDecisionContract["skillFit"],
+      domainExperienceLevel:
+        contractDraft.domainExperienceLevel as FullValidationDecisionContract["domainExperienceLevel"],
+      existingAudience:
+        contractDraft.existingAudience as FullValidationDecisionContract["existingAudience"],
+      buyerAccess:
+        contractDraft.buyerAccess as FullValidationDecisionContract["buyerAccess"],
+      platformTolerance:
+        contractDraft.platformTolerance.toLowerCase() as FullValidationDecisionContract["platformTolerance"],
+      regulatoryTolerance:
+        contractDraft.regulatoryTolerance.toLowerCase() as FullValidationDecisionContract["regulatoryTolerance"],
+      confirmed: true,
+    })
+    : "Complete the decision, founder, access, and constraint fields to generate the interpreted brief.";
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -75,6 +145,11 @@ export function ResearchForm({
     setSubmitting(true);
     setError("");
     try {
+      if (mode === "full_validation" && !decisionBriefConfirmed) {
+        throw new Error(
+          "Confirm the interpreted decision brief before Full Validation research begins.",
+        );
+      }
       const form = new FormData(event.currentTarget);
       const project = projectId ? { id: projectId } : await createProject({ name: "Default Project" });
       const result = await startResearchRun({
@@ -91,6 +166,22 @@ export function ResearchForm({
           complexityTolerance: String(form.get("complexityTolerance") ?? ""),
           platformTolerance: String(form.get("platformTolerance") ?? ""),
           regulatoryTolerance: String(form.get("regulatoryTolerance") ?? ""),
+          ...(mode === "full_validation"
+            ? {
+              decisionContract: {
+                ...contractDraft,
+                availableTimeHoursPerWeek:
+                  Number(contractDraft.availableTimeHoursPerWeek),
+                availableBudgetAmount:
+                  Number(contractDraft.availableBudgetAmount),
+                platformTolerance:
+                  contractDraft.platformTolerance.toLowerCase(),
+                regulatoryTolerance:
+                  contractDraft.regulatoryTolerance.toLowerCase(),
+                confirmed: true,
+              } as FullValidationDecisionContract,
+            }
+            : {}),
         },
         mode,
         idempotency_key: idempotencyKey.current,
@@ -177,18 +268,55 @@ export function ResearchForm({
         </label>
         <label className="field">
           <span>Platform dependency ceiling</span>
-          <select name="platformTolerance" defaultValue={initialValues.assumptions?.platformTolerance ?? "Low"}><option>Low</option><option>Medium</option><option>High</option></select>
+          <select name="platformTolerance" value={contractDraft.platformTolerance} onChange={(event) => setContractValue("platformTolerance", event.target.value)} required={mode === "full_validation"}>
+            {mode === "full_validation" && <option value="" disabled>Choose a tolerance</option>}
+            <option>Low</option><option>Medium</option><option>High</option>
+          </select>
         </label>
         <label className="field full">
           <span>Regulatory exposure ceiling</span>
-          <select name="regulatoryTolerance" defaultValue={initialValues.assumptions?.regulatoryTolerance ?? "Low"}><option>Low</option><option>Medium</option><option>High</option></select>
+          <select name="regulatoryTolerance" value={contractDraft.regulatoryTolerance} onChange={(event) => setContractValue("regulatoryTolerance", event.target.value)} required={mode === "full_validation"}>
+            {mode === "full_validation" && <option value="" disabled>Choose a tolerance</option>}
+            <option>Low</option><option>Medium</option><option>High</option>
+          </select>
         </label>
       </div>
     </section>
 
+    {mode === "full_validation" && <section className={`form-section decision-section ${revealUpClass}`} style={getStaggerDelay(2)}>
+      <div className="decision-section-head">
+        <span>03</span>
+        <div>
+          <p className="eyebrow">Confirm the decision contract</p>
+          <h2>Define the decision before research begins.</h2>
+          <p>These are founder-provided constraints. ShouldBuild will not fill in missing skills, access, time, budget, tolerance, or stop conditions.</p>
+        </div>
+      </div>
+      <div className="field-grid decision-field-grid">
+        <label className="field full"><span>Decision being considered</span><input value={contractDraft.decisionBeingConsidered} onChange={(event) => setContractValue("decisionBeingConsidered", event.target.value)} placeholder="e.g. Whether to fund and build a paid pilot" required /></label>
+        <label className="field"><span>Target milestone</span><input value={contractDraft.targetMilestone} onChange={(event) => setContractValue("targetMilestone", event.target.value)} placeholder="e.g. Two paid pilots" required /></label>
+        <label className="field"><span>Decision deadline</span><input type="date" value={contractDraft.deadline} onChange={(event) => setContractValue("deadline", event.target.value)} required /></label>
+        <label className="field"><span>Available hours per week</span><input type="number" min="1" max="168" value={contractDraft.availableTimeHoursPerWeek} onChange={(event) => setContractValue("availableTimeHoursPerWeek", event.target.value)} required /></label>
+        <label className="field"><span>Validation budget</span><span className="field-inline"><input aria-label="Budget currency" value={contractDraft.budgetCurrency} onChange={(event) => setContractValue("budgetCurrency", event.target.value.toUpperCase())} placeholder="USD" minLength={3} maxLength={3} required /><input aria-label="Budget amount" type="number" min="0" value={contractDraft.availableBudgetAmount} onChange={(event) => setContractValue("availableBudgetAmount", event.target.value)} placeholder="Amount" required /></span></label>
+        <label className="field"><span>Founder skills</span><textarea value={contractDraft.founderSkills} onChange={(event) => setContractValue("founderSkills", event.target.value)} placeholder="Relevant product, technical, sales, or operating skills" required /></label>
+        <label className="field"><span>Skill fit for this idea</span><select value={contractDraft.skillFit} onChange={(event) => setContractValue("skillFit", event.target.value)} required><option value="" disabled>Choose based on your profile</option><option value="strong">Strong match</option><option value="partial">Partial match</option><option value="gap">Material gap</option></select></label>
+        <label className="field"><span>Domain experience</span><textarea value={contractDraft.domainExperience} onChange={(event) => setContractValue("domainExperience", event.target.value)} placeholder="Relevant roles, years, workflows, or none" required /></label>
+        <label className="field"><span>Domain experience level</span><select value={contractDraft.domainExperienceLevel} onChange={(event) => setContractValue("domainExperienceLevel", event.target.value)} required><option value="" disabled>Choose based on your experience</option><option value="deep">Deep</option><option value="some">Some</option><option value="none">None</option></select></label>
+        <label className="field"><span>Existing audience or distribution</span><select value={contractDraft.existingAudience} onChange={(event) => setContractValue("existingAudience", event.target.value)} required><option value="" disabled>Choose current access</option><option value="owned_target_audience">Owned target-buyer audience</option><option value="relevant_network">Relevant network</option><option value="none">None</option></select></label>
+        <label className="field"><span>Audience details <small>Optional</small></span><input value={contractDraft.existingAudienceDetails} onChange={(event) => setContractValue("existingAudienceDetails", event.target.value)} placeholder="Channel, size, and relevance" /></label>
+        <label className="field"><span>Access to target buyers</span><select value={contractDraft.buyerAccess} onChange={(event) => setContractValue("buyerAccess", event.target.value)} required><option value="" disabled>Choose current access</option><option value="direct">Direct access</option><option value="warm">Warm introductions</option><option value="cold">Cold outreach only</option><option value="none">No current access</option></select></label>
+        <label className="field"><span>Buyer-access details <small>Optional</small></span><input value={contractDraft.buyerAccessDetails} onChange={(event) => setContractValue("buyerAccessDetails", event.target.value)} placeholder="Who you can reach and how" /></label>
+        <label className="field full"><span>Conditions that would make you abandon the idea</span><textarea value={contractDraft.abandonmentConditions} onChange={(event) => setContractValue("abandonmentConditions", event.target.value)} placeholder="State a falsifiable stop condition, not a feeling" required /></label>
+      </div>
+      <article className="grounding-readiness" role="status"><Radar size={15}/><span><b>Interpreted brief</b> {interpretedBrief}</span></article>
+      <label className="field full">
+        <span><input type="checkbox" checked={decisionBriefConfirmed} onChange={(event) => setDecisionBriefConfirmed(event.target.checked)} disabled={!contractComplete} required /> I confirm this interpreted brief is accurate and authorize research against these constraints.</span>
+      </label>
+    </section>}
+
     <section className={`form-section mode-section decision-section depth-section ${revealUpClass}`} style={getStaggerDelay(2)}>
       <div className="decision-section-head depth-section-head">
-        <span>03</span>
+        <span>{mode === "full_validation" ? "04" : "03"}</span>
         <div>
           <p className="eyebrow">Choose the burden of proof</p>
           <h2>How much confidence does this decision deserve?</h2>
@@ -208,7 +336,16 @@ export function ResearchForm({
           return <button
             type="button"
             aria-pressed={active}
-            onClick={() => setMode(reportMode)}
+            onClick={() => {
+              setMode(reportMode);
+              if (reportMode === "quick_scan") {
+                setContractDraft((current) => ({
+                  ...current,
+                  platformTolerance: current.platformTolerance || "Low",
+                  regulatoryTolerance: current.regulatoryTolerance || "Low",
+                }));
+              }
+            }}
             className={`${active ? "mode-card selected" : "mode-card"} ${motion.transitionBase} ${motion.press}`}
             key={reportMode}
           >
