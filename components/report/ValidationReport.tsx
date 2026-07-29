@@ -35,8 +35,6 @@ function QuickScanReport({ report, scorecard, publicMode = false, runId, chartDa
   const strongestNegative = o.evidence.find((item) => item.id === report.strongestNegativeEvidenceId) ?? o.evidence.find((item) => item.disconfirming && !item.excluded) ?? o.evidence.find((item) => item.signal === "Risk");
   const canonicalSourceCount = countEvidenceSources(o.evidence);
   const independentDomainCount = new Set(o.evidence.map(canonicalDomainFor).filter(Boolean)).size;
-  const primarySourceCount = o.evidence.filter((item) => !item.excluded && (item.sourceTier ?? 4) <= 2).length;
-  const contradictoryEvidenceCount = o.evidence.filter((item) => !item.excluded && item.disconfirming).length;
   const acceptedEvidenceCount = report.evidenceSufficiency?.acceptedEvidenceCount ??
     o.evidence.filter((item) => !item.excluded && (!item.acceptanceDecision || item.acceptanceDecision === "accepted_core")).length;
   const evidenceConfidence = report.decisionProduct?.evidenceConfidence;
@@ -71,12 +69,19 @@ function QuickScanReport({ report, scorecard, publicMode = false, runId, chartDa
 
   const verdictClass = o.scorecard.verdict.toLowerCase().replace(/\s+/g, "-");
 
-  return <div className={publicMode ? "validation-report public-report premium-report" : "validation-report premium-report"}>
+  return <div className={publicMode ? "validation-report public-report premium-report quick-report-dossier" : "validation-report premium-report quick-report-dossier"}>
     {toast && <div className="report-toast sf-confirmation" role="status">{toast}</div>}
 
+    <div className="report-document-bar">
+      <div><span>ShouldBuild / Quick Scan</span><b>Decision brief</b><small>{reportDate} · Report {report.version}</small></div>
+      <div>
+        <button type="button" onClick={() => exportFile("pdf")}><Download size={14}/> Export PDF</button>
+        <button type="button" onClick={() => exportFile("md")}><FileText size={14}/> Markdown</button>
+      </div>
+    </div>
     <header className="report-engine-hero">
       <div>
-        <p className="eyebrow">{publicMode ? "Sample validation report" : config.label} · {reportDate}</p>
+        <p className="eyebrow">{publicMode ? "Sample decision brief" : config.label} · {reportDate}</p>
         <span className={`report-mode-badge mode-${report.reportMode}`}>{config.label}</span>
         <h2>{o.name}</h2>
         <p>{o.oneLiner}</p>
@@ -88,15 +93,16 @@ function QuickScanReport({ report, scorecard, publicMode = false, runId, chartDa
           <span>{o.mvp.buildEstimate} to validation</span>
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+      <div className="report-verdict-lockup">
+        <span>Recommended next move</span>
+        <i className={`verdict-${verdictClass}`}>{o.scorecard.verdict}</i>
+        <div>
           {showExactScore && <ScoreBadge score={o.scorecard.total} size="lg" />}
-          <div style={{ textAlign: 'left' }}>
-            <b style={{ fontSize: showExactScore ? 28 : 18, fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{customerScore}</b>
-            <small style={{ display: 'block', fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>DETERMINISTIC SCORE CONFIDENCE</small>
+          <div>
+            <b>{customerScore}</b>
+            <small>Evidence-adjusted score</small>
           </div>
         </div>
-        <i className={`verdict-${verdictClass}`}>{o.scorecard.verdict}</i>
       </div>
     </header>
 
@@ -105,12 +111,8 @@ function QuickScanReport({ report, scorecard, publicMode = false, runId, chartDa
     <section className="report-decision-strip" aria-label={`${config.label} decision summary`}>
       <article><span>Official verdict</span><b>{o.scorecard.verdict}</b></article>
       <article><span>Evidence confidence</span><b>{evidenceConfidence?.band ?? report.evidenceSufficiency?.overallEvidenceConfidence ?? "Not persisted"}</b></article>
-      <article><span>Score reliability</span><b>{o.scorecard.confidence}%</b></article>
-      {report.decisionProduct && <article><span>Report completeness</span><b>{report.decisionProduct.reportCompleteness.score}%</b></article>}
       <article><span>Evidence findings accepted</span><b>{acceptedEvidenceCount}</b></article>
-      <article><span>Distinct sources cited</span><b>{canonicalSourceCount}</b></article>
       <article><span>Independent cited domains</span><b>{independentDomainCount}</b></article>
-      {report.reportMode === "full_validation" && <><article><span>Primary / official sources</span><b>{primarySourceCount}</b></article><article><span>Contradictory evidence</span><b>{contradictoryEvidenceCount}</b></article></>}
       <article><span>{report.reportMode === "quick_scan" ? "Strongest positive signal" : "Most important opportunity"}</span><b>{strongestPositive?.title ?? "Not enough supporting evidence"}</b></article>
       <article><span>{report.reportMode === "quick_scan" ? "Strongest negative signal" : "Most important objection"}</span><b>{strongestNegative?.title ?? report.adversarialGate?.objection ?? "No independent negative signal resolved"}</b></article>
       <article className="report-recommendation"><span>Highest-value next experiment</span><b>{report.decisionProduct?.experiments[0]?.name ?? "A decision experiment was not persisted."}</b></article>

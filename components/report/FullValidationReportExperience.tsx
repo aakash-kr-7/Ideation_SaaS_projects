@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, CheckCircle2, Download, ExternalLink, RotateCcw, ShieldAlert } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Download, ExternalLink, FileJson, FileSpreadsheet, FileText, RotateCcw, ShieldAlert } from "lucide-react";
 import type { ValidationReport } from "@/lib/report-schema";
 import type { ReportChartDataset } from "./ReportCharts";
 import { ReportCharts } from "./ReportCharts";
@@ -29,6 +29,7 @@ const packLabels: Record<string, string> = {
 const statusLabels: Record<string, string> = { completed: "Completed", completed_no_evidence: "Completed with no accepted evidence", provider_failed: "Unavailable", unavailable: "Unavailable", quota_blocked: "Quota blocked", timed_out: "Timed out", skipped: "Not required" };
 const human = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 const domain = (url: string, fallback: string) => { try { const host = new URL(url).hostname.replace(/^www\./, ""); return host === "vertexaisearch.cloud.google.com" ? fallback.replace(/^www\./, "") : host; } catch { return fallback || "Domain unavailable"; } };
+const reportSections = ["Executive decision","Evidence sufficiency","Recommended buyer and wedge","Problem and behavioural demand","Alternatives and competition","Pricing and willingness to pay","Buyer reachability and acquisition","Product and operational feasibility","Risks and adversarial findings","Scenario economics","Twelve-factor analysis","Validation plan","Evidence ledger and methodology"];
 
 export function FullValidationReportExperience({ report, scorecard, publicMode = false, runId, chartDatasets }: Props) {
   const [toast, setToast] = useState("");
@@ -39,6 +40,7 @@ export function FullValidationReportExperience({ report, scorecard, publicMode =
   const reason = (id: string | null | undefined) => id ? evidenceById.get(id) : undefined;
   const support = reason(verdict?.strongestSupportingEvidenceId);
   const challenge = reason(verdict?.strongestChallengingEvidenceId);
+  const reportDate = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(report.generatedAt));
   const exportFile = async (format: "md" | "json" | "csv" | "pdf") => {
     const payload = { ...report, opportunity: o };
     if (!publicMode && runId) {
@@ -61,14 +63,43 @@ export function FullValidationReportExperience({ report, scorecard, publicMode =
   };
   const conclusion = (title: string, ids: string[], assumptions: string[] = [], segments: string[] = []) => <article className="fv-conclusion"><div><span>{title}</span><b>{ids.length ? "Evidence linked" : "Unresolved"}</b></div>{citations(ids)}{!!assumptions.length && <p><strong>Assumptions:</strong> {assumptions.join(" ")}</p>}{!!segments.length && <p><strong>Applies to:</strong> {segments.join(", ")}</p>}</article>;
 
-  return <main className="validation-report full-validation-report">
+  return <main className="validation-report full-validation-report report-dossier">
     {toast && <div className="report-toast" role="status">{toast}</div>}
+    <div className="fv-document-bar">
+      <div>
+        <span>ShouldBuild / Decision dossier</span>
+        <b>Immutable report {report.version}</b>
+        <small>{reportDate} · {o.evidence.filter(item => !item.excluded).length} accepted evidence records</small>
+      </div>
+      <div className="fv-document-actions" aria-label="Report exports">
+        <button type="button" onClick={() => exportFile("pdf")}><FileText size={14}/><span>Export PDF</span></button>
+        <button type="button" onClick={() => exportFile("md")}><FileSpreadsheet size={14}/><span>Markdown</span></button>
+        <button type="button" onClick={() => exportFile("json")}><FileJson size={14}/><span>JSON</span></button>
+      </div>
+    </div>
     <header className="fv-decision-hero">
-      <div><p className="eyebrow">Full Validation · immutable report {report.version}</p><h1>{o.name}</h1><p>{o.oneLiner}</p><div className="fv-verdict"><strong>{verdict?.verdict ?? o.scorecard.verdict}</strong><span>{verdict?.scoreRange ?? o.scorecard.scoreBand?.display ?? `${o.scorecard.total}/100`}</span><span>Evidence Confidence: {verdict?.evidenceConfidence ?? report.evidenceSufficiency?.overallEvidenceConfidence ?? "Not persisted"}</span></div></div>
-      <dl><div><dt>Recommended buyer</dt><dd>{verdict?.recommendedTargetSegment ?? "Not supported yet"}</dd></div><div><dt>Product wedge</dt><dd>{verdict?.recommendedProductWedge ?? "Not supported yet"}</dd></div><div><dt>Strongest reason to build</dt><dd>{support?.snippet ?? "No accepted supporting evidence resolved."}</dd></div><div><dt>Strongest reason not to build</dt><dd>{challenge?.snippet ?? "No accepted challenging evidence resolved."}</dd></div></dl>
-      <div className="fv-conditions"><article><CheckCircle2/><span>Upgrade</span><p>{verdict?.upgradeCondition}</p></article><article><AlertTriangle/><span>Downgrade</span><p>{verdict?.downgradeCondition}</p></article><article><ShieldAlert/><span>Kill</span><p>{verdict?.killCondition}</p></article></div>
+      <div className="fv-hero-copy">
+        <p className="eyebrow">The decision, before the sunk cost</p>
+        <h1>{o.name}</h1>
+        <p>{o.oneLiner}</p>
+      </div>
+      <aside className="fv-decision-stamp" aria-label="Decision outcome">
+        <span>Recommended move</span>
+        <strong>{verdict?.verdict ?? o.scorecard.verdict}</strong>
+        <b>{verdict?.scoreRange ?? o.scorecard.scoreBand?.display ?? `${o.scorecard.total}/100`}</b>
+        <small>{verdict?.evidenceConfidence ?? report.evidenceSufficiency?.overallEvidenceConfidence ?? "Not persisted"} evidence confidence</small>
+      </aside>
+      <dl className="fv-decision-facts">
+        <div><dt>Who to win first</dt><dd>{verdict?.recommendedTargetSegment ?? "Not supported yet"}</dd></div>
+        <div><dt>What to earn the right to build</dt><dd>{verdict?.recommendedProductWedge ?? "Not supported yet"}</dd></div>
+      </dl>
+      <div className="fv-case-split">
+        <article><span>Case for the opportunity</span><p>{support?.snippet ?? "No accepted supporting evidence resolved."}</p></article>
+        <article><span>Pressure against the opportunity</span><p>{challenge?.snippet ?? "No accepted challenging evidence resolved."}</p></article>
+      </div>
+      <div className="fv-conditions"><article><CheckCircle2/><span>Evidence that earns an upgrade</span><p>{verdict?.upgradeCondition}</p></article><article><AlertTriangle/><span>Signal that forces a downgrade</span><p>{verdict?.downgradeCondition}</p></article><article><ShieldAlert/><span>Condition that ends the case</span><p>{verdict?.killCondition}</p></article></div>
     </header>
-    <nav className="fv-nav" aria-label="Report sections">{["Executive decision","Evidence Sufficiency","Recommended buyer and wedge","Problem and behavioural demand","Alternatives and competition","Pricing and willingness to pay","Buyer reachability and acquisition","Product and operational feasibility","Risks and adversarial findings","Scenario economics","Twelve-factor analysis","Validation plan","Evidence ledger and methodology"].map((label, i) => <a key={label} href={`#fv-${i+1}`}>{i+1}. {label}</a>)}</nav>
+    <nav className="fv-nav" aria-label="Report sections">{reportSections.map((label, i) => <a key={label} href={`#fv-${i+1}`}><span>{String(i + 1).padStart(2, "0")}</span>{label}</a>)}</nav>
 
     {section("fv-1","01 · Decision","Executive decision", <><p className="fv-lead">{report.executiveSummary}</p><div className="fv-gate">{Object.entries(decision.adversarialGate?.checks ?? {}).map(([key,value]) => <span key={key} data-state={value}>{human(key)}: {human(value)}</span>)}</div></>)}
     {section("fv-2","02 · Coverage","Evidence Sufficiency", <><div className="fv-metrics"><b>{report.evidenceSufficiency?.acceptedEvidenceCount ?? 0}<span>Accepted findings</span></b><b>{report.evidenceSufficiency?.independentEvidenceGroups ?? 0}<span>Independent groups</span></b><b>{report.evidenceSufficiency?.primaryDirectEvidenceCount ?? 0}<span>Direct or official</span></b><b>{Math.round((report.evidenceSufficiency?.sourceConcentration ?? 0)*100)}%<span>Source concentration</span></b></div><div className="fv-pack-grid">{packs.map(pack => { const unavailable = ["provider_failed","unavailable","quota_blocked","timed_out"].includes(pack.status ?? ""); return <article key={pack.packKey} data-state={pack.status}><span>{packLabels[pack.packKey ?? ""] ?? human(pack.packKey ?? "Research pack")}</span><b>{statusLabels[pack.status ?? ""] ?? human(pack.status ?? "Not required")}</b><small>{pack.acceptedEvidenceCount ?? 0} accepted</small>{unavailable && <button onClick={() => location.reload()}><RotateCcw size={13}/>Retry research</button>}</article>})}</div></>)}

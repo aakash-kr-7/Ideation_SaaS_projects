@@ -7,21 +7,23 @@ const MARGIN = 44;
 
 type Color = readonly [number, number, number];
 const COLORS = {
-  navy: [0.063, 0.165, 0.263] as Color,
-  midnight: [0.043, 0.122, 0.2] as Color,
-  teal: [0.059, 0.463, 0.431] as Color,
-  tealDark: [0.043, 0.373, 0.349] as Color,
-  tealPale: [0.882, 0.953, 0.941] as Color,
-  ivory: [0.969, 0.965, 0.949] as Color,
+  navy: [0.09, 0.078, 0.169] as Color,
+  midnight: [0.027, 0.035, 0.078] as Color,
+  teal: [0.463, 0.361, 1] as Color,
+  tealDark: [0.306, 0.231, 0.733] as Color,
+  tealPale: [0.941, 0.925, 1] as Color,
+  lime: [0.678, 1, 0.329] as Color,
+  mint: [0.329, 0.878, 0.761] as Color,
+  ivory: [0.973, 0.969, 0.949] as Color,
   white: [1, 1, 1] as Color,
-  carbon: [0.09, 0.125, 0.2] as Color,
-  slate: [0.357, 0.4, 0.478] as Color,
-  mist: [0.851, 0.871, 0.906] as Color,
-  mistPale: [0.93, 0.94, 0.947] as Color,
+  carbon: [0.09, 0.09, 0.133] as Color,
+  slate: [0.373, 0.38, 0.439] as Color,
+  mist: [0.867, 0.863, 0.898] as Color,
+  mistPale: [0.941, 0.937, 0.961] as Color,
   amber: [0.761, 0.463, 0.086] as Color,
   amberPale: [0.969, 0.925, 0.843] as Color,
-  blue: [0.145, 0.388, 0.922] as Color,
-  red: [0.63, 0.18, 0.2] as Color,
+  blue: [0.396, 0.286, 0.91] as Color,
+  red: [0.745, 0.247, 0.298] as Color,
 } as const;
 
 type PdfEvidence = {
@@ -137,6 +139,7 @@ type PdfPayload = {
   };
   fullValidationDecision?: {
     verdictStructure?: {
+      verdict?: string;
       scoreRange?: string;
       evidenceConfidence?: string;
       recommendedTargetSegment?: string | null;
@@ -164,6 +167,12 @@ function readableCitations(ids: string[] | undefined, labels: CitationLabels) {
 
 function payloadFor(value: unknown): PdfPayload {
   return value && typeof value === "object" ? value as PdfPayload : {};
+}
+
+function displayedVerdict(input: ExportBundleInput, payload: PdfPayload) {
+  return payload.fullValidationDecision?.verdictStructure?.verdict ||
+    payload.decisionIntegrity?.effectiveVerdict ||
+    input.verdict;
 }
 
 function clean(value: unknown) {
@@ -400,10 +409,10 @@ function buildCover(
 ) {
   const page = new PdfPage(COLORS.midnight);
   const reportName = input.reportMode === "quick_scan" ? "QUICK SCAN" : "FULL VALIDATION";
-  page.rect(0, 0, 8, PAGE_HEIGHT, COLORS.teal);
+  page.rect(0, 0, 8, PAGE_HEIGHT, COLORS.lime);
   page.text("SHOULD", MARGIN + 8, 43, 10, "F2", COLORS.white);
-  page.text("BUILD", MARGIN + 8 + 39, 43, 10, "F2", COLORS.teal);
-  page.text(`${reportName} / EVIDENCE REPORT`, MARGIN + 8, 82, 7, "F2", [
+  page.text("BUILD", MARGIN + 8 + 39, 43, 10, "F2", COLORS.lime);
+  page.text(`${reportName} / DECISION DOSSIER`, MARGIN + 8, 82, 7, "F2", [
     0.49,
     0.77,
     0.73,
@@ -431,10 +440,10 @@ function buildCover(
     3,
   );
 
-  page.rect(MARGIN + 8, 276, 516, 111, [0.055, 0.184, 0.278], [
-    0.12,
-    0.32,
-    0.39,
+  page.rect(MARGIN + 8, 276, 516, 111, [0.075, 0.063, 0.16], [
+    0.31,
+    0.24,
+    0.65,
   ], 10);
   const scoreBand = payload.opportunity?.scorecard?.scoreBand;
   const showExact = !scoreBand || scoreBand.label === "High Evidence Confidence";
@@ -447,7 +456,7 @@ function buildCover(
     0.73,
   ]);
   page.line(MARGIN + 152, 294, MARGIN + 152, 369, [0.12, 0.29, 0.36]);
-  page.text(input.verdict, MARGIN + 174, 300, 19, "F2", COLORS.white);
+  page.text(displayedVerdict(input, payload), MARGIN + 174, 300, 19, "F2", COLORS.white);
   page.text(
     `${input.confidence}% scoring confidence`,
     MARGIN + 174,
@@ -546,14 +555,14 @@ function buildCover(
 
 function buildScorecard(input: ExportBundleInput, payload: PdfPayload, evidence: PdfEvidence[]) {
   const page = new PdfPage();
-  addRunningHeader(page, "Decision", "The opportunity, measured");
+  addRunningHeader(page, "Decision", "Verdict at a glance");
 
   page.rect(MARGIN, 125, 154, 116, COLORS.navy, undefined, 10);
   const scoreBand = payload.opportunity?.scorecard?.scoreBand;
   const scoreDisplay = scoreBand && scoreBand.label !== "High Evidence Confidence" ? `${scoreBand.minimum}-${scoreBand.maximum}` : String(input.total);
   page.text(String(scoreDisplay), MARGIN + 18, 142, scoreBand && scoreBand.label !== "High Evidence Confidence" ? 16 : 39, "F2", COLORS.white);
   if (!scoreBand || scoreBand.label === "High Evidence Confidence") page.text("/ 100", MARGIN + 111, 164, 9, "F1", [0.7, 0.77, 0.81]);
-  page.text(input.verdict, MARGIN + 18, 195, 12, "F2", [0.55, 0.84, 0.8]);
+  page.text(displayedVerdict(input, payload), MARGIN + 18, 195, 12, "F2", COLORS.teal);
   page.text(`${input.confidence}% scoring confidence`, MARGIN + 18, 217, 7.5, "F1", [
     0.67,
     0.75,
@@ -1081,28 +1090,33 @@ function buildIntegrity(payload: PdfPayload) {
 function buildDecisionDossierPages(payload: PdfPayload, labels: CitationLabels) {
   const sections = payload.decisionProduct?.sections || [];
   const pages: PdfPage[] = [];
-  for (let offset = 0; offset < sections.length; offset += 2) {
-    const page = new PdfPage();
-    addRunningHeader(page, "Dossier", offset ? "Decision dossier, continued" : "Decision dossier");
-    let top = 122;
-    sections.slice(offset, offset + 2).forEach((section, localIndex) => {
-      const index = offset + localIndex + 1;
-      page.rect(MARGIN, top, PAGE_WIDTH - MARGIN * 2, 246, COLORS.white, COLORS.mist, 8);
-      page.text(String(index).padStart(2, "0"), MARGIN + 15, top + 15, 8, "F2", COLORS.teal);
-      page.text(truncate(section.title || "Decision section", 72), MARGIN + 48, top + 14, 11, "F2", COLORS.navy);
-      page.wrappedText(section.summary || "", MARGIN + 48, top + 34, 455, 7.5, 11, "F3", COLORS.slate, 2);
-      let statementTop = top + 64;
-      (section.statements || []).slice(0, 4).forEach((statement) => {
-        page.badge(statement.kind || "Finding", MARGIN + 48, statementTop, statement.kind === "MissingEvidence" ? COLORS.amber : COLORS.teal);
-        page.wrappedText(statement.text || "", MARGIN + 132, statementTop + 1, 370, 7.2, 10, "F1", COLORS.carbon, 2);
-        const refs = statement.evidenceIds?.length ? `Citations: ${readableCitations(statement.evidenceIds, labels)}` : statement.sourceUrls?.length ? `Source: ${statement.sourceUrls.join(", ")}` : "";
-        if (refs) page.text(truncate(refs, 92), MARGIN + 132, statementTop + 24, 5.5, "F1", COLORS.blue);
-        statementTop += 43;
-      });
-      top += 260;
+  let page = new PdfPage();
+  let top = 122;
+  addRunningHeader(page, "Dossier", "Decision dossier");
+  sections.forEach((section, index) => {
+    const statements = (section.statements || []).slice(0, 4);
+    const cardHeight = 86 + Math.max(1, statements.length) * 43;
+    if (top + cardHeight > 735) {
+      pages.push(page);
+      page = new PdfPage();
+      addRunningHeader(page, "Dossier", "Decision dossier, continued");
+      top = 122;
+    }
+    page.rect(MARGIN, top, PAGE_WIDTH - MARGIN * 2, cardHeight, COLORS.white, COLORS.mist, 8);
+    page.text(String(index + 1).padStart(2, "0"), MARGIN + 15, top + 15, 8, "F2", COLORS.teal);
+    page.text(truncate(section.title || "Decision section", 72), MARGIN + 48, top + 14, 11, "F2", COLORS.navy);
+    page.wrappedText(section.summary || "", MARGIN + 48, top + 34, 455, 7.5, 11, "F3", COLORS.slate, 2);
+    let statementTop = top + 64;
+    statements.forEach((statement) => {
+      page.badge(statement.kind || "Finding", MARGIN + 48, statementTop, statement.kind === "MissingEvidence" ? COLORS.amber : COLORS.teal);
+      page.wrappedText(statement.text || "", MARGIN + 132, statementTop + 1, 370, 7.2, 10, "F1", COLORS.carbon, 2);
+      const refs = statement.evidenceIds?.length ? `Citations: ${readableCitations(statement.evidenceIds, labels)}` : statement.sourceUrls?.length ? `Source: ${statement.sourceUrls.join(", ")}` : "";
+      if (refs) page.text(truncate(refs, 92), MARGIN + 132, statementTop + 24, 5.5, "F1", COLORS.blue);
+      statementTop += 43;
     });
-    pages.push(page);
-  }
+    top += cardHeight + 14;
+  });
+  if (sections.length) pages.push(page);
   return pages;
 }
 
@@ -1301,9 +1315,9 @@ function serialize(pages: PdfPage[]) {
     );
   });
   objects.push(
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Times-Italic >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Times-Italic /Encoding /WinAnsiEncoding >>",
   );
 
   let pdf = "%PDF-1.4\n";
