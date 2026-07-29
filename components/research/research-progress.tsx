@@ -31,6 +31,8 @@ type ProgressSnapshot = {
   id: string; mode: ReportMode; status: ResearchStatus; currentStage: string; progressDetail: string;
   createdAt: string; updatedAt: string; stageStartedAt: string | null; lastProgressAt: string | null; terminalAt: string | null;
   creditState: string | null; creditRestored: boolean; publicFailureReason: string | null;
+  researchOutcome?: "research_unavailable" | "insufficient_evidence" | "research_completed" | null;
+  retryAfter?: string | null;
   stages: Stage[]; tasks: Task[]; metrics: Metrics; retrieval: Retrieval[]; sources: Source[]; evidence: Evidence[];
   clusters: Cluster[]; confidence: { band?: string; score?: number; reasons?: string[] };
   queries?: QueryActivity[]; contradictions?: ContradictionActivity[]; specialists?: SpecialistActivity[];
@@ -259,7 +261,9 @@ export function ResearchProgress({ id }: { id: string }) {
     </section>
 
     {requestError && <p className="progress-error" role="alert">{requestError}</p>}
-    {snapshot.status === "Failed" && <TerminalCard icon={<OctagonX />} title="Research failed safely" copy={snapshot.publicFailureReason ?? "Research stopped before completion."} creditRestored={snapshot.creditRestored} action="Retry with the same brief" onAction={() => router.push(`/research/new?mode=${snapshot.mode}&retryFrom=${id}`)} />}
+    {snapshot.status === "Failed" && <TerminalCard icon={<OctagonX />} title={snapshot.researchOutcome === "research_unavailable" ? "Research unavailable" : "Research stopped safely"} copy={snapshot.researchOutcome === "research_unavailable"
+      ? `${snapshot.publicFailureReason ?? "Mandatory research could not run, so no market verdict was produced."}${snapshot.retryAfter ? ` Retry after ${new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(snapshot.retryAfter))}.` : " Please retry when research capacity is available."}`
+      : snapshot.publicFailureReason ?? "Research stopped before completion."} creditRestored={snapshot.creditRestored} action={snapshot.retryAfter && new Date(snapshot.retryAfter).getTime() > Date.now() ? "Retry available after provider reset" : "Retry with the same brief"} disabled={Boolean(snapshot.retryAfter && new Date(snapshot.retryAfter).getTime() > Date.now())} onAction={() => router.push(`/research/new?mode=${snapshot.mode}&retryFrom=${id}`)} />}
     {snapshot.status === "Cancelled" && <TerminalCard icon={<XCircle />} title="Research cancelled" copy={snapshot.publicFailureReason ?? "This run was cancelled."} creditRestored={snapshot.creditRestored} action="Start again" onAction={() => router.push(`/research/new?mode=${snapshot.mode}&retryFrom=${id}`)} />}
     {active && <div className="research-room-actions"><button className="button ghost" type="button" disabled={cancelling} onClick={cancel}>{cancelling ? "Cancelling…" : "Cancel research"}</button></div>}
   </div>;
@@ -271,6 +275,6 @@ function Metric({ icon: Icon, value, label }: { icon: typeof Database; value: nu
 function PanelHeading({ kicker, title, trailing }: { kicker: string; title: string; trailing: React.ReactNode }) {
   return <header className="research-panel-heading"><div><span>{kicker}</span><h2>{title}</h2></div>{trailing}</header>;
 }
-function TerminalCard({ icon, title, copy, creditRestored, action, onAction }: { icon: React.ReactNode; title: string; copy: string; creditRestored: boolean; action: string; onAction: () => void }) {
-  return <section className="research-terminal-card"><span>{icon}</span><h2>{title}</h2><p>{copy}</p>{creditRestored && <p><CheckCircle2 size={15} /> The reserved credit was restored.</p>}<button type="button" onClick={onAction}>{action}</button></section>;
+function TerminalCard({ icon, title, copy, creditRestored, action, disabled = false, onAction }: { icon: React.ReactNode; title: string; copy: string; creditRestored: boolean; action: string; disabled?: boolean; onAction: () => void }) {
+  return <section className="research-terminal-card"><span>{icon}</span><h2>{title}</h2><p>{copy}</p>{creditRestored && <p><CheckCircle2 size={15} /> The reserved credit was restored.</p>}<button type="button" disabled={disabled} onClick={onAction}>{action}</button></section>;
 }

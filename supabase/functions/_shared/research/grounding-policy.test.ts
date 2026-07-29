@@ -29,7 +29,8 @@ Deno.test("optional daily quota exhaustion degrades once instead of retrying the
 
 Deno.test("grounding call budgets are bounded by report mode", () => {
   assert(groundedCallLimit("disabled", "quick_scan", 4) === 0, "disabled mode made a call");
-  assert(groundedCallLimit("optional", "quick_scan", 4) === 1, "Quick optional exceeded one call");
+  assert(groundedCallLimit("optional", "quick_scan", 4) === 3, "Quick Scan did not reserve its three decision-purpose calls");
+  assert(groundedCallLimit("required", "quick_scan", 5) === 3, "Quick Scan planned more than three pre-repair calls");
   assert(groundedCallLimit("optional", "full_validation", 4) === 2, "Full optional exceeded two calls");
   assert(groundedCallLimit("required", "full_validation", 4) === 4, "required mode lost packs");
 });

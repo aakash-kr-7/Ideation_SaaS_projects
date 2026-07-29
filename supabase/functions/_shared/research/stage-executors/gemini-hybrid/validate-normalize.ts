@@ -21,6 +21,9 @@ import {
   type BriefDimension,
   type CanonicalResearchBrief,
 } from "../../research-brief.ts";
+import { persistResearchCallMetric } from "../../research-call-metrics.ts";
+import { classifyWithOptionalGroq } from "../../groq-classifier.ts";
+import { researchUnavailableMessage } from "../../quick-scan-reliability.ts";
 
 const EVIDENCE_TOPICS = [
   "customer_pain",
@@ -487,7 +490,10 @@ export async function executeHybridValidateNormalize(
       queryFamily?: string;
     }>
     : [];
-  if (!opportunityId || !combinedText || !catalog.length || !researchBrief) {
+  if (
+    !opportunityId || !combinedText || !researchBrief ||
+    (!catalog.length && mode === "full_validation")
+  ) {
     return stageFailed(
       "permanent",
       "Validation requires an opportunity, canonical research brief, and directly retrieved attributable source metadata.",
@@ -568,13 +574,28 @@ export async function executeHybridValidateNormalize(
     const sourceIndex = [...allowedSources.values()].map((source) =>
       `${source.sourceId} | ${source.url} | ${source.pageType} | tier ${source.sourceTier} | relevance ${source.relevanceScore}`
     ).join("\n");
+    const evidenceBoundContext = mode === "quick_scan"
+      ? {
+        rejectedEvidenceSummary: inputMeta.rejectedEvidenceSummary || {},
+        contradictionObjects: inputMeta.contradictionObjects || [],
+        validatedPricingObservations:
+          inputMeta.validatedPricingObservations || [],
+        factorEvidenceStates: inputMeta.factorEvidenceStates || [],
+        missingEvidence: inputMeta.missingEvidence || [],
+        sourceConcentration: inputMeta.sourceConcentration || null,
+      }
+      : null;
     const sharedPrompt = `Report mode: ${mode}\nCanonical research brief:\n${
       JSON.stringify(researchBrief)
     }\n\nAllowed source IDs and canonical URLs:\n${sourceIndex}\n\n${
       mode === "full_validation"
         ? "Extract 12 to 18 non-duplicative claims spanning as many evidence topics and independent sources as the dossier supports. Preserve negative results and do not pad unsupported topics.\\n\\n"
         : ""
-    }Retrieved evidence dossier:\n${
+    }${evidenceBoundContext
+      ? `Code-owned research context (descriptive only; do not override evidence gates):\n${
+        JSON.stringify(evidenceBoundContext)
+      }\n\n`
+      : ""}Retrieved evidence dossier:\n${
       combinedText.slice(0, mode === "full_validation" ? 30_000 : 34_000)
     }`;
     const coreResult = await gemini.generate({
@@ -585,10 +606,29 @@ export async function executeHybridValidateNormalize(
       budget,
       db,
       systemInstruction:
-        "The canonical research brief is the binding semantic boundary. Use only directly retrieved pages classified as core evidence. Cross-check every claim against the cited page and brief. Every claim, competitor, risk, price, and contradiction must cite SOURCE_ID values or explicitly say Insufficient evidence. A numeric price must come from a page that actually states that price. Contradictions must test one exact proposition-specific claim with separate supporting and challenging sources. Never invent a value or source.",
+        "The canonical research brief is the binding semantic boundary. Synthesize only the accepted evidence explicitly supplied in the prompt; do not search, browse, or rely on outside knowledge. Cross-check every claim against the cited page and brief. Every factual claim, competitor, risk, price, inference, and contradiction must cite SOURCE_ID values or explicitly say Insufficient evidence. A numeric price and plan name must appear in the retrieved page. Public list pricing is not buyer payment evidence. Contradictions must test one exact proposition-specific claim with separate supporting and challenging sources. Unsupported output is a hypothesis, never a finding. Never invent a value or source.",
       prompt: sharedPrompt,
       responseSchema: RESPONSE_SCHEMA,
     });
+    if (mode === "quick_scan") {
+      await persistResearchCallMetric(db, {
+        runId,
+        callPurpose: "evidence_bound_synthesis",
+        queryFamily: "validate_normalize",
+        grounded: false,
+        sourcesDiscovered: allowedSources.size,
+        sourcesAccepted: allowedSources.size,
+        independentEvidenceGroupsAdded: 0,
+        evidenceFamiliesAdded: unique(
+          [...allowedSources.values()].map((source) => source.queryFamily),
+        ),
+        pricingClaimsValidated: Array.isArray(
+            inputMeta.validatedPricingObservations,
+          )
+          ? inputMeta.validatedPricingObservations.length
+          : 0,
+      });
+    }
     let parsed = coreResult.parsed as any;
     if (mode === "full_validation") {
       const focusedSources = [...allowedSources.values()].filter((source) =>
@@ -712,10 +752,7 @@ export async function executeHybridValidateNormalize(
             rationale:
               `${first.applicability} This is competitor price context, not willingness-to-pay proof.`,
             firstOffer: parsed.pricing?.firstOffer || "Paid pilot hypothesis",
-            targetCustomers: Math.max(
-              1,
-              Number(parsed.pricing?.targetCustomers || 5),
-            ),
+            targetCustomers: null,
             sourceIds: unique([
               ...(parsed.pricing?.sourceIds || []),
               ...pricingFindings.map((finding: any) => finding.sourceId),
@@ -921,7 +958,11 @@ export async function executeHybridValidateNormalize(
     parsed.claims = (parsed.claims || []).map((claim: any) => {
       const propositionSpecific =
         propositionChallengeSources.has(claim.sourceId) &&
-        String(claim.title || "").startsWith("Challenge to:");
+        allowedSources.get(String(claim.sourceId || ""))?.queryFamily ===
+          "quick_adversarial" &&
+        genuineChallengeLanguage(
+          `${String(claim.title || "")} ${String(claim.excerpt || "")}`,
+        );
       if (!claim.disconfirming || propositionSpecific) return claim;
       return {
         ...claim,
@@ -1046,11 +1087,14 @@ export async function executeHybridValidateNormalize(
         continue;
       }
       const fingerprint = await sha256(
-        `${source.sourceId}|${String(claim.title).trim().toLowerCase()}|${
-          String(claim.excerpt).trim().toLowerCase()
+        `${normalizeClaimIdentity(claim.title)}|${
+          normalizeClaimIdentity(claim.excerpt)
         }`,
       );
-      if (fingerprints.has(fingerprint)) continue;
+      if (fingerprints.has(fingerprint)) {
+        rejectClaim("duplicate_source_claim");
+        continue;
+      }
       fingerprints.add(fingerprint);
       let snippet = String(claim.excerpt).trim();
       let structuredValue: ReturnType<typeof validateStructuredValue>;
@@ -1120,6 +1164,86 @@ export async function executeHybridValidateNormalize(
         numericValidation,
       });
     }
+    if (
+      mode === "quick_scan" &&
+      Array.isArray(inputMeta.validatedPricingObservations)
+    ) {
+      for (const observation of inputMeta.validatedPricingObservations as Array<
+        {
+          sourceUrl?: string;
+          exactExcerpt?: string;
+          planName?: string | null;
+          pricePoint?: string;
+        }
+      >) {
+        const canonicalUrl = canonicalizeUrl(
+          String(observation.sourceUrl || ""),
+        );
+        const source = [...allowedSources.values()].find((candidate) =>
+          canonicalUrl && candidate.url === canonicalUrl
+        );
+        if (
+          !source ||
+          source.pageType !== "official_pricing" ||
+          !observation.exactExcerpt ||
+          !observation.pricePoint ||
+          !claimSupportedByPage(
+            observation.exactExcerpt,
+            source.retrievedText,
+          )
+        ) continue;
+        const numericValidation = validateNumericClaim({
+          narrativeValue: observation.pricePoint,
+          sourceText: source.retrievedText,
+          sourceUrl: source.url,
+          claimType: "price",
+          sourceClass: `${source.sourceClass} ${source.pageType}`,
+        });
+        if (numericValidation.status !== "verified") continue;
+        const fingerprint = await sha256(
+          `${normalizeClaimIdentity(
+            `${observation.planName || source.title} verified public price`,
+          )}|${normalizeClaimIdentity(observation.exactExcerpt)}`,
+        );
+        if (fingerprints.has(fingerprint)) continue;
+        let structuredValue: ReturnType<typeof validateStructuredValue>;
+        try {
+          structuredValue = validateStructuredValue(
+            observation.pricePoint,
+            "Pricing",
+          );
+        } catch {
+          continue;
+        }
+        fingerprints.add(fingerprint);
+        numericAudit.push({ fingerprint, validation: numericValidation });
+        validClaims.push({
+          sourceId: source.sourceId,
+          sourceUrl: source.url,
+          sourceTier: source.sourceTier,
+          title: `${observation.planName || source.title} verified public price`,
+          excerpt: observation.exactExcerpt,
+          snippet: observation.exactExcerpt,
+          family: "solution",
+          signalType: "Pricing",
+          strength: "High",
+          disconfirming: false,
+          numericValue: observation.pricePoint,
+          evidenceTopic: "pricing",
+          matchedBriefDimensions: source.matchedBriefDimensions,
+          sourceText: source.retrievedText,
+          sourceClass: source.sourceClass,
+          pageType: source.pageType,
+          relevanceScore: source.relevanceScore,
+          geminiRelevanceScore: source.relevanceScore,
+          relevanceClass: source.relevanceClass,
+          mismatchReasons: source.mismatchReasons,
+          structuredValue,
+          numericValidation,
+          fingerprint,
+        });
+      }
+    }
     // A synthesis miss is not a research-system failure. Reuse only exact,
     // semantically accepted excerpts from the directly retrieved catalog. This
     // keeps every evidence gate intact while avoiding a false terminal failure
@@ -1135,10 +1259,67 @@ export async function executeHybridValidateNormalize(
         validClaims.push(claim);
       }
     }
+    if (
+      mode === "quick_scan" &&
+      !(parsed.contradictions || []).length &&
+      Array.isArray(inputMeta.contradictionObjects)
+    ) {
+      const candidate = inputMeta.contradictionObjects[0] as {
+        proposition?: string;
+        supportingEvidenceIds?: string[];
+        challengingEvidenceIds?: string[];
+        unresolvedImplication?: string;
+      } | undefined;
+      const supportingSourceIds = unique(
+        (candidate?.supportingEvidenceIds || []).filter((sourceId) =>
+          validClaims.some((claim) =>
+            claim.sourceId === sourceId && !claim.disconfirming
+          )
+        ),
+      );
+      const challengingSourceIds = unique(
+        (candidate?.challengingEvidenceIds || []).filter((sourceId) =>
+          validClaims.some((claim) =>
+            claim.sourceId === sourceId && claim.disconfirming &&
+            genuineChallengeLanguage(
+              `${claim.title || ""} ${claim.snippet || claim.excerpt || ""}`,
+            )
+          )
+        ),
+      );
+      if (
+        candidate?.proposition && supportingSourceIds.length &&
+        challengingSourceIds.length
+      ) {
+        parsed.contradictions = [{
+          testedClaim: candidate.proposition,
+          supportingSourceIds,
+          challengingSourceIds,
+          relationship:
+            "Accepted primary evidence supports the proposition while accepted adversarial evidence documents a same-workflow workaround, resistance, or low-urgency condition.",
+          resolutionStatus: "unresolved",
+          resolutionNote: candidate.unresolvedImplication ||
+            "The proposition-specific conflict remains unresolved.",
+        }];
+      }
+    }
     const insufficientEvidence = validClaims.length === 0;
     if (insufficientEvidence) {
       parsed = insufficientEvidenceArtifacts(mode);
     }
+    const secondModelClassifications = mode === "quick_scan"
+      ? await classifyWithOptionalGroq({
+        runId,
+        db,
+        brief: researchBrief,
+        claims: validClaims.map((claim) => ({
+          fingerprint: claim.fingerprint,
+          title: claim.title,
+          snippet: claim.snippet,
+          sourceId: claim.sourceId,
+        })),
+      })
+      : new Map();
 
     const evidenceItemIds: string[] = [];
     const sourceRecords: Array<
@@ -1192,6 +1373,37 @@ export async function executeHybridValidateNormalize(
           mismatch_reasons: claim.mismatchReasons,
           acceptance_decision: "accepted_core",
           evidence_topic: claim.evidenceTopic,
+          claim_id: `claim:${claim.fingerprint}`,
+          canonical_source_id: sourceMeta.sourceId,
+          canonical_domain: sourceMeta.domain.replace(/^www\./, "").toLowerCase(),
+          source_family: sourceMeta.queryFamily || claim.evidenceTopic,
+          source_authority: sourceMeta.authorityScore ||
+            (claim.sourceTier === 1 ? 1 : claim.sourceTier === 2 ? 0.8 : 0.45),
+          evidence_directness: sourceMeta.directnessScore ||
+            (claim.sourceTier === 1 ? 0.85 : claim.sourceTier === 2 ? 0.65 : 0.4),
+          semantic_relevance: claim.relevanceScore,
+          independence_key: claim.fingerprint,
+          syndication_group: claim.fingerprint,
+          evidence_role: claim.disconfirming ? "challenging" : "supporting",
+          associated_factor_ids: factorIdsForClaim(
+            claim.evidenceTopic,
+            claim.signalType,
+          ),
+          extraction_confidence: Math.min(
+            1,
+            Math.max(0, Number(claim.geminiRelevanceScore || claim.relevanceScore)),
+          ),
+          numeric_validation_state: claim.numericValidation?.status ||
+            (claim.structuredValue ? "not_checked" : "not_applicable"),
+          model_classification_metadata: {
+            geminiRelevanceScore: claim.geminiRelevanceScore,
+            relevanceClass: claim.relevanceClass,
+            matchedBriefDimensions: claim.matchedBriefDimensions,
+            acceptanceDecision: "accepted_core",
+            optionalGroqClassification:
+              secondModelClassifications.get(claim.fingerprint) || null,
+            officialEvidenceStateAuthority: "code",
+          },
         }, { onConflict: "run_id,claim_fingerprint" }).select("id").single();
       if (itemError || !item) {
         throw new Error(`Evidence persistence failed: ${itemError?.message}`);
@@ -1211,6 +1423,40 @@ export async function executeHybridValidateNormalize(
         );
       }
     });
+    if (mode === "quick_scan") {
+      const { data: seededCompetitors } = await db.from("competitors")
+        .select("id,canonical_homepage,candidate_type,verification_status")
+        .eq("opportunity_id", opportunityId)
+        .in("verification_status", [
+          "unverified_seed",
+          "discovered_candidate",
+        ]);
+      for (const competitor of seededCompetitors || []) {
+        const competitorDomain = safeDomain(
+          String(competitor.canonical_homepage || ""),
+        );
+        const source = [...allowedSources.values()].find((candidate) =>
+          candidate.domain.replace(/^www\./, "").toLowerCase() ===
+              competitorDomain &&
+          ["official_product", "official_documentation", "official_pricing"]
+            .includes(candidate.pageType) &&
+          sourceIdToEvidence.has(candidate.sourceId)
+        );
+        const evidenceId = source
+          ? sourceIdToEvidence.get(source.sourceId)
+          : null;
+        if (source && evidenceId) {
+          await db.from("competitors").update({
+            verification_status: competitor.candidate_type === "adjacent"
+              ? "adjacent_alternative"
+              : "live_verified_competitor",
+            verified_at: new Date().toISOString(),
+            evidence_ids: [evidenceId],
+            updated_at: new Date().toISOString(),
+          }).eq("id", competitor.id);
+        }
+      }
+    }
     await persistArtifacts(
       db,
       opportunityId,
@@ -1245,14 +1491,34 @@ export async function executeHybridValidateNormalize(
     await db.from("evidence_contradictions").delete().eq("run_id", runId);
     const supportingBySource = new Map<string, string[]>();
     const challengingBySource = new Map<string, string[]>();
+    const contradictionSupportSources = new Set<string>(
+      (parsed.contradictions || []).flatMap((item: any) =>
+        item.supportingSourceIds || []
+      ),
+    );
+    const contradictionChallengeSources = new Set<string>(
+      (parsed.contradictions || []).flatMap((item: any) =>
+        item.challengingSourceIds || []
+      ),
+    );
     validClaims.forEach((claim, index) => {
       const title = String(claim.title || "");
-      if (title.startsWith("Support for:")) {
+      const sourceFamily = allowedSources.get(claim.sourceId)?.queryFamily;
+      if (
+        title.startsWith("Support for:") ||
+        (contradictionSupportSources.has(claim.sourceId) &&
+          sourceFamily === "quick_primary_problem_buyer_demand")
+      ) {
         supportingBySource.set(claim.sourceId, [
           ...(supportingBySource.get(claim.sourceId) || []),
           evidenceItemIds[index],
         ]);
-      } else if (title.startsWith("Challenge to:")) {
+      } else if (
+        title.startsWith("Challenge to:") ||
+        (contradictionChallengeSources.has(claim.sourceId) &&
+          sourceFamily === "quick_adversarial" &&
+          genuineChallengeLanguage(`${title} ${claim.snippet || ""}`))
+      ) {
         challengingBySource.set(claim.sourceId, [
           ...(challengingBySource.get(claim.sourceId) || []),
           evidenceItemIds[index],
@@ -1663,6 +1929,19 @@ export async function executeHybridValidateNormalize(
         sourceIds: [],
         evidence_ids: [],
       };
+    if (mode === "quick_scan") {
+      const diagnostics = aggregateRejectionDiagnostics(rejectedClaims);
+      for (const [reason, count] of Object.entries(diagnostics)) {
+        await db.from("evidence_rejection_diagnostics").upsert({
+          run_id: runId,
+          pipeline_stage: "validate_normalize",
+          reason,
+          count,
+          details: { rawReasons: rejectedClaims },
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "run_id,pipeline_stage,reason" });
+      }
+    }
     await db.from("adversarial_verdict_gates").upsert({
       run_id: runId,
       emerging_verdict: "Validate First",
@@ -1697,6 +1976,18 @@ export async function executeHybridValidateNormalize(
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    if (
+      mode === "quick_scan" &&
+      /GEMINI_API_KEY|authentication|unauthorized|forbidden|429|quota|resource_exhausted|timeout|temporar|unavailable|5\d\d|connection|peer closed|tls close/i
+        .test(message)
+    ) {
+      return stageFailed(
+        "research_unavailable",
+        researchUnavailableMessage(
+          /timeout/i.test(message) ? "timed_out" : "provider_failed",
+        ),
+      );
+    }
     const errorClass =
       /timeout|429|quota|temporar|unavailable|5\d\d|JSON|unterminated|unexpected (?:end|eof)|connection|peer closed|tls close/i
           .test(message)
@@ -1707,6 +1998,30 @@ export async function executeHybridValidateNormalize(
       `Validation and normalization failed: ${message}`,
     );
   }
+}
+
+export function aggregateRejectionDiagnostics(
+  rejected: Record<string, number>,
+) {
+  const result: Record<string, number> = {};
+  for (const [rawReason, count] of Object.entries(rejected)) {
+    const reason =
+      /duplicate/.test(rawReason)
+        ? "duplicate_source"
+        : /excerpt|unknown_source/.test(rawReason)
+        ? "missing_excerpt"
+        : /tier|authoritative/.test(rawReason)
+        ? "weak_authority"
+        : /pricing|numeric|willingness/.test(rawReason)
+        ? "pricing_mismatch"
+        : /relevance|brief_dimensions|source_not_core/.test(rawReason)
+        ? "semantic_mismatch"
+        : /invalid/.test(rawReason)
+        ? "parsing_failure"
+        : "inaccessible_page";
+    result[reason] = (result[reason] || 0) + count;
+  }
+  return result;
 }
 
 export async function materializeCatalogClaims(
@@ -1756,9 +2071,9 @@ export async function materializeCatalogClaims(
       source.queryFamily,
       source.pageType,
     );
-    const negative = /negative|contradiction/i.test(source.queryFamily) &&
-      /\b(?:complaint|difficult|fail(?:ed|ure)?|lack(?:s|ed)?|not|no |problem|unnecessary|without)\b/i
-        .test(excerpt);
+    const negative = /negative|contradiction|adversarial/i.test(
+      source.queryFamily,
+    ) && genuineChallengeLanguage(excerpt);
     const signalType = evidenceTopic === "pricing"
       ? "Pricing"
       : negative || evidenceTopic === "risks" ||
@@ -1768,7 +2083,7 @@ export async function materializeCatalogClaims(
       ? "Demand"
       : "Pain";
     const fingerprint = await sha256(
-      `${source.sourceId}|${source.title.trim().toLowerCase()}|${excerpt.trim().toLowerCase()}`,
+      `${normalizeClaimIdentity(source.title)}|${normalizeClaimIdentity(excerpt)}`,
     );
     claims.push({
       sourceId: source.sourceId,
@@ -1843,7 +2158,9 @@ function topicForQueryFamily(
   if (/segment/.test(value)) return "segments";
   if (/market|regulatory/.test(value)) return "market_context";
   if (/gtm|case_stud/.test(value)) return "gtm";
-  if (/negative|contradiction/.test(value)) return "contradiction";
+  if (/negative|contradiction|adversarial/.test(value)) {
+    return "contradiction";
+  }
   if (/review|complaint|risk/.test(value)) return "risks";
   if (/behavior|buyer_voice|demand/.test(value)) return "behavior_demand";
   return "customer_pain";
@@ -1860,30 +2177,35 @@ function insufficientEvidenceArtifacts(mode: string) {
       rationale:
         "No attributable pricing or willingness-to-pay evidence survived validation.",
       firstOffer:
-        "Do not set a paid offer until buyer interviews or a paid-pilot test provide direct evidence.",
-      targetCustomers: 1,
+        "Unavailable — evidence gap: no accepted evidence supports a first offer.",
+      targetCustomers: null,
       sourceIds: [],
     },
     mvp: {
       outcome:
-        "Resolve the highest-priority evidence gaps before committing to a build.",
+        "Unavailable — evidence gap: no grounded MVP outcome was established.",
       buildEstimate: "Not estimated",
-      buildComplexity: "Low",
+      buildComplexity: null,
       scope: [
-        "Run focused buyer interviews and test the riskiest proposition.",
+        "Unavailable — evidence gap: no grounded MVP scope was established.",
       ],
       exclusions: [
-        "Do not infer demand, pricing, or market size from rejected sources.",
+        "Unavailable — evidence gap: no grounded scope exclusions were established.",
       ],
     },
     launch: {
-      firstCustomerChannel: "Direct outreach to the submitted target customer",
+      firstCustomerChannel:
+        "Unavailable — evidence gap: no reachable customer channel was established.",
       outreachMessage:
-        "Ask for a problem interview and avoid presenting an unsupported solution claim.",
+        "Unavailable — evidence gap: no grounded outreach message was established.",
       successMetric:
-        "Obtain attributable problem, alternative, and willingness-to-pay evidence.",
-      weekOne: ["Interview target buyers using the unresolved evidence gaps."],
-      firstTen: ["Record attributable responses and rerun validation."],
+        "Unavailable — evidence gap: no grounded success metric was established.",
+      weekOne: [
+        "Unavailable — evidence gap: no grounded validation sequence was established.",
+      ],
+      firstTen: [
+        "Unavailable — evidence gap: no grounded early-customer strategy was established.",
+      ],
     },
     adversarial: {
       outcome: "InsufficientEvidence",
@@ -1974,6 +2296,10 @@ async function persistArtifacts(
         comparability: classification.comparability,
         pricing: pricingSupported ? values.pricing : "Insufficient evidence",
         evidence_ids: refs,
+        verification_status: classification.classification === "adjacent"
+          ? "adjacent_alternative"
+          : "live_verified_competitor",
+        verified_at: new Date().toISOString(),
       }, { onConflict: "opportunity_id,name" });
     }
   }
@@ -2001,7 +2327,7 @@ async function persistArtifacts(
       ? parsed.pricing.rationale
       : "No accepted pricing or willingness-to-pay evidence supports a value.",
     first_offer: parsed.pricing.firstOffer,
-    target_customers: Math.max(1, parsed.pricing.targetCustomers),
+    target_customers: null,
     evidence_ids: pricingEvidenceIds,
   }, { onConflict: "opportunity_id" });
   const { data: mvp } = await db.from("mvp_plans").upsert({
@@ -2056,6 +2382,48 @@ async function sha256(value: string) {
   return [...new Uint8Array(digest)].map((byte) =>
     byte.toString(16).padStart(2, "0")
   ).join("");
+}
+
+function normalizeClaimIdentity(value: unknown) {
+  return String(value || "").toLowerCase()
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/[^a-z0-9%$]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function factorIdsForClaim(topic: unknown, signal: unknown) {
+  const byTopic: Record<string, string[]> = {
+    customer_pain: ["painSeverity", "purchaseUrgency", "retentionPotential"],
+    behavior_demand: [
+      "painSeverity",
+      "purchaseUrgency",
+      "buyerReachability",
+      "retentionPotential",
+      "distributionClarity",
+    ],
+    willingness_to_pay: ["willingnessToPay", "speedToFirstRevenue"],
+    competitors: ["competitionGap"],
+    alternatives: ["competitionGap", "retentionPotential"],
+    pricing: ["speedToFirstRevenue"],
+    risks: [
+      "mvpSpeed",
+      "platformDependencyRisk",
+      "regulatoryRisk",
+    ],
+    market_context: ["buyerReachability", "regulatoryRisk"],
+    gtm: ["buyerReachability", "distributionClarity"],
+    contradiction: ["competitionGap", "painSeverity", "purchaseUrgency"],
+    segments: ["buyerReachability", "distributionClarity"],
+  };
+  const mapped = byTopic[String(topic || "")] || [];
+  if (mapped.length) return mapped;
+  if (signal === "Risk") {
+    return ["mvpSpeed", "platformDependencyRisk", "regulatoryRisk"];
+  }
+  if (signal === "Pricing") return ["speedToFirstRevenue"];
+  if (signal === "Demand") return ["buyerReachability", "distributionClarity"];
+  return ["painSeverity"];
 }
 
 function validRetrievalDate(value: unknown) {
@@ -2317,4 +2685,17 @@ function cleanSpecialistText(value: unknown) {
     .replace(/\s{2,}/g, " ")
     .replace(/\s+([,.;:])/g, "$1")
     .trim();
+}
+
+function genuineChallengeLanguage(value: string) {
+  return /\b(?:unnecessary|low priority|rarely|occasional|workaround|free alternative|resistan|switching|failed|abandoned|saturat|already use|good enough|not worth|no need)\b/i
+    .test(value);
+}
+
+function safeDomain(value: string) {
+  try {
+    return new URL(value).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return "";
+  }
 }

@@ -62,7 +62,12 @@ export const STAGE_TRANSITIONS: Record<PipelineStage, PipelineStage | null> = {
   complete: null,
 };
 
-export type ErrorClass = "transient" | "permanent" | "budget" | "timeout";
+export type ErrorClass =
+  | "transient"
+  | "permanent"
+  | "budget"
+  | "timeout"
+  | "research_unavailable";
 
 export interface StageContext {
   readonly runId: string;

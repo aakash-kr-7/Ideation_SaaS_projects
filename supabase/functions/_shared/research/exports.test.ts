@@ -17,12 +17,50 @@ const input = {
     weight: 12,
     note: "Verified pain.",
     evidenceIds: ["00000000-0000-4000-8000-000000000002"],
+    rawScore: 90,
+    evidenceCoefficient: 0.75,
+    effectiveScore: 80,
+    evidenceState: "EVIDENCED",
+    supportingEvidenceIds: ["00000000-0000-4000-8000-000000000002"],
+    confidenceDeductions: [],
+    unresolvedGaps: [],
   }],
   payload: {
     id: "00000000-0000-4000-8000-000000000001",
+    version: "2.0",
+    researchAvailabilityState: "research_completed",
     score: 84,
     verdict: "Validate First",
     content: "Actual run content",
+    evidenceSufficiency: {
+      acceptedEvidenceCount: 1,
+      independentEvidenceGroups: 1,
+      independentDomains: 1,
+      sourceFamilyCoverage: ["customer_pain"],
+      primaryDirectEvidenceCount: 1,
+      supportingEvidenceCount: 1,
+      challengingEvidenceCount: 0,
+      coveredFactors: ["painSeverity"],
+      assumedFactors: ["willingnessToPay"],
+      missingEvidenceFamilies: ["willingness_to_pay"],
+      sourceConcentration: 1,
+      overallEvidenceConfidence: "Low",
+      mostImportantLimitation: "Direct willingness-to-pay evidence is missing.",
+    },
+    verdictChangeConditions: {
+      nearestBoundary: 85,
+      highestLeverageUncertainFactor: "willingnessToPay",
+      upgradeCondition: "We would upgrade this verdict if independent buyers make paid commitments.",
+      downgradeCondition: "We would downgrade it if current alternatives remove switching friction.",
+    },
+    researchExecution: {
+      packStatuses: [
+        { packKey: "quick_primary", status: "completed", acceptedEvidenceCount: 1 },
+        { packKey: "quick_adversarial", status: "completed_no_evidence", acceptedEvidenceCount: 0 },
+        { packKey: "quick_pricing_wtp", status: "completed", acceptedEvidenceCount: 1 },
+        { packKey: "quick_coverage_repair", status: "skipped", acceptedEvidenceCount: 0 },
+      ],
+    },
     reasoningFlags: [{
       type: "AdversarialObjection",
       severity: "Blocking",
@@ -52,9 +90,21 @@ const input = {
       reason: "Unresolved evidence-cited objection.",
     },
     opportunity: {
+      scorecard: {
+        scoreBand: {
+          minimum: 70,
+          maximum: 91,
+          label: "Low Evidence Confidence",
+          display: "70–91 · Low Evidence Confidence",
+        },
+      },
       evidence: [{
         id: "00000000-0000-4000-8000-000000000002",
         source: "Buyer interview archive",
+        canonicalDomain: "buyer.example.test",
+        sourceType: "Direct buyer evidence",
+        evidenceRole: "supporting",
+        associatedFactorIds: ["painSeverity"],
         title: "Attributable buyer pain",
         snippet: "Service teams report approval disputes.",
         url: "https://example.test/evidence",
@@ -88,6 +138,16 @@ Deno.test("all export formats carry consistent run facts", () => {
         output.includes("Effective verdict"),
       "decision integrity missing",
     );
+    assert(
+      output.includes("Evidence Sufficiency") ||
+        output.includes("evidenceSufficiency") ||
+        output.includes("evidence_sufficiency_json") ||
+        output.includes("EVIDENCE SUFFICIENCY"),
+      "Evidence Sufficiency missing",
+    );
+    assert(output.includes("Research Completed") || output.includes("research_completed") || output.includes("RESEARCH COMPLETED"), "research availability missing");
+    assert(output.includes("quick_primary") || output.toLowerCase().includes("quick primary"), "research pack status missing");
+    assert(output.includes("70") && output.includes("91"), "displayed uncertainty range missing");
   }
   assert(
     outputs[1].includes("[S1] Attributable buyer pain (Buyer interview archive)"),
@@ -99,7 +159,7 @@ Deno.test("all export formats carry consistent run facts", () => {
     "csv citation missing",
   );
   assert(outputs[3].startsWith("%PDF-1.4"), "invalid PDF signature");
-  assert(outputs[3].includes("[S1] Buyer interview archive"), "readable PDF citation missing");
+  assert(outputs[3].includes("[S1] buyer.example.test"), "canonical-domain PDF citation missing");
   assert(!outputs[3].includes(input.breakdowns[0].evidenceIds[0]), "PDF exposed a raw evidence UUID");
 });
 

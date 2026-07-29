@@ -49,11 +49,11 @@ export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }
           </tr>
         </thead>
         <tbody>
-          <Row label="Overall score" reports={reports} value={r => `${r.opportunity.scorecard.total} / 100`} />
+          <Row label="Overall score" reports={reports} value={r => r.opportunity.scorecard.scoreBand?.display ?? `${r.opportunity.scorecard.total} / 100`} />
           <Row label="Verdict" reports={reports} value={r => r.opportunity.scorecard.verdict} />
           <Row label="Buyer pain severity" reports={reports} value={r => metric("painSeverity")(r)} />
           <Row label="Willingness to pay" reports={reports} value={r => metric("willingnessToPay")(r)} />
-          <Row label="Build complexity" reports={reports} value={r => r.opportunity.mvp.buildComplexity} />
+          <Row label="Build complexity" reports={reports} value={r => r.opportunity.mvp.buildComplexity ?? "Unavailable"} />
           <Row label="Distribution clarity" reports={reports} value={r => metric("distributionClarity")(r)} />
           <Row label="Retention potential" reports={reports} value={r => metric("retentionPotential")(r)} />
           <Row label="Platform risk" reports={reports} value={r => `${metric("platformDependencyRisk")(r)} risk`} />

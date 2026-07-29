@@ -51,6 +51,9 @@ try {
 // Since we can't run raw SQL easily, verify by testing known internal tables
 const internalTables = [
   "source_registry", "public_retrieval_cache", "gemini_cache", "api_usage_logs",
+  "research_call_metrics", "validated_pricing_observations",
+  "quick_scan_research_pack_statuses", "research_adapter_metrics",
+  "evidence_rejection_diagnostics",
   "research_jobs", "research_job_attempts", "research_pipeline_metrics",
   "research_pipeline_cursors", "evidence_graph_nodes", "evidence_graph_edges",
   "research_briefs", "evidence_contradictions", "operational_alerts",

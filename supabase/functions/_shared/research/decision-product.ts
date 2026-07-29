@@ -1,3 +1,5 @@
+import { competitorIntegrityPresentation } from "./evidence-integrity.ts";
+
 type Evidence = {
   id: string;
   title: string;
@@ -149,10 +151,13 @@ export function buildDecisionCharts(payload: any, existing: Chart[] = []): Chart
 
 function quickSections(payload: any, c: any): Section[] {
   const o = payload.opportunity;
-  const competitorText = (o.competitors || []).map((item: any) => `${item.name} (${String(item.classification || "adjacent").replaceAll("_", " ")}): ${item.positioning}; pricing ${item.pricing}.`).join(" ");
+  const competitorText = (o.competitors || []).map((item: any) => {
+    const integrity = competitorIntegrityPresentation(item);
+    return `${item.name} (${String(item.classification || "adjacent").replaceAll("_", " ")}, ${integrity.verificationStatus.replaceAll("_", " ")}): ${integrity.positioning}; pricing ${integrity.pricing}.`;
+  }).join(" ");
   const scoreStatements = scoringStatements(o.scorecard);
   const content: Record<string, Section> = {
-    "Executive decision": section("executive-decision", "Executive decision", c.inference(`${o.scorecard.verdict} at ${round(o.scorecard.total)}/100. ${decisionHeadline(o.scorecard.verdict, payload.reportMode)}`, c.evidence)),
+    "Executive decision": section("executive-decision", "Executive decision", c.inference(`${o.scorecard.verdict} at ${o.scorecard.scoreBand?.display || `${round(o.scorecard.total)}/100`}. ${decisionHeadline(o.scorecard.verdict, payload.reportMode)}`, c.evidence)),
     "Score, verdict and Evidence Confidence": { key: "score-confidence", title: "Score, verdict and Evidence Confidence", summary: c.confidenceExplanation, statements: scoreStatements },
     "Idea interpretation": section("idea-interpretation", "Idea interpretation", c.hypothesis(`${payload.canonicalResearchBrief?.exactProductProposition || o.oneLiner} The canonical research brief remains the semantic boundary; this is a testable product hypothesis, not an established market fact.`)),
     "Target customer and job to be done": section("target-customer", "Target customer and job to be done", c.inference(`${o.targetCustomer} need to ${jobFrom(o.corePain)}.`, c.painEvidence)),
@@ -178,7 +183,7 @@ function fullSections(payload: any, c: any): Section[] {
     return specialist ? c.inference(specialist.assessment, evidenceForIds(c.evidence, specialist.evidenceIds)) : missing(`The ${name} assessment is unavailable.`);
   };
   const sections: Section[] = [
-    section("executive-decision", "Executive decision", c.inference(`${o.scorecard.verdict} at ${round(o.scorecard.total)}/100. ${decisionHeadline(o.scorecard.verdict, payload.reportMode)}`, c.evidence)),
+    section("executive-decision", "Executive decision", c.inference(`${o.scorecard.verdict} at ${o.scorecard.scoreBand?.display || `${round(o.scorecard.total)}/100`}. ${decisionHeadline(o.scorecard.verdict, payload.reportMode)}`, c.evidence)),
     { key: "score-confidence", title: "Score, verdict and confidence", summary: c.confidenceExplanation, statements: scoringStatements(o.scorecard) },
     section("idea-assumptions", "Idea and assumptions", c.hypothesis(o.oneLiner), c.hypothesis(`Assumed buyer: ${o.targetCustomer}. Assumed market: ${o.market}.`)),
     { key: "segments", title: "Target segments", summary: "Segments surfaced by shared-dossier synthesis.", statements: (insights.targetSegments || []).map((item: any) => c.inference(item.name, evidenceForIds(c.evidence, item.evidenceIds))).concat((insights.targetSegments || []).length ? [] : [missing("No evidence-bound segment was established.")]) },
@@ -260,37 +265,37 @@ function buildExperiments(payload: any) {
     {
       name: "Problem-frequency interviews",
       hypothesis: `${customer} experience ${pain} often enough to change behaviour.`,
-      targetParticipant: `The buyer or workflow owner at a qualified ${customer} organization`,
-      recruitmentMethod: `Founder-led outreach through professional-service associations, agency directories, and warm introductions; screen for recent customer sign-off responsibility.`,
-      sampleSize: "8 qualified participants",
-      method: `Interview 8 qualified ${customer}; capture the last occurrence, current workaround, frequency, consequence, and owner.`,
-      successCriterion: "At least 5 describe a recent occurrence and 3 actively seek a better workflow.",
-      failureCriterion: "Fewer than 3 report a recent, consequential occurrence.",
-      duration: "7 days",
-      decisionUnlocked: "Whether the approval/sign-off problem is frequent and consequential enough to justify a workflow product.",
+      targetParticipant: `Buyers or workflow owners in the ${customer} segment who meet the qualification rule`,
+      recruitmentMethod: "Use only a buyer channel established in the canonical brief; otherwise record channel reachability as an evidence gap.",
+      sampleSize: "Not prefilled — define the qualified participant set before the test.",
+      method: `Collect attributable recent-occurrence accounts from independent qualified participants in the ${customer} segment; capture the workaround, frequency, consequence, and owner.`,
+      successCriterion: "Multiple independent qualified buyers provide recent examples with a measurable consequence and active search for a better workflow.",
+      failureCriterion: "Qualified buyers consistently report no recent consequential occurrence or no reason to change behaviour.",
+      duration: "Not prefilled — set and persist the test window before starting.",
+      decisionUnlocked: "Whether the stated problem is frequent and consequential enough to justify further validation.",
     },
     {
       name: "Concierge workflow pilot",
       hypothesis: "A narrow assisted workflow creates repeat usage before automation is built.",
-      targetParticipant: `Operational users at qualified ${customer} teams who currently collect customer approval`,
-      recruitmentMethod: "Recruit from interview participants who can provide a live deliverable requiring customer sign-off during the test window.",
-      sampleSize: "3 service teams",
-      method: "Run the core workflow manually with 3 teams for 14 days; log repeated use, completion time, and abandonment.",
-      successCriterion: "At least 2 teams use it twice and ask to continue.",
-      failureCriterion: "Teams revert to their existing workflow or need unrelated features to participate.",
-      duration: "14 days",
+      targetParticipant: `Qualified users in the ${customer} segment who can run the actual target workflow`,
+      recruitmentMethod: "Recruit only participants who can run a real instance of the target workflow and permit attributable observation.",
+      sampleSize: "Not prefilled — define independent qualified workflow instances before the test.",
+      method: "Run the scoped workflow without unsupported automation; record repeat use, completion, abandonment, and return to the existing alternative.",
+      successCriterion: "Independent qualified users repeat the scoped workflow and choose to continue without requiring unrelated scope.",
+      failureCriterion: "Users revert to the existing workflow or participation depends on unsupported feature expansion.",
+      duration: "Not prefilled — span enough real workflow cycles to observe repeat use.",
       decisionUnlocked: "Whether the proposed workflow changes repeat behaviour before engineering automation.",
     },
     {
       name: "Paid-offer test",
       hypothesis: `${offer} is valuable enough to trigger a real commitment.`,
-      targetParticipant: `Budget-holding buyers at qualified ${customer} organizations`,
-      recruitmentMethod: "Re-contact teams that completed the workflow pilot and supplement with matched outbound prospects using the same qualification screen.",
-      sampleSize: "5 qualified buyers",
-      method: `Present the same scoped offer to 5 qualified buyers and request payment, a deposit, or a signed paid-pilot commitment.`,
-      successCriterion: "At least 2 buyers make a monetary or signed commitment.",
+      targetParticipant: `Independent budget holders in the ${customer} segment`,
+      recruitmentMethod: "Use qualified participants who reviewed or used the same scoped workflow; do not mix materially different offers.",
+      sampleSize: "Not prefilled — define the independent qualified buyer set before the test.",
+      method: `Present the same scoped ${offer} and request an attributable payment, deposit, or signed paid-pilot commitment.`,
+      successCriterion: "At least two independent qualified buyers make an attributable monetary or signed commitment.",
       failureCriterion: "Interest remains verbal or depends on unsupported feature expansion.",
-      duration: "10 days",
+      duration: "Not prefilled — set and persist the decision window before starting.",
       decisionUnlocked: "Whether to proceed with paid product development, change packaging, or stop.",
     },
   ];
@@ -299,7 +304,9 @@ function buildExperiments(payload: any) {
 function scoringStatements(scorecard: any): Statement[] {
   return Object.entries(scorecard?.scores || {}).map(([criterion, rawScore]) => ({
     kind: "Inference",
-    text: `${titleFor(criterion)}: ${round(Number(rawScore))}/100. ${scorecard?.notes?.[criterion] || "No factor note was persisted."}`,
+    text: scorecard?.factorEvidence?.[criterion]
+      ? `${titleFor(criterion)}: ${round(Number(scorecard.factorEvidence[criterion].rawScore))} raw, coefficient ${Number(scorecard.factorEvidence[criterion].evidenceCoefficient).toFixed(2)}, ${round(Number(scorecard.factorEvidence[criterion].effectiveScore))} effective, ${scorecard.factorEvidence[criterion].evidenceState}. ${scorecard?.notes?.[criterion] || "No factor note was persisted."}`
+      : `${titleFor(criterion)}: ${round(Number(rawScore))}/100 (legacy factor without persisted evidence state). ${scorecard?.notes?.[criterion] || "No factor note was persisted."}`,
     evidenceIds: unique(scorecard?.evidenceRefs?.[criterion] || []),
     sourceUrls: [],
   }));

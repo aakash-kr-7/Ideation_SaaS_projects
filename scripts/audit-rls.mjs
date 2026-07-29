@@ -111,7 +111,7 @@ try {
   attacker.realtime.disconnect();
   if (victimEvents < 1 || attackerEvents !== 0) throw new Error(`Realtime tenant isolation failed: ${JSON.stringify({ victimEvents, attackerEvents })}`);
 
-  const internalTables = ["source_registry", "public_retrieval_cache", "gemini_cache", "api_usage_logs", "research_jobs", "research_job_attempts", "research_pipeline_metrics", "research_pipeline_cursors", "evidence_graph_nodes", "evidence_graph_edges", "research_briefs", "evidence_contradictions", "operational_alerts", "edge_rate_limit_windows"];
+  const internalTables = ["source_registry", "public_retrieval_cache", "gemini_cache", "api_usage_logs", "research_jobs", "research_job_attempts", "research_pipeline_metrics", "research_pipeline_cursors", "research_call_metrics", "validated_pricing_observations", "quick_scan_research_pack_statuses", "research_adapter_metrics", "evidence_rejection_diagnostics", "evidence_graph_nodes", "evidence_graph_edges", "research_briefs", "evidence_contradictions", "operational_alerts", "edge_rate_limit_windows"];
   for (const table of internalTables) {
     const authenticated = await attacker.from(table).select("*").limit(1);
     if (!authenticated.error) throw new Error(`Authenticated client retained Data API access to internal table ${table}`);

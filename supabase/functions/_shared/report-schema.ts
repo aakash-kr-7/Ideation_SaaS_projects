@@ -38,6 +38,21 @@ export const evidenceSchema = z.object({
   matchedBriefDimensions: z.array(z.string()).optional(),
   mismatchReasons: z.array(z.string()).optional(),
   acceptanceDecision: z.string().optional(),
+  claimId: z.string().optional(),
+  canonicalSourceId: z.string().uuid().nullable().optional(),
+  canonicalDomain: z.string().optional(),
+  sourceFamily: z.string().optional(),
+  sourceAuthority: z.number().min(0).max(1).optional(),
+  evidenceDirectness: z.number().min(0).max(1).optional(),
+  semanticRelevance: z.number().min(0).max(1).optional(),
+  independenceKey: z.string().optional(),
+  syndicationGroup: z.string().optional(),
+  claimFingerprint: z.string().optional(),
+  evidenceRole: z.enum(["supporting", "challenging"]).optional(),
+  associatedFactorIds: z.array(z.string()).optional(),
+  extractionConfidence: z.number().min(0).max(1).optional(),
+  numericValidationState: z.enum(["verified", "flagged", "rejected", "not_applicable", "not_checked"]).optional(),
+  modelClassificationMetadata: z.record(z.string(), z.unknown()).nullable().optional(),
 });
 export const competitorSchema = z.object({
   id: z.string(),
@@ -62,13 +77,25 @@ export const competitorSchema = z.object({
     productUseCase: false,
   }),
   evidenceIds: z.array(z.string().uuid()).default([]),
+  verificationStatus: z.enum([
+    "discovered_candidate",
+    "live_verified_competitor",
+    "adjacent_alternative",
+    "unverified_seed",
+  ]).optional(),
+  verifiedAt: z.string().nullable().optional(),
+  categoryId: z.string().nullable().optional(),
+  canonicalHomepage: z.string().url().nullable().optional(),
+  categoryRationale: z.string().nullable().optional(),
+  candidateType: z.enum(["direct", "adjacent"]).nullable().optional(),
+  seedLastReviewedAt: z.string().nullable().optional(),
 });
 export const pricingModelSchema = z.object({
   model: z.string(),
   pricePoint: z.string(),
   rationale: z.string(),
   firstOffer: z.string(),
-  targetCustomers: z.number().int().nonnegative(),
+  targetCustomers: z.number().int().nonnegative().nullable(),
 });
 export const launchPlanSchema = z.object({
   firstCustomerChannel: z.string(),
@@ -89,7 +116,7 @@ export const mvpPlanSchema = z.object({
   scope: z.array(z.string()).min(1),
   exclusions: z.array(z.string()),
   buildEstimate: z.string(),
-  buildComplexity: z.enum(["Low", "Medium", "High"]),
+  buildComplexity: z.enum(["Low", "Medium", "High"]).nullable(),
 });
 const scoreNumber = () => z.number().min(0).max(100);
 const weightNumber = () => z.number().min(0);
@@ -115,6 +142,26 @@ const verdictSchema = z.enum([
   "Weak Signal",
   "Avoid",
 ]);
+const factorEvidenceSchema = z.object({
+  rawScore: scoreNumber(),
+  evidenceCoefficient: z.number().min(0).max(1),
+  effectiveScore: scoreNumber(),
+  evidenceState: z.enum(["EVIDENCED", "SUGGESTIVE", "ASSUMED"]),
+  supportingEvidenceIds: z.array(z.string().uuid()),
+  challengingEvidenceIds: z.array(z.string().uuid()).default([]),
+  confidenceDeductions: z.array(z.string()).default([]),
+  unresolvedGaps: z.array(z.string()).default([]),
+});
+const scoreBandSchema = z.object({
+  minimum: z.number().min(0).max(100),
+  maximum: z.number().min(0).max(100),
+  label: z.enum([
+    "High Evidence Confidence",
+    "Moderate Evidence Confidence",
+    "Low Evidence Confidence",
+  ]),
+  display: z.string().min(1),
+});
 export const scorecardSchema = z.object({
   scores: z.object(criterionScoreShape),
   notes: z.object(criterionStringShape),
@@ -125,6 +172,8 @@ export const scorecardSchema = z.object({
   verdict: verdictSchema,
   deterministicVerdict: verdictSchema.optional(),
   decisionStatus: z.enum(["Passed", "Challenged"]).optional(),
+  factorEvidence: z.record(z.string(), factorEvidenceSchema).default({}),
+  scoreBand: scoreBandSchema.optional(),
 });
 export const opportunitySchema = z.object({
   id: z.string(),
@@ -364,6 +413,89 @@ export const validationReportSchema = z.object({
     publishedWithReducedConfidence: z.boolean(),
     dimensions: z.record(z.string(), z.number()),
   }).optional(),
+  researchAvailabilityState: z.enum([
+    "research_completed",
+    "insufficient_evidence",
+  ]).optional(),
+  evidenceSufficiency: z.object({
+    acceptedEvidenceCount: z.number().int().nonnegative(),
+    independentEvidenceGroups: z.number().int().nonnegative(),
+    independentDomains: z.number().int().nonnegative(),
+    sourceFamilyCoverage: z.array(z.string()),
+    primaryDirectEvidenceCount: z.number().int().nonnegative(),
+    supportingEvidenceCount: z.number().int().nonnegative(),
+    challengingEvidenceCount: z.number().int().nonnegative(),
+    coveredFactors: z.array(z.string()),
+    assumedFactors: z.array(z.string()),
+    missingEvidenceFamilies: z.array(z.string()),
+    sourceConcentration: z.number().min(0).max(1),
+    overallEvidenceConfidence: z.enum(["High", "Moderate", "Low", "Insufficient"]),
+    mostImportantLimitation: z.string().min(1),
+  }).optional(),
+  verdictChangeConditions: z.object({
+    nearestBoundary: z.number().nullable(),
+    highestLeverageUncertainFactor: z.string(),
+    upgradeCondition: z.string().min(1),
+    downgradeCondition: z.string().min(1),
+  }).optional(),
+  researchExecution: z.object({
+    maximumGroundedCalls: z.number().int().min(0).max(4),
+    groundedCalls: z.number().int().min(0).max(4),
+    conditionalCallTrigger: z.array(z.string()),
+    packStatuses: z.array(z.object({
+      packKey: z.string(),
+      status: z.enum([
+        "completed",
+        "completed_no_evidence",
+        "quota_blocked",
+        "provider_failed",
+        "timed_out",
+        "skipped",
+      ]),
+      acceptedEvidenceCount: z.number().int().nonnegative(),
+      failureReason: z.string().nullable().optional(),
+    })).default([]),
+    adversarialFinding: z.string().min(1),
+    calls: z.array(z.object({
+      callPurpose: z.string(),
+      queryFamily: z.string(),
+      grounded: z.boolean(),
+      conditionalCallTrigger: z.array(z.string()),
+      provider: z.string(),
+      model: z.string().nullable().optional(),
+      promptTokens: z.number().int().nonnegative(),
+      completionTokens: z.number().int().nonnegative(),
+      sourcesDiscovered: z.number().int().nonnegative(),
+      sourcesAccepted: z.number().int().nonnegative(),
+      independentEvidenceGroupsAdded: z.number().int().nonnegative(),
+      evidenceFamiliesAdded: z.array(z.string()),
+      contradictionsAdded: z.number().int().nonnegative(),
+      pricingClaimsValidated: z.number().int().nonnegative(),
+      cacheHits: z.number().int().nonnegative(),
+      durationMs: z.number().int().nonnegative(),
+      quotaFailure: z.boolean(),
+    })),
+  }).optional(),
+  pricingIntegrity: z.object({
+    verifiedCompetitorPricing: z.array(z.object({
+      sourceId: z.string().uuid().nullable().optional(),
+      sourceUrl: z.string().url(),
+      planName: z.string().nullable(),
+      pricePoint: z.string(),
+      pricingModel: z.enum([
+        "subscription",
+        "usage",
+        "one_time",
+        "custom",
+        "unknown",
+      ]),
+      exactExcerpt: z.string(),
+      validationState: z.literal("verified"),
+    })),
+    buyerPaymentEvidenceIds: z.array(z.string().uuid()),
+    inferredMonetisationPotential: z.string(),
+    missingWtpEvidence: z.boolean(),
+  }).optional(),
 });
 
 export interface ReportOpportunity {
@@ -379,7 +511,7 @@ export interface ReportOpportunity {
   evidence: EvidenceItem[];
   competitors: Competitor[];
   pricing: PricingModel;
-  mvp: MVPPlan & { buildComplexity: "Low" | "Medium" | "High" };
+  mvp: MVPPlan & { buildComplexity: "Low" | "Medium" | "High" | null };
   launch: LaunchPlan & {
     firstTenStrategy: string[];
     firstHundredStrategy?: string[];
@@ -417,6 +549,12 @@ export interface ValidationReport {
   strongestPositiveEvidenceId?: string;
   strongestNegativeEvidenceId?: string;
   decisionProduct?: z.infer<typeof decisionProductSchema>;
+  contradictions: z.infer<typeof validationReportSchema.shape.contradictions>;
+  researchAvailabilityState?: z.infer<typeof validationReportSchema.shape.researchAvailabilityState>;
+  evidenceSufficiency?: z.infer<typeof validationReportSchema.shape.evidenceSufficiency>;
+  verdictChangeConditions?: z.infer<typeof validationReportSchema.shape.verdictChangeConditions>;
+  researchExecution?: z.infer<typeof validationReportSchema.shape.researchExecution>;
+  pricingIntegrity?: z.infer<typeof validationReportSchema.shape.pricingIntegrity>;
 }
 
 // Database-specific schema constraints for Server Actions inputs

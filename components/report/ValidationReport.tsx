@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
-import { AlertTriangle, Download, FileJson, FileSpreadsheet, FileText, ListChecks, ShieldCheck, Circle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, Download, FileJson, FileSpreadsheet, FileText, ListChecks, ShieldCheck, Circle, CheckCircle2, Globe2 } from "lucide-react";
 import { ValidationReport as ReportType } from "@/lib/report-schema";
 import type { EvidenceItem } from "@/lib/types";
 import { reportToCsv, reportToMarkdown, downloadExport } from "@/lib/report-export";
@@ -24,14 +24,15 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
   const strongestPositive = o.evidence.find((item) => item.id === report.strongestPositiveEvidenceId) ?? o.evidence.find((item) => !item.disconfirming && !item.excluded);
   const strongestNegative = o.evidence.find((item) => item.id === report.strongestNegativeEvidenceId) ?? o.evidence.find((item) => item.disconfirming && !item.excluded) ?? o.evidence.find((item) => item.signal === "Risk");
   const canonicalSourceCount = countEvidenceSources(o.evidence);
-  const independentDomainCount = new Set(o.evidence.map((item) => {
-    try { return new URL(item.url).hostname.replace(/^www\./, ""); } catch { return item.source; }
-  }).filter(Boolean)).size;
+  const independentDomainCount = new Set(o.evidence.map(canonicalDomainFor).filter(Boolean)).size;
   const primarySourceCount = o.evidence.filter((item) => !item.excluded && (item.sourceTier ?? 4) <= 2).length;
   const contradictoryEvidenceCount = o.evidence.filter((item) => !item.excluded && item.disconfirming).length;
-  const acceptedEvidenceCount = o.evidence.filter((item) => !item.excluded).length;
+  const acceptedEvidenceCount = report.evidenceSufficiency?.acceptedEvidenceCount ??
+    o.evidence.filter((item) => !item.excluded && (!item.acceptanceDecision || item.acceptanceDecision === "accepted_core")).length;
   const evidenceConfidence = report.decisionProduct?.evidenceConfidence;
   const reportDate = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(report.generatedAt));
+  const customerScore = o.scorecard.scoreBand?.display ?? `${o.scorecard.total}/100`;
+  const showExactScore = !o.scorecard.scoreBand || o.scorecard.scoreBand.label === "High Evidence Confidence";
 
   const exportFile = async (format: "md" | "json" | "csv" | "pdf") => {
     const payload = { ...report, opportunity: o };
@@ -73,34 +74,36 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
           <span>{o.targetCustomer}</span>
           <span>{o.market}</span>
           <span>{o.pricing.model}</span>
-          <span>{o.mvp.buildComplexity} complexity</span>
+          <span>{o.mvp.buildComplexity ? `${o.mvp.buildComplexity} complexity` : "Build complexity unavailable"}</span>
           <span>{o.mvp.buildEstimate} to validation</span>
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-          <ScoreBadge score={o.scorecard.total} size="lg" />
+          {showExactScore && <ScoreBadge score={o.scorecard.total} size="lg" />}
           <div style={{ textAlign: 'left' }}>
-            <b style={{ fontSize: 28, fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{o.scorecard.total}</b>
-            <small style={{ display: 'block', fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>/100 SCORE</small>
+            <b style={{ fontSize: showExactScore ? 28 : 18, fontFamily: 'var(--mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{customerScore}</b>
+            <small style={{ display: 'block', fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>DETERMINISTIC SCORE CONFIDENCE</small>
           </div>
         </div>
         <i className={`verdict-${verdictClass}`}>{o.scorecard.verdict}</i>
       </div>
     </header>
 
+    <EvidenceSufficiencySummary report={report}/>
+
     <section className="report-decision-strip" aria-label={`${config.label} decision summary`}>
       <article><span>Official verdict</span><b>{o.scorecard.verdict}</b></article>
-      <article><span>Evidence confidence</span><b>{evidenceConfidence?.band ?? "Insufficient evidence"}</b></article>
+      <article><span>Evidence confidence</span><b>{evidenceConfidence?.band ?? report.evidenceSufficiency?.overallEvidenceConfidence ?? "Not persisted"}</b></article>
       <article><span>Score reliability</span><b>{o.scorecard.confidence}%</b></article>
-      <article><span>Report completeness</span><b>{report.decisionProduct?.reportCompleteness.score ?? 0}%</b></article>
+      {report.decisionProduct && <article><span>Report completeness</span><b>{report.decisionProduct.reportCompleteness.score}%</b></article>}
       <article><span>Evidence findings accepted</span><b>{acceptedEvidenceCount}</b></article>
       <article><span>Distinct sources cited</span><b>{canonicalSourceCount}</b></article>
       <article><span>Independent cited domains</span><b>{independentDomainCount}</b></article>
       {report.reportMode === "full_validation" && <><article><span>Primary / official sources</span><b>{primarySourceCount}</b></article><article><span>Contradictory evidence</span><b>{contradictoryEvidenceCount}</b></article></>}
       <article><span>{report.reportMode === "quick_scan" ? "Strongest positive signal" : "Most important opportunity"}</span><b>{strongestPositive?.title ?? "Not enough supporting evidence"}</b></article>
       <article><span>{report.reportMode === "quick_scan" ? "Strongest negative signal" : "Most important objection"}</span><b>{strongestNegative?.title ?? report.adversarialGate?.objection ?? "No independent negative signal resolved"}</b></article>
-      <article className="report-recommendation"><span>Recommendation</span><b>{report.topRecommendation ?? o.launch.successMetric}</b></article>
+      <article className="report-recommendation"><span>Highest-value next experiment</span><b>{report.decisionProduct?.experiments[0]?.name ?? "A decision experiment was not persisted."}</b></article>
     </section>
 
     {sourcePreview && <aside className="source-preview" aria-label="Evidence source preview">
@@ -118,9 +121,9 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
           <VerdictBadge verdict={o.scorecard.verdict} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: "18px 0 10px 0" }}>
-          <ScoreBadge score={o.scorecard.total} size="lg" />
+          {showExactScore && <ScoreBadge score={o.scorecard.total} size="lg" />}
           <div>
-            <b style={{ fontSize: 16 }}>{o.scorecard.total}<small style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>/100</small></b>
+            <b style={{ fontSize: 16 }}>{customerScore}</b>
             <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)' }}>{o.scorecard.confidence}% score confidence</p>
           </div>
         </div>
@@ -148,12 +151,12 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
           {tabs.map(t => <button key={t} className={`${tab === t ? "active" : ""} ${motion.buttonTight}`} aria-pressed={tab === t} onClick={() => setTab(t)}>{t}</button>)}
         </nav>
         <div className="report-tab-content sf-content-enter" key={tab}>
-          {tab === "Conclusion" && <><Verdict report={report}/><DecisionDossier report={report}/></>}
+          {tab === "Conclusion" && <><Verdict report={report}/><VerdictClarity report={report}/><DecisionDossier report={report}/></>}
           {tab === "Evidence" && <EvidenceView report={report} onPreview={setSourcePreview}/>}
           {tab === "Demand" && <EvidenceSignalView report={report} signals={["Pain", "Demand"]}/>}
           {tab === "Competition" && <CompetitorView report={report}/>}
           {tab === "Market" && <EvidenceSignalView report={report} signals={["Demand", "Pricing"]}/>}
-          {tab === "Score breakdown" && <ScoringView scorecard={o.scorecard}/>}
+          {tab === "Score breakdown" && <ScoringView scorecard={o.scorecard} evidence={o.evidence}/>}
           {tab === "MVP scope" && <MvpView report={report}/>}
           {tab === "Pricing" && <PricingView report={report}/>}
           {tab === "Go-to-market" && <LaunchView report={report}/>}
@@ -164,7 +167,7 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
           {tab === "Sources" && <SourcesView report={report}/>}
           {tab === "Exports" && <ExportView onExport={exportFile} formats={report.availableExports}/>}
         </div>
-        <FinalBlock report={report}/>
+        {report.reportMode === "full_validation" && <FinalBlock report={report}/>}
         {report.reportMode === "quick_scan" && !publicMode && <section className="quick-upgrade-card"><div><p className="eyebrow">Ready for a final decision?</p><h3>Upgrade to Full Validation.</h3><p>Your idea and context will be carried forward. We'll run deeper adversarial research, model your MVP, build a GTM plan, and deliver a comprehensive decision dossier.</p></div><Link className="button" href={`/research/new?mode=full_validation&upgradeFrom=${runId ?? report.id}`}>Run Full Validation</Link></section>}
       </div>
     </div>
@@ -173,6 +176,35 @@ export function ValidationReport({ report, scorecard, publicMode = false, runId,
 
 function Metric({ label, value }: { label: string; value: string }) {
   return <div><span>{label}</span><b>{value}</b></div>;
+}
+
+function EvidenceSufficiencySummary({ report }: { report: ReportType }) {
+  const summary = report.evidenceSufficiency;
+  if (!summary) return <section className="report-callout" role="note"><div><p className="eyebrow">Evidence Sufficiency</p><h3>Legacy report — factor-level sufficiency was not persisted.</h3><p>This immutable report remains readable, but no new confidence metadata is inferred retroactively.</p></div></section>;
+  const state = report.researchAvailabilityState === "insufficient_evidence" ? "Insufficient Evidence" : "Research Completed";
+  const cautious = summary.overallEvidenceConfidence === "Low" || summary.overallEvidenceConfidence === "Insufficient";
+  const displayedScore = report.opportunity.scorecard.scoreBand?.display ?? `${report.opportunity.scorecard.total}/100`;
+  return <section className={`evidence-sufficiency evidence-confidence-${summary.overallEvidenceConfidence.toLowerCase()}`} aria-label="Evidence Sufficiency">
+    <header><div><p className="eyebrow">Evidence Sufficiency</p><h3>{report.opportunity.scorecard.scoreBand?.display ? displayedScore : `${displayedScore} · ${summary.overallEvidenceConfidence} Evidence Confidence`}</h3><p>{cautious ? "Treat this result as a bounded signal, not a settled market conclusion." : "The displayed confidence reflects the persisted evidence behind this report."}</p></div><div><span className="research-state">{state}</span><b>{report.opportunity.scorecard.verdict}</b></div></header>
+    <div className="sufficiency-metrics">
+      <article><span>Independent groups</span><b>{summary.independentEvidenceGroups}</b></article>
+      <article><span>Source-family coverage</span><b>{summary.sourceFamilyCoverage.length}</b><small>{summary.sourceFamilyCoverage.map(humanLabel).join(", ") || "No families covered"}</small></article>
+      <article><span>Direct or official evidence</span><b>{summary.primaryDirectEvidenceCount}</b></article>
+      <article><span>Source concentration</span><b>{Math.round(summary.sourceConcentration * 100)}%</b></article>
+    </div>
+    <div className="sufficiency-limitations"><p><b>Missing critical evidence:</b> {summary.missingEvidenceFamilies.map(humanLabel).join(", ") || "No critical family is recorded as missing."}</p><p><b>Strongest confidence limitation:</b> {summary.mostImportantLimitation}</p></div>
+    {report.researchExecution && <ResearchPackStatus report={report}/>}
+  </section>;
+}
+
+const PACK_LABELS: Record<string, string> = { quick_primary: "Primary buyer/problem research", quick_adversarial: "Adversarial research", quick_pricing_wtp: "Pricing and willingness-to-pay research", quick_coverage_repair: "Conditional coverage repair" };
+const PACK_STATUS_LABELS: Record<string, string> = { completed: "Completed", completed_no_evidence: "Completed, no accepted evidence", quota_blocked: "Quota blocked", provider_failed: "Provider unavailable", timed_out: "Timed out", skipped: "Not required" };
+function ResearchPackStatus({ report }: { report: ReportType }) {
+  const statuses = new Map(report.researchExecution?.packStatuses.map((item) => [item.packKey, item]) ?? []);
+  return <div className="research-pack-status" aria-label="Research pack status">{Object.entries(PACK_LABELS).map(([key, label]) => {
+    const item = statuses.get(key); const status = item?.status ?? "skipped";
+    return <article key={key} data-state={status}><span>{label}</span><b>{PACK_STATUS_LABELS[status]}</b>{item?.failureReason && <small>{item.failureReason}</small>}</article>;
+  })}</div>;
 }
 
 function Verdict({ report }: { report: ReportType }) {
@@ -185,9 +217,9 @@ function Verdict({ report }: { report: ReportType }) {
         <h3>{report.executiveSummary}</h3>
         <p><b>Strongest signal:</b> {o.evidence[0]?.snippet}</p>
         <p><b>Primary risk:</b> {o.risks[0]?.description}</p>
-        <p><b>Validate first:</b> {report.topRecommendation ?? o.launch.successMetric}</p>
+        <p><b>Validate first:</b> {report.decisionProduct?.experiments[0]?.name ?? "A validation experiment was not persisted."}</p>
         {!!report.narrativeCitations?.executive_summary.length && <div className="sentence-citations">
-          {report.narrativeCitations.executive_summary.map((claim, index) => <p key={`${claim.text}-${index}`}>{claim.text}<EvidenceCitations report={report} evidenceIds={claim.evidence_ids}/></p>)}
+          <p><b>Executive-summary evidence:</b><EvidenceCitations report={report} evidenceIds={[...new Set(report.narrativeCitations.executive_summary.flatMap((claim) => claim.evidence_ids))]}/></p>
         </div>}
       </div>
     </div>
@@ -237,13 +269,17 @@ function CompetitorView({ report }: { report: ReportType }) {
     return <div className="report-callout" style={{ margin: '20px' }}>
       <div>
         <p className="eyebrow">Competitive analysis</p>
-        <h3>No competitors identified</h3>
-        <p>No direct competitors were discovered or mapped during this run.</p>
+        <h3>Current competitor details were not verified.</h3>
+        <p>Relevant category candidates were identified, but current pricing and positioning could not be verified in this scan.</p>
       </div>
     </div>;
   }
 
+  const hasUnverified = report.opportunity.competitors.some((item) =>
+    !["live_verified_competitor", "adjacent_alternative"].includes(item.verificationStatus || (item.evidenceIds?.length ? "live_verified_competitor" : "unverified_seed"))
+  );
   return <div className="competitor-table-wrap">
+    {hasUnverified && <div className="report-callout" role="note">Relevant category candidates were identified, but current pricing and positioning could not be verified in this scan.</div>}
     <table className="competitor-table">
       <thead>
         <tr>
@@ -256,24 +292,27 @@ function CompetitorView({ report }: { report: ReportType }) {
         </tr>
       </thead>
       <tbody>
-        {report.opportunity.competitors.map((c, index) => <tr className={revealUpClass} style={getStaggerDelay(index)} key={c.id}>
-          <td><b>{c.name}</b></td>
+        {report.opportunity.competitors.map((c, index) => {
+          const verification = c.verificationStatus || (c.evidenceIds?.length ? "live_verified_competitor" : "unverified_seed");
+          const verified = verification === "live_verified_competitor" || verification === "adjacent_alternative";
+          return <tr className={revealUpClass} style={getStaggerDelay(index)} key={c.id}>
+          <td><b>{c.name}</b><small>{humanLabel(verification)}</small></td>
           <td>{c.target}</td>
-          <td>{c.pricing}</td>
+          <td>{verified ? c.pricing : "Not live verified"}</td>
           <td>{c.strength}</td>
-          <td>{c.positioning}</td>
-          <td>{c.gap}</td>
-        </tr>)}
+          <td>{verified ? c.positioning : "Not live verified"}</td>
+          <td>{verified ? c.gap : "Unavailable — evidence gap"}</td>
+        </tr>;})}
       </tbody>
     </table>
   </div>;
 }
 
-function ScoringView({ scorecard }: { scorecard: ReportType["opportunity"]["scorecard"] }) {
+function ScoringView({ scorecard, evidence }: { scorecard: ReportType["opportunity"]["scorecard"]; evidence: EvidenceItem[] }) {
   const entries = Object.entries(scorecard.scores);
   const ordered = [...entries].sort((a, b) => b[1] - a[1]);
   return <>
-    <div className="canonical-scorecard"><div><p className="eyebrow">Official deterministic score</p><h3>{scorecard.total}/100 · {scorecard.verdict}</h3><p>The displayed verdict is computed by the shared scoring engine. Narrative generation cannot override it.</p></div><ScoreBreakdown scorecard={scorecard}/></div>
+    <div className="canonical-scorecard"><div><p className="eyebrow">Official deterministic score</p><h3>{scorecard.scoreBand?.display ?? `${scorecard.total}/100`} · {scorecard.verdict}</h3><p>The displayed verdict is computed by the shared scoring engine. Narrative generation cannot override it.</p></div><ScoreBreakdown scorecard={scorecard} evidence={evidence}/></div>
     <section className="score-explanation">
       <p className="eyebrow">Score analysis</p>
       <p><b>Strongest drivers:</b> {ordered.slice(0, 3).map(([key]) => pretty(key)).join(", ")}. <b>Weakest drivers:</b> {ordered.slice(-3).map(([key]) => pretty(key)).join(", ")}.</p>
@@ -288,6 +327,10 @@ function ScoringView({ scorecard }: { scorecard: ReportType["opportunity"]["scor
 
 function pretty(value: string) {
   return value.replace(/([A-Z])/g, " $1").replace(/^./, x => x.toUpperCase());
+}
+
+function humanLabel(value: string) {
+  return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function specialistName(value: string) {
@@ -354,7 +397,7 @@ function PricingView({ report }: { report: ReportType }) {
     ["Pricing model", p.model, "Persisted model", p.rationale],
     ["Core price", p.pricePoint, "Persisted price point", p.rationale],
     ["First offer", p.firstOffer, "Initial paid validation", p.rationale],
-    ...(p.targetCustomers > 0 ? [["Initial target", `${p.targetCustomers} customers`, "Persisted customer target", p.rationale]] : [])
+    ...(p.targetCustomers !== null && p.targetCustomers > 0 ? [["Initial target", `${p.targetCustomers} customers`, "Persisted customer target", p.rationale]] : [])
   ];
   return <>
     <div className="pricing-strategy-cards">
@@ -374,7 +417,7 @@ function LaunchView({ report }: { report: ReportType }) {
   return <div className="launch-plan">
     <div className="launch-columns">
       <article>
-        <p className="eyebrow">First 10 customers</p>
+        <p className="eyebrow">Early customer strategy</p>
         <b>{l.firstCustomerChannel}</b>
         <ol>{l.firstTenStrategy.map((step, index) => <li key={step}><span>{index + 1}</span>{step}</li>)}</ol>
       </article>
@@ -488,6 +531,30 @@ function EvidenceSignalView({ report, signals }: { report: ReportType; signals: 
   </section>;
 }
 
+function VerdictClarity({ report }: { report: ReportType }) {
+  const evidence = report.opportunity.evidence;
+  const supporting = evidence.find((item) => item.id === report.strongestPositiveEvidenceId) ?? evidence.find((item) => !item.excluded && !item.disconfirming);
+  const experiment = report.decisionProduct?.experiments[0];
+  return <section className="verdict-clarity" aria-label="Verdict clarity">
+    <header><p className="eyebrow">What drives this verdict</p><h3>{report.opportunity.scorecard.verdict}</h3></header>
+    <div className="verdict-clarity-grid">
+      <article><span>Strongest supporting reason</span><p>{supporting?.snippet ?? "No independent supporting reason was accepted."}</p></article>
+      <article><span>Strongest uncertainty</span><p>{report.evidenceSufficiency?.mostImportantLimitation ?? report.limitations[0] ?? "Confidence metadata was not persisted."}</p></article>
+      <article><span>Evidence that would upgrade it</span><p>{report.verdictChangeConditions?.upgradeCondition ?? "An upgrade condition was not persisted."}</p></article>
+      <article><span>Evidence that would downgrade it</span><p>{report.verdictChangeConditions?.downgradeCondition ?? "A downgrade condition was not persisted."}</p></article>
+    </div>
+    {experiment && <article className="next-experiment">
+      <div><span>Highest-value next experiment</span><h4>{experiment.name}</h4></div>
+      <dl>
+        <div><dt>Target buyer</dt><dd>{experiment.targetParticipant}</dd></div><div><dt>Method</dt><dd>{experiment.method}</dd></div>
+        <div><dt>Sample size</dt><dd>{experiment.sampleSize}</dd></div><div><dt>Duration</dt><dd>{experiment.duration}</dd></div>
+        <div><dt>Success threshold</dt><dd>{experiment.successCriterion}</dd></div><div><dt>Failure threshold</dt><dd>{experiment.failureCriterion}</dd></div>
+        <div><dt>Decision unlocked</dt><dd>{experiment.decisionUnlocked}</dd></div>
+      </dl>
+    </article>}
+  </section>;
+}
+
 function DecisionDossier({ report }: { report: ReportType }) {
   const product = report.decisionProduct;
   if (!product) return null;
@@ -504,7 +571,7 @@ function DecisionDossier({ report }: { report: ReportType }) {
           <h4>{section.title}</h4>
           <p>{section.summary}</p>
           <ul>{section.statements.map((statement, index) => <li key={`${statement.kind}-${index}`}>
-            <b className={`statement-kind kind-${statement.kind.toLowerCase()}`}>{statement.kind}</b>
+            <b className={`statement-kind kind-${statement.kind.toLowerCase()}`}>{humanLabel(statement.kind)}</b>
             <span>{statement.text}</span>
             {!!statement.evidenceIds.length && <EvidenceCitations report={report} evidenceIds={statement.evidenceIds}/>}
             {!statement.evidenceIds.length && statement.sourceUrls.map((url, sourceIndex) => <a key={url} href={url} target="_blank" rel="noreferrer">[source {sourceIndex + 1}]</a>)}
@@ -585,15 +652,70 @@ function EvidenceCitations({ report, evidenceIds }: { report: ReportType; eviden
 }
 
 function AdversarialView({ report }: { report: ReportType }) {
+  const adversarial = report.researchExecution?.packStatuses.find((item) => item.packKey === "quick_adversarial");
+  const completed = adversarial && ["completed", "completed_no_evidence"].includes(adversarial.status);
   return <div className="adversarial-report-view">
-    <section><p className="eyebrow">Adversarial verdict gate</p><h3>{report.adversarialGate?.outcome ?? "Gate incomplete"}</h3><p>{report.adversarialGate?.objection ?? "Adversarial analysis is incomplete."}</p><EvidenceCitations report={report} evidenceIds={report.adversarialGate?.evidence_ids ?? []}/></section>
+    <section><p className="eyebrow">Adversarial verdict gate</p><h3>{completed ? report.adversarialGate?.outcome ?? "Completed" : "Adversarial research incomplete"}</h3><p>{completed ? report.researchExecution?.adversarialFinding ?? report.adversarialGate?.objection : "This scan cannot claim that no contradiction exists because the adversarial research pack did not complete."}</p><EvidenceCitations report={report} evidenceIds={report.adversarialGate?.evidence_ids ?? []}/></section>
+    {report.contradictions.map((item) => <section className="contradiction-card" key={item.exactClaimTested}>
+      <p className="eyebrow">Proposition tested</p><h3>{item.proposition ?? item.exactClaimTested}</h3>
+      <div><article><b>Supporting evidence</b><EvidenceCitations report={report} evidenceIds={item.supportingEvidenceIds}/></article><article><b>Challenging evidence</b><EvidenceCitations report={report} evidenceIds={item.challengingEvidenceIds}/></article></div>
+      <p><b>Applies to:</b> {item.segmentApplicability ?? "All stated target segments"} · <b>Unresolved implication:</b> {item.unresolvedImplication ?? item.resolutionNote ?? "No unresolved implication persisted."}</p>
+    </section>)}
   </div>;
 }
 
 function SourcesView({ report }: { report: ReportType }) {
-  return <div className="report-source-list">
-    {report.opportunity.evidence.map((item) => <article key={item.id}><div><b>{item.source}</b><span>{item.sourceTier ? `Tier ${item.sourceTier}` : item.sourceType}</span>{item.excluded && <i>Excluded from scoring</i>}</div><p>{item.title}</p>{item.url ? <a href={item.url} target="_blank" rel="noreferrer">Inspect source ↗</a> : <span>Source URL unavailable</span>}</article>)}
+  const evidence = report.opportunity.evidence;
+  const groups = new Map<string, EvidenceItem[]>();
+  for (const item of evidence) {
+    const domain = canonicalDomainFor(item);
+    groups.set(domain, [...(groups.get(domain) ?? []), item]);
+  }
+  const discovered = report.researchExecution?.calls.reduce((sum, call) => sum + call.sourcesDiscovered, 0);
+  const accepted = evidence.filter((item) => !item.excluded).length;
+  const cited = new Set(evidence.filter((item) => item.url).map((item) => item.canonicalSourceId || item.url)).size;
+  const independent = new Set(evidence.filter((item) => !item.excluded).map((item) => item.independenceKey || item.canonicalSourceId || canonicalDomainFor(item))).size;
+  return <div className="source-groups">
+    <section className="source-counts" aria-label="Source count definitions">
+      <Metric label="Sources discovered" value={discovered === undefined ? "Not persisted" : String(discovered)}/>
+      <Metric label="Sources fetched" value="Not persisted"/>
+      <Metric label="Evidence accepted" value={String(accepted)}/>
+      <Metric label="Sources cited" value={String(cited)}/>
+      <Metric label="Independent evidence groups" value={String(independent)}/>
+    </section>
+    {[...groups.entries()].sort((a, b) => b[1].length - a[1].length).map(([domain, items]) => <details key={domain} open={groups.size <= 4}>
+      <summary><span className="source-favicon"><Globe2 size={15}/>{domain !== "Domain unavailable" && <img src={`https://${domain}/favicon.ico`} alt="" onError={(event) => { event.currentTarget.style.display = "none"; }}/>}</span><span><b>{domain}</b><small>{items.length} claim{items.length === 1 ? "" : "s"} from this domain · one source group</small></span></summary>
+      <div>{items.map((item) => <article key={item.id}>
+        <div><b>{item.title}</b><span>{humanLabel(item.sourceType)} · {authorityLabel(item)} · {item.excluded ? "Excluded" : "Accepted"} · {item.evidenceRole === "challenging" || item.disconfirming ? "Challenging" : "Supporting"} · Numeric check: {humanLabel(item.numericValidationState ?? "not checked")}</span></div>
+        <p>{item.snippet}</p>
+        <small>Factors: {item.associatedFactorIds?.length ? item.associatedFactorIds.map(humanLabel).join(", ") : "No factor link persisted"}</small>
+        {meaningfulGroqDisagreement(item) && <p className="model-disagreement"><AlertTriangle size={14}/>Second-model disagreement: this evidence was interpreted differently by the two models, so it carries reduced confidence.</p>}
+        {item.url ? <a href={item.url} target="_blank" rel="noreferrer">Inspect source ↗</a> : <span>Source URL unavailable</span>}
+      </article>)}</div>
+    </details>)}
   </div>;
+}
+
+function canonicalDomainFor(item: EvidenceItem) {
+  if (item.canonicalDomain && item.canonicalDomain !== "vertexaisearch.cloud.google.com") return item.canonicalDomain.replace(/^www\./, "");
+  try {
+    const domain = new URL(item.url).hostname.replace(/^www\./, "");
+    return domain === "vertexaisearch.cloud.google.com" ? item.source.replace(/^www\./, "") : domain;
+  } catch { return item.source || "Domain unavailable"; }
+}
+function authorityLabel(item: EvidenceItem) {
+  if (typeof item.sourceAuthority === "number") return `${Math.round(item.sourceAuthority * 100)}% authority`;
+  return item.sourceTier ? `Tier ${item.sourceTier} authority` : "Authority not rated";
+}
+function meaningfulGroqDisagreement(item: EvidenceItem) {
+  const groq = item.modelClassificationMetadata?.optionalGroqClassification as { evidenceRole?: string; semanticAlignment?: string } | null | undefined;
+  if (!groq) return false;
+  const role = item.evidenceRole ?? (item.disconfirming ? "challenging" : "supporting");
+  const roleDisagrees = groq.evidenceRole && !["mixed", "unclear", role].includes(groq.evidenceRole);
+  const relevance = String(item.modelClassificationMetadata?.relevanceClass ?? "").toLowerCase();
+  const alignmentMap: Record<string, string> = { directly_relevant: "direct", contextually_relevant: "contextual", adjacent: "adjacent", out_of_scope: "unclear" };
+  const relevanceDisagrees = groq.semanticAlignment && relevance && groq.semanticAlignment !== (alignmentMap[relevance] ?? relevance) && groq.semanticAlignment !== "unclear";
+  return Boolean(roleDisagrees || relevanceDisagrees);
 }
 
 function ExportView({ onExport, formats }: { onExport: (format: "md" | "json" | "csv" | "pdf") => void | Promise<void>; formats: ReportType["availableExports"] }) {
@@ -612,15 +734,15 @@ function ExportView({ onExport, formats }: { onExport: (format: "md" | "json" | 
 
 function FinalBlock({ report }: { report: ReportType }) {
   const o = report.opportunity;
-  const action = report.decisionProduct?.primaryRecommendation ?? report.topRecommendation ?? "Insufficient evidence";
+  const experiment = report.decisionProduct?.experiments[0];
   return <section className="final-verdict-block">
     <p className="eyebrow">Final recommendation</p>
     <h3>{o.scorecard.verdict}</h3>
     <div>
-      <span><b>Next action: </b>{action}</span>
+      <span><b>Next action: </b>{experiment ? `${experiment.name}: ${experiment.method}` : "No decision experiment was persisted."}</span>
       {report.reportMode === "full_validation" && <span><b>Build first: </b>{o.mvp.scope[0]}</span>}
       {report.reportMode === "full_validation" && <span><b>Do not build: </b>{o.mvp.exclusions[0]}</span>}
-      <span><b>Decision threshold: </b>{report.decisionProduct?.experiments[0]?.decisionUnlocked ?? "Insufficient evidence"}</span>
+      <span><b>Decision threshold: </b>{experiment?.decisionUnlocked ?? "No decision threshold was persisted."}</span>
     </div>
   </section>;
 }

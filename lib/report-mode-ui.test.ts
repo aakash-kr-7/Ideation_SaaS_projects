@@ -6,6 +6,8 @@ function assert(value: unknown, message: string) { if (!value) throw new Error(m
 
 Deno.test("report layouts expose concise and comprehensive navigation", () => {
   assert(!REPORT_TABS.quick_scan.includes("MVP scope" as never), "Quick Scan must stay concise");
+  assert(REPORT_TABS.quick_scan.includes("Adversarial"), "Quick Scan must expose its dedicated adversarial pack");
+  assert(REPORT_TABS.quick_scan.includes("Sources"), "Quick Scan must expose canonical source groups");
   assert(REPORT_TABS.full_validation.includes("MVP scope"), "Full Validation must include MVP scope");
   assert(REPORT_TABS.full_validation.includes("Adversarial"), "Full Validation must include adversarial findings");
 });
@@ -28,4 +30,5 @@ Deno.test("comparison flags unequal research scopes", () => {
 
 Deno.test("source counts use distinct persisted citation URLs", () => {
   assert(countEvidenceSources([{ url: "https://example.test/a" }, { url: "https://example.test/a" }, { url: "https://example.test/b" }, { url: "" }]) === 2, "duplicate evidence rows must not inflate source counts");
+  assert(countEvidenceSources([{ canonicalSourceId: "source-a", url: "https://redirect.test/1" }, { canonicalSourceId: "source-a", url: "https://redirect.test/2" }]) === 1, "redirect URLs must not inflate canonical source counts");
 });

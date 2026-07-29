@@ -57,7 +57,7 @@ export async function executeGenerateExports(
 
   const { data: breakdowns } = await db
     .from("score_breakdowns")
-    .select("criterion, score, weight, notes, id")
+    .select("criterion, score, raw_score, evidence_coefficient, effective_score, evidence_state, supporting_evidence_ids, challenging_evidence_ids, confidence_deductions, unresolved_gaps, weight, notes, id")
     .eq("score_id", inputMeta.scoreId);
 
   const { data: scoreEvRefs } = await db
@@ -98,6 +98,13 @@ export async function executeGenerateExports(
     evidenceIds: (scoreEvRefs || [])
       .filter((ref: any) => ref.score_breakdown_id === b.id)
       .map((ref: any) => ref.evidence_id),
+    rawScore: Number(b.raw_score ?? b.score),
+    evidenceCoefficient: Number(b.evidence_coefficient ?? 0),
+    effectiveScore: Number(b.effective_score ?? b.score),
+    evidenceState: b.evidence_state || "ASSUMED",
+    supportingEvidenceIds: b.supporting_evidence_ids || [],
+    confidenceDeductions: b.confidence_deductions || [],
+    unresolvedGaps: b.unresolved_gaps || [],
   }));
 
   const exportInput: ExportBundleInput = {

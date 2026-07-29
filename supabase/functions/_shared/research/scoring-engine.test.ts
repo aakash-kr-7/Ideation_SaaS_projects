@@ -79,7 +79,8 @@ Deno.test("Tier 3 volume cannot match Tier 1/2 evidence quality", () => {
       evidence_topic: "pricing",
     }],
   }).find((factor) => factor.criterion === "willingnessToPay")!;
-  assertEquals(competitorListPrice.score, 10);
+  assertEquals(competitorListPrice.rawScore, 10);
+  assertEquals(competitorListPrice.score, 50);
   assertEquals(competitorListPrice.evidenceIds.length, 0);
 
   const generalDemand = Array.from({ length: 12 }, (_, i) => ({
@@ -138,5 +139,7 @@ Deno.test("adjacent e-signature products do not receive direct-incumbent scoring
     ...base,
     competitors: [{ id: "direct", gap: "Same", strength: "Focused", pricing: "$", classification: "direct" as const }],
   }).find((factor) => factor.criterion === "competitionGap")!;
-  if (adjacent.score <= direct.score) throw new Error("Adjacent competitor was weighted as heavily as a direct incumbent.");
+  if (adjacent.rawScore <= direct.rawScore) throw new Error("Adjacent competitor was weighted as heavily as a direct incumbent.");
+  assertEquals(adjacent.effectiveScore, 50);
+  assertEquals(direct.effectiveScore, 50);
 });

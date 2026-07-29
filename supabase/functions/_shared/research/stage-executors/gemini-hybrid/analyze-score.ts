@@ -3,12 +3,16 @@ import { stageCompleted, stageFailed } from "../../stages.ts";
 import {
   calculateDeterministicScore,
   computeFactors,
+  deriveScoreConfidenceBand,
   verdictFor,
   type WeightRow,
 } from "../../scoring-engine.ts";
 import { updateState } from "../../pipeline-utils.ts";
 import { gateVerdict } from "../../reasoning-integrity.ts";
-import { evidenceConfidence } from "../../evidence-intelligence.ts";
+import {
+  buildEvidenceSufficiencySummary,
+  buildVerdictChangeConditions,
+} from "../../evidence-integrity.ts";
 
 export async function executeHybridAnalyzeScore(
   ctx: StageContext,
@@ -31,7 +35,7 @@ export async function executeHybridAnalyzeScore(
     const { data: evidence } = await db
       .from("evidence_items")
       .select(
-        "id, signal_type, strength, title, snippet, evidence_family, evidence_topic, source_tier, source_id, source_domain, source_class, excluded, disconfirming, independent_source_count, created_at, relevance_score, relevance_class, matched_brief_dimensions, acceptance_decision",
+        "id, signal_type, strength, title, snippet, evidence_family, evidence_topic, source_tier, source_id, source_domain, source_class, excluded, disconfirming, independent_source_count, independent_domain_count, created_at, relevance_score, relevance_class, matched_brief_dimensions, acceptance_decision, claim_id, canonical_source_id, canonical_domain, source_family, source_authority, evidence_directness, semantic_relevance, independence_key, syndication_group, claim_fingerprint, evidence_role, associated_factor_ids, extraction_confidence, numeric_validation_state, model_classification_metadata",
       )
       .eq("run_id", runId);
 
@@ -55,10 +59,10 @@ export async function executeHybridAnalyzeScore(
     );
     const { data: evidenceClusters } = await db.from("evidence_clusters")
       .select("*").eq("opportunity_id", opportunityId);
-    const { data: explicitContradictions } = await db.from(
+    const { count: unresolvedContradictionCount } = await db.from(
       "evidence_contradictions",
     )
-      .select("id")
+      .select("id", { count: "exact", head: true })
       .eq("run_id", runId)
       .eq("resolution_status", "unresolved");
 
@@ -66,9 +70,14 @@ export async function executeHybridAnalyzeScore(
     const factors = computeFactors({
       evidence: evidence || [],
       risks: risks || [],
-      competitors: competitors || [],
+      competitors: (competitors || []).filter((competitor: any) =>
+        ["live_verified_competitor", "adjacent_alternative"].includes(
+          competitor.verification_status,
+        )
+      ),
       hasPricingModel: !!pricing,
       launchStrategyCount: launch?.launch_strategies?.length || 0,
+      unresolvedContradictionCount: unresolvedContradictionCount || 0,
     });
 
     const weights = (weightRows || []).map((w: any) => ({
@@ -78,6 +87,17 @@ export async function executeHybridAnalyzeScore(
 
     const total = calculateDeterministicScore(factors, weights);
     const deterministicVerdict = verdictFor(total);
+    const scoreBand = deriveScoreConfidenceBand(factors, weights, total);
+    const evidenceSufficiency = buildEvidenceSufficiencySummary(
+      (evidence || []) as any,
+      factors,
+      scoreBand,
+    );
+    const verdictChangeConditions = buildVerdictChangeConditions(
+      total,
+      factors,
+      weights,
+    );
 
     // --- Apply adversarial gating ---
     const { effectiveVerdict, adversarialDowngrade, reason: gateReason } =
@@ -96,32 +116,13 @@ export async function executeHybridAnalyzeScore(
     // Scoring confidence measures evidence-bound factor coverage and inherits a
     // hard ceiling from evidence quality. Successful arithmetic alone cannot
     // produce a high-confidence score.
-    const usable = (evidence || []).filter((e: any) =>
-      !e.excluded && e.acceptance_decision === "accepted_core"
-    );
-    const evidenceConfidenceResult = evidenceConfidence(
-      usable as any,
-      undefined,
-      explicitContradictions?.length || 0,
-    );
-    const factorsWithEvidence = factors.filter((factor) =>
-      factor.evidenceIds.length > 0
-    ).length;
-    const factorCoverage = factorsWithEvidence / factors.length;
-    const evidenceCeiling = evidenceConfidenceResult.band === "High"
-      ? 95
-      : evidenceConfidenceResult.band === "Moderate"
-      ? 75
-      : evidenceConfidenceResult.band === "Low"
-      ? 50
-      : 25;
-    const confidence = Math.max(
-      0,
-      Math.min(
-        evidenceCeiling,
-        Math.round(25 + factorCoverage * 65 - (adversarialDowngrade ? 10 : 0)),
-      ),
-    );
+    const totalWeight = weights.reduce((sum, row) => sum + row.weight, 0) || 1;
+    const confidence = Math.max(0, Math.min(100, Math.round(
+      factors.reduce((sum, factor) =>
+        sum + factor.evidenceCoefficient *
+          (weights.find((row) => row.criterion === factor.criterion)?.weight || 0),
+      0) / totalWeight * 100,
+    )));
 
     // --- Persist score ---
     const { data: score, error: scoreError } = await db
@@ -149,6 +150,14 @@ export async function executeHybridAnalyzeScore(
         score_id: score.id,
         criterion: factor.criterion,
         score: factor.score,
+        raw_score: factor.rawScore,
+        evidence_coefficient: factor.evidenceCoefficient,
+        effective_score: factor.effectiveScore,
+        evidence_state: factor.evidenceState,
+        supporting_evidence_ids: factor.supportingEvidenceIds,
+        challenging_evidence_ids: factor.challengingEvidenceIds,
+        confidence_deductions: factor.confidenceDeductions,
+        unresolved_gaps: factor.unresolvedGaps,
         notes: factor.note,
         weight: weights.find((w) => w.criterion === factor.criterion)?.weight ||
           1,
@@ -175,7 +184,8 @@ export async function executeHybridAnalyzeScore(
       chart_key: "opportunity-factor-breakdown",
       chart_type: "radar",
       source_data: {
-        values: Object.fromEntries(factors.map((f) => [f.criterion, f.score])),
+        values: Object.fromEntries(factors.map((f) => [f.criterion, f.effectiveScore])),
+        rawValues: Object.fromEntries(factors.map((f) => [f.criterion, f.rawScore])),
       },
       supporting_evidence_ids: factors.flatMap((f) => f.evidenceIds),
     });
@@ -338,6 +348,12 @@ export async function executeHybridAnalyzeScore(
         deterministicVerdict,
         adversarialDowngrade,
         confidence,
+        scoreBand,
+        allowedEvidenceIds: Array.isArray(inputMeta.allowedEvidenceIds)
+          ? inputMeta.allowedEvidenceIds
+          : [],
+        evidenceSufficiency,
+        verdictChangeConditions,
         chartDatasets,
         insufficientEvidence: Boolean(inputMeta.insufficientEvidence),
         validationRejections: inputMeta.rejectedClaims || {},

@@ -12,6 +12,7 @@ export interface ResearchPack {
   key: string;
   query: string;
   focus: string;
+  purpose?: "primary" | "adversarial" | "pricing_wtp" | "coverage_repair";
 }
 
 export interface SourceCandidate {
@@ -37,6 +38,10 @@ export interface RetrievedSource extends SourceCandidate {
 }
 
 type Fetcher = typeof fetch;
+const redditSearchCache = new Map<string, {
+  expiresAt: number;
+  results: SourceCandidate[];
+}>();
 
 export function buildResearchPacks(
   run: { idea_name: string; idea_description: string; target_customer: string; target_region?: string },
@@ -78,18 +83,43 @@ export function buildResearchPacks(
       { key: "contradiction", query: `${concept} unnecessary failure adoption objection`, focus: "proposition-specific negative evidence" },
     ];
   }
-  return approvalAudit ? [
-    { key: "customer_pain", query: `"customer sign-off" "approval history" ${buyer} disputes`, focus: "direct pain and demand in the specified buyer workflow" },
-    { key: "competitor_official", query: `"client approval" "audit trail" software`, focus: "official competitor and alternative sources" },
-    { key: "pricing_official", query: `"client approval" online proofing pricing`, focus: "verified public pricing and packaging" },
-    { key: "buyer_voice", query: `"client approval" agency review complaint email`, focus: "direct buyer/user evidence and current alternatives" },
-    { key: "negative_evidence", query: `"customer sign-off" software unnecessary complaint`, focus: "negative, contradictory, and failed-alternative evidence" },
-  ] : [
-    { key: "customer_pain", query: `${concept} ${buyer} pain demand`, focus: "direct pain and demand" },
-    { key: "competitor_official", query: `${concept} competitors official product`, focus: "official competitor and alternative sources" },
-    { key: "pricing_official", query: `${concept} pricing plans`, focus: "verified public pricing and packaging" },
-    { key: "buyer_voice", query: `${concept} ${buyer} review complaint workaround`, focus: "direct buyer/user evidence and current alternatives" },
-    { key: "negative_evidence", query: `${concept} unnecessary failure complaint`, focus: "negative, contradictory, and failed-alternative evidence" },
+  const compactConcept = significantTerms(
+    brief?.exactProductProposition || `${run.idea_name} ${run.idea_description}`,
+  ).slice(0, 4).join(" ");
+  const compactBuyer = significantTerms(
+    brief?.targetBuyer || run.target_customer,
+  ).slice(0, 3).join(" ");
+  const compactWorkflow = significantTerms(
+    brief?.workflowChanged || run.idea_description,
+  ).slice(0, 3).join(" ");
+  const semanticAnchor = approvalAudit
+    ? `client approval sign-off ${compactBuyer}`
+    : `${compactConcept} ${compactBuyer} ${compactWorkflow}`;
+  return [
+    {
+      key: "quick_primary_problem_buyer_demand",
+      purpose: "primary",
+      query:
+        `${semanticAnchor} workflow current alternative pain frequency severity repeated demand adoption`,
+      focus:
+        "the exact buyer, exact workflow, current alternative, pain frequency and severity, behavioural demand, and category activity",
+    },
+    {
+      key: "quick_adversarial",
+      purpose: "adversarial",
+      query:
+        `${semanticAnchor} unnecessary low priority workaround free alternative failed abandoned complaint resistance switching occasional saturation`,
+      focus:
+        "proposition-specific disconfirmation: low urgency, low-friction workarounds, failed tools, buyer resistance, free alternatives, saturation, and occasional rather than urgent use",
+    },
+    {
+      key: "quick_pricing_wtp_reachability",
+      purpose: "pricing_wtp",
+      query:
+        `${semanticAnchor} official pricing plans price procurement paid pilot budget owner switching cost purchase buyer community reach`,
+      focus:
+        "official competitor pricing and plan names, payment behaviour, paid pilots, budget ownership, switching costs, and practical buyer reachability",
+    },
   ];
 }
 
@@ -103,23 +133,70 @@ export async function discoverCandidates(args: {
   const fetcher = args.fetcher ?? fetch;
   const discovered: SourceCandidate[] = [];
   let externalSearchCalls = 0;
+  const stoppedAdapters = new Set<string>();
   for (const pack of args.packs) {
     const searches: Array<[string, () => Promise<SourceCandidate[]>]> = [];
     if (getEnv("TAVILY_API_KEY")) searches.push(["tavily", () => searchTavily(pack, fetcher)]);
     if (getEnv("BRAVE_SEARCH_API_KEY")) searches.push(["brave", () => searchBrave(pack, fetcher)]);
     searches.push(["duckduckgo", () => searchDuckDuckGo(pack, fetcher)]);
-    searches.push(["wikipedia", () => searchWikipedia(pack, fetcher)]);
-    searches.push(["hacker_news", () => searchHackerNews(pack, fetcher)]);
+    if (!pack.key.startsWith("quick_")) {
+      searches.push(["wikipedia", () => searchWikipedia(pack, fetcher)]);
+    }
+    if (args.technical) {
+      searches.push(["hacker_news", () => searchHackerNews(pack, fetcher)]);
+    } else if (
+      pack.purpose === "primary" &&
+      /consumer|local|service|home|household|neighborhood|marketplace/i.test(pack.query)
+    ) {
+      searches.push([
+        "public_directory_discovery",
+        () => searchPublicDirectories(pack, fetcher),
+      ]);
+    }
+    if (
+      getEnv("REDDIT_BUYER_VOICE_ENABLED")?.toLowerCase() === "true" &&
+      /quick_primary|quick_adversarial|quick_pricing/.test(pack.key)
+    ) {
+      searches.push(["reddit_optional", () => searchReddit(pack, fetcher)]);
+    }
     if (args.technical) searches.push(["github", () => searchGitHub(pack, fetcher)]);
     for (const [provider, search] of searches) {
+      if (stoppedAdapters.has(provider)) {
+        await updateAdapterMetric(args.db, {
+          runId: args.runId,
+          adapter: provider,
+          queryFamily: pack.key,
+          stoppedEarly: true,
+          failureReason: "zero_yield_circuit_breaker",
+        });
+        continue;
+      }
       const started = Date.now();
       externalSearchCalls++;
       try {
         const results = await search();
         discovered.push(...results);
         await logExternalUsage(args.db, args.runId, provider, `external_search_${pack.key}`, "success", started, true, false);
+        await updateAdapterMetric(args.db, {
+          runId: args.runId,
+          adapter: provider,
+          queryFamily: pack.key,
+          calls: 1,
+          pagesFound: results.length,
+          failureReason: results.length ? null : "no_pages_found",
+        });
+        if (!results.length) stoppedAdapters.add(provider);
       } catch (error) {
-        await logExternalUsage(args.db, args.runId, provider, `external_search_${pack.key}`, "failed", started, true, false, safeMessage(error));
+        const failureReason = adapterFailureReason(error);
+        await logExternalUsage(args.db, args.runId, provider, `external_search_${pack.key}`, "failed", started, true, false, failureReason);
+        await updateAdapterMetric(args.db, {
+          runId: args.runId,
+          adapter: provider,
+          queryFamily: pack.key,
+          calls: 1,
+          failureReason,
+        });
+        stoppedAdapters.add(provider);
       }
     }
   }
@@ -134,6 +211,74 @@ export async function discoverCandidates(args: {
     candidates: diversifyAndRank([...unique.values()]),
     externalSearchCalls,
   };
+}
+
+export async function discoverOfficialSitemapCandidates(args: {
+  runId: string;
+  seeds: Array<{ candidateName?: string; canonicalHomepage?: string }>;
+  db: any;
+  fetcher?: Fetcher;
+}): Promise<SourceCandidate[]> {
+  const fetcher = args.fetcher ?? fetch;
+  const discovered: SourceCandidate[] = [];
+  for (const seed of args.seeds.slice(0, 4)) {
+    if (!seed.canonicalHomepage) continue;
+    let origin: string;
+    try {
+      origin = new URL(seed.canonicalHomepage).origin;
+    } catch {
+      continue;
+    }
+    const started = Date.now();
+    try {
+      const response = await fetcher(`${origin}/sitemap.xml`, {
+        headers: {
+          "User-Agent": "ShouldBuildResearch/1.0",
+          Accept: "application/xml,text/xml,text/plain",
+        },
+        signal: AbortSignal.timeout(7_000),
+      });
+      if (!response.ok) throw new Error(`sitemap ${response.status}`);
+      const xml = (await response.text()).slice(0, 500_000);
+      const urls = [...xml.matchAll(/<loc>\s*([^<]+)\s*<\/loc>/gi)]
+        .map((match) => decodeHtml(match[1].trim()))
+        .filter((url) =>
+          /^https?:\/\//i.test(url) &&
+          /pricing|plans|product|features|services|solutions|customers|case-stud/i.test(url)
+        )
+        .slice(0, 6);
+      discovered.push(...urls.map((url, index) => ({
+        title: `${seed.candidateName || new URL(origin).hostname} official page`,
+        url,
+        snippet: "Official sitemap discovery candidate; content requires live validation.",
+        provider: "official_sitemap",
+        queryFamily: /pricing|plans/i.test(url)
+          ? "quick_pricing_wtp_reachability"
+          : "quick_primary_problem_buyer_demand",
+        score: 102 - index,
+      })));
+      await logExternalUsage(args.db, args.runId, "official_sitemap", "sitemap_discovery", "success", started, true, false);
+      await updateAdapterMetric(args.db, {
+        runId: args.runId,
+        adapter: "official_sitemap",
+        queryFamily: "competitor_seed_sitemap",
+        calls: 1,
+        pagesFound: urls.length,
+        failureReason: urls.length ? null : "no_pages_found",
+      });
+    } catch (error) {
+      const failureReason = adapterFailureReason(error);
+      await logExternalUsage(args.db, args.runId, "official_sitemap", "sitemap_discovery", "failed", started, true, false, failureReason);
+      await updateAdapterMetric(args.db, {
+        runId: args.runId,
+        adapter: "official_sitemap",
+        queryFamily: "competitor_seed_sitemap",
+        calls: 1,
+        failureReason,
+      });
+    }
+  }
+  return diversifyAndRank(discovered);
 }
 
 export async function retrieveCandidates(args: {
@@ -151,55 +296,144 @@ export async function retrieveCandidates(args: {
   for (const candidate of chosen) {
     const canonical = canonicalizeUrl(candidate.url);
     if (!canonical) {
-      reject("invalid_url");
-      await audit(args.db, args.runId, candidate, null, "rejected", "invalid_url");
+      reject("parsing_failure");
+      await audit(args.db, args.runId, candidate, null, "rejected", "parsing_failure");
+      await updateAdapterMetric(args.db, {
+        runId: args.runId,
+        adapter: candidate.provider,
+        queryFamily: candidate.queryFamily,
+        failureReason: "parsing_failure",
+      });
       continue;
     }
     const started = Date.now();
     try {
+      let acceptedCanonical = canonical;
       const cached = await readCache(args.db, canonical);
       const fetched = cached || await fetchPage(canonical, fetcher);
       if (!fetched || fetched.text.length < 120) {
         const firecrawl = getEnv("FIRECRAWL_API_KEY") ? await fetchWithFirecrawl(canonical, fetcher) : null;
         if (!firecrawl || firecrawl.text.length < 120) {
-          reject("empty_or_unextractable");
-          await audit(args.db, args.runId, candidate, canonical, "rejected", "empty_or_unextractable");
-          await logExternalUsage(args.db, args.runId, "direct_http", "page_fetch", "failed", started, false, true, "empty_or_unextractable");
+          reject("missing_excerpt");
+          await audit(args.db, args.runId, candidate, canonical, "rejected", "missing_excerpt");
+          await logExternalUsage(args.db, args.runId, "direct_http", "page_fetch", "failed", started, false, true, "missing_excerpt");
+          await updateAdapterMetric(args.db, {
+            runId: args.runId,
+            adapter: candidate.provider,
+            queryFamily: candidate.queryFamily,
+            pagesFetched: 1,
+            failureReason: "missing_excerpt",
+          });
           continue;
         }
         await writeCache(args.db, canonical, firecrawl.text, firecrawl.contentType);
         const relevance = assessSemanticRelevance(args.brief, `${candidate.title}\n${candidate.snippet}\n${firecrawl.text}`, candidate.queryFamily);
         const authority = classifyPageAuthority({ url: canonical, title: candidate.title, text: firecrawl.text, provider: candidate.provider, relevanceScore: relevance.score });
         if (relevance.acceptanceDecision !== "accepted_core") {
-          const reason = relevance.acceptanceDecision === "quarantined_context" ? "semantic_adjacent_quarantined" : "semantic_out_of_scope";
+          const reason = "semantic_mismatch";
           reject(reason);
           await audit(args.db, args.runId, candidate, canonical, "rejected", reason, relevance, authority);
+          await updateAdapterMetric(args.db, {
+            runId: args.runId,
+            adapter: candidate.provider,
+            queryFamily: candidate.queryFamily,
+            pagesFetched: 1,
+            failureReason: reason,
+          });
           continue;
         }
         accepted.push(toRetrieved(candidate, canonical, firecrawl.text, "firecrawl", relevance, authority));
+        await updateAdapterMetric(args.db, {
+          runId: args.runId,
+          adapter: candidate.provider,
+          queryFamily: candidate.queryFamily,
+          pagesFetched: 1,
+          evidenceAccepted: 1,
+          independentEvidenceGroupsAdded: 1,
+        });
         await logExternalUsage(args.db, args.runId, "firecrawl", "page_fetch_fallback", "success", started, false, true);
       } else {
-        if (!cached) await writeCache(args.db, canonical, fetched.text, fetched.contentType);
-        const relevance = assessSemanticRelevance(args.brief, `${candidate.title}\n${candidate.snippet}\n${fetched.text}`, candidate.queryFamily);
-        const authority = classifyPageAuthority({ url: canonical, title: candidate.title, text: fetched.text, provider: candidate.provider, relevanceScore: relevance.score });
-        if (relevance.acceptanceDecision !== "accepted_core") {
-          const reason = relevance.acceptanceDecision === "quarantined_context" ? "semantic_adjacent_quarantined" : "semantic_out_of_scope";
-          reject(reason);
-          await audit(args.db, args.runId, candidate, canonical, "rejected", reason, relevance, authority);
+        const fetchedFinalUrl =
+          (fetched as unknown as { finalUrl?: unknown }).finalUrl;
+        const finalCanonical = canonicalizeUrl(
+          typeof fetchedFinalUrl === "string"
+            ? fetchedFinalUrl
+            : canonical,
+        ) || canonical;
+        if (
+          /(?:^|\.)vertexaisearch\.cloud\.google\.com$/i.test(
+            new URL(finalCanonical).hostname,
+          )
+        ) {
+          reject("inaccessible_page");
+          await audit(
+            args.db,
+            args.runId,
+            candidate,
+            finalCanonical,
+            "rejected",
+            "inaccessible_page",
+          );
+          await updateAdapterMetric(args.db, {
+            runId: args.runId,
+            adapter: candidate.provider,
+            queryFamily: candidate.queryFamily,
+            pagesFetched: 1,
+            failureReason: "inaccessible_page",
+          });
           continue;
         }
-        accepted.push(toRetrieved(candidate, canonical, fetched.text, cached ? "retrieval_cache" : "direct_http", relevance, authority));
+        acceptedCanonical = finalCanonical;
+        if (!cached) {
+          await writeCache(
+            args.db,
+            finalCanonical,
+            fetched.text,
+            fetched.contentType,
+          );
+        }
+        const relevance = assessSemanticRelevance(args.brief, `${candidate.title}\n${candidate.snippet}\n${fetched.text}`, candidate.queryFamily);
+        const authority = classifyPageAuthority({ url: finalCanonical, title: candidate.title, text: fetched.text, provider: candidate.provider, relevanceScore: relevance.score });
+        if (relevance.acceptanceDecision !== "accepted_core") {
+          const reason = "semantic_mismatch";
+          reject(reason);
+          await audit(args.db, args.runId, candidate, finalCanonical, "rejected", reason, relevance, authority);
+          await updateAdapterMetric(args.db, {
+            runId: args.runId,
+            adapter: candidate.provider,
+            queryFamily: candidate.queryFamily,
+            pagesFetched: 1,
+            failureReason: reason,
+          });
+          continue;
+        }
+        accepted.push(toRetrieved(candidate, finalCanonical, fetched.text, cached ? "retrieval_cache" : "direct_http", relevance, authority));
+        await updateAdapterMetric(args.db, {
+          runId: args.runId,
+          adapter: candidate.provider,
+          queryFamily: candidate.queryFamily,
+          pagesFetched: 1,
+          evidenceAccepted: 1,
+          independentEvidenceGroupsAdded: 1,
+        });
         await logExternalUsage(args.db, args.runId, cached ? "retrieval_cache" : "direct_http", "page_fetch", "success", started, false, true);
       }
       const latest = accepted.at(-1);
-      if (latest?.canonicalUrl === canonical) {
-        await audit(args.db, args.runId, candidate, canonical, "accepted", null, latest.relevance, latest.authority);
+      if (latest?.canonicalUrl === acceptedCanonical) {
+        await audit(args.db, args.runId, candidate, acceptedCanonical, "accepted", null, latest.relevance, latest.authority);
       }
     } catch (error) {
-      const reason = /timeout/i.test(safeMessage(error)) ? "timeout" : "fetch_error";
+      const reason = /timeout/i.test(safeMessage(error)) ? "timeout" : "inaccessible_page";
       reject(reason);
       await audit(args.db, args.runId, candidate, canonical, "rejected", reason);
       await logExternalUsage(args.db, args.runId, "direct_http", "page_fetch", "failed", started, false, true, reason);
+      await updateAdapterMetric(args.db, {
+        runId: args.runId,
+        adapter: candidate.provider,
+        queryFamily: candidate.queryFamily,
+        pagesFetched: 1,
+        failureReason: reason,
+      });
     }
   }
   return { accepted: deduplicateContent(accepted), rejected, pagesAttempted: chosen.length };
@@ -207,6 +441,18 @@ export async function retrieveCandidates(args: {
   function reject(reason: string) {
     rejected[reason] = (rejected[reason] || 0) + 1;
   }
+}
+
+async function searchPublicDirectories(pack: ResearchPack, fetcher: Fetcher) {
+  const directoryQuery =
+    `(${pack.query.split(/\s+/).slice(0, 10).join(" ")}) (site:yelp.com OR site:thumbtack.com OR site:angi.com OR site:tripadvisor.com OR site:producthunt.com)`;
+  return searchDuckDuckGo({ ...pack, query: directoryQuery }, fetcher).then(
+    (items) => items.map((item) => ({
+      ...item,
+      provider: "public_directory_discovery",
+      score: Math.min(item.score, 58),
+    })),
+  );
 }
 
 async function searchTavily(pack: ResearchPack, fetcher: Fetcher) {
@@ -305,6 +551,54 @@ async function searchHackerNews(pack: ResearchPack, fetcher: Fetcher) {
   });
 }
 
+async function searchReddit(pack: ResearchPack, fetcher: Fetcher) {
+  const cacheKey = pack.query.toLowerCase().replace(/\s+/g, " ").trim();
+  const cached = redditSearchCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.results;
+  const response = await fetcher(
+    `https://www.reddit.com/search.json?sort=relevance&t=all&limit=5&q=${
+      encodeURIComponent(pack.query)
+    }`,
+    {
+      headers: {
+        "User-Agent": "ShouldBuildResearch/1.0 (bounded buyer-voice search)",
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (!response.ok) throw new Error(`Reddit optional ${response.status}`);
+  const body = await response.json() as {
+    data?: {
+      children?: Array<{
+        data?: {
+          title?: string;
+          permalink?: string;
+          selftext?: string;
+        };
+      }>;
+    };
+  };
+  const results = (body.data?.children || []).flatMap((child, index) => {
+    const item = child.data;
+    return item?.permalink
+      ? [{
+        title: item.title || "Reddit discussion",
+        url: `https://www.reddit.com${item.permalink}`,
+        snippet: String(item.selftext || "").slice(0, 600),
+        provider: "reddit_optional",
+        queryFamily: pack.key,
+        score: 67 - index,
+      }]
+      : [];
+  });
+  redditSearchCache.set(cacheKey, {
+    expiresAt: Date.now() + 15 * 60_000,
+    results,
+  });
+  return results;
+}
+
 async function searchGitHub(pack: ResearchPack, fetcher: Fetcher) {
   const query = `${pack.query.split(/\s+/).slice(0, 7).join(" ")} in:name,description`;
   const response = await fetcher(`https://api.github.com/search/repositories?per_page=8&q=${encodeURIComponent(query)}`, {
@@ -333,7 +627,11 @@ async function fetchPage(url: string, fetcher: Fetcher) {
   const contentType = response.headers.get("content-type") || "text/plain";
   if (!/html|text|json|xml|rss|atom/i.test(contentType)) return null;
   const body = (await response.text()).slice(0, 300_000);
-  return { text: extractText(body).slice(0, 12_000), contentType };
+  return {
+    text: extractText(body).slice(0, 12_000),
+    contentType,
+    finalUrl: response.url || url,
+  };
 }
 
 async function fetchWithFirecrawl(url: string, fetcher: Fetcher) {
@@ -438,6 +736,56 @@ export async function logExternalUsage(
   });
 }
 
+async function updateAdapterMetric(
+  db: any,
+  input: {
+    runId: string;
+    adapter: string;
+    queryFamily: string;
+    calls?: number;
+    pagesFound?: number;
+    pagesFetched?: number;
+    evidenceAccepted?: number;
+    independentEvidenceGroupsAdded?: number;
+    failureReason?: string | null;
+    stoppedEarly?: boolean;
+  },
+) {
+  const { data: current } = await db.from("research_adapter_metrics")
+    .select("calls,pages_found,pages_fetched,evidence_accepted,independent_evidence_groups_added")
+    .eq("run_id", input.runId)
+    .eq("adapter", input.adapter)
+    .eq("query_family", input.queryFamily)
+    .maybeSingle();
+  await db.from("research_adapter_metrics").upsert({
+    run_id: input.runId,
+    adapter: input.adapter,
+    query_family: input.queryFamily,
+    calls: Number(current?.calls || 0) + Number(input.calls || 0),
+    pages_found: Number(current?.pages_found || 0) +
+      Number(input.pagesFound || 0),
+    pages_fetched: Number(current?.pages_fetched || 0) +
+      Number(input.pagesFetched || 0),
+    evidence_accepted: Number(current?.evidence_accepted || 0) +
+      Number(input.evidenceAccepted || 0),
+    independent_evidence_groups_added:
+      Number(current?.independent_evidence_groups_added || 0) +
+      Number(input.independentEvidenceGroupsAdded || 0),
+    failure_reason: input.failureReason ?? null,
+    stopped_early: Boolean(input.stoppedEarly),
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "run_id,adapter,query_family" });
+}
+
+function adapterFailureReason(error: unknown) {
+  const message = safeMessage(error);
+  if (/timeout|aborterror/i.test(message)) return "timeout";
+  if (/401|403|auth|unauthor/i.test(message)) return "authentication";
+  if (/429|quota|resource_exhausted/i.test(message)) return "quota";
+  if (/parse|json|syntax/i.test(message)) return "parsing_failure";
+  return "provider_failed";
+}
+
 function toRetrieved(
   candidate: SourceCandidate,
   canonicalUrl: string,
@@ -447,7 +795,9 @@ function toRetrieved(
   authority: PageAuthority,
 ): RetrievedSource {
   const domain = new URL(canonicalUrl).hostname.toLowerCase();
-  const community = candidate.provider === "hacker_news";
+  const community = candidate.provider === "hacker_news" ||
+    candidate.provider === "reddit_optional" ||
+    authority.pageType === "community_discussion";
   const sourceClass: RetrievedSource["sourceClass"] = authority.pageType === "official_pricing"
     ? "commercial"
     : ["official_documentation", "regulatory", "market_research"].includes(authority.pageType)

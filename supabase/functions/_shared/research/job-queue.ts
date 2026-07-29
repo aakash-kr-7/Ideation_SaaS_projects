@@ -166,7 +166,7 @@ export async function completeJob(
 export async function failJob(
   db: SupabaseDb,
   jobId: string,
-  errorClass: "transient" | "permanent" | "budget" | "timeout",
+  errorClass: "transient" | "permanent" | "budget" | "timeout" | "research_unavailable",
   errorMessage: string,
 ): Promise<{ status: string; retried: boolean }> {
   // Gracefully handle cancellation / permanent failures

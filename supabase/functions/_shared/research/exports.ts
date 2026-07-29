@@ -16,6 +16,13 @@ export interface ExportBundleInput {
       weight: number;
       note: string;
       evidenceIds: string[];
+      rawScore?: number;
+      evidenceCoefficient?: number;
+      effectiveScore?: number;
+      evidenceState?: string;
+      supportingEvidenceIds?: string[];
+      confidenceDeductions?: string[];
+      unresolvedGaps?: string[];
     }
   >;
   payload: unknown;
@@ -25,8 +32,10 @@ const csvCell = (value: unknown) =>
   `"${String(value ?? "").replaceAll('"', '""')}"`;
 
 type ReportIntegrityPayload = {
+  version?: string;
+  researchAvailabilityState?: "research_completed" | "insufficient_evidence";
   opportunity?: {
-    evidence?: Array<{ id?: string; title?: string; source?: string; url?: string }>;
+    evidence?: Array<{ id?: string; title?: string; source?: string; url?: string; canonicalDomain?: string; sourceType?: string; evidenceRole?: string; associatedFactorIds?: string[] }>;
   };
   decisionProduct?: {
     headline?: string;
@@ -65,6 +74,30 @@ type ReportIntegrityPayload = {
     finalJudgeEffectiveMismatch?: boolean;
     adversarialDowngrade?: boolean;
     reason?: string | null;
+  };
+  evidenceSufficiency?: {
+    acceptedEvidenceCount?: number;
+    independentEvidenceGroups?: number;
+    independentDomains?: number;
+    sourceFamilyCoverage?: string[];
+    primaryDirectEvidenceCount?: number;
+    supportingEvidenceCount?: number;
+    challengingEvidenceCount?: number;
+    coveredFactors?: string[];
+    assumedFactors?: string[];
+    missingEvidenceFamilies?: string[];
+    sourceConcentration?: number;
+    overallEvidenceConfidence?: string;
+    mostImportantLimitation?: string;
+  };
+  verdictChangeConditions?: {
+    nearestBoundary?: number | null;
+    highestLeverageUncertainFactor?: string;
+    upgradeCondition?: string;
+    downgradeCondition?: string;
+  };
+  researchExecution?: {
+    packStatuses?: Array<{ packKey?: string; status?: string; acceptedEvidenceCount?: number; failureReason?: string | null }>;
   };
 };
 
@@ -167,12 +200,23 @@ export function renderJson(input: ExportBundleInput) {
 }
 export function renderMarkdown(input: ExportBundleInput) {
   const labels = citationLabels(input.payload);
+  const integrity = integrityPayload(input.payload);
+  const sufficiency = integrity.evidenceSufficiency;
+  const change = integrity.verdictChangeConditions;
+  const scorecard = (input.payload as any)?.opportunity?.scorecard;
+  const displayedScore = scorecard?.scoreBand?.display || `${input.total}/100`;
+  const researchState = integrity.researchAvailabilityState === "insufficient_evidence" ? "Insufficient Evidence" : integrity.researchAvailabilityState === "research_completed" ? "Research Completed" : "Legacy report";
+  const packs = integrity.researchExecution?.packStatuses?.map((item) => `- ${(item.packKey || "").replaceAll("_", " ")}: ${(item.status || "").replaceAll("_", " ")} (${item.acceptedEvidenceCount ?? 0} accepted)`).join("\n") || "Not persisted.";
+  const sourceRows = (integrity.opportunity?.evidence || []).map((item) => `| ${item.title || "Untitled source"} | ${item.canonicalDomain || item.source || "Domain unavailable"} | ${item.sourceType || "Unknown"} | ${item.evidenceRole || "Not recorded"} | ${(item.associatedFactorIds || []).join(", ") || "None"} | ${item.url || "Unavailable"} |`).join("\n");
   const rows = input.breakdowns.map((b) =>
-    `| ${b.criterion} | ${b.score} | ${b.weight} | ${
+    `| ${b.criterion} | ${b.rawScore ?? b.score} | ${b.evidenceCoefficient ?? "Legacy"} | ${b.effectiveScore ?? b.score} | ${b.evidenceState ?? "Legacy"} | ${b.weight} | ${
       humanCitations(b.evidenceIds, labels, "None")
-    } |`
+    } | ${(b.confidenceDeductions || []).join("; ") || "None"} | ${(b.unresolvedGaps || []).join("; ") || "None"} |`
   ).join("\n");
-  return `# ${input.ideaName}\n\n**Run ID:** ${input.runId}  \n**Score:** ${input.total}/100  \n**Verdict:** ${input.verdict}  \n**Confidence:** ${input.confidence}/100\n\n## Executive summary\n\n${input.executiveSummary}\n\n${decisionProductMarkdown(input.payload)}\n\n## Score breakdown\n\n| Criterion | Score | Weight | Evidence |\n|---|---:|---:|---|\n${rows}\n\n## Methodology\n\n${input.methodology}\n\n${
+  const sufficiencyMarkdown = sufficiency
+    ? `## Evidence Sufficiency\n\n- Accepted evidence: ${sufficiency.acceptedEvidenceCount}\n- Independent evidence groups: ${sufficiency.independentEvidenceGroups}\n- Independent domains: ${sufficiency.independentDomains}\n- Source-family coverage: ${(sufficiency.sourceFamilyCoverage || []).join(", ") || "None"}\n- Primary/direct evidence: ${sufficiency.primaryDirectEvidenceCount}\n- Supporting / challenging: ${sufficiency.supportingEvidenceCount} / ${sufficiency.challengingEvidenceCount}\n- Covered factors: ${(sufficiency.coveredFactors || []).join(", ") || "None"}\n- Assumed factors: ${(sufficiency.assumedFactors || []).join(", ") || "None"}\n- Missing evidence families: ${(sufficiency.missingEvidenceFamilies || []).join(", ") || "None"}\n- Source concentration: ${Math.round(Number(sufficiency.sourceConcentration || 0) * 100)}%\n- Overall Evidence Confidence: ${sufficiency.overallEvidenceConfidence}\n- Main limitation: ${sufficiency.mostImportantLimitation}\n${change ? `- Upgrade condition: ${change.upgradeCondition}\n- Downgrade condition: ${change.downgradeCondition}\n` : ""}`
+    : "## Evidence Sufficiency\n\nLegacy report — factor-level sufficiency was not persisted.\n\n";
+  return `# ${input.ideaName}\n\n**Run ID:** ${input.runId}  \n**Report version:** ${integrity.version || "Not recorded"}  \n**Research availability:** ${researchState}  \n**Displayed score:** ${displayedScore}  \n**Exact internal score:** ${input.total}/100  \n**Verdict:** ${input.verdict}  \n**Confidence:** ${input.confidence}/100\n\n${sufficiencyMarkdown}\n### Research packs\n\n${packs}\n\n## Executive summary\n\n${input.executiveSummary}\n\n${decisionProductMarkdown(input.payload)}\n\n## Score breakdown\n\n| Criterion | Raw score | Evidence coefficient | Effective score | Evidence state | Weight | Evidence | Confidence deductions | Unresolved gaps |\n|---|---:|---:|---:|---|---:|---|---|---|\n${rows}\n\n## Sources and citations\n\n| Title | Canonical domain | Type | Role | Linked factors | Link |\n|---|---|---|---|---|---|\n${sourceRows || "| No persisted source | — | — | — | — | — |"}\n\n## Methodology\n\n${input.methodology}\n\n${
     integrityMarkdown(input.payload)
   }\n`;
 }
@@ -182,10 +226,15 @@ export function renderCsv(input: ExportBundleInput) {
     "run_id",
     "idea_name",
     "total",
+    "displayed_score",
     "verdict",
     "confidence",
     "criterion",
     "factor_score",
+    "raw_factor_score",
+    "evidence_coefficient",
+    "effective_factor_score",
+    "evidence_state",
     "weight",
     "evidence_ids",
     "note",
@@ -196,6 +245,11 @@ export function renderCsv(input: ExportBundleInput) {
     "decision_product_json",
     "evidence_json",
     "chart_catalog_json",
+    "evidence_sufficiency_json",
+    "verdict_change_conditions_json",
+    "report_version",
+    "research_availability_state",
+    "research_pack_statuses_json",
   ].map(csvCell).join(",");
   const rows = input.breakdowns.length ? input.breakdowns : [{
     criterion: "",
@@ -211,10 +265,15 @@ export function renderCsv(input: ExportBundleInput) {
         input.runId,
         input.ideaName,
         input.total,
+        (input.payload as any)?.opportunity?.scorecard?.scoreBand?.display || `${input.total}/100`,
         input.verdict,
         input.confidence,
         b.criterion,
         b.score,
+        b.rawScore ?? b.score,
+        b.evidenceCoefficient ?? "",
+        b.effectiveScore ?? b.score,
+        b.evidenceState ?? "Legacy",
         b.weight,
         b.evidenceIds.join("|"),
         b.note,
@@ -225,6 +284,11 @@ export function renderCsv(input: ExportBundleInput) {
         JSON.stringify(integrity.decisionProduct || null),
         JSON.stringify((input.payload as any)?.opportunity?.evidence || []),
         JSON.stringify(integrity.decisionProduct?.charts || []),
+        JSON.stringify(integrity.evidenceSufficiency || null),
+        JSON.stringify(integrity.verdictChangeConditions || null),
+        integrity.version || "",
+        integrity.researchAvailabilityState || "legacy",
+        JSON.stringify(integrity.researchExecution?.packStatuses || []),
       ].map(csvCell).join(",")
     ),
   ].join("\r\n")}`;

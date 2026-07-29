@@ -112,7 +112,7 @@ Deno.test("provider-mocked hybrid discovery retrieves and audits real-shaped sou
     fetcher: mockedFetch,
   });
   assert(
-    discovery.externalSearchCalls === 20,
+    discovery.externalSearchCalls === 9,
     `unexpected provider count ${discovery.externalSearchCalls}`,
   );
   assert(discovery.candidates.length >= 3, "candidate discovery was empty");
@@ -178,4 +178,38 @@ Deno.test("a synthesis miss materializes only exact semantically accepted catalo
     "fallback evidence was not an exact retrieved excerpt",
   );
   assert(claims[0].numericValue === "", "fallback invented a numeric claim");
+});
+
+Deno.test("consumer and local fallback uses bounded directories and stops zero-yield adapters", async () => {
+  const db = new FakeDb();
+  const run = {
+    idea_name: "Apartment AC Rescue",
+    idea_description:
+      "A local service matching apartment renters with same-day air-conditioning repair providers.",
+    target_customer: "Apartment renters and local home-service buyers",
+    target_region: "India",
+  };
+  const brief = buildCanonicalResearchBrief(run);
+  const packs = buildResearchPacks(run, "quick_scan", brief);
+  const emptySearch: typeof fetch = async (input) => {
+    const url = String(input);
+    if (url.includes("duckduckgo.com")) {
+      return new Response("<html><body>No matching result links</body></html>", {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      });
+    }
+    throw new Error(`Unexpected adapter call: ${url}`);
+  };
+  const discovery = await discoverCandidates({
+    runId: crypto.randomUUID(),
+    packs,
+    db,
+    technical: false,
+    fetcher: emptySearch,
+  });
+  const usage = (db.rows.api_usage_logs || []) as Array<{ provider?: string }>;
+  assert(discovery.externalSearchCalls === 2, `zero-yield adapters were repeated ${discovery.externalSearchCalls} times`);
+  assert(usage.some((row) => row.provider === "public_directory_discovery"), "local directory discovery did not run");
+  assert(!usage.some((row) => row.provider === "hacker_news" || row.provider === "github"), "technical adapters ran for a local-service idea");
 });

@@ -29,7 +29,7 @@ const many = async (table, select = "*", order = "created_at") => {
 
 const run = await one("research_runs");
 if (run.status !== "Completed") throw new Error(`Run is ${run.status}, not Completed.`);
-const [jobs, stages, metrics, usage, sources, evidence, confidence, retrievalAudit, reservation, ledger, graphNodes, graphEdges, specialists, researchBrief, contradictions, numericClaims] = await Promise.all([
+const [jobs, stages, metrics, usage, sources, evidence, confidence, retrievalAudit, reservation, ledger, graphNodes, graphEdges, specialists, researchBrief, contradictions, numericClaims, researchCalls, pricingObservations] = await Promise.all([
   many("research_jobs"),
   many("research_stages"),
   one("research_pipeline_metrics"),
@@ -46,6 +46,8 @@ const [jobs, stages, metrics, usage, sources, evidence, confidence, retrievalAud
   one("research_briefs"),
   many("evidence_contradictions"),
   many("numeric_claim_validations"),
+  many("research_call_metrics"),
+  many("validated_pricing_observations"),
 ]);
 const { data: opportunity, error: opportunityError } = await db.from("opportunities")
   .select("*,opportunity_scores(*,score_breakdowns(*,score_evidence_refs(*))),competitors(*),pricing_models(*),risks(*)")
@@ -241,6 +243,8 @@ await Promise.all([
   save("research-brief.json", researchBrief),
   save("contradictions.json", contradictions),
   save("numeric-claims.json", numericClaims),
+  save("research-call-metrics.json", researchCalls),
+  save("validated-pricing-observations.json", pricingObservations),
   save("score.json", opportunity),
   save("report.json", report),
   save("charts.json", charts),

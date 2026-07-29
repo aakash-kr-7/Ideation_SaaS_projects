@@ -27,6 +27,7 @@ const COLORS = {
 type PdfEvidence = {
   id?: string;
   source?: string;
+  canonicalDomain?: string;
   sourceType?: string;
   title?: string;
   snippet?: string;
@@ -56,6 +57,7 @@ type PdfPass = {
 };
 
 type PdfPayload = {
+  researchAvailabilityState?: "research_completed" | "insufficient_evidence";
   generatedAt?: string;
   executiveSummary?: string;
   methodology?: string;
@@ -72,6 +74,7 @@ type PdfPayload = {
       verdict?: string;
       deterministicVerdict?: string;
       decisionStatus?: string;
+      scoreBand?: { minimum?: number; maximum?: number; label?: string; display?: string };
     };
   };
   retrieval?: {
@@ -116,6 +119,22 @@ type PdfPayload = {
     specialistOutputs?: Array<{ name?: string; keyFindings?: string[]; evidenceIds?: string[]; opposingEvidenceIds?: string[]; confidence?: string; relevantBriefDimensions?: string[]; unresolvedGaps?: string[]; decisionImplication?: string }>;
     charts?: Array<{ title?: string; sourceData?: unknown; evidenceIds?: string[]; sourceExplanation?: string; unavailable?: boolean }>;
   };
+  evidenceSufficiency?: {
+    acceptedEvidenceCount?: number;
+    independentEvidenceGroups?: number;
+    independentDomains?: number;
+    primaryDirectEvidenceCount?: number;
+    assumedFactors?: string[];
+    overallEvidenceConfidence?: string;
+    mostImportantLimitation?: string;
+  };
+  verdictChangeConditions?: {
+    upgradeCondition?: string;
+    downgradeCondition?: string;
+  };
+  researchExecution?: {
+    packStatuses?: Array<{ packKey?: string; status?: string }>;
+  };
 };
 
 type CitationLabels = Map<string, string>;
@@ -123,7 +142,7 @@ type CitationLabels = Map<string, string>;
 function citationLabels(evidence: PdfEvidence[]): CitationLabels {
   return new Map(evidence.map((item, index) => [
     item.id || `missing-${index}`,
-    `[S${index + 1}] ${truncate(item.source || item.title || "Persisted source", 42)}`,
+    `[S${index + 1}] ${truncate(item.canonicalDomain || item.source || item.title || "Persisted source", 42)}`,
   ]));
 }
 
@@ -366,7 +385,7 @@ function buildCover(
   input: ExportBundleInput,
   payload: PdfPayload,
   evidence: PdfEvidence[],
-  passes: PdfPass[],
+  _passes: PdfPass[],
 ) {
   const page = new PdfPage(COLORS.midnight);
   const reportName = input.reportMode === "quick_scan" ? "QUICK SCAN" : "FULL VALIDATION";
@@ -406,8 +425,11 @@ function buildCover(
     0.32,
     0.39,
   ], 10);
-  page.text(String(input.total), MARGIN + 28, 294, 38, "F2", COLORS.white);
-  page.text("/ 100", MARGIN + 116, 313, 10, "F1", [0.57, 0.68, 0.74]);
+  const scoreBand = payload.opportunity?.scorecard?.scoreBand;
+  const showExact = !scoreBand || scoreBand.label === "High Evidence Confidence";
+  const coverScore = showExact ? String(input.total) : `${scoreBand.minimum}-${scoreBand.maximum}`;
+  page.text(coverScore, MARGIN + 28, 294, showExact ? 38 : 30, "F2", COLORS.white);
+  if (showExact) page.text("/ 100", MARGIN + 116, 313, 10, "F1", [0.57, 0.68, 0.74]);
   page.text("DETERMINISTIC SCORE", MARGIN + 28, 349, 6.5, "F2", [
     0.49,
     0.77,
@@ -433,7 +455,40 @@ function buildCover(
     challenged ? [0.28, 0.22, 0.12] : [0.05, 0.25, 0.26],
   );
 
-  page.text("EXECUTIVE READOUT", MARGIN + 8, 426, 7, "F2", [0.49, 0.77, 0.73]);
+  const sufficiency = payload.evidenceSufficiency;
+  page.text(
+    `EVIDENCE SUFFICIENCY / ${sufficiency?.overallEvidenceConfidence || "LEGACY"}`,
+    MARGIN + 8,
+    397,
+    7,
+    "F2",
+    [0.49, 0.77, 0.73],
+  );
+  page.text(
+    payload.researchAvailabilityState === "insufficient_evidence"
+      ? "INSUFFICIENT EVIDENCE"
+      : payload.researchAvailabilityState === "research_completed"
+      ? "RESEARCH COMPLETED"
+      : "LEGACY REPORT",
+    PAGE_WIDTH - MARGIN - 108,
+    397,
+    6.5,
+    "F2",
+    [0.72, 0.79, 0.83],
+  );
+  page.wrappedText(
+    sufficiency?.mostImportantLimitation ||
+      "Legacy report — factor-level sufficiency was not persisted.",
+    MARGIN + 8,
+    411,
+    500,
+    8,
+    11,
+    "F1",
+    [0.72, 0.79, 0.83],
+    2,
+  );
+  page.text("EXECUTIVE READOUT", MARGIN + 8, 442, 7, "F2", [0.49, 0.77, 0.73]);
   page.wrappedText(input.executiveSummary, MARGIN + 8, 449, 500, 13, 19, "F1", [
     0.88,
     0.91,
@@ -452,15 +507,19 @@ function buildCover(
       String(evidence.filter((item) => !item.excluded).length),
       "usable evidence rows",
     ],
-    [String(tierOneTwo), "Tier 1 / 2 signals"],
-    [String(maxCorroboration), "max independent corroboration"],
-    [String(passes.length), "recorded research passes"],
+    [String(sufficiency?.independentEvidenceGroups ?? maxCorroboration), "independent evidence groups"],
+    [String(sufficiency?.independentDomains ?? tierOneTwo), "independent domains"],
+    [String(sufficiency?.assumedFactors?.length ?? 0), "assumed factors"],
   ];
   metrics.forEach(([value, caption], index) => {
     const x = MARGIN + 8 + index * 128;
     page.text(value, x, 622, 18, "F2", COLORS.white);
     page.wrappedText(caption, x, 647, 104, 6.8, 9, "F1", [0.55, 0.66, 0.72], 2);
   });
+  const packSummary = payload.researchExecution?.packStatuses?.map((item) =>
+    `${label(item.packKey || "pack")}: ${label(item.status || "not recorded")}`
+  ).join(" / ");
+  if (packSummary) page.wrappedText(`RESEARCH PACKS / ${packSummary}`, MARGIN + 8, 677, 500, 6.2, 8, "F1", [0.55, 0.66, 0.72], 2);
   page.line(MARGIN + 8, 697, PAGE_WIDTH - MARGIN, 697, [0.12, 0.29, 0.36]);
   page.text(`Report reference ${input.runId.slice(0, 8).toUpperCase()}`, MARGIN + 8, 715, 7, "F1", [0.49, 0.61, 0.68]);
   page.text(
@@ -474,13 +533,15 @@ function buildCover(
   return page;
 }
 
-function buildScorecard(input: ExportBundleInput, evidence: PdfEvidence[]) {
+function buildScorecard(input: ExportBundleInput, payload: PdfPayload, evidence: PdfEvidence[]) {
   const page = new PdfPage();
   addRunningHeader(page, "Decision", "The opportunity, measured");
 
   page.rect(MARGIN, 125, 154, 116, COLORS.navy, undefined, 10);
-  page.text(String(input.total), MARGIN + 18, 142, 39, "F2", COLORS.white);
-  page.text("/ 100", MARGIN + 111, 164, 9, "F1", [0.7, 0.77, 0.81]);
+  const scoreBand = payload.opportunity?.scorecard?.scoreBand;
+  const scoreDisplay = scoreBand && scoreBand.label !== "High Evidence Confidence" ? `${scoreBand.minimum}-${scoreBand.maximum}` : String(input.total);
+  page.text(String(scoreDisplay), MARGIN + 18, 142, scoreBand && scoreBand.label !== "High Evidence Confidence" ? 16 : 39, "F2", COLORS.white);
+  if (!scoreBand || scoreBand.label === "High Evidence Confidence") page.text("/ 100", MARGIN + 111, 164, 9, "F1", [0.7, 0.77, 0.81]);
   page.text(input.verdict, MARGIN + 18, 195, 12, "F2", [0.55, 0.84, 0.8]);
   page.text(`${input.confidence}% scoring confidence`, MARGIN + 18, 217, 7.5, "F1", [
     0.67,
@@ -517,11 +578,11 @@ function buildScorecard(input: ExportBundleInput, evidence: PdfEvidence[]) {
       272,
       y + 2,
       238,
-      factor.score,
+      factor.effectiveScore ?? factor.score,
       factor.score < 40 ? COLORS.amber : COLORS.teal,
     );
     page.text(
-      String(Math.round(factor.score * 10) / 10),
+      `${Math.round((factor.effectiveScore ?? factor.score) * 10) / 10} ${factor.evidenceState || "Legacy"}`,
       520,
       y - 1,
       7.5,
@@ -664,7 +725,7 @@ function buildEvidencePages(evidence: PdfEvidence[], labels: CitationLabels) {
       );
       page.text(
         `Source: ${
-          truncate(item.source || item.url || "Persisted source", 66)
+          truncate(item.canonicalDomain || item.source || item.url || "Persisted source", 66)
         }`,
         MARGIN + 16,
         top + 84,
@@ -1115,7 +1176,7 @@ function buildAppendixPages(input: ExportBundleInput, evidence: PdfEvidence[], l
   evidence.forEach((item) => {
     entries.push({
       heading: `${labels.get(item.id || "") || "Citation unresolved"} / ${
-        item.source || item.sourceType || "Persisted source"
+        item.canonicalDomain || item.source || item.sourceType || "Persisted source"
       }`,
       body: item.url || item.snippet ||
         "No source URL was present in the report snapshot.",
@@ -1250,7 +1311,7 @@ export function renderPremiumPdf(input: ExportBundleInput): Uint8Array {
   const passes = payload.retrieval?.passes || [];
   const pages = [
     buildCover(input, payload, evidence, passes),
-    buildScorecard(input, evidence),
+    buildScorecard(input, payload, evidence),
     ...buildDecisionDossierPages(payload, labels),
     ...buildExperimentPages(payload),
     ...buildSpecialistPages(payload, labels),
