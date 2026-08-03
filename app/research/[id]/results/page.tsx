@@ -15,7 +15,7 @@ export default async function DynamicResultsPage({ params }: { params: Promise<{
     if (loaded.state === "pending") {
       return (
         <AppShell title="Validation report">
-          <div className="page-content">
+          <div className="px-sb-5 py-sb-8 sm:px-sb-8 sm:py-sb-10">
             <ReportRetryState reason={loaded.reason} />
           </div>
         </AppShell>
@@ -24,7 +24,7 @@ export default async function DynamicResultsPage({ params }: { params: Promise<{
 
     return (
       <AppShell title="Validation report">
-        <div className="page-content">
+        <div className="px-sb-5 py-sb-8 sm:px-sb-8 sm:py-sb-10">
           <ValidationReport report={loaded.value.report} runId={id} chartDatasets={loaded.value.chartDatasets} />
         </div>
       </AppShell>

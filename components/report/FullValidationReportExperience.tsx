@@ -1,132 +1,397 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, CheckCircle2, Download, ExternalLink, FileJson, FileSpreadsheet, FileText, RotateCcw, ShieldAlert } from "lucide-react";
+import { Circle, Download, ExternalLink } from "lucide-react";
 import type { ValidationReport } from "@/lib/report-schema";
-import type { ReportChartDataset } from "./ReportCharts";
-import { ReportCharts } from "./ReportCharts";
 import { downloadExport, reportToCsv, reportToMarkdown } from "@/lib/report-export";
+import { scoringCriteria } from "@/lib/scoring";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EvidenceBadge, type EvidenceTier } from "@/components/ui/evidence-badge";
+import {
+  Fulcrum,
+  type FulcrumEvidenceChip,
+} from "@/components/ui/fulcrum";
+import { ScoreDisplay } from "@/components/ui/score-display";
+import { StaggerGroup, useFirstSessionMotion } from "@/components/ui/session-stagger";
+import { Toast } from "@/components/ui/toast";
+import { VerdictBadge } from "@/components/ui/verdict-badge";
+import { EmptyState } from "@/components/ui/state-message";
+import { FactorEvidenceList, ReportCharts, type FactorAnalysisItem, type ReportChartDataset } from "./ReportCharts";
 import { LivingReportControls } from "./LivingReportControls";
 
-type Props = { report: ValidationReport; scorecard?: ValidationReport["opportunity"]["scorecard"]; publicMode?: boolean; runId?: string; chartDatasets?: ReportChartDataset[] };
+type Props = {
+  report: ValidationReport;
+  scorecard?: ValidationReport["opportunity"]["scorecard"];
+  publicMode?: boolean;
+  previewMode?: boolean;
+  runId?: string;
+  chartDatasets?: ReportChartDataset[];
+};
+
 type Decision = {
   scoreContract?: { name: string; meaning: string; doesNotMean: string; method: string };
-  rollups?: Array<{ key: string; label: string; score: number; factors: string[] }>;
-  evidenceConfidence?: { label: string; band: string; score: number; independentEvidenceGroups: number; separateFromReadinessScore: boolean };
-  scoreChange?: { question: string; answer: string; materialUpwardEvidence: string; materialDownwardEvidence: string; strongestKillCondition: string; highestLeverageUnresolvedAssumption: string; currentScore: number; targetScore: number };
-  decisionContract?: { interpretedBrief?: string | null };
-  verificationCard?: Record<string, unknown>;
-  factorAnalysis?: Array<{ criterion: string; rawScore: number; effectiveScore: number; evidenceCoefficient: number; evidenceState: string; supportingEvidenceIds: string[]; challengingEvidenceIds: string[]; buyerSegmentApplicability: string[]; unresolvedAssumptions: string[]; scoreSensitivity: { lower: number; current: number; upper: number; explanation: string } }>;
-  segmentRankings?: Array<{ segment: string; score: number; evidenceStrength: number; independentEvidenceGroups: number; metrics: Record<string, number>; evidenceIds: string[]; rankReason: string }>;
-  recommendedSegment?: string | null;
-  alternativeMap?: Array<{ id: string; name: string; classification: string; verified: boolean; targetSegment: string | null; positioning: string | null; verifiedPricing: string | null; strengths: string[]; recurringComplaints: string[]; switchingImplications: string[]; differentiationGap: string | null; evidenceIds: string[] }>;
-  economicsScenarios?: Array<{ name: string; price: number | null; currency: string | null; customersRequired: number | null; acquisitionCost: number | null; grossMarginRange: [number, number] | null; breakEvenCustomers: number | null; supportBurden: string; assumptions: string[]; evidenceSourceIds: string[] }>;
-  adversarialGate?: { verdict: string; lowered: boolean; blocked: boolean; checks: Record<string, string>; reasons: string[] };
-  verdictStructure?: { verdict: string; score: number; scoreRange: string; evidenceConfidence: string; strongestSupportingEvidenceId: string | null; strongestChallengingEvidenceId: string | null; strongestAssumption: string; recommendedTargetSegment: string | null; recommendedProductWedge: string | null; upgradeCondition: string; downgradeCondition: string; killCondition: string };
-  founderActionPlan?: { highestValueHypothesis: string; targetBuyer: string; recruitmentChannel: string; sampleSize: number; testMethod: string; durationDays: number; successThreshold: string; failureThreshold: string; maximumBudget: { amount: number; currency: string; assumption: boolean }; decisionUnlocked: string; days: Array<{ days: string; priority: number; action: string }> };
+  evidenceConfidence?: { band: string };
+  scoreChange?: {
+    question: string;
+    answer: string;
+    materialUpwardEvidence: string;
+    materialDownwardEvidence: string;
+    strongestKillCondition: string;
+    highestLeverageUnresolvedAssumption: string;
+    currentScore: number;
+    targetScore: number;
+  };
+  factorAnalysis?: FactorAnalysisItem[];
+  verdictStructure?: {
+    verdict: string;
+    score: number;
+    scoreRange: string;
+    evidenceConfidence: string;
+    strongestSupportingEvidenceId: string | null;
+    strongestChallengingEvidenceId: string | null;
+    strongestAssumption: string;
+    recommendedTargetSegment: string | null;
+    recommendedProductWedge: string | null;
+    upgradeCondition: string;
+    downgradeCondition: string;
+    killCondition: string;
+  };
+  founderActionPlan?: {
+    highestValueHypothesis: string;
+    targetBuyer: string;
+    recruitmentChannel: string;
+    sampleSize: number;
+    testMethod: string;
+    durationDays: number;
+    successThreshold: string;
+    failureThreshold: string;
+    maximumBudget: { amount: number; currency: string; assumption: boolean };
+    decisionUnlocked: string;
+    days: Array<{ days: string; priority: number; action: string }>;
+  };
 };
 
-const packLabels: Record<string, string> = {
-  buyer_problem: "Buyer, frequency and severity", alternatives_competitors: "Alternatives and positioning", pricing_wtp: "Pricing and willingness to pay",
-  reachability_acquisition: "Reachability and acquisition", feasibility_operations: "Product and operational feasibility", adversarial_failure: "Adversarial evidence",
-  regulatory_legal: "Regulatory or legal", technical_feasibility: "Technical feasibility", marketplace_liquidity: "Marketplace liquidity",
-  geographic_differences: "Geographic differences", segment_disagreement: "Segment disagreement", source_concentration: "Source concentration repair",
-  contradiction_repair: "Contradiction repair", coverage_repair: "Coverage repair",
+type Evidence = ValidationReport["opportunity"]["evidence"][number];
+type AdversarialReportView = {
+  adversarialInvestigation?: {
+    propositions: Array<{ supportingEvidenceIds: string[]; challengingEvidenceIds: string[] }>;
+  };
 };
-const statusLabels: Record<string, string> = { completed: "Completed", completed_no_evidence: "Completed with no accepted evidence", provider_failed: "Unavailable", unavailable: "Unavailable", quota_blocked: "Quota blocked", timed_out: "Timed out", skipped: "Not required" };
-const human = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-const domain = (url: string, fallback: string) => { try { const host = new URL(url).hostname.replace(/^www\./, ""); return host === "vertexaisearch.cloud.google.com" ? fallback.replace(/^www\./, "") : host; } catch { return fallback || "Domain unavailable"; } };
-const reportSections = ["Executive decision","Evidence sufficiency","Recommended buyer and wedge","Problem and behavioural demand","Alternatives and competition","Pricing and willingness to pay","Buyer reachability and acquisition","Product and operational feasibility","Risks and adversarial findings","Scenario economics","Twelve-factor analysis","Validation plan","Evidence ledger and methodology"];
 
-export function FullValidationReportExperience({ report, scorecard, publicMode = false, runId, chartDatasets }: Props) {
-  const [toast, setToast] = useState("");
-  const decision = report.fullValidationDecision as Decision;
-  const o = { ...report.opportunity, scorecard: scorecard ?? report.opportunity.scorecard };
-  const verdict = decision.verdictStructure;
-  const evidenceById = new Map(o.evidence.map((item) => [item.id, item]));
-  const reason = (id: string | null | undefined) => id ? evidenceById.get(id) : undefined;
-  const support = reason(verdict?.strongestSupportingEvidenceId);
-  const challenge = reason(verdict?.strongestChallengingEvidenceId);
-  const reportDate = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(report.generatedAt));
-  const exportFile = async (format: "md" | "json" | "csv" | "pdf") => {
-    const payload = { ...report, opportunity: o };
-    if (!publicMode && runId) {
-      const response = await fetch(`/api/research/${runId}/export`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ format }) });
-      if (!response.ok) { setToast("This immutable export is unavailable."); return; }
-      const blob = await response.blob(); const disposition = response.headers.get("Content-Disposition") ?? "";
-      downloadExport(disposition.match(/filename="([^"]+)"/)?.[1] ?? `${o.name}-report.${format}`, blob, blob.type);
-    } else if (format === "pdf") window.print();
-    else if (format === "md") downloadExport(`${o.name}-report.md`, reportToMarkdown(payload), "text/markdown");
-    else if (format === "json") downloadExport(`${o.name}-report.json`, JSON.stringify(payload, null, 2), "application/json");
-    else downloadExport(`${o.name}-report.csv`, reportToCsv(payload), "text/csv");
-    setToast(`${format.toUpperCase()} export prepared from report version ${report.version}.`);
-  };
-  const packs = report.researchExecution?.packStatuses ?? [];
-  const section = (id: string, eyebrow: string, title: string, body: React.ReactNode) => <section id={id} className="fv-section"><header><span>{eyebrow}</span><h2>{title}</h2></header>{body}</section>;
-  const citations = (ids: readonly string[]) => {
-    const grouped = new Map<string, typeof o.evidence>();
-    ids.map(id => evidenceById.get(id)).filter(Boolean).forEach(item => { const e = item!; const key = e.canonicalDomain || domain(e.url, e.source); grouped.set(key, [...(grouped.get(key) ?? []), e]); });
-    return grouped.size ? <div className="fv-citations">{[...grouped].map(([key, items]) => <span key={key}><b>{key}</b>{items.map((e, i) => <a key={e.id} href={e.url} target="_blank" rel="noreferrer" aria-label={`Open ${e.title}`}>{i + 1}<ExternalLink size={10}/></a>)}</span>)}</div> : <small>No accepted citation linked.</small>;
-  };
-  const conclusion = (title: string, ids: string[], assumptions: string[] = [], segments: string[] = []) => <article className="fv-conclusion"><div><span>{title}</span><b>{ids.length ? "Evidence linked" : "Unresolved"}</b></div>{citations(ids)}{!!assumptions.length && <p><strong>Assumptions:</strong> {assumptions.join(" ")}</p>}{!!segments.length && <p><strong>Applies to:</strong> {segments.join(", ")}</p>}</article>;
-
-  return <main className="validation-report full-validation-report report-dossier">
-    {toast && <div className="report-toast" role="status">{toast}</div>}
-    <div className="fv-document-bar">
-      <div>
-        <span>ShouldBuild / Decision dossier</span>
-        <b>Immutable report {report.version}</b>
-        <small>{reportDate} · {o.evidence.filter(item => !item.excluded).length} accepted evidence records</small>
-      </div>
-      <div className="fv-document-actions" aria-label="Report exports">
-        <button type="button" onClick={() => exportFile("pdf")}><FileText size={14}/><span>Export PDF</span></button>
-        <button type="button" onClick={() => exportFile("md")}><FileSpreadsheet size={14}/><span>Markdown</span></button>
-        <button type="button" onClick={() => exportFile("json")}><FileJson size={14}/><span>JSON</span></button>
-      </div>
-    </div>
-    <header className="fv-decision-hero">
-      <div className="fv-hero-copy">
-        <p className="eyebrow">The decision, before the sunk cost</p>
-        <h1>{o.name}</h1>
-        <p>{o.oneLiner}</p>
-      </div>
-      <aside className="fv-decision-stamp" aria-label="Decision outcome">
-        <span>{decision.scoreContract?.name ?? "ShouldBuild Readiness Score"}</span>
-        <strong>{verdict?.verdict ?? o.scorecard.verdict}</strong>
-        <b>{verdict?.scoreRange ?? o.scorecard.scoreBand?.display ?? `${o.scorecard.total}/100`}</b>
-        <small>{verdict?.evidenceConfidence ?? report.evidenceSufficiency?.overallEvidenceConfidence ?? "Not persisted"} evidence confidence</small>
-      </aside>
-      <dl className="fv-decision-facts">
-        <div><dt>Who to win first</dt><dd>{verdict?.recommendedTargetSegment ?? "Not supported yet"}</dd></div>
-        <div><dt>What to earn the right to build</dt><dd>{verdict?.recommendedProductWedge ?? "Not supported yet"}</dd></div>
-      </dl>
-      <div className="fv-case-split">
-        <article><span>Case for the opportunity</span><p>{support?.snippet ?? "No accepted supporting evidence resolved."}</p></article>
-        <article><span>Pressure against the opportunity</span><p>{challenge?.snippet ?? "No accepted challenging evidence resolved."}</p></article>
-      </div>
-      <div className="fv-conditions"><article><CheckCircle2/><span>Evidence that materially raises readiness</span><p>{decision.scoreChange?.materialUpwardEvidence ?? verdict?.upgradeCondition}</p></article><article><AlertTriangle/><span>Evidence that materially lowers readiness</span><p>{decision.scoreChange?.materialDownwardEvidence ?? verdict?.downgradeCondition}</p></article><article><ShieldAlert/><span>Strongest kill condition</span><p>{decision.scoreChange?.strongestKillCondition ?? verdict?.killCondition}</p></article></div>
-    </header>
-    <nav className="fv-nav" aria-label="Report sections">{reportSections.map((label, i) => <a key={label} href={`#fv-${i+1}`}><span>{String(i + 1).padStart(2, "0")}</span>{label}</a>)}</nav>
-
-    {section("fv-1","01 · Decision","Executive decision", <><p className="fv-lead">{report.executiveSummary}</p>{decision.decisionContract?.interpretedBrief && <article className="fv-conclusion"><div><span>Confirmed decision brief</span><b>Founder confirmed</b></div><p>{decision.decisionContract.interpretedBrief}</p></article>}<article className="fv-conclusion"><div><span>{decision.scoreContract?.name ?? "ShouldBuild Readiness Score"}</span><b>Decision readiness, not predicted success</b></div><p>{decision.scoreContract?.meaning ?? "An evidence-based measure of decision readiness."}</p><p><strong>It does not mean:</strong> {decision.scoreContract?.doesNotMean ?? "It is not a probability of success."}</p></article><div className="fv-gate">{Object.entries(decision.adversarialGate?.checks ?? {}).map(([key,value]) => <span key={key} data-state={value}>{human(key)}: {human(value)}</span>)}</div></>)}
-    {section("fv-2","02 · Coverage","Evidence Sufficiency", <><div className="fv-metrics"><b>{report.evidenceSufficiency?.acceptedEvidenceCount ?? 0}<span>Accepted findings</span></b><b>{report.evidenceSufficiency?.independentEvidenceGroups ?? 0}<span>Independent groups</span></b><b>{report.evidenceSufficiency?.primaryDirectEvidenceCount ?? 0}<span>Direct or official</span></b><b>{Math.round((report.evidenceSufficiency?.sourceConcentration ?? 0)*100)}%<span>Source concentration</span></b></div><div className="fv-pack-grid">{packs.map(pack => { const unavailable = ["provider_failed","unavailable","quota_blocked","timed_out"].includes(pack.status ?? ""); return <article key={pack.packKey} data-state={pack.status}><span>{packLabels[pack.packKey ?? ""] ?? human(pack.packKey ?? "Research pack")}</span><b>{statusLabels[pack.status ?? ""] ?? human(pack.status ?? "Not required")}</b><small>{pack.acceptedEvidenceCount ?? 0} accepted</small>{unavailable && <button onClick={() => location.reload()}><RotateCcw size={13}/>Retry research</button>}</article>})}</div></>)}
-    {section("fv-3","03 · Focus","Recommended buyer and wedge", <><div className="fv-segments">{decision.segmentRankings?.map((s,i) => <article key={s.segment}><span>#{i+1}</span><h3>{s.segment}</h3><b>{s.score.toFixed(1)}</b><p>{s.rankReason}</p><small>{s.independentEvidenceGroups} independent groups · {Math.round(s.evidenceStrength*100)}% evidence strength</small></article>)}</div>{conclusion("Recommended wedge", verdict?.strongestSupportingEvidenceId ? [verdict.strongestSupportingEvidenceId] : [], [verdict?.strongestAssumption ?? ""].filter(Boolean), verdict?.recommendedTargetSegment ? [verdict.recommendedTargetSegment] : [])}</>)}
-    {section("fv-4","04 · Demand","Problem and behavioural demand", <div className="fv-evidence-list">{o.evidence.filter(e => ["Pain","Demand"].includes(e.signal) && !e.excluded).map(e => <EvidenceCard key={e.id} evidence={e}/>)}</div>)}
-    {section("fv-5","05 · Landscape","Alternatives and competition", <div className="fv-table-wrap"><table><thead><tr><th>Alternative</th><th>Class</th><th>Verification</th><th>Positioning</th><th>Pricing</th><th>Possible gap</th></tr></thead><tbody>{decision.alternativeMap?.map(a => <tr key={a.id}><th>{a.name}</th><td>{human(a.classification)}</td><td>{a.verified ? "Live verified" : "Unverified seed"}</td><td>{a.verified ? a.positioning ?? "Not found" : "Not presented as live"}</td><td>{a.verifiedPricing ?? "Not verified"}</td><td>{a.differentiationGap ?? "No evidence-backed gap"}</td></tr>)}</tbody></table></div>)}
-    {section("fv-6","06 · Commercial","Pricing and willingness to pay", <><p className="fv-lead">{report.fullValidationInsights?.willingnessToPay.finding ?? "No willingness-to-pay finding was persisted."}</p><div className="fv-evidence-list">{o.evidence.filter(e => e.signal === "Pricing" && !e.excluded).map(e => <EvidenceCard key={e.id} evidence={e}/>)}</div></>)}
-    {section("fv-7","07 · Distribution","Buyer reachability and acquisition", conclusion("Reachability conclusion", o.evidence.filter(e => e.evidenceTopic === "gtm" && !e.excluded).map(e => e.id), [], verdict?.recommendedTargetSegment ? [verdict.recommendedTargetSegment] : []))}
-    {section("fv-8","08 · Delivery","Product and operational feasibility", <><p className="fv-lead">{o.mvp.outcome}</p><div className="fv-columns"><article><h3>Build first</h3><ul>{o.mvp.scope.map(x=><li key={x}>{x}</li>)}</ul></article><article><h3>Do not build yet</h3><ul>{o.mvp.exclusions.map(x=><li key={x}>{x}</li>)}</ul></article></div></>)}
-    {section("fv-9","09 · Challenge","Risks and adversarial findings", <><div className="fv-risk-grid">{o.risks.map(r => <article key={r.id} data-severity={r.severity}><span>{r.severity} · {r.category}</span><h3>{r.description}</h3><p>{r.mitigation}</p></article>)}</div>{decision.adversarialGate?.reasons.map(x=><p key={x} className="fv-warning">{human(x)}</p>)}</>)}
-    {section("fv-10","10 · Economics","Scenario economics", <div className="fv-scenarios">{decision.economicsScenarios?.map(s => <article key={s.name}><span>{human(s.name)}</span><h3>{s.price == null ? "Price unresolved" : `${s.currency ?? ""} ${s.price}`}</h3><dl><div><dt>Customers required</dt><dd>{s.customersRequired ?? "Unresolved"}</dd></div><div><dt>Acquisition cost</dt><dd>{s.acquisitionCost ?? "Unresolved"}</dd></div><div><dt>Gross margin</dt><dd>{s.grossMarginRange ? `${s.grossMarginRange[0]}–${s.grossMarginRange[1]}%` : "Unresolved"}</dd></div><div><dt>Break-even customers</dt><dd>{s.breakEvenCustomers ?? "Unresolved"}</dd></div><div><dt>Support burden</dt><dd>{human(s.supportBurden)}</dd></div></dl><small>{s.assumptions.join(" ")}</small></article>)}</div>)}
-    {section("fv-11","11 · Factors","ShouldBuild Readiness Score · twelve-factor analysis", <><div className="fv-metrics">{decision.rollups?.map(rollup => <b key={rollup.key}>{rollup.score}<span>{rollup.label}</span></b>)}<b>{decision.evidenceConfidence?.band ?? verdict?.evidenceConfidence ?? "Unknown"}<span>Evidence Confidence · separate</span></b></div>{decision.scoreChange && <article className="fv-conclusion"><div><span>{decision.scoreChange.question}</span><b>Evidence required</b></div><p>{decision.scoreChange.answer}</p><p><strong>Highest-leverage unresolved assumption:</strong> {decision.scoreChange.highestLeverageUnresolvedAssumption}</p></article>}<ReportCharts report={report} datasets={chartDatasets}/><div className="fv-factor-list">{decision.factorAnalysis?.map(f => <article key={f.criterion}><header><h3>{human(f.criterion)}</h3><span data-state={f.evidenceState}>{human(f.evidenceState)}</span><b>{f.effectiveScore}</b></header><div className="fv-range" aria-label={`${human(f.criterion)} score range ${f.scoreSensitivity.lower} to ${f.scoreSensitivity.upper}, current ${f.scoreSensitivity.current}`}><i style={{left:`${f.scoreSensitivity.lower}%`,width:`${f.scoreSensitivity.upper-f.scoreSensitivity.lower}%`}}/><b style={{left:`${f.scoreSensitivity.current}%`}}/></div><p>Raw {f.rawScore} · confidence {Math.round(f.evidenceCoefficient*100)}% · range {f.scoreSensitivity.lower}–{f.scoreSensitivity.upper}</p>{conclusion("Factor evidence", [...f.supportingEvidenceIds,...f.challengingEvidenceIds], f.unresolvedAssumptions, f.buyerSegmentApplicability)}</article>)}</div></>)}
-    {section("fv-12","12 · Next 30 days","Validation plan", decision.founderActionPlan ? <><div className="fv-plan-summary"><h3>{decision.founderActionPlan.highestValueHypothesis}</h3><p><b>Target:</b> {decision.founderActionPlan.targetBuyer} · <b>Recruit via:</b> {decision.founderActionPlan.recruitmentChannel}</p><p><b>Maximum budget:</b> {decision.founderActionPlan.maximumBudget.currency} {decision.founderActionPlan.maximumBudget.amount}{decision.founderActionPlan.maximumBudget.assumption ? " (assumption)" : ""}</p></div><ol className="fv-timeline">{decision.founderActionPlan.days.map((d,i) => <li key={d.days}><span>Week {Math.min(4,Math.floor(i*4/5)+1)} · days {d.days}</span><p>{d.action}</p><dl><div><dt>Sample</dt><dd>{decision.founderActionPlan?.sampleSize}</dd></div><div><dt>Success</dt><dd>{decision.founderActionPlan?.successThreshold}</dd></div><div><dt>Failure</dt><dd>{decision.founderActionPlan?.failureThreshold}</dd></div><div><dt>Decision</dt><dd>{decision.founderActionPlan?.decisionUnlocked}</dd></div></dl></li>)}</ol></> : <p>No action plan persisted.</p>)}
-    {section("fv-13","13 · Audit trail","Evidence ledger and methodology", <><p className="fv-lead">{report.methodology}</p><div className="fv-ledger">{[...new Set(o.evidence.map(e => e.canonicalDomain || domain(e.url,e.source)))].map(d => { const items=o.evidence.filter(e => (e.canonicalDomain || domain(e.url,e.source))===d); const groups=new Set(items.map(e=>e.independenceKey || e.canonicalSourceId || e.url)); return <details key={d}><summary><b>{d}</b><span>{items.length} citations · {groups.size} independent group{groups.size===1?"":"s"}</span></summary>{items.map(e=><EvidenceCard key={e.id} evidence={e}/>)}</details>})}</div></>)}
-    {!publicMode && runId && <LivingReportControls runId={runId} currentAsOf={report.currentAsOf} staleEvidenceWarning={report.staleEvidenceWarning}/>}
-    <footer className="fv-export"><div><h2>Immutable report exports</h2><p>Every format is generated from report version {report.version} and the same frozen payload.</p></div>{(["pdf","md","json","csv"] as const).map(f=><button key={f} onClick={()=>exportFile(f)}><Download size={14}/>{f.toUpperCase()}</button>)}</footer>
-  </main>;
+function firstSentence(value: string) {
+  const match = value.trim().match(/^.*?[.!?](?:\s|$)/);
+  return match?.[0].trim() || value.trim();
 }
 
-function EvidenceCard({ evidence: e }: { evidence: ValidationReport["opportunity"]["evidence"][number] }) {
-  const kind = e.sourceTier && e.sourceTier <= 2 ? "Official / primary" : e.sourceType;
-  return <article className="fv-evidence-card"><div><span>{e.evidenceRole === "challenging" || e.disconfirming ? "Challenging" : "Supporting"}</span><b>{e.strength} confidence</b></div><h3>{e.title}</h3><p>{e.snippet}</p><small>{kind} · {e.sourceFamily ?? "Unclassified family"} · {e.independenceKey ? "Independent group tracked" : "Independence unresolved"} · {e.acceptanceDecision === "accepted_core" || !e.acceptanceDecision ? "Accepted" : human(e.acceptanceDecision)}</small>{e.url && <a href={e.url} target="_blank" rel="noreferrer">{e.canonicalDomain || domain(e.url,e.source)} <ExternalLink size={11}/></a>}</article>;
+function tierFromState(state: string | undefined): EvidenceTier | null {
+  if (state === "EVIDENCED") return "evidenced";
+  if (state === "SUGGESTIVE") return "suggestive";
+  if (state === "ASSUMED") return "assumed";
+  return null;
+}
+
+function evidenceMetadata(report: ValidationReport, decision: Decision, evidence: Evidence) {
+  const scorecard = report.opportunity.scorecard;
+  const factorEvidence = scorecard.factorEvidence;
+  const associated = evidence.associatedFactorIds?.find((key) => factorEvidence?.[key as keyof typeof factorEvidence]);
+  const factorEntry = associated
+    ? factorEvidence?.[associated as keyof typeof factorEvidence]
+    : Object.values(factorEvidence ?? {}).find((factor) => factor?.supportingEvidenceIds.includes(evidence.id) || factor?.challengingEvidenceIds.includes(evidence.id));
+  const analysisEntry = decision.factorAnalysis?.find((factor) => factor.supportingEvidenceIds.includes(evidence.id) || factor.challengingEvidenceIds.includes(evidence.id));
+  const tier = tierFromState(factorEntry?.evidenceState ?? analysisEntry?.evidenceState);
+  if (!tier) return null;
+
+  return {
+    tier,
+    whatWasFound: evidence.atomicClaim ?? evidence.snippet,
+    sourceCount: evidence.independentSourceCount ?? (evidence.url ? 1 : 0),
+    independenceGrouping: evidence.independenceKey ?? evidence.syndicationGroup ?? evidence.canonicalDomain ?? "Independence group not persisted",
+    freshnessDate: evidence.publishedOrUpdatedAt ?? evidence.date ?? evidence.retrievedAt ?? "Source date not persisted",
+  };
+}
+
+function uniqueEvidence(ids: Array<string | null | undefined>, byId: Map<string, Evidence>) {
+  return [...new Set(ids.filter((id): id is string => Boolean(id)))]
+    .map((id) => byId.get(id))
+    .filter((item): item is Evidence => item !== undefined && !item.excluded);
+}
+
+export function FullValidationReportExperience({
+  report,
+  scorecard,
+  publicMode = false,
+  previewMode = false,
+  runId,
+  chartDatasets,
+}: Props) {
+  const [toast, setToast] = useState("");
+  const motionReportId = runId ?? report.id;
+  const animateReportEntrance = useFirstSessionMotion(`report:${motionReportId}:v1`);
+  const decision = report.fullValidationDecision as Decision;
+  const opportunity = { ...report.opportunity, scorecard: scorecard ?? report.opportunity.scorecard };
+  const verdict = decision.verdictStructure;
+  const resolvedVerdict = verdict?.verdict ?? opportunity.scorecard.verdict;
+  const fulcrumEntries: FulcrumEvidenceChip[] = scoringCriteria
+    .map((criterion) => ({
+      id: `report-${criterion.key}`,
+      label: criterion.label,
+      side: criterion.risk ? "prosecution" as const : "defence" as const,
+      weight: opportunity.scorecard.weights[criterion.key],
+      statusLabel: criterion.risk ? "risk" : "positive",
+    }))
+    .sort(
+      (left, right) =>
+        left.weight - right.weight || left.label.localeCompare(right.label),
+    );
+  const factorAnalysis = decision.factorAnalysis ?? [];
+  const evidenceById = new Map(opportunity.evidence.map((item) => [item.id, item]));
+  const propositions = (report as ValidationReport & AdversarialReportView).adversarialInvestigation?.propositions ?? [];
+  const prosecutionEvidence = uniqueEvidence([
+    verdict?.strongestSupportingEvidenceId,
+    report.strongestPositiveEvidenceId,
+    ...propositions.flatMap((item) => item.supportingEvidenceIds),
+    ...factorAnalysis.flatMap((item) => item.supportingEvidenceIds),
+  ], evidenceById);
+  const defenceEvidence = uniqueEvidence([
+    verdict?.strongestChallengingEvidenceId,
+    report.strongestNegativeEvidenceId,
+    ...propositions.flatMap((item) => item.challengingEvidenceIds),
+    ...factorAnalysis.flatMap((item) => item.challengingEvidenceIds),
+  ], evidenceById);
+  const reportDate = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(report.generatedAt));
+  const currentScore = decision.scoreChange?.currentScore ?? opportunity.scorecard.total;
+  const targetScore = decision.scoreChange?.targetScore ?? report.verdictChangeConditions?.nearestBoundary;
+  const plan = decision.founderActionPlan;
+  const planItems = plan?.days ?? opportunity.launch.weekOne.map((action, index) => ({ days: String(index + 1), priority: index + 1, action }));
+
+  async function exportFile(format: "md" | "json" | "csv" | "pdf") {
+    const payload = { ...report, opportunity };
+    if (!publicMode && runId) {
+      const response = await fetch(`/api/research/${runId}/export`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ format }),
+      });
+      if (!response.ok) {
+        setToast("The stored export is unavailable. Recheck the report before exporting again.");
+        return;
+      }
+      const blob = await response.blob();
+      const disposition = response.headers.get("Content-Disposition") ?? "";
+      downloadExport(disposition.match(/filename="([^"]+)"/)?.[1] ?? `${opportunity.name}-report.${format}`, blob, blob.type);
+    } else if (format === "pdf") {
+      window.print();
+    } else if (format === "md") {
+      downloadExport(`${opportunity.name}-report.md`, reportToMarkdown(payload), "text/markdown");
+    } else if (format === "json") {
+      downloadExport(`${opportunity.name}-report.json`, JSON.stringify(payload, null, 2), "application/json");
+    } else {
+      downloadExport(`${opportunity.name}-report.csv`, reportToCsv(payload), "text/csv");
+    }
+    setToast(`${format.toUpperCase()} export prepared from report version ${report.version}.`);
+  }
+
+  return (
+    <main className="validation-report full-validation-report mx-auto grid w-full max-w-6xl gap-sb-10 pb-sb-16">
+      <Toast className="report-toast" title={toast} open={Boolean(toast)}/>
+
+      <div className="fv-document-bar flex flex-col gap-sb-3 border-b border-sb-border-hairline py-sb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <span className="block text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">Full Validation · immutable report</span>
+          <b className="mt-sb-1 block text-sm font-medium">{report.version}</b>
+          <small className="font-sb-mono text-xs tabular-nums text-sb-text-tertiary">{reportDate} · {opportunity.evidence.filter((item) => !item.excluded).length} accepted findings</small>
+        </div>
+        {!previewMode && (
+          <div className="fv-document-actions flex flex-wrap gap-sb-2" aria-label="Report exports">
+            <Button variant="ghost" className="min-h-9 px-sb-3 text-xs" onClick={() => void exportFile("pdf")}><Download size={13}/>PDF</Button>
+            <Button variant="ghost" className="min-h-9 px-sb-3 text-xs" onClick={() => void exportFile("md")}><Download size={13}/>Markdown</Button>
+            <Button variant="ghost" className="min-h-9 px-sb-3 text-xs" onClick={() => void exportFile("json")}><Download size={13}/>JSON</Button>
+          </div>
+        )}
+      </div>
+
+      <header className="fv-decision-hero grid gap-sb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <div className="fv-hero-copy min-w-0">
+          <p className="eyebrow m-0 text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">Verdict</p>
+          <h1 className="mb-0 mt-sb-2 font-sb-display text-4xl font-[480] tracking-[-0.03em] sm:text-5xl">{opportunity.name}</h1>
+          <p className="mb-0 mt-sb-3 max-w-3xl text-base leading-relaxed text-sb-text-secondary">{opportunity.oneLiner}</p>
+        </div>
+        <Card className="fv-decision-stamp grid w-full min-w-64 max-w-sm gap-sb-3 bg-sb-bg-surface-2 p-sb-5" aria-label="Decision outcome">
+          <span className="text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">{decision.scoreContract?.name ?? "ShouldBuild Readiness Score"}</span>
+          <div className="flex items-end justify-between gap-sb-4">
+            <ScoreDisplay score={opportunity.scorecard.total} size="xl" showMax animationKey={`full-validation-${motionReportId}`}/>
+            <VerdictBadge verdict={resolvedVerdict}/>
+          </div>
+          <Fulcrum
+            entries={fulcrumEntries}
+            score={opportunity.scorecard.total}
+            verdict={resolvedVerdict}
+            animate={false}
+            maxVisibleEntriesPerSide={2}
+            showTally={false}
+            showVerdictBadge={false}
+            className="mt-sb-1 w-full border-t border-sb-border-hairline pt-sb-2"
+          />
+        </Card>
+        <p className="col-span-full m-0 max-w-4xl text-lg leading-relaxed text-sb-text-primary">{firstSentence(report.executiveSummary)}</p>
+        {previewMode && <CaseColumns className="fv-case-split col-span-full" report={report} decision={decision} prosecution={prosecutionEvidence} defence={defenceEvidence} animateEntrance={animateReportEntrance} limit={1}/>}
+      </header>
+
+      <section className="fv-section grid gap-sb-5" aria-labelledby="factor-grid-title">
+        <SectionHeading eyebrow="01 · Factor evidence" title="Twelve factors, in comparable rows" description="Open any factor to inspect its linked sources, independence grouping, and freshness date." id="factor-grid-title"/>
+        <FactorEvidenceList report={{ ...report, opportunity }} factors={factorAnalysis} motionKey={motionReportId} animateEntrance={animateReportEntrance}/>
+        <ReportCharts report={{ ...report, opportunity }} datasets={chartDatasets}/>
+      </section>
+
+      <section className="fv-section grid gap-sb-5" aria-labelledby="adversarial-title">
+        <SectionHeading eyebrow="02 · Adversarial case" title="Prosecution vs. Defence" description="Both sides are drawn from accepted, factor-linked findings in this immutable report." id="adversarial-title"/>
+        <CaseColumns className="fv-case-split" report={report} decision={decision} prosecution={prosecutionEvidence} defence={defenceEvidence} animateEntrance={animateReportEntrance}/>
+      </section>
+
+      <section className="fv-section" aria-labelledby="movement-title">
+        <Card className="grid gap-sb-5 border-l-4 border-l-sb-accent p-sb-6 sm:p-sb-8">
+          <SectionHeading
+            eyebrow="03 · Decision movement"
+            title={`What moves this from ${currentScore}${targetScore != null ? ` to ${targetScore}` : " to the next decision boundary"}`}
+            description={decision.scoreChange?.answer ?? report.verdictChangeConditions?.upgradeCondition ?? "No score-change condition was persisted for this report."}
+            id="movement-title"
+          />
+          <div className="grid gap-sb-4 md:grid-cols-3">
+            <MovementPoint label="Moves up" value={decision.scoreChange?.materialUpwardEvidence ?? verdict?.upgradeCondition ?? report.verdictChangeConditions?.upgradeCondition}/>
+            <MovementPoint label="Moves down" value={decision.scoreChange?.materialDownwardEvidence ?? verdict?.downgradeCondition ?? report.verdictChangeConditions?.downgradeCondition}/>
+            <MovementPoint label="Stop condition" value={decision.scoreChange?.strongestKillCondition ?? verdict?.killCondition}/>
+          </div>
+        </Card>
+      </section>
+
+      <section className="fv-section grid gap-sb-5" aria-labelledby="validation-plan-title">
+        <SectionHeading
+          eyebrow="04 · Validation plan"
+          title={plan?.highestValueHypothesis ?? "Next validation actions"}
+          description={plan ? `${plan.testMethod} Target ${plan.targetBuyer} through ${plan.recruitmentChannel}.` : `Use the persisted launch plan to test the next decision before expanding scope.`}
+          id="validation-plan-title"
+        />
+        <div className="grid gap-sb-3">
+          {planItems.map((item) => (
+            <Card className="grid grid-cols-[auto_1fr] gap-sb-4 p-sb-5" key={`${item.days}-${item.priority}`}>
+              <Circle className="mt-0.5 text-sb-text-tertiary" size={18} aria-hidden="true"/>
+              <div>
+                <span className="font-sb-mono text-xs uppercase tracking-[0.02em] text-sb-text-tertiary">Days {item.days} · priority {item.priority}</span>
+                <p className="mb-0 mt-sb-1 text-sm leading-relaxed text-sb-text-primary">{item.action}</p>
+              </div>
+            </Card>
+          ))}
+        </div>
+        {plan && (
+          <Card className="grid gap-sb-4 p-sb-5 text-sm text-sb-text-secondary sm:grid-cols-3">
+            <PlanThreshold label="Success threshold" value={plan.successThreshold}/>
+            <PlanThreshold label="Failure threshold" value={plan.failureThreshold}/>
+            <PlanThreshold label="Decision unlocked" value={plan.decisionUnlocked}/>
+          </Card>
+        )}
+      </section>
+
+      {!publicMode && runId ? (
+        <LivingReportControls runId={runId} currentAsOf={report.currentAsOf} staleEvidenceWarning={report.staleEvidenceWarning}/>
+      ) : (
+        <Card className="fv-section grid gap-sb-1 p-sb-4 text-xs text-sb-text-tertiary" role="status">
+          <span>Living report</span>
+          <span>Sample freshness is frozen at {report.currentAsOf ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(report.currentAsOf)) : reportDate}.</span>
+        </Card>
+      )}
+
+      {!previewMode && (
+        <footer className="fv-export flex flex-col gap-sb-4 border-t border-sb-border-hairline pt-sb-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="m-0 max-w-2xl text-xs leading-relaxed text-sb-text-tertiary">Exports are generated from immutable report version {report.version}; they do not recalculate the score or evidence tiers.</p>
+          <div className="flex flex-wrap gap-sb-2">
+            {(["pdf", "md", "json", "csv"] as const).map((format) => <Button variant="ghost" className="min-h-9 px-sb-3 text-xs" key={format} onClick={() => void exportFile(format)}>{format.toUpperCase()}</Button>)}
+          </div>
+        </footer>
+      )}
+    </main>
+  );
+}
+
+function SectionHeading({ eyebrow, title, description, id }: { eyebrow: string; title: string; description: string; id: string }) {
+  return (
+    <header>
+      <p className="m-0 text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">{eyebrow}</p>
+      <h2 id={id} className="mb-0 mt-sb-1 font-sb-display text-3xl font-[480] tracking-[-0.02em]">{title}</h2>
+      <p className="mb-0 mt-sb-2 max-w-3xl text-sm leading-relaxed text-sb-text-secondary">{description}</p>
+    </header>
+  );
+}
+
+function CaseColumns({
+  report,
+  decision,
+  prosecution,
+  defence,
+  className = "",
+  animateEntrance,
+  limit = 4,
+}: {
+  report: ValidationReport;
+  decision: Decision;
+  prosecution: Evidence[];
+  defence: Evidence[];
+  className?: string;
+  animateEntrance: boolean;
+  limit?: number;
+}) {
+  return (
+    <div className={`${className} grid gap-sb-4 md:grid-cols-2`}>
+      <CaseColumn title="Prosecution" description="The strongest persisted case for proceeding." background="bg-sb-prosecution-bg" report={report} decision={decision} evidence={prosecution.slice(0, limit)} animateEntrance={animateEntrance}/>
+      <CaseColumn title="Defence" description="The strongest persisted case against committing yet." background="bg-sb-defence-bg" report={report} decision={decision} evidence={defence.slice(0, limit)} animateEntrance={animateEntrance}/>
+    </div>
+  );
+}
+
+function CaseColumn({ title, description, background, report, decision, evidence, animateEntrance }: { title: string; description: string; background: string; report: ValidationReport; decision: Decision; evidence: Evidence[]; animateEntrance: boolean }) {
+  const tiered = evidence.flatMap((item) => {
+    const metadata = evidenceMetadata(report, decision, item);
+    return metadata ? [{ item, metadata }] : [];
+  });
+  return (
+    <Card className={`grid content-start gap-sb-5 p-sb-6 sm:p-sb-8 ${background}`}>
+      <header>
+        <h3 className="m-0 font-sb-display text-2xl font-[480]">{title}</h3>
+        <p className="mb-0 mt-sb-2 text-sm text-sb-text-tertiary">{description}</p>
+      </header>
+      {tiered.length ? (
+        <StaggerGroup
+          animateEntrance={animateEntrance}
+          className="grid gap-sb-5"
+          durationMs={200}
+          itemClassName="border-t border-sb-border-hairline pt-sb-5 first:border-t-0 first:pt-0"
+          maxItems={4}
+          stepMs={55}
+        >
+          {tiered.map(({ item, metadata }, index) => (
+            <article className="grid gap-sb-3" key={item.id}>
+              <EvidenceBadge {...metadata} animateSettle={animateEntrance} settleDelayMs={index * 30}/>
+              <p className="m-0 text-sm leading-relaxed text-sb-text-secondary">{item.atomicClaim ?? item.snippet}</p>
+              {item.url && <a className="inline-flex w-fit items-center gap-sb-1 text-xs text-sb-text-tertiary hover:text-sb-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sb-border-focus" href={item.url} target="_blank" rel="noreferrer">{item.canonicalDomain ?? item.source}<ExternalLink size={11}/></a>}
+            </article>
+          ))}
+        </StaggerGroup>
+      ) : (
+        <EmptyState message="No factor-linked claim with a persisted evidence tier is available on this side. Review the factor rows for the next evidence gap."/>
+      )}
+    </Card>
+  );
+}
+
+function MovementPoint({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="border-t border-sb-border-hairline pt-sb-3">
+      <span className="text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">{label}</span>
+      <p className="mb-0 mt-sb-2 text-sm leading-relaxed text-sb-text-secondary">{value || "No condition was persisted."}</p>
+    </div>
+  );
+}
+
+function PlanThreshold({ label, value }: { label: string; value: string }) {
+  return <div><span className="block text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">{label}</span><p className="mb-0 mt-sb-2 leading-relaxed">{value}</p></div>;
 }

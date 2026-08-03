@@ -1,25 +1,30 @@
 import Link from "next/link";
-import { ArrowRight, Bookmark, FileText, Gauge, Radar, Rocket, SearchCheck, ShieldCheck, Target } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
-import { StatCard } from "@/components/dashboard/stat-card";
 import { ProjectCard } from "@/components/dashboard/project-card";
-import { ScoreBadge } from "@/components/scoring/score-badge";
-import { ScoreGuide } from "@/components/scoring/ScoreGuide";
-import { VerdictBadge } from "@/components/opportunity/verdict-badge";
-import { ResearchRun, Opportunity, ScoreBreakdown, MarketType } from "@/lib/types";
-import { validationReportSchema } from "@/lib/report-schema";
-import { createClient } from "@/lib/supabase/server";
-import { motion, getStaggerDelay, revealUpClass } from "@/lib/motion";
 import { ReportHistory } from "@/components/dashboard/report-history";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { FirstSessionStagger } from "@/components/ui/session-stagger";
+import { EmptyState } from "@/components/ui/state-message";
+import type { MarketType, Opportunity, ResearchRun, ScoreBreakdown } from "@/lib/types";
+import { validationReportSchema } from "@/lib/report-schema";
 import { countEvidenceSources } from "@/lib/report-mode-ui";
+import { createClient } from "@/lib/supabase/server";
 import { firstRelation, relationArray } from "@/lib/supabase/relations";
 import { isResearchStatus } from "@/supabase/functions/_shared/research/status";
 
 export const dynamic = "force-dynamic";
 
 const marketTypes: readonly MarketType[] = ["B2B", "D2C", "Creator", "Developer Tool", "Local Business", "Agency Tool", "Student/Career", "Other"];
+
 function isMarketType(value: string): value is MarketType {
   return marketTypes.some((market) => market === value);
+}
+
+function evidenceNeedsRevalidation(evidence: { freshnessState?: string; revalidationDueAt?: string }) {
+  if (evidence.freshnessState === "stale" || evidence.freshnessState === "revalidation_due") return true;
+  if (!evidence.revalidationDueAt) return false;
+  const dueAt = new Date(evidence.revalidationDueAt).getTime();
+  return Number.isFinite(dueAt) && dueAt <= Date.now();
 }
 
 export default async function DashboardPage() {
@@ -33,18 +38,28 @@ export default async function DashboardPage() {
   ]);
   if (error) throw error;
   if (historyError) throw historyError;
-  const history = new Map(((historyData ?? []) as Array<{
-    id: string; sourceCount: number; independentDomains: number; durationMs: number | null; completedAt: string | null;
-    groundingDegraded: boolean; publicReason: string | null; creditRestored: boolean;
-  }>).map((item) => [item.id, item]));
 
-  const mappedRuns: ResearchRun[] = (databaseRuns || []).map((run) => {
-    let opportunity: Opportunity | undefined = undefined;
-    const versions = relationArray(firstRelation(run.reports)?.report_versions).sort((a, b) => b.version_number - a.version_number);
+  const history = new Map(((historyData ?? []) as Array<{
+    id: string;
+    sourceCount: number;
+    independentDomains: number;
+    durationMs: number | null;
+    completedAt: string | null;
+    groundingDegraded: boolean;
+    publicReason: string | null;
+    creditRestored: boolean;
+  }>).map((item) => [item.id, item]));
+  const revalidationByRun = new Map<string, boolean>();
+
+  const mappedRuns: ResearchRun[] = (databaseRuns ?? []).map((run) => {
+    let opportunity: Opportunity | undefined;
+    const versions = relationArray(firstRelation(run.reports)?.report_versions).sort((left, right) => right.version_number - left.version_number);
     const parsed = validationReportSchema.safeParse(versions[0]?.payload);
+
     if (parsed.success) {
-      const o = parsed.data.opportunity;
-      const scorecard = o.scorecard;
+      const report = parsed.data;
+      const payload = report.opportunity;
+      const scorecard = payload.scorecard;
       const scores = scorecard.scores;
       const legacyScore: ScoreBreakdown = {
         pain: scores.painSeverity,
@@ -55,24 +70,28 @@ export default async function DashboardPage() {
         complexity: scores.mvpSpeed,
         platformRisk: scores.platformDependencyRisk,
         founderFit: scores.founderFit,
-        total: scorecard.total
+        total: scorecard.total,
       };
       opportunity = {
-        id: o.id,
-        name: o.name,
-        one_liner: o.oneLiner,
-        target_customer: o.targetCustomer,
-        market: isMarketType(o.market) ? o.market : "Other",
+        id: payload.id,
+        name: payload.name,
+        one_liner: payload.oneLiner,
+        target_customer: payload.targetCustomer,
+        market: isMarketType(payload.market) ? payload.market : "Other",
         score: legacyScore,
         verdict: scorecard.verdict === "Build Now" ? "Build now" : scorecard.verdict === "Avoid" ? "Avoid for now" : "Validate first",
         confidence: scorecard.confidence,
-        evidence: o.evidence,
-        competitors: o.competitors,
-        pricing: o.pricing,
-        mvp: o.mvp,
-        launch: o.launch,
-        risks: o.risks
+        evidence: payload.evidence,
+        competitors: payload.competitors,
+        pricing: payload.pricing,
+        mvp: payload.mvp,
+        launch: payload.launch,
+        risks: payload.risks,
       };
+      revalidationByRun.set(
+        run.id,
+        Boolean(report.staleEvidenceWarning?.trim()) || payload.evidence.some(evidenceNeedsRevalidation),
+      );
     }
 
     return {
@@ -86,205 +105,114 @@ export default async function DashboardPage() {
       status: isResearchStatus(run.status) ? run.status : "Failed",
       createdAt: run.created_at.slice(0, 10),
       progress: run.progress,
-      opportunity
+      opportunity,
     };
   });
 
-  const completedRuns = mappedRuns.filter(r => r.status === "Completed");
-  const averageScore = completedRuns.length > 0
-    ? Math.round(completedRuns.reduce((sum, r) => sum + (r.opportunity?.score.total ?? 0), 0) / completedRuns.length)
+  const completedRuns = mappedRuns.filter((run) => run.status === "Completed" && run.opportunity);
+  const rankedIdeas = [...completedRuns].sort((left, right) => (right.opportunity?.score.total ?? 0) - (left.opportunity?.score.total ?? 0));
+  const averageScore = completedRuns.length
+    ? Math.round(completedRuns.reduce((total, run) => total + (run.opportunity?.score.total ?? 0), 0) / completedRuns.length)
     : 0;
-
-  const openInvestigations = mappedRuns.filter(r => r.status !== "Completed" && r.status !== "Failed").length;
-  const readyCount = completedRuns.filter(r => r.opportunity?.verdict === "Build now" || r.opportunity?.verdict === "Validate first").length;
-
+  const revalidationCount = completedRuns.filter((run) => revalidationByRun.get(run.id)).length;
   const hasData = mappedRuns.length > 0;
-  const hasCompleted = completedRuns.length > 0;
 
-  const activeFiles = mappedRuns.slice(0, 4);
-  const rankedFiles = [...completedRuns].sort((a, b) => (b.opportunity?.score.total ?? 0) - (a.opportunity?.score.total ?? 0)).slice(0, 4);
+  const historyRows = mappedRuns.map((run) => {
+    const facts = history.get(run.id);
+    return {
+      id: run.id,
+      ideaName: run.ideaName,
+      mode: run.mode,
+      status: run.status,
+      createdAt: run.createdAt,
+      score: run.opportunity?.score.total,
+      verdict: run.opportunity?.verdict,
+      sourceCount: facts?.sourceCount ?? countEvidenceSources(run.opportunity?.evidence ?? []),
+      independentDomains: facts?.independentDomains ?? new Set((run.opportunity?.evidence ?? []).map((item) => {
+        try { return new URL(item.url).hostname; } catch { return item.source; }
+      })).size,
+      durationMs: facts?.durationMs,
+      completedAt: facts?.completedAt,
+      degraded: facts?.groundingDegraded,
+      publicReason: facts?.publicReason,
+      creditRestored: facts?.creditRestored,
+    };
+  });
 
-  const primaryInvestigation = rankedFiles[0];
+  const action = hasData ? (
+    <Link className="inline-flex min-h-10 items-center rounded-sb-md border border-sb-accent bg-sb-accent px-sb-4 py-sb-2 text-sm font-medium text-sb-text-primary transition-colors duration-sb-fast ease-sb-standard hover:border-sb-accent-hover hover:bg-sb-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sb-border-focus" href="/research/new?mode=quick_scan">
+      Validate idea
+    </Link>
+  ) : undefined;
 
-  // Dynamic priority actions from actual data
-  const priorityActions = rankedFiles.filter(run=>run.opportunity?.launch.weekOne[0]).slice(0, 3).map((run, index) => ({
-    num: `0${index + 1}`,
-    name: run.ideaName,
-    desc: run.opportunity!.launch.weekOne[0],
-    action: run.opportunity?.verdict === "Build now" ? "Start building" : "Test next"
-  }));
-
-  return <AppShell title="Dashboard" action={<Link className={`button button-small ${motion.buttonBase}`} href="/research/new">Validate idea <ArrowRight size={15}/></Link>}>
-    <div className="page-content command-center" data-tour="dashboard-canvas">
-
-      {/* ─── EMPTY STATE ─── */}
-      {!hasData && (
-        <section className="dashboard-empty-state">
-          <div className="empty-state-card" data-tour="reports">
-            <div className="dashboard-empty-copy">
-              <div className="empty-state-icon">
-                <SearchCheck size={28} />
-              </div>
-              <p className="eyebrow">Decision room ready</p>
-              <h2>Give your best idea somewhere serious to go.</h2>
-              <p>
-                Name the buyer, describe the painful workflow, and let the market challenge the story
-                before your calendar, capital, or codebase commits to it.
-              </p>
-              <Link className={`button ${motion.buttonBase}`} href="/research/new">
-                Put my idea on trial <ArrowRight size={15} />
-              </Link>
-              <small><ShieldCheck size={13}/> One free Quick Scan available monthly · No card required</small>
-            </div>
-            <div className="dashboard-empty-preview" aria-label="What your first report unlocks">
-              <header><span><Radar size={14}/> YOUR FIRST DECISION FILE</span><i>WAITING FOR BRIEF</i></header>
-              <div className="empty-preview-verdict"><span>VERDICT</span><b>Not guessed.<br/>Earned.</b></div>
-              <div className="empty-state-steps">
-                <div>
-                  <span>01</span>
-                  <div>
-                    <b>Expose the buyer pain</b>
-                    <small>Find whether the problem is visible outside your own head.</small>
-                  </div>
-                </div>
-                <div>
-                  <span>02</span>
-                  <div>
-                    <b>Attack the fragile assumptions</b>
-                    <small>See what could break pricing, reach, retention, or scope.</small>
-                  </div>
-                </div>
-                <div>
-                  <span>03</span>
-                  <div>
-                    <b>Leave with the next move</b>
-                    <small>Build, test, narrow, or walk away—with reasons.</small>
-                  </div>
-                </div>
-              </div>
-              <footer><span/><b>Evidence begins when the brief arrives.</b></footer>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ─── DATA STATE ─── */}
-      {hasData && (
-        <>
-          <section className="command-intro">
-            <div>
-              <p className="eyebrow cyan-eyebrow">Your validation pipeline</p>
-              <h2>What to do next</h2>
-              <p>See every idea you&apos;ve tested, their verdicts, and what to do next.</p>
-            </div>
-            {primaryInvestigation && (
-              <div className="command-focus">
-                <Target size={17}/>
-                <span>
-                  <b>Top-scored idea: {primaryInvestigation.ideaName}</b>
-                  <small>{primaryInvestigation.opportunity?.one_liner}</small>
-                </span>
-                <Link href={`/research/${primaryInvestigation.id}/results`}>View report <ArrowRight size={13}/></Link>
-              </div>
-            )}
+  return (
+    <AppShell title="Dashboard" action={action}>
+      <main className="mx-auto grid w-full max-w-6xl gap-sb-8 px-sb-5 py-sb-8 sm:px-sb-8 sm:py-sb-10" data-tour="dashboard-canvas">
+        {!hasData ? (
+          <section className="mx-auto grid w-full max-w-2xl gap-sb-5 py-sb-12">
+            <header>
+              <p className="m-0 text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">Dashboard</p>
+              <h1 className="mb-0 mt-sb-1 font-sb-display text-3xl font-[480] tracking-[-0.02em]">Your idea list starts with evidence</h1>
+            </header>
+            <EmptyState
+              message="No ideas have been validated yet. Run a Quick Scan to create the first Readiness Score and verdict."
+              action={
+                <Link className="inline-flex min-h-10 items-center rounded-sb-md border border-sb-accent bg-sb-accent px-sb-4 py-sb-2 text-sm font-medium text-sb-text-primary transition-colors duration-sb-fast ease-sb-standard hover:border-sb-accent-hover hover:bg-sb-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sb-border-focus" href="/research/new?mode=quick_scan">
+                  Run a Quick Scan
+                </Link>
+              }
+            />
           </section>
+        ) : (
+          <>
+            <header className="max-w-3xl">
+              <p className="m-0 text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">Validation portfolio</p>
+              <h1 className="mb-0 mt-sb-1 font-sb-display text-3xl font-[480] tracking-[-0.02em]">Ideas, ranked by readiness</h1>
+              <p className="mb-0 mt-sb-2 text-sm leading-relaxed text-sb-text-secondary">Scan verdicts first, then open the evidence behind the scores that deserve attention.</p>
+            </header>
 
-          <section className="stats-grid command-stats">
-            <StatCard icon={FileText} label="Ideas validated" value={String(completedRuns.length).padStart(2, "0")} detail={`${completedRuns.length} completed`}/>
-            <StatCard icon={Gauge} label="Average score" value={String(averageScore)} detail="Across all validations"/>
-            <StatCard icon={Bookmark} label="In progress" value={String(openInvestigations).padStart(2, "0")} detail="Being analyzed now"/>
-            <StatCard icon={Rocket} label="Passed validation" value={String(readyCount).padStart(2, "0")} detail="Build now or validate first"/>
-          </section>
+            <section className="grid gap-sb-3 sm:grid-cols-3" aria-label="Actionable portfolio metrics">
+              <StatCard label="Ideas" value={String(mappedRuns.length)} detail={`${completedRuns.length} with a completed verdict`} resolveKey="dashboard:stat:ideas"/>
+              <StatCard label="Average score" value={completedRuns.length ? String(averageScore) : "—"} detail="Across completed validations" resolveKey="dashboard:stat:average-score" score={completedRuns.length > 0}/>
+              <StatCard label="Needs revalidation" value={String(revalidationCount)} detail="Reports with stale or due evidence" resolveKey="dashboard:stat:revalidation"/>
+            </section>
 
-          {hasCompleted && <ScoreGuide score={averageScore}/>}
-
-          <section className="command-grid">
-            {/* Next Steps */}
-            {priorityActions.length > 0 && (
-              <div className="section-card radar-card">
-                <header>
-                  <div>
-                    <p className="eyebrow cyan-eyebrow">Next steps</p>
-                    <h2>Do these first</h2>
-                  </div>
-                  <Radar size={18}/>
-                </header>
-                <div className="radar-actions">
-                  {priorityActions.map((act, index) => <article key={act.num} className={revealUpClass} style={getStaggerDelay(index)}>
-                    <span>{act.num}</span>
-                    <div><b>{act.name}</b><p>{act.desc}</p></div>
-                    <i>{act.action}</i>
-                  </article>)}
-                </div>
-              </div>
-            )}
-
-            {/* Previous Validations */}
-            <div className="section-card saved-card" data-tour="reports">
-              <header>
+            <section className="grid gap-sb-4" aria-labelledby="ranked-ideas-title">
+              <div className="flex items-end justify-between gap-sb-4 border-b border-sb-border-hairline pb-sb-3">
                 <div>
-                  <p className="eyebrow cyan-eyebrow">Your reports</p>
-                  <h2>Previous validations</h2>
+                  <p className="m-0 text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">Score order</p>
+                  <h2 id="ranked-ideas-title" className="mb-0 mt-sb-1 font-sb-display text-xl font-[480]">Validated ideas</h2>
                 </div>
-                {completedRuns.length >= 2 && <Link href="/compare">Compare ideas</Link>}
-              </header>
-              {mappedRuns.length > 0 ? (
-                <ReportHistory runs={mappedRuns.map(run => {
-                  const facts = history.get(run.id);
-                  return {
-                    id: run.id, ideaName: run.ideaName, mode: run.mode, status: run.status, createdAt: run.createdAt,
-                    score: run.opportunity?.score.total, verdict: run.opportunity?.verdict, confidence: run.opportunity?.confidence,
-                    sourceCount: facts?.sourceCount ?? countEvidenceSources(run.opportunity?.evidence ?? []),
-                    independentDomains: facts?.independentDomains ?? new Set((run.opportunity?.evidence ?? []).map((item) => {
-                      try { return new URL(item.url).hostname; } catch { return item.source; }
-                    })).size,
-                    durationMs: facts?.durationMs, completedAt: facts?.completedAt, degraded: facts?.groundingDegraded,
-                    publicReason: facts?.publicReason, creditRestored: facts?.creditRestored,
-                  };
-                })}/>
+                <span className="font-sb-mono text-xs tabular-nums text-sb-text-tertiary">{rankedIdeas.length} scored</span>
+              </div>
+              {rankedIdeas.length ? (
+                <FirstSessionStagger
+                  className="grid gap-sb-2"
+                  sessionKey="dashboard:project-list:v1"
+                  maxItems={10}
+                  stepMs={70}
+                  durationMs={180}
+                >
+                  {rankedIdeas.map((run, index) => <ProjectCard run={run} rank={index + 1} key={run.id}/>)}
+                </FirstSessionStagger>
               ) : (
-                <div className="saved-empty">
-                  <p>Your validated ideas will appear here.</p>
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Bottom Section */}
-          {hasCompleted && (
-            <section className="command-bottom">
-              <div className="section-card">
-                <header>
-                  <div>
-                    <p className="eyebrow cyan-eyebrow">Recent validations</p>
-                    <h2>Latest ideas tested</h2>
-                  </div>
-                  <Link href="/research/new">Validate new idea <ArrowRight size={14}/></Link>
-                </header>
-                <div className="project-grid">
-                  {activeFiles.slice(0, 3).map((run, index) => <div key={run.id} className={revealUpClass} style={getStaggerDelay(index)}><ProjectCard run={run}/></div>)}
-                </div>
-              </div>
-              {rankedFiles.length > 0 && (
-                <div className="section-card leaderboard">
-                  <header>
-                    <div>
-                      <p className="eyebrow cyan-eyebrow">Top-scored ideas</p>
-                      <h2>Strongest signals</h2>
-                    </div>
-                  </header>
-                  {rankedFiles.map((run, index) => <Link href={`/research/${run.id}/results`} key={run.id} className={`leaderboard-row ${motion.transitionBase} ${motion.hoverElevateSubtle} active:scale-[0.99] ${revealUpClass}`} style={getStaggerDelay(index)}>
-                    <span>{String(index + 1).padStart(2, "0")}</span>
-                    <div><b>{run.ideaName}</b><small>{run.opportunity?.target_customer}</small></div>
-                    <ScoreBadge score={run.opportunity?.score.total ?? 0} size="sm"/>
-                    <VerdictBadge verdict={run.opportunity?.verdict ?? "Validate first"}/>
-                  </Link>)}
-                </div>
+                <EmptyState message="No completed scores are available yet. Open an in-progress run in report history to see its current research stage."/>
               )}
             </section>
-          )}
-        </>
-      )}
-    </div>
-  </AppShell>;
+
+            <section className="grid gap-sb-4" aria-labelledby="history-title" data-tour="reports">
+              <div className="flex flex-col gap-sb-2 border-b border-sb-border-hairline pb-sb-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="m-0 text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">Chronological record</p>
+                  <h2 id="history-title" className="mb-0 mt-sb-1 font-sb-display text-xl font-[480]">Report history</h2>
+                </div>
+                {completedRuns.length >= 2 && <Link className="text-sm text-sb-text-secondary hover:text-sb-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sb-border-focus" href="/compare">Compare ideas</Link>}
+              </div>
+              <ReportHistory runs={historyRows}/>
+            </section>
+          </>
+        )}
+      </main>
+    </AppShell>
+  );
 }

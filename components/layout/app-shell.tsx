@@ -1,20 +1,46 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import Link from "next/link";
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  BarChart3, CreditCard, LayoutDashboard, Plus, Search, Settings, Scale,
-  Circle, LogOut, ChevronDown, BookOpen, User, Command, ArrowRight, X,
-  ShieldCheck, Sparkles
+  ArrowRight,
+  BarChart3,
+  BookOpen,
+  ChevronDown,
+  Circle,
+  Command,
+  CreditCard,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Plus,
+  Scale,
+  Search,
+  Settings,
+  User,
+  X,
 } from "lucide-react";
 import { Brand } from "./brand";
 import { LegalFooter } from "./legal-footer";
 import { ProductTour } from "./product-tour";
 import { useAuth } from "./auth-provider";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { MagneticButton } from "@/components/ui/magnetic-button";
+import { ModalTransition, PanelTransition } from "@/components/ui/panel-transition";
 import { createClient } from "@/lib/supabase/client";
-import { motion, getStaggerDelay, revealUpClass } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, description: "Validation pipeline and next actions", keywords: "home overview reports" },
@@ -26,12 +52,12 @@ const links = [
 ];
 
 const pageContext: Record<string, string> = {
-  "Dashboard": "Your validation pipeline, ranked by what deserves attention next.",
+  Dashboard: "Your validation pipeline, ranked by what deserves attention next.",
   "Validate idea": "Brief the market. Pressure-test the assumptions. Earn the next move.",
-  "Compare": "Put competing ideas under the same decision criteria.",
+  Compare: "Put competing ideas under the same decision criteria.",
   "Scoring model": "See exactly what is carrying—or weakening—the verdict.",
-  "Pricing": "Choose the depth of evidence the decision deserves.",
-  "Settings": "Tune the decision system to the way you actually build.",
+  Pricing: "Choose the depth of evidence the decision deserves.",
+  Settings: "Tune the decision system to the way you actually build.",
 };
 
 function isActiveNavigation(href: string, pathname: string) {
@@ -41,15 +67,12 @@ function isActiveNavigation(href: string, pathname: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-import { Suspense } from "react";
-
 function TourAutoStarter({ onStartTour, tourCompleted }: { onStartTour: () => void; tourCompleted?: boolean }) {
   const searchParams = useSearchParams();
-  
+
   useEffect(() => {
     if (searchParams.get("tour") === "start" && !tourCompleted) {
       onStartTour();
-      // Clean URL
       const url = new URL(window.location.href);
       url.searchParams.delete("tour");
       window.history.replaceState({}, "", url.toString());
@@ -59,7 +82,7 @@ function TourAutoStarter({ onStartTour, tourCompleted }: { onStartTour: () => vo
   return null;
 }
 
-export function AppShell({ children, title, action }: { children: React.ReactNode; title: string; action?: React.ReactNode }) {
+export function AppShell({ children, title, action }: { children: ReactNode; title: string; action?: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, profile, loading } = useAuth();
@@ -72,21 +95,20 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
   const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const quickNavInputRef = useRef<HTMLInputElement>(null);
-  const activeLinkIndex = links.findIndex(({ href }) => isActiveNavigation(href, pathname));
   const filteredLinks = useMemo(() => {
     const query = quickNavQuery.trim().toLowerCase();
-    return query ? links.filter(item => `${item.label} ${item.description} ${item.keywords}`.toLowerCase().includes(query)) : links;
+    return query
+      ? links.filter((item) => `${item.label} ${item.description} ${item.keywords}`.toLowerCase().includes(query))
+      : links;
   }, [quickNavQuery]);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        setQuickNavOpen(open => !open);
+        setQuickNavOpen((open) => !open);
       }
       if (event.key === "Escape") {
         setQuickNavOpen(false);
@@ -107,6 +129,14 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
 
   useEffect(() => setQuickNavIndex(0), [quickNavQuery]);
 
+  useEffect(() => {
+    const handleClick = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
   const openQuickNavResult = (href: string) => {
     setQuickNavOpen(false);
     router.push(href);
@@ -114,28 +144,26 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
 
   const handleQuickNavKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (!filteredLinks.length) return;
-    if (event.key === "ArrowDown") { event.preventDefault(); setQuickNavIndex(index => (index + 1) % filteredLinks.length); }
-    if (event.key === "ArrowUp") { event.preventDefault(); setQuickNavIndex(index => (index - 1 + filteredLinks.length) % filteredLinks.length); }
-    if (event.key === "Enter") { event.preventDefault(); openQuickNavResult(filteredLinks[quickNavIndex]?.href ?? filteredLinks[0].href); }
-  };
-
-  // Close menu on outside click
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setQuickNavIndex((index) => (index + 1) % filteredLinks.length);
     }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setQuickNavIndex((index) => (index - 1 + filteredLinks.length) % filteredLinks.length);
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      openQuickNavResult(filteredLinks[quickNavIndex]?.href ?? filteredLinks[0].href);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
       const supabase = createClient();
       await supabase.auth.signOut();
-    } catch (e) {
-      console.error("Could not sign out:", e);
+    } catch (error) {
+      console.error("Could not sign out:", error);
     } finally {
       window.location.href = "/sign-in";
     }
@@ -145,164 +173,224 @@ export function AppShell({ children, title, action }: { children: React.ReactNod
   const avatarUrl = user?.user_metadata?.avatar_url;
 
   return (
-    <div className="app-shell">
-      <aside id="app-sidebar" className={`sidebar ${mobileNavOpen ? "mobile-open" : ""}`}>
-        <Brand href="/dashboard" />
-        <div className="workspace">
-          <span className="workspace-mark" aria-hidden="true"><Image src="/brand/shouldbuild-mark.svg" alt="" width={28} height={28}/></span>
-          <div><b>Decision room</b><small>Every idea earns its next move</small></div>
+    <div className="min-h-screen bg-sb-bg-base text-sb-text-primary">
+      <aside
+        id="app-sidebar"
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-sb-border-hairline bg-sb-bg-surface-1",
+          "transition-transform duration-sb-base ease-sb-standard md:translate-x-0",
+          mobileNavOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
+        <div className="border-b border-sb-border-hairline px-sb-5 py-sb-4">
+          <Brand href="/dashboard" />
         </div>
-        <p className="sidebar-label">DECISION SYSTEM</p>
-        <nav className="instrument-nav" aria-label="Main navigation" style={{ "--active-index": activeLinkIndex } as CSSProperties}>
-          {activeLinkIndex >= 0 && <span className="nav-active-indicator" aria-hidden="true" />}
-          {links.map(({ href, label, icon: Icon, description }, index) => (
-            <Link
-              href={href}
-              key={href}
-              className={`${isActiveNavigation(href, pathname) ? "nav-link active" : "nav-link"} ${motion.transitionBase} ${motion.pressTight} ${revealUpClass}`}
-              style={getStaggerDelay(index, 150, 25)}
-              onClick={() => setMobileNavOpen(false)}
-              data-tour={`nav-${href.split("/").filter(Boolean).join("-")}`}
-              data-preview={description}
-            >
-              <Icon size={16} /><span>{label}</span>
-            </Link>
-          ))}
+
+        <div className="mx-sb-4 mt-sb-4 flex items-center gap-sb-3 rounded-sb-md border border-sb-border-hairline bg-sb-bg-surface-2 p-sb-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-sb-sm border border-sb-border-hairline bg-sb-bg-surface-1" aria-hidden="true">
+            <Image src="/brand/shouldbuild-mark.svg" alt="" width={24} height={24}/>
+          </span>
+          <span className="min-w-0 flex-1">
+            <b className="block truncate text-sm font-medium">Decision room</b>
+            <small className="block truncate text-xs text-sb-text-tertiary">Current workspace</small>
+          </span>
+          <ChevronDown className="text-sb-text-tertiary" size={14} aria-hidden="true"/>
+        </div>
+
+        <p className="mb-sb-2 mt-sb-6 px-sb-5 text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">Decision system</p>
+        <nav className="flex flex-col gap-sb-1 px-sb-3" aria-label="Main navigation">
+          {links.map(({ href, label, icon: Icon, description }) => {
+            const active = isActiveNavigation(href, pathname);
+            return (
+              <MagneticButton className="w-full" key={href}>
+                <Link
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "relative flex min-h-10 w-full items-center gap-sb-3 rounded-sb-md px-sb-3 py-sb-2 text-sm",
+                    "transition-[background-color,color,transform] duration-sb-fast ease-sb-standard active:scale-[0.97]",
+                    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sb-border-focus",
+                    active
+                      ? "bg-sb-accent-muted text-sb-accent"
+                      : "text-sb-text-secondary hover:bg-sb-bg-surface-2 hover:text-sb-text-primary",
+                  )}
+                  onClick={() => setMobileNavOpen(false)}
+                  data-tour={`nav-${href.split("/").filter(Boolean).join("-")}`}
+                  data-preview={description}
+                >
+                  {active && <span className="absolute inset-y-sb-2 left-0 w-0.5 rounded-sb-pill bg-sb-accent" aria-hidden="true"/>}
+                  <Icon size={16} aria-hidden="true"/>
+                  <span>{label}</span>
+                </Link>
+              </MagneticButton>
+            );
+          })}
         </nav>
-        <div className="side-bottom">
-          <div className="side-note">
-            <Circle size={10} fill="currentColor" />
-            {user
-              ? <span><b>Private system online</b><small>Your evidence trail stays attached to every verdict</small></span>
-              : <span><b>Explore the system</b><small>Sign in when an idea deserves a real trial</small></span>}
+
+        <div className="mt-auto border-t border-sb-border-hairline p-sb-4">
+          <div className="flex items-start gap-sb-3 rounded-sb-md bg-sb-bg-surface-2 p-sb-3 text-sb-text-secondary">
+            <Circle className="mt-1 shrink-0 text-sb-text-tertiary" size={8} fill="currentColor" aria-hidden="true"/>
+            <span>
+              <b className="block text-xs font-medium text-sb-text-primary">{user ? "Private workspace" : "Explore ShouldBuild"}</b>
+              <small className="mt-sb-1 block text-xs leading-relaxed text-sb-text-tertiary">
+                {user ? "Evidence stays attached to every verdict." : "Sign in when an idea deserves a full evidence trail."}
+              </small>
+            </span>
           </div>
-          <p className="sidebar-footnote"><ShieldCheck size={11}/> SHOULDBUILD · VALIDATE FIRST</p>
+          <p className="mb-0 mt-sb-3 text-xs uppercase tracking-[0.02em] text-sb-text-tertiary">ShouldBuild · Evidence first</p>
         </div>
       </aside>
 
-      <main className="app-main">
-        <header className="app-header">
-          <div className="app-header-left">
-            <button
-              className={`mobile-menu-toggle ${motion.transitionBase} ${motion.pressTight}`}
-              onClick={() => setMobileNavOpen(!mobileNavOpen)}
+      <div className="min-h-screen md:pl-72">
+        <header className="sticky top-0 z-30 flex min-h-20 items-center justify-between gap-sb-4 border-b border-sb-border-hairline bg-sb-bg-base px-sb-4 py-sb-3 md:px-sb-6">
+          <div className="flex min-w-0 items-center gap-sb-3">
+            <Button
+              variant="ghost"
+              className="shrink-0 px-sb-3 md:hidden"
+              onClick={() => setMobileNavOpen((open) => !open)}
               aria-label="Toggle navigation"
               aria-expanded={mobileNavOpen}
               aria-controls="app-sidebar"
             >
-              <span />
-              <span />
-              <span />
-            </button>
-            <div>
-              <p className="eyebrow"><Sparkles size={11}/> Decision room / {title}</p>
-              <h1>{title}</h1>
-              <small>{pageContext[title] ?? "Evidence first. Commitment second."}</small>
+              <Menu size={18}/>
+            </Button>
+            <div className="min-w-0">
+              <p className="m-0 text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">Decision room / {title}</p>
+              <h1 className="m-0 truncate font-sb-display text-2xl font-[480] tracking-[-0.01em]">{title}</h1>
+              <p className="m-0 hidden truncate text-xs text-sb-text-secondary lg:block">{pageContext[title] ?? "Evidence first. Commitment second."}</p>
             </div>
           </div>
-          <div className="header-actions">
-            <button className={`quick-nav-trigger ${motion.buttonTight}`} onClick={() => setQuickNavOpen(true)} aria-label="Open quick navigation">
-              <Search size={14}/><span>Jump anywhere</span><kbd>{mounted && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl"} K</kbd>
-            </button>
+
+          <div className="flex shrink-0 items-center gap-sb-2">
+            <Button variant="secondary" className="hidden lg:inline-flex" onClick={() => setQuickNavOpen(true)} aria-label="Open quick navigation">
+              <Search size={14}/><span>Jump anywhere</span><kbd className="rounded-sb-sm border border-sb-border-hairline px-sb-1 font-sb-mono text-xs text-sb-text-tertiary">{mounted && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl"} K</kbd>
+            </Button>
             {action}
             {loading ? (
-              <span className="user-menu-loading" aria-label="Loading account" />
+              <span className="size-9 rounded-sb-pill border border-sb-border-hairline bg-sb-bg-surface-2" aria-label="Loading account"/>
             ) : !user ? (
-              <Link className="button button-small ghost" href={`/sign-in?redirectTo=${encodeURIComponent(pathname)}`}>Sign in</Link>
-            ) : <div className="user-menu-wrap" ref={menuRef}>
-              <button
-                type="button"
-                className={`user-menu-trigger ${motion.transitionBase} ${motion.pressTight}`}
-                onClick={() => setMenuOpen(!menuOpen)}
-                aria-expanded={menuOpen}
-                aria-haspopup="menu"
-                aria-label={`Open profile menu for ${displayName}`}
-              >
-                {mounted ? (
-                  <>
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt=""
-                        referrerPolicy="no-referrer"
-                        className="user-avatar"
-                      />
-                    ) : (
-                      <span className="user-avatar-fallback">
-                        {displayName[0].toUpperCase()}
-                      </span>
-                    )}
-                    <i className="user-presence-dot" aria-hidden="true"/>
-                    <span className="user-menu-name">{displayName}</span>
-                  </>
-                ) : (
-                  <div className="w-6 h-6 rounded-full bg-border animate-pulse mr-2" />
-                )}
-                <ChevronDown size={14} className={`user-menu-chevron ${menuOpen ? "open" : ""}`} />
-              </button>
+              <Link className="rounded-sb-md px-sb-3 py-sb-2 text-sm text-sb-text-secondary hover:bg-sb-bg-surface-1 hover:text-sb-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sb-border-focus" href={`/sign-in?redirectTo=${encodeURIComponent(pathname)}`}>Sign in</Link>
+            ) : (
+              <div className="relative" ref={menuRef}>
+                <Button
+                  variant="ghost"
+                  className="px-sb-2"
+                  onClick={() => setMenuOpen((open) => !open)}
+                  aria-expanded={menuOpen}
+                  aria-haspopup="menu"
+                  aria-label={`Open profile menu for ${displayName}`}
+                >
+                  {mounted && avatarUrl ? (
+                    <img src={avatarUrl} alt="" referrerPolicy="no-referrer" className="size-7 rounded-sb-pill object-cover"/>
+                  ) : (
+                    <span className="grid size-7 place-items-center rounded-sb-pill border border-sb-border-hairline bg-sb-bg-surface-2 text-xs font-medium">{displayName[0].toUpperCase()}</span>
+                  )}
+                  <span className="hidden max-w-32 truncate text-sm sm:inline">{displayName}</span>
+                  <ChevronDown className={cn("text-sb-text-tertiary transition-transform duration-sb-fast ease-sb-standard", menuOpen && "rotate-180")} size={14}/>
+                </Button>
 
-              {menuOpen && mounted && (
-                <div className="user-dropdown" role="menu" aria-label="Profile menu">
-                  <div className="user-dropdown-header">
-                    <span><i/> Private decision room</span>
-                    <b>{displayName}</b>
-                    <small>{user?.email}</small>
-                  </div>
-                  <hr />
-                  <Link href="/settings" role="menuitem" className={`user-dropdown-item ${motion.transitionBase} ${motion.pressTight}`} onClick={() => setMenuOpen(false)}>
-                    <User size={14} /> Profile & Settings
-                  </Link>
-                  <button type="button" role="menuitem" className={`user-dropdown-item ${motion.transitionBase} ${motion.pressTight}`} onClick={() => { setMenuOpen(false); setTourOpen(true); }}>
-                    <BookOpen size={14} /> Take Product Tour
-                  </button>
-                  <hr />
-                  <button type="button" role="menuitem" className={`user-dropdown-item danger ${motion.transitionBase} ${motion.pressTight}`} onClick={handleSignOut}>
-                    <LogOut size={14} /> Sign out
-                  </button>
-                </div>
-              )}
-            </div>}
+                <PanelTransition
+                  isOpen={menuOpen && mounted}
+                  variant="popover"
+                  className="absolute right-0 top-[calc(100%+var(--sb-space-2))] z-50 w-64"
+                >
+                  <Card className="bg-sb-bg-surface-2 p-sb-2" role="menu" aria-label="Profile menu">
+                    <div className="border-b border-sb-border-hairline px-sb-3 py-sb-3">
+                      <b className="block truncate text-sm font-medium">{displayName}</b>
+                      <small className="block truncate text-xs text-sb-text-tertiary">{user.email}</small>
+                    </div>
+                    <Link href="/settings" role="menuitem" className="mt-sb-2 flex min-h-10 items-center gap-sb-2 rounded-sb-md px-sb-3 py-sb-2 text-sm text-sb-text-secondary hover:bg-sb-bg-surface-3 hover:text-sb-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sb-border-focus" onClick={() => setMenuOpen(false)}>
+                      <User size={14}/> Profile &amp; Settings
+                    </Link>
+                    <Button variant="ghost" role="menuitem" className="w-full justify-start" onClick={() => { setMenuOpen(false); setTourOpen(true); }}>
+                      <BookOpen size={14}/> Take Product Tour
+                    </Button>
+                    <div className="my-sb-2 border-t border-sb-border-hairline"/>
+                    <Button variant="destructive" role="menuitem" className="w-full justify-start" onClick={handleSignOut}>
+                      <LogOut size={14}/> Sign out
+                    </Button>
+                  </Card>
+                </PanelTransition>
+              </div>
+            )}
           </div>
         </header>
-        <div key={pathname} className="sf-content-enter app-page-canvas" data-tour="page-canvas">{children}</div>
-        <LegalFooter compact />
-      </main>
 
-      {/* Mobile nav overlay */}
-      {mobileNavOpen && (
-        <div className="mobile-nav-overlay" onClick={() => setMobileNavOpen(false)} />
+        <main className="min-h-[calc(100vh-5rem)]">
+          <div key={pathname} className="min-w-0" data-tour="page-canvas">{children}</div>
+        </main>
+        <LegalFooter compact/>
+      </div>
+
+      <PanelTransition
+        isOpen={mobileNavOpen}
+        variant="fade"
+        className="fixed inset-0 z-30 md:hidden"
+      >
+        <button
+          type="button"
+          className="absolute inset-0 cursor-default [background:color-mix(in_srgb,var(--sb-bg-base)_82%,transparent)]"
+          onClick={() => setMobileNavOpen(false)}
+          aria-label="Close navigation"
+        />
+      </PanelTransition>
+
+      <ModalTransition
+        isOpen={quickNavOpen}
+        overlayProps={{
+          className: "fixed inset-0 z-50 grid place-items-start px-sb-4 pt-[12vh] [background:color-mix(in_srgb,var(--sb-bg-base)_82%,transparent)]",
+          onMouseDown: () => setQuickNavOpen(false),
+        }}
+        panelProps={{
+          className: "w-full max-w-xl",
+          role: "dialog",
+          "aria-modal": true,
+          "aria-label": "Quick navigation",
+          onMouseDown: (event) => event.stopPropagation(),
+        }}
+      >
+          <Card className="w-full bg-sb-bg-surface-2">
+            <header className="flex items-center gap-sb-3 border-b border-sb-border-hairline p-sb-3">
+              <Search className="shrink-0 text-sb-text-tertiary" size={17}/>
+              <Input ref={quickNavInputRef} className="border-0 bg-transparent p-0 focus:border-transparent focus-visible:outline-offset-4" value={quickNavQuery} onChange={(event) => setQuickNavQuery(event.target.value)} onKeyDown={handleQuickNavKeyDown} placeholder="Go to a page…" aria-label="Search pages" aria-controls="quick-nav-results"/>
+              <Button variant="ghost" className="min-h-8 px-sb-2 py-sb-1" onClick={() => setQuickNavOpen(false)} aria-label="Close quick navigation"><X size={14}/></Button>
+            </header>
+            <div id="quick-nav-results" className="max-h-[55vh] overflow-y-auto p-sb-2" role="listbox">
+              <p className="m-0 px-sb-3 py-sb-2 text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">Navigate</p>
+              {filteredLinks.map(({ href, label, icon: Icon, description }, index) => (
+                <Button
+                  key={href}
+                  variant="ghost"
+                  role="option"
+                  aria-selected={index === quickNavIndex}
+                  className={cn("mb-sb-1 w-full justify-start px-sb-3 text-left", index === quickNavIndex && "bg-sb-bg-surface-3 text-sb-text-primary")}
+                  onMouseEnter={() => setQuickNavIndex(index)}
+                  onClick={() => openQuickNavResult(href)}
+                >
+                  <span className="grid size-8 shrink-0 place-items-center rounded-sb-sm border border-sb-border-hairline bg-sb-bg-surface-1"><Icon size={15}/></span>
+                  <span className="min-w-0 flex-1"><b className="block text-sm font-medium">{label}</b><small className="block truncate text-xs text-sb-text-tertiary">{description}</small></span>
+                  <ArrowRight className="text-sb-text-tertiary" size={14}/>
+                </Button>
+              ))}
+              {!filteredLinks.length && (
+                <div className="grid justify-items-center gap-sb-2 px-sb-4 py-sb-8 text-center text-sb-text-tertiary">
+                  <Command size={18}/><b className="text-sm font-medium text-sb-text-secondary">No matching page</b><small>Try “report”, “pricing”, or “settings”.</small>
+                </div>
+              )}
+            </div>
+            <footer className="flex gap-sb-4 border-t border-sb-border-hairline px-sb-4 py-sb-3 text-xs text-sb-text-tertiary">
+              <span><kbd className="font-sb-mono">↑ ↓</kbd> select</span><span><kbd className="font-sb-mono">↵</kbd> open</span><span><kbd className="font-sb-mono">Esc</kbd> close</span>
+            </footer>
+          </Card>
+      </ModalTransition>
+
+      {user && (
+        <Suspense fallback={null}>
+          <TourAutoStarter onStartTour={() => setTourOpen(true)} tourCompleted={profile?.tour_completed}/>
+        </Suspense>
       )}
 
-      {quickNavOpen && <div className="quick-nav-backdrop" onMouseDown={() => setQuickNavOpen(false)}>
-        <section className="quick-nav-panel sf-content-enter" role="dialog" aria-modal="true" aria-label="Quick navigation" onMouseDown={event => event.stopPropagation()}>
-          <header className="quick-nav-search">
-            <Search size={17}/>
-            <input ref={quickNavInputRef} value={quickNavQuery} onChange={event => setQuickNavQuery(event.target.value)} onKeyDown={handleQuickNavKeyDown} placeholder="Go to a page…" aria-label="Search pages" aria-controls="quick-nav-results"/>
-            <button onClick={() => setQuickNavOpen(false)} aria-label="Close quick navigation"><X size={14}/></button>
-          </header>
-          <div id="quick-nav-results" className="quick-nav-results" role="listbox">
-            <p>Navigate</p>
-            {filteredLinks.map(({ href, label, icon: Icon, description }, index) => <button key={href} role="option" aria-selected={index === quickNavIndex} className={index === quickNavIndex ? "selected" : ""} onMouseEnter={() => setQuickNavIndex(index)} onClick={() => openQuickNavResult(href)}>
-              <span><Icon size={16}/></span><div><b>{label}</b><small>{description}</small></div><ArrowRight size={14}/>
-            </button>)}
-            {!filteredLinks.length && <div className="quick-nav-empty"><Command size={18}/><b>No matching page</b><small>Try “report”, “pricing”, or “settings”.</small></div>}
-          </div>
-          <footer><span><kbd>↑</kbd><kbd>↓</kbd> select</span><span><kbd>↵</kbd> open</span><span><kbd>Esc</kbd> close</span></footer>
-        </section>
-      </div>}
-
-      {user && <Suspense fallback={null}>
-        <TourAutoStarter
-          onStartTour={() => setTourOpen(true)}
-          tourCompleted={profile?.tour_completed}
-        />
-      </Suspense>}
-
-      <ProductTour
-        isOpen={Boolean(user && tourOpen)}
-        onClose={() => setTourOpen(false)}
-        onComplete={() => setTourOpen(false)}
-      />
+      <ProductTour isOpen={Boolean(user && tourOpen)} onClose={() => setTourOpen(false)} onComplete={() => setTourOpen(false)}/>
     </div>
   );
 }

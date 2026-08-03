@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { manifestColors } from "@/lib/design-tokens";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -7,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Evidence-backed market validation for product ideas.",
     start_url: "/",
     display: "standalone",
-    background_color: "#061827",
-    theme_color: "#70C9B5",
+    background_color: manifestColors.background,
+    theme_color: manifestColors.theme,
     icons: [
       {
         src: "/icon.svg",

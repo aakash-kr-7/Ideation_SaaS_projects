@@ -1,5 +1,6 @@
 import { LandingPage } from "@/components/landing/landing-page";
+import { sampleFullValidation } from "@/lib/sample-reports";
 
 export default function Page() {
-  return <LandingPage />;
+  return <LandingPage report={sampleFullValidation}/>;
 }

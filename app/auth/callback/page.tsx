@@ -1,9 +1,31 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AlertTriangle, CheckCircle2, LoaderCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { LoaderCircle, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+
+function CallbackStatus({ status, message, onRetry }: {
+  status: "loading" | "success" | "error";
+  message: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <Card className="w-full max-w-md p-sb-8">
+      <div className="grid justify-items-center gap-sb-4 text-center" role={status === "error" ? "alert" : "status"}>
+        {status === "loading" && <LoaderCircle className="animate-spin text-sb-accent" size={32} />}
+        {status === "success" && <CheckCircle2 className="text-sb-verdict-build" size={32} />}
+        {status === "error" && <AlertTriangle className="text-sb-verdict-avoid" size={32} />}
+        <p className="m-0 text-sm leading-relaxed text-sb-text-secondary">{message}</p>
+        {status === "error" && onRetry && (
+          <Button className="mt-sb-2" onClick={onRetry}>Back to sign in</Button>
+        )}
+      </div>
+    </Card>
+  );
+}
 
 function CallbackContent() {
   const router = useRouter();
@@ -14,13 +36,11 @@ function CallbackContent() {
   useEffect(() => {
     const handleCallback = async () => {
       const supabase = createClient();
-
-      // Check if there's already a session (hash-based flows auto-resolve)
       const { data: { session }, error } = await supabase.auth.getSession();
 
       if (error) {
         setStatus("error");
-        setMessage(error.message || "Authentication failed. Please try again.");
+        setMessage(error.message || "Authentication failed. Sign in again.");
         return;
       }
 
@@ -32,9 +52,6 @@ function CallbackContent() {
         return;
       }
 
-      // If no session and no error, the hash may need processing
-      // Supabase client auto-processes hash fragments on init
-      // Wait briefly and check again
       await new Promise(resolve => setTimeout(resolve, 1500));
       const { data: { session: retrySession } } = await supabase.auth.getSession();
 
@@ -45,41 +62,20 @@ function CallbackContent() {
         setTimeout(() => router.replace(next), 800);
       } else {
         setStatus("error");
-        setMessage("Could not complete authentication. Please sign in again.");
+        setMessage("Authentication could not be completed. Sign in again.");
       }
     };
 
-    handleCallback();
+    void handleCallback();
   }, [router, searchParams]);
 
-  return (
-    <div className="auth-card auth-callback-card">
-      <div className="auth-callback-status">
-        {status === "loading" && <LoaderCircle className="animate-spin" size={32} style={{ color: "var(--accent)" }} />}
-        {status === "success" && <CheckCircle2 size={32} style={{ color: "var(--verdict-build)" }} />}
-        {status === "error" && <AlertTriangle size={32} style={{ color: "var(--verdict-avoid)" }} />}
-        <p>{message}</p>
-        {status === "error" && (
-          <button className="button" onClick={() => router.push("/sign-in")} style={{ marginTop: 16 }}>
-            Back to sign in
-          </button>
-        )}
-      </div>
-    </div>
-  );
+  return <CallbackStatus status={status} message={message} onRetry={() => router.push("/sign-in")} />;
 }
 
 export default function AuthCallbackPage() {
   return (
-    <main className="auth-page">
-      <Suspense fallback={
-        <div className="auth-card auth-callback-card">
-          <div className="auth-callback-status">
-            <LoaderCircle className="animate-spin" size={32} style={{ color: "var(--accent)" }} />
-            <p>Loading callback handler…</p>
-          </div>
-        </div>
-      }>
+    <main className="grid min-h-screen place-items-center bg-sb-bg-base px-sb-5 py-sb-10 text-sb-text-primary">
+      <Suspense fallback={<CallbackStatus status="loading" message="Loading callback handler…" />}>
         <CallbackContent />
       </Suspense>
     </main>

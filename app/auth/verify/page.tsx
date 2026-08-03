@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, ArrowRight, LoaderCircle, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, LoaderCircle, Mail } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 import { authEntryUrl, safeAuthRedirect } from "@/lib/auth-redirect";
+
+const stepClass = "grid grid-cols-[2rem_1fr] items-start gap-sb-3 rounded-sb-md border border-sb-border-hairline bg-sb-bg-surface-2 p-sb-3";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -18,13 +22,11 @@ export default function VerifyEmailPage() {
   useEffect(() => {
     const intendedDestination = safeAuthRedirect(new URL(window.location.href).searchParams.get("next"));
     setNextPath(intendedDestination);
-    // Try to get the email from the current session or localStorage
-    const stored = typeof window !== "undefined" ? localStorage.getItem("shouldbuild-verify-email") : null;
+    const stored = localStorage.getItem("shouldbuild-verify-email");
     if (stored) setEmail(stored);
 
-    // Check if already verified
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    void supabase.auth.getUser().then(({ data: { user } }) => {
       if (user?.email_confirmed_at) {
         const storedRedirect = localStorage.getItem("shouldbuild-auth-redirect");
         localStorage.removeItem("shouldbuild-auth-redirect");
@@ -35,7 +37,7 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     if (cooldown <= 0) return;
-    const timer = setTimeout(() => setCooldown(c => c - 1), 1000);
+    const timer = setTimeout(() => setCooldown(current => current - 1), 1000);
     return () => clearTimeout(timer);
   }, [cooldown]);
 
@@ -47,82 +49,51 @@ export default function VerifyEmailPage() {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(nextPath)}`,
-        },
+        options: { emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(nextPath)}` },
       });
       if (error) throw error;
       setResent(true);
       setCooldown(60);
       setTimeout(() => setResent(false), 4000);
     } catch {
-      // Silently handle — don't reveal whether email exists
+      // Do not reveal whether an email address exists.
     } finally {
       setResending(false);
     }
   };
 
   return (
-    <main className="auth-page">
-      <div className="auth-card auth-verify-card">
+    <main className="grid min-h-screen place-items-center bg-sb-bg-base px-sb-5 py-sb-10 text-sb-text-primary">
+      <Card className="grid w-full max-w-lg gap-sb-6 p-sb-8">
         <Brand />
-        <div className="auth-verify-icon">
-          <Mail size={28} />
-        </div>
-        <div className="auth-copy">
-          <h1>Check your email</h1>
-          <p>
-            We sent a verification link to{" "}
-            {email ? <strong>{email}</strong> : "your email address"}.
-            Click the link to verify your account and get started.
+        <div className="grid size-12 place-items-center rounded-sb-md border border-sb-border-hairline bg-sb-bg-surface-2 text-sb-text-secondary"><Mail size={28} /></div>
+        <div className="grid gap-sb-2">
+          <h1 className="m-0 font-sb-display text-2xl font-[480]">Check your email</h1>
+          <p className="m-0 text-sm leading-relaxed text-sb-text-secondary">
+            We sent a verification link to {email ? <strong className="text-sb-text-primary">{email}</strong> : "your email address"}. Click the link to verify your account and get started.
           </p>
         </div>
 
-        <div className="auth-verify-steps">
-          <div className="verify-step">
-            <span>1</span>
-            <div>
-              <b>Open your email</b>
-              <small>Check your inbox (and spam folder)</small>
+        <div className="grid gap-sb-3">
+          {[
+            ["Open your email", "Check your inbox (and spam folder)"],
+            ["Click the verification link", "Use the link before it expires"],
+            ["Start validating ideas", "You'll be redirected automatically"],
+          ].map(([title, detail], index) => (
+            <div className={stepClass} key={title}>
+              <span className="grid size-8 place-items-center rounded-sb-pill border border-sb-border-hairline-strong font-sb-mono text-xs">{index + 1}</span>
+              <div><b className="block text-sm">{title}</b><small className="text-sb-text-secondary">{detail}</small></div>
             </div>
-          </div>
-          <div className="verify-step">
-            <span>2</span>
-            <div>
-              <b>Click the verification link</b>
-              <small>Use the link before it expires</small>
-            </div>
-          </div>
-          <div className="verify-step">
-            <span>3</span>
-            <div>
-              <b>Start validating ideas</b>
-              <small>You&apos;ll be redirected automatically</small>
-            </div>
-          </div>
+          ))}
         </div>
 
-        <div className="auth-verify-actions">
-          <button
-            className="button ghost"
-            onClick={handleResend}
-            disabled={resending || cooldown > 0}
-          >
-            {resending ? (
-              <><LoaderCircle className="animate-spin" size={14} /> Sending…</>
-            ) : resent ? (
-              <><CheckCircle2 size={14} /> Email sent!</>
-            ) : cooldown > 0 ? (
-              `Resend in ${cooldown}s`
-            ) : (
-              "Resend verification email"
-            )}
-          </button>
-          <button className="button" onClick={() => router.push(authEntryUrl(nextPath))}>
-            Back to sign in <ArrowRight size={14} />
-          </button>
+        <div className="flex flex-col gap-sb-3 sm:flex-row sm:justify-end">
+          <Button variant="secondary" onClick={handleResend} disabled={resending || cooldown > 0}>
+            {resending ? <><LoaderCircle className="animate-spin" size={14} /> Sending…</> : resent ? <><CheckCircle2 size={14} /> Email sent</> : cooldown > 0 ? `Resend in ${cooldown}s` : "Resend verification email"}
+          </Button>
+          <Button onClick={() => router.push(authEntryUrl(nextPath))}>Back to sign in <ArrowRight size={14} /></Button>
         </div>
-      </div>
+      </Card>
     </main>
   );
 }

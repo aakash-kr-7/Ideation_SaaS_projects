@@ -6,6 +6,10 @@ import {
   ArrowLeft, ArrowRight, BarChart3, Check, FileText, LayoutDashboard,
   Lightbulb, Plus, Scale, SearchCheck, X,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ModalTransition } from "@/components/ui/panel-transition";
+import { cn } from "@/lib/utils";
 
 interface TourStep {
   icon: typeof LayoutDashboard;
@@ -85,18 +89,14 @@ type Highlight = { top: number; left: number; width: number; height: number };
 
 export function ProductTour({ isOpen, onClose, onComplete }: ProductTourProps) {
   const [step, setStep] = useState(0);
-  const [exiting, setExiting] = useState(false);
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   const current = tourSteps[step];
   const Icon = current.icon;
 
   const dismiss = useCallback(() => {
-    setExiting(true);
-    window.setTimeout(() => {
-      setExiting(false);
-      setStep(0);
-      onClose();
-    }, 220);
+    setStep(0);
+    setHighlight(null);
+    onClose();
   }, [onClose]);
 
   const rememberCompletion = useCallback(async () => {
@@ -137,9 +137,10 @@ export function ProductTour({ isOpen, onClose, onComplete }: ProductTourProps) {
       ? document.querySelector<HTMLElement>(selector) ?? (current.fallback ? document.querySelector<HTMLElement>(current.fallback) : null)
       : null;
 
-    document.body.classList.add("tour-active");
-    target?.classList.add("tour-target-active");
-    target?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    target?.scrollIntoView({
+      block: "nearest",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
 
     const measure = () => {
       if (!target) return setHighlight(null);
@@ -159,8 +160,6 @@ export function ProductTour({ isOpen, onClose, onComplete }: ProductTourProps) {
     window.addEventListener("resize", measure);
     window.addEventListener("scroll", measure, true);
     return () => {
-      document.body.classList.remove("tour-active");
-      target?.classList.remove("tour-target-active");
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", measure, true);
     };
@@ -201,48 +200,74 @@ export function ProductTour({ isOpen, onClose, onComplete }: ProductTourProps) {
     return { className, style: { left, top, width } };
   }, [highlight]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className={`tour-overlay ${exiting ? "tour-exit" : ""}`} role="presentation">
-      {highlight ? <div className="tour-spotlight" style={highlight} /> : <div className="tour-backdrop" />}
-      <div
-        className={`tour-modal tour-modal-${modalPosition.className}`}
-        style={modalPosition.style}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="tour-title"
-        key={step}
-      >
-        <div className="tour-window-bar">
-          <div><span className="tour-window-signal"/><b>ShouldBuild</b><i>/ Guided activation</i></div>
-          <span className="tour-window-dots"><i/><i/><i/></span>
+    <ModalTransition
+      isOpen={isOpen}
+      overlayProps={{
+        className: "fixed inset-0 z-[70] [background:color-mix(in_srgb,var(--sb-bg-base)_82%,transparent)]",
+        role: "presentation",
+      }}
+      overlayContent={highlight && (
+        <div
+          className="pointer-events-none fixed rounded-sb-md border border-sb-border-hairline-strong bg-transparent"
+          style={highlight}
+          aria-hidden="true"
+        />
+      )}
+      panelProps={{
+        className: cn(
+          "fixed z-[71]",
+          !modalPosition.style && "pointer-events-none inset-0 grid place-items-center p-sb-4",
+        ),
+        style: modalPosition.style,
+        role: "dialog",
+        "aria-modal": true,
+        "aria-labelledby": "tour-title",
+      }}
+    >
+      <Card className="pointer-events-auto relative max-h-[calc(100vh-var(--sb-space-8))] w-full max-w-lg overflow-y-auto bg-sb-bg-surface-2 p-sb-6">
+        <div className="mb-sb-5 flex items-center justify-between border-b border-sb-border-hairline pb-sb-3 text-xs uppercase tracking-[0.02em] text-sb-text-tertiary">
+          <span><b className="font-medium text-sb-text-secondary">ShouldBuild</b> / Guided tour</span>
+          <span className="font-sb-mono tabular-nums">{String(step + 1).padStart(2, "0")} / {String(tourSteps.length).padStart(2, "0")}</span>
         </div>
-        <button className="tour-close" onClick={dismiss} aria-label="Close tour"><X size={17} /></button>
-        <div className="tour-step-counter"><span>{String(step + 1).padStart(2, "0")}</span> / {String(tourSteps.length).padStart(2, "0")} <i>{current.signal}</i></div>
-        <div className="tour-heading-row">
-          <div className={`tour-icon-wrap${step === 0 ? " tour-brand-icon" : ""}`}>
+        <Button variant="ghost" className="absolute right-sb-4 top-sb-4 min-h-8 px-sb-2 py-sb-1" onClick={dismiss} aria-label="Close tour"><X size={16}/></Button>
+
+        <div className="flex items-center justify-between gap-sb-4">
+          <div className="grid size-11 place-items-center rounded-sb-md border border-sb-border-hairline bg-sb-bg-surface-1 text-sb-text-secondary">
             {step === 0 ? <Image src="/brand/shouldbuild-mark.svg" alt="" width={34} height={34}/> : <Icon size={22} />}
           </div>
-          <span className="tour-status-pill"><i/> Decision system live</span>
+          <span className="rounded-sb-pill border border-sb-border-hairline px-sb-3 py-sb-1 text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">{current.signal}</span>
         </div>
-        <p className="eyebrow tour-section-label">{current.section}</p>
-        <h2 className="tour-title" id="tour-title">{current.title}</h2>
-        <p className="tour-body">{current.body}</p>
-        <div className="tour-tip"><Lightbulb size={15} /><p><b>Operator note</b>{current.tip}</p></div>
-        <div className="tour-progress" aria-label="Tour progress">
-          {tourSteps.map((_, index) => <i className={index <= step ? "active" : ""} key={index} />)}
+
+        <p className="mb-sb-2 mt-sb-5 text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">{current.section}</p>
+        <h2 className="m-0 font-sb-display text-2xl font-[480] leading-tight tracking-[-0.01em]" id="tour-title">{current.title}</h2>
+        <p className="mb-0 mt-sb-3 text-sm leading-relaxed text-sb-text-secondary">{current.body}</p>
+
+        <Card className="mt-sb-5 flex gap-sb-3 rounded-sb-md bg-sb-bg-surface-1 p-sb-4">
+          <Lightbulb className="mt-0.5 shrink-0 text-sb-text-tertiary" size={15}/>
+          <p className="m-0 text-sm leading-relaxed text-sb-text-secondary"><b className="mb-sb-1 block font-medium text-sb-text-primary">Operator note</b>{current.tip}</p>
+        </Card>
+
+        <div className="mt-sb-5 flex gap-sb-2" aria-label={`Tour progress: step ${step + 1} of ${tourSteps.length}`}>
+          {tourSteps.map((_, index) => (
+            <span
+              className={cn("h-1 flex-1 rounded-sb-pill", index <= step ? "bg-sb-border-hairline-strong" : "bg-sb-bg-surface-1")}
+              key={index}
+              aria-hidden="true"
+            />
+          ))}
         </div>
-        <div className="tour-nav">
-          <button className="tour-skip" onClick={() => void skip()}>I know my way around</button>
-          <div className="tour-nav-buttons">
-            {step > 0 && <button className="button ghost tour-prev" onClick={previous}><ArrowLeft size={14} /> Back</button>}
-            <button className="button tour-next" onClick={next}>
+
+        <div className="mt-sb-6 flex flex-col-reverse items-stretch justify-between gap-sb-3 border-t border-sb-border-hairline pt-sb-5 sm:flex-row sm:items-center">
+          <Button variant="ghost" onClick={() => void skip()}>Skip tour</Button>
+          <div className="flex gap-sb-2">
+            {step > 0 && <Button variant="secondary" className="flex-1" onClick={previous}><ArrowLeft size={14}/> Back</Button>}
+            <Button className="flex-1 whitespace-nowrap" onClick={next}>
               {step === tourSteps.length - 1 ? <><Check size={15} /> Enter decision room</> : <>Show next move <ArrowRight size={15} /></>}
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </Card>
+    </ModalTransition>
   );
 }

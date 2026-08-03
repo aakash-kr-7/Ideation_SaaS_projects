@@ -1,6 +1,20 @@
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/layout/auth-provider";
+import { PageTransition } from "@/components/layout/page-transition";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--sb-font-inter",
+  display: "swap",
+});
+
+const jetBrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--sb-font-jetbrains-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://shouldbuild.app"),
@@ -34,15 +48,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-      </head>
-      <body suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${jetBrainsMono.variable}`}>
+      <body className="font-sb-body" suppressHydrationWarning>
         <AuthProvider>
-          {children}
+          <PageTransition>{children}</PageTransition>
         </AuthProvider>
       </body>
     </html>

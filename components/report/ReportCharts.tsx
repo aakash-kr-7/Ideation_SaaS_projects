@@ -1,6 +1,15 @@
 "use client";
 
+import { useState } from "react";
+import { ChevronDown, ExternalLink } from "lucide-react";
 import type { ValidationReport } from "@/lib/report-schema";
+import { scoringCriteria } from "@/lib/scoring";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Disclosure } from "@/components/ui/disclosure";
+import { EvidenceBadge, type EvidenceTier } from "@/components/ui/evidence-badge";
+import { DataResolve } from "@/components/ui/data-resolve";
+import { PanelTransition } from "@/components/ui/panel-transition";
 
 export type ReportChartDataset = {
   chartKey: string;
@@ -10,77 +19,230 @@ export type ReportChartDataset = {
   supportingEvidenceIds: string[];
 };
 
-type Datum = { label: string; value: number; note?: string };
+export type FactorAnalysisItem = {
+  criterion: string;
+  rawScore: number;
+  effectiveScore: number;
+  evidenceCoefficient: number;
+  evidenceState: string;
+  supportingEvidenceIds: string[];
+  challengingEvidenceIds: string[];
+  buyerSegmentApplicability: string[];
+  unresolvedAssumptions: string[];
+  scoreSensitivity?: { lower: number; current: number; upper: number; explanation: string };
+};
 
-function titleFor(key: string) {
-  return key.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+type Datum = { label: string; value: number };
+
+function human(value: string) {
+  return value.replaceAll("_", " ").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function finite(value: unknown) {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+function tierFromState(state: string | undefined): EvidenceTier | null {
+  if (state === "EVIDENCED") return "evidenced";
+  if (state === "SUGGESTIVE") return "suggestive";
+  if (state === "ASSUMED") return "assumed";
+  return null;
 }
 
-function objectData(value: unknown): Datum[] {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
-  return Object.entries(value as Record<string, unknown>)
-    .filter(([, entry]) => typeof entry === "number")
-    .map(([label, entry]) => ({ label: titleFor(label.replace(/^tier_/, "Tier ")), value: finite(entry) }));
+function sourceKey(evidence: ValidationReport["opportunity"]["evidence"][number]) {
+  return evidence.canonicalSourceId ?? evidence.url ?? evidence.source;
 }
 
-function fallbackCharts(report: ValidationReport): ReportChartDataset[] {
-  const evidence = report.opportunity.evidence.filter((item) => !item.excluded);
-  const byTier = evidence.reduce<Record<string, number>>((all, item) => {
-    const tier = `tier_${item.sourceTier ?? 4}`;
-    all[tier] = (all[tier] ?? 0) + 1;
-    return all;
-  }, {});
-  const byFamily = evidence.reduce<Record<string, number>>((all, item) => {
-    const family = item.evidenceFamily ?? "unclassified";
-    all[family] = (all[family] ?? 0) + 1;
-    return all;
-  }, {});
-  const bySignal = evidence.reduce<Record<string, number>>((all, item) => {
-    all[item.signal] = (all[item.signal] ?? 0) + 1;
-    return all;
-  }, {});
-  return [
-    { chartKey: "score_breakdown", chartType: "bar", sourceData: { values: report.opportunity.scorecard.scores }, chartConfig: { title: "Score contribution by criterion", maxValue: 100 }, supportingEvidenceIds: [] },
-    { chartKey: "evidence_balance", chartType: "bar", sourceData: { supporting: evidence.filter((item) => !item.disconfirming).length, contradictory: evidence.filter((item) => item.disconfirming).length }, chartConfig: { title: "Evidence balance" }, supportingEvidenceIds: evidence.map((item) => item.id) },
-    { chartKey: "source_quality_distribution", chartType: "bar", sourceData: { byTier }, chartConfig: { title: "Source quality distribution" }, supportingEvidenceIds: evidence.map((item) => item.id) },
-    { chartKey: "evidence_coverage", chartType: "bar", sourceData: { byFamily, bySignal }, chartConfig: { title: "Evidence coverage" }, supportingEvidenceIds: evidence.map((item) => item.id) },
-  ];
+function independenceKey(evidence: ValidationReport["opportunity"]["evidence"][number]) {
+  return evidence.independenceKey ?? evidence.syndicationGroup ?? evidence.canonicalDomain ?? sourceKey(evidence);
+}
+
+function evidenceDate(evidence: ValidationReport["opportunity"]["evidence"][number]) {
+  return evidence.publishedOrUpdatedAt ?? evidence.date ?? evidence.retrievedAt ?? null;
+}
+
+function newestDate(items: ValidationReport["opportunity"]["evidence"]) {
+  const dated = items.map(evidenceDate).filter((value): value is string => Boolean(value));
+  if (!dated.length) return "No source date persisted";
+  return [...dated].sort((a, b) => {
+    const aTime = new Date(a).getTime();
+    const bTime = new Date(b).getTime();
+    if (!Number.isFinite(aTime) || !Number.isFinite(bTime)) return 0;
+    return bTime - aTime;
+  })[0];
+}
+
+export function FactorEvidenceList({ report, factors = [], motionKey, animateEntrance }: { report: ValidationReport; factors?: FactorAnalysisItem[]; motionKey: string; animateEntrance: boolean }) {
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const scorecard = report.opportunity.scorecard;
+  const evidenceById = new Map(report.opportunity.evidence.map((item) => [item.id, item]));
+
+  function toggle(key: string) {
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  return (
+    <div className="grid gap-sb-3">
+      {scoringCriteria.map((criterion, index) => {
+        const persisted = scorecard.factorEvidence?.[criterion.key];
+        const analysis = factors.find((item) => item.criterion === criterion.key);
+        const supportingIds = persisted?.supportingEvidenceIds ?? analysis?.supportingEvidenceIds ?? [];
+        const challengingIds = persisted?.challengingEvidenceIds ?? analysis?.challengingEvidenceIds ?? [];
+        const evidenceIds = [...new Set([...supportingIds, ...challengingIds])];
+        const evidence = evidenceIds.map((id) => evidenceById.get(id)).filter((item): item is NonNullable<typeof item> => Boolean(item));
+        const sources = new Set(evidence.map(sourceKey));
+        const groups = [...new Set(evidence.map(independenceKey))];
+        const state = persisted?.evidenceState ?? analysis?.evidenceState;
+        const tier = tierFromState(state);
+        const isOpen = expanded.has(criterion.key);
+        const detailId = `factor-evidence-${criterion.key}`;
+        const effectiveScore = persisted?.effectiveScore ?? analysis?.effectiveScore ?? scorecard.scores[criterion.key];
+        const unresolved = persisted?.unresolvedGaps ?? analysis?.unresolvedAssumptions ?? [];
+
+        return (
+          <Card className="grid gap-sb-4 p-sb-4 sm:p-sb-5" key={criterion.key}>
+            <div className="grid gap-sb-4 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-sb-2">
+                  <span className="font-sb-mono text-xs tabular-nums text-sb-text-tertiary">{String(index + 1).padStart(2, "0")}</span>
+                  <h3 className="m-0 text-base font-medium">{criterion.label}</h3>
+                  <span className="text-xs text-sb-text-tertiary"><DataResolve resolveKey={`report:${motionKey}:factor:${criterion.key}:weight`} isResolved durationMs={220}>{scorecard.weights[criterion.key]}</DataResolve>% weight contribution</span>
+                </div>
+                <p className="mb-0 mt-sb-2 text-sm leading-relaxed text-sb-text-secondary">{scorecard.notes[criterion.key]}</p>
+              </div>
+
+              {tier ? (
+                <EvidenceBadge
+                  tier={tier}
+                  whatWasFound={scorecard.notes[criterion.key]}
+                  sourceCount={sources.size}
+                  independenceGrouping={groups.length ? groups.join(", ") : "No independent group persisted"}
+                  freshnessDate={newestDate(evidence)}
+                  settleDelayMs={index * 30}
+                  animateSettle={animateEntrance}
+                />
+              ) : (
+                <span className="w-fit rounded-sb-pill border border-dotted border-sb-border-hairline-strong px-sb-3 py-sb-1 text-xs uppercase tracking-[0.02em] text-sb-text-tertiary">Tier not persisted</span>
+              )}
+
+              <div className="flex items-center justify-between gap-sb-3 lg:justify-end">
+                <DataResolve
+                  resolveKey={`report:${motionKey}:factor:${criterion.key}:effective-score`}
+                  isResolved
+                  durationMs={220}
+                  className="text-lg font-semibold text-sb-text-primary"
+                  aria-label={`${criterion.label} score ${effectiveScore} out of 100`}
+                >
+                  {effectiveScore}
+                </DataResolve>
+                <Button
+                  variant="ghost"
+                  className="min-h-9 px-sb-3 text-xs"
+                  aria-expanded={isOpen}
+                  aria-controls={detailId}
+                  onClick={() => toggle(criterion.key)}
+                >
+                  {isOpen ? "Hide evidence" : "View evidence"}
+                  <ChevronDown className={`transition-transform duration-sb-fast ease-sb-standard ${isOpen ? "rotate-180" : ""}`} size={14}/>
+                </Button>
+              </div>
+            </div>
+
+            <PanelTransition isOpen={isOpen} id={detailId}>
+              <div className="grid gap-sb-3 border-t border-sb-border-hairline pt-sb-4">
+                {evidence.length ? evidence.map((item) => {
+                  const role = challengingIds.includes(item.id) ? "Challenging" : "Supporting";
+                  return (
+                    <article className="grid gap-sb-2 rounded-sb-md border border-sb-border-hairline bg-sb-bg-surface-2 p-sb-4" key={item.id}>
+                      <div className="flex flex-wrap items-center justify-between gap-sb-2 text-xs uppercase tracking-[0.02em] text-sb-text-tertiary">
+                        <span>{role} source</span>
+                        <span className="font-sb-mono normal-case tabular-nums">{evidenceDate(item) ?? "Source date not persisted"}</span>
+                      </div>
+                      <h4 className="m-0 text-sm font-medium">{item.title}</h4>
+                      <p className="m-0 text-sm leading-relaxed text-sb-text-secondary">{item.atomicClaim ?? item.snippet}</p>
+                      <div className="flex flex-wrap items-center justify-between gap-sb-2 text-xs text-sb-text-tertiary">
+                        <span>Independence: {independenceKey(item)}</span>
+                        {item.url && (
+                          <a className="inline-flex items-center gap-sb-1 hover:text-sb-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sb-border-focus" href={item.url} target="_blank" rel="noreferrer">
+                            {item.canonicalDomain ?? item.source}<ExternalLink size={11}/>
+                          </a>
+                        )}
+                      </div>
+                    </article>
+                  );
+                }) : (
+                  <p className="m-0 rounded-sb-md border border-dashed border-sb-border-hairline p-sb-4 text-sm leading-relaxed text-sb-text-secondary">
+                    No source is linked to this factor in the immutable report.{unresolved.length ? ` Next evidence needed: ${unresolved.join(" ")}` : " Review the factor note before acting on it."}
+                  </p>
+                )}
+              </div>
+            </PanelTransition>
+          </Card>
+        );
+      })}
+    </div>
+  );
 }
 
 function chartData(chart: ReportChartDataset): Datum[] {
-  const data = chart.sourceData;
-  if (Array.isArray(data.labels) && Array.isArray(data.values)) {
-    const values = data.values as unknown[];
-    return data.labels.map((label, index) => ({ label: String(label), value: finite(values[index]) }));
-  }
-  if (chart.chartKey === "source_selection_funnel") return objectData(data);
-  if (chart.chartKey === "evidence_coverage") return objectData(data.byFamily).concat(objectData(data.bySignal));
-  return objectData(data.byTier).length ? objectData(data.byTier) : objectData(data.values).length ? objectData(data.values) : objectData(data);
+  const labels = chart.sourceData.labels;
+  const values = chart.sourceData.values;
+  if (!Array.isArray(labels) || !Array.isArray(values)) return [];
+  return labels.flatMap((label, index) => {
+    const value = values[index];
+    return typeof value === "number" && Number.isFinite(value) ? [{ label: String(label), value }] : [];
+  });
 }
 
-export function ReportCharts({ report, datasets = [] }: { report: ValidationReport; datasets?: ReportChartDataset[] }) {
-  const charts = datasets.length ? datasets : fallbackCharts(report);
-  return <section className="report-charts" aria-label="Evidence-based charts">
-    <header><p className="eyebrow">Chart desk</p><h3>What the evidence distribution says</h3><p>Each chart is rendered from the verified report dataset{datasets.length ? "" : " or this frozen sample report's schema-backed evidence"}.</p></header>
-    <div className="report-chart-grid">
-      {charts.slice(0, report.reportMode === "quick_scan" ? 4 : 6).map((chart) => {
-        const data = chartData(chart);
-        const max = Math.max(...data.map((item) => item.value), 1);
-        return <figure className="report-chart" key={chart.chartKey}>
-          <figcaption><span>{chart.chartType}</span><b>{String(chart.chartConfig.title ?? titleFor(chart.chartKey))}</b><small>{chart.supportingEvidenceIds.length ? `${chart.supportingEvidenceIds.length} linked evidence item${chart.supportingEvidenceIds.length === 1 ? "" : "s"}` : String(chart.chartConfig.sourceExplanation ?? "Structured-data explanation available")}</small></figcaption>
-          {data.length ? <div className="chart-bars" role="img" aria-label={`${titleFor(chart.chartKey)} chart: ${data.map((item) => `${item.label}, ${item.value}`).join("; ")}`}>
-            {data.slice(0, 12).map((item) => <div className="chart-bar" key={item.label}>
-              <span title={item.label}>{titleFor(item.label)}</span><i><b style={{ width: `${Math.max(4, (item.value / max) * 100)}%` }} /></i><strong>{item.value}</strong>
-            </div>)}
-          </div> : <p className="chart-empty">{String(chart.sourceData.reason ?? "No chartable evidence was found for this report.")}</p>}
-          <p className="chart-source-explanation">{String(chart.chartConfig.sourceExplanation ?? "Derived from verified structured report data.")}</p>
-          {data.length > 0 && <details><summary>Accessible values</summary><table><tbody>{data.map((item) => <tr key={item.label}><th>{titleFor(item.label)}</th><td>{item.value}</td></tr>)}</tbody></table></details>}
-        </figure>;
-      })}
-    </div>
-  </section>;
+function isGenuineTrend(chart: ReportChartDataset) {
+  const type = chart.chartType.toLowerCase();
+  return ["line", "area", "trend", "timeline"].some((candidate) => type.includes(candidate))
+    || chart.chartConfig.purpose === "trend"
+    || chart.chartConfig.isTrend === true;
+}
+
+export function ReportCharts({ datasets = [] }: { report: ValidationReport; datasets?: ReportChartDataset[] }) {
+  const trends = datasets.filter(isGenuineTrend).map((chart) => ({ chart, data: chartData(chart) })).filter(({ data }) => data.length > 1);
+  if (!trends.length) return null;
+
+  return (
+    <section className="grid gap-sb-4" aria-labelledby="report-trends-title">
+      <header>
+        <p className="m-0 text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">Persisted trends</p>
+        <h2 id="report-trends-title" className="mb-0 mt-sb-1 font-sb-display text-2xl font-[480]">Change over time</h2>
+      </header>
+      <div className="grid gap-sb-4 lg:grid-cols-2">
+        {trends.map(({ chart, data }) => {
+          const minimum = Math.min(...data.map((item) => item.value));
+          const maximum = Math.max(...data.map((item) => item.value));
+          const range = maximum - minimum || 1;
+          const points = data.map((item, index) => {
+            const x = data.length === 1 ? 0 : (index / (data.length - 1)) * 100;
+            const y = 28 - ((item.value - minimum) / range) * 24;
+            return `${x},${y}`;
+          }).join(" ");
+          return (
+            <Card className="grid gap-sb-4 p-sb-5" key={chart.chartKey}>
+              <div>
+                <h3 className="m-0 text-sm font-medium">{String(chart.chartConfig.title ?? human(chart.chartKey))}</h3>
+                <p className="mb-0 mt-sb-1 text-xs text-sb-text-tertiary">{chart.supportingEvidenceIds.length} linked evidence item{chart.supportingEvidenceIds.length === 1 ? "" : "s"}</p>
+              </div>
+              <svg className="h-24 w-full overflow-visible" viewBox="0 0 100 32" role="img" aria-label={data.map((item) => `${item.label}: ${item.value}`).join(", ")} preserveAspectRatio="none">
+                <polyline points={points} fill="none" stroke="var(--sb-text-secondary)" strokeWidth="1.25" vectorEffect="non-scaling-stroke"/>
+              </svg>
+              <div className="flex justify-between gap-sb-3 font-sb-mono text-xs tabular-nums text-sb-text-tertiary"><span>{data[0].label}: {data[0].value}</span><span>{data.at(-1)?.label}: {data.at(-1)?.value}</span></div>
+              <Disclosure
+                className="text-xs text-sb-text-secondary"
+                panelClassName="pt-sb-3"
+                summary="Accessible values"
+              >
+                <dl className="m-0 grid grid-cols-[1fr_auto] gap-sb-2">{data.map((item) => <div className="contents" key={item.label}><dt>{item.label}</dt><dd className="m-0 font-sb-mono tabular-nums">{item.value}</dd></div>)}</dl>
+              </Disclosure>
+            </Card>
+          );
+        })}
+      </div>
+    </section>
+  );
 }

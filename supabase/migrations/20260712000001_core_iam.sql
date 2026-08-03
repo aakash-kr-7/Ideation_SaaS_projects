@@ -47,7 +47,6 @@ create table public.user_preferences (
   technical_level text,
   region text,
   launch_channels text[],
-  theme_preference text default 'system',
   email_notifications boolean default true,
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null

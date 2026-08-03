@@ -7,6 +7,9 @@ import {
   Rocket, ShieldCheck, Sparkles, Target, User,
 } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { safeAuthRedirect } from "@/lib/auth-redirect";
 
@@ -270,112 +273,109 @@ export default function OnboardingPage() {
   const chosenExperience = experienceLevels.find(level => level.value === data.experience_level)?.label;
 
   return (
-    <main className="onboarding-page">
-      <div className="onboarding-bg" />
-      <div className="onboarding-grid" aria-hidden="true" />
-      <div className="onboarding-orbit onboarding-orbit-one" aria-hidden="true" />
-      <div className="onboarding-orbit onboarding-orbit-two" aria-hidden="true" />
-
-      <div className="onboarding-shell">
-        <header className="onboarding-header">
+    <main className="min-h-screen bg-sb-bg-base text-sb-text-primary">
+      <div className="mx-auto w-full max-w-6xl px-sb-5 py-sb-6 md:px-sb-8 md:py-sb-10">
+        <header className="flex items-center justify-between gap-sb-4 border-b border-sb-border-hairline pb-sb-4">
           <Brand />
-          <div className="onboarding-header-meta">
-            <span><ShieldCheck size={13} /> Private workspace</span>
-            <button className="onboarding-skip" onClick={() => void skip()} disabled={saving}>Use smart defaults</button>
+          <div className="flex items-center gap-sb-3">
+            <span className="hidden items-center gap-sb-2 text-xs text-sb-text-tertiary sm:inline-flex"><ShieldCheck size={13} /> Private workspace</span>
+            <Button variant="ghost" onClick={() => void skip()} disabled={saving}>Use smart defaults</Button>
           </div>
         </header>
 
-        <div className="onboarding-workspace">
-          <aside className="onboarding-brief">
-            <div className="onboarding-brief-kicker"><Activity size={14} /> Decision lens is calibrating</div>
-            <p className="onboarding-brief-step">0{step + 1} <span>/ 0{steps.length}</span></p>
-            <h2>Before the market judges the idea, calibrate the lens.</h2>
-            <p className="onboarding-brief-copy">
+        <div className="grid gap-sb-6 py-sb-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+          <Card className="hidden self-start p-sb-6 lg:grid lg:gap-sb-5">
+            <div className="flex items-center gap-sb-2 text-xs font-medium uppercase tracking-[0.08em] text-sb-text-tertiary"><Activity size={14} /> Decision lens is calibrating</div>
+            <p className="m-0 font-sb-mono text-3xl tabular-nums">0{step + 1} <span className="text-base text-sb-text-tertiary">/ 0{steps.length}</span></p>
+            <h2 className="m-0 font-sb-display text-2xl font-[480] tracking-[-0.015em]">Before the market judges the idea, calibrate the lens.</h2>
+            <p className="m-0 text-sm leading-relaxed text-sb-text-secondary">
               Five focused choices turn generic research into a decision system shaped around your ambition, constraints, and way of building.
             </p>
 
-            <div className="onboarding-lens">
-              <header>
-                <div><Sparkles size={13} /><span>Your decision lens</span></div>
-                <i>Live</i>
+            <Card className="grid gap-sb-3 bg-sb-bg-surface-2 p-sb-4">
+              <header className="flex items-center justify-between gap-sb-3 border-b border-sb-border-hairline pb-sb-3">
+                <div className="flex items-center gap-sb-2 text-sm"><Sparkles className="text-sb-text-secondary" size={13} /><span>Your decision lens</span></div>
+                <span className="font-sb-mono text-xs text-sb-text-tertiary">Live</span>
               </header>
-              <div className="onboarding-lens-row"><span>Builder</span><b>{chosenExperience || data.display_name || "Waiting for context"}</b></div>
-              <div className="onboarding-lens-row"><span>Market</span><b>{chosenMarket || "Open market"}</b></div>
-              <div className="onboarding-lens-row"><span>Target</span><b>{chosenGoal || "Not fixed yet"}</b></div>
-              <div className="onboarding-lens-signal"><span /> Recommendations sharpen as you answer</div>
-            </div>
+              <div className="flex items-start justify-between gap-sb-3 text-sm"><span className="text-sb-text-tertiary">Builder</span><b className="text-right font-medium">{chosenExperience || data.display_name || "Waiting for context"}</b></div>
+              <div className="flex items-start justify-between gap-sb-3 text-sm"><span className="text-sb-text-tertiary">Market</span><b className="text-right font-medium">{chosenMarket || "Open market"}</b></div>
+              <div className="flex items-start justify-between gap-sb-3 text-sm"><span className="text-sb-text-tertiary">Target</span><b className="text-right font-medium">{chosenGoal || "Not fixed yet"}</b></div>
+              <div className="flex items-center gap-sb-2 border-t border-sb-border-hairline pt-sb-3 text-xs text-sb-text-secondary"><span className="size-1.5 rounded-sb-pill bg-sb-accent" /> Recommendations sharpen as you answer</div>
+            </Card>
 
-            <p className="onboarding-brief-note">
+            <p className="m-0 text-xs leading-relaxed text-sb-text-tertiary">
               No busywork. Every answer changes how a future report frames risk, scope, pricing, or distribution.
             </p>
-          </aside>
+          </Card>
 
-          <section className="onboarding-stage">
-            <div className="onboarding-stage-chrome">
-              <span>Profile calibration</span>
-              <div>{steps.map((_, index) => <i className={index <= step ? "active" : ""} key={index} />)}</div>
+          <section className="grid gap-sb-4">
+            <div className="flex items-center justify-between gap-sb-4 text-xs text-sb-text-tertiary">
+              <span className="font-medium uppercase tracking-[0.08em]">Profile calibration</span>
+              <div className="flex gap-sb-2" aria-label={`Step ${step + 1} of ${steps.length}`}>{steps.map((_, index) => <i className={`h-1.5 w-8 rounded-sb-pill ${index <= step ? "bg-sb-accent" : "bg-sb-bg-surface-3"}`} key={index} />)}</div>
             </div>
 
-            <div className="onboarding-card" key={step}>
-              {saveError && <div className="auth-error" role="alert">{saveError}</div>}
-              <div className="onboarding-card-icon"><Icon size={21} /></div>
-              <p className="eyebrow">{current.eyebrow}</p>
-              <h1>{current.title}</h1>
-              <p className="onboarding-why">{current.why}</p>
+            <Card className="grid gap-sb-5 p-sb-5 md:p-sb-8" key={step}>
+              {saveError && <Card className="border-sb-verdict-avoid p-sb-3 text-sm text-sb-verdict-avoid" role="alert">{saveError}</Card>}
+              <div className="grid size-10 place-items-center rounded-sb-md border border-sb-border-hairline bg-sb-bg-surface-2 text-sb-text-secondary"><Icon size={21} /></div>
+              <div className="grid gap-sb-2">
+                <p className="m-0 text-xs font-medium uppercase tracking-[0.08em] text-sb-text-tertiary">{current.eyebrow}</p>
+                <h1 className="m-0 font-sb-display text-2xl font-[480] tracking-[-0.015em] md:text-3xl">{current.title}</h1>
+                <p className="m-0 text-sm leading-relaxed text-sb-text-secondary">{current.why}</p>
+              </div>
 
-              <div className="onboarding-fields">
+              <div className="grid gap-sb-4">
                 {step === 0 && (
-                  <label className="onboarding-text-field">
+                  <label className="grid gap-sb-2 text-sm font-medium">
                     <span>What should appear in your decision room?</span>
-                    <input type="text" value={data.display_name} onChange={event => update("display_name", event.target.value)} placeholder="Your name" />
-                    <small>Used only to personalize your workspace and reports.</small>
+                    <Input type="text" value={data.display_name} onChange={event => update("display_name", event.target.value)} placeholder="Your name" />
+                    <small className="font-normal text-sb-text-tertiary">Used only to personalize your workspace and reports.</small>
                   </label>
                 )}
 
                 {step === 1 && (
-                  <div className="onboarding-option-grid">
+                  <div className="grid gap-sb-3 sm:grid-cols-2">
                     {experienceLevels.map(option => (
-                      <button type="button" key={option.value} className={`onboarding-option ${data.experience_level === option.value ? "selected" : ""}`} onClick={() => update("experience_level", option.value)}>
+                      <Button type="button" variant="secondary" key={option.value} aria-pressed={data.experience_level === option.value} className={`h-auto min-h-16 justify-start p-sb-3 text-left ${data.experience_level === option.value ? "border-sb-border-focus bg-sb-accent-muted" : ""}`} onClick={() => update("experience_level", option.value)}>
                         {data.experience_level === option.value && <Check size={14} />}
-                        <b>{option.label}</b><small>{option.desc}</small>
-                      </button>
+                        <span><b className="block font-medium">{option.label}</b><small className="block font-normal text-sb-text-secondary">{option.desc}</small></span>
+                      </Button>
                     ))}
                   </div>
                 )}
 
                 {step === 2 && (
                   <>
-                    <div className="onboarding-chip-grid">
+                    <div className="flex flex-wrap gap-sb-2">
                       {markets.map(market => (
-                        <button type="button" key={market.value} className={`onboarding-chip ${data.preferred_market === market.value ? "selected" : ""}`} onClick={() => update("preferred_market", market.value)}>
+                        <Button type="button" variant="secondary" key={market.value} aria-pressed={data.preferred_market === market.value} className={data.preferred_market === market.value ? "border-sb-border-focus bg-sb-accent-muted" : ""} onClick={() => update("preferred_market", market.value)}>
                           {data.preferred_market === market.value && <Check size={12} />}{market.label}
-                        </button>
+                        </Button>
                       ))}
                     </div>
-                    <label className="onboarding-text-field onboarding-customer-field">
+                    <label className="grid gap-sb-2 text-sm font-medium">
                       <span>Who do you most want to understand?</span>
-                      <input type="text" value={data.target_customer_type} onChange={event => update("target_customer_type", event.target.value)} placeholder="e.g. Independent salon owners with repeat bookings" />
-                      <small>Optional. Specific buyers create sharper evidence searches.</small>
+                      <Input type="text" value={data.target_customer_type} onChange={event => update("target_customer_type", event.target.value)} placeholder="e.g. Independent salon owners with repeat bookings" />
+                      <small className="font-normal text-sb-text-tertiary">Optional. Specific buyers create sharper evidence searches.</small>
                     </label>
                   </>
                 )}
 
                 {step === 3 && (
                   <>
-                    <div className="onboarding-option-grid compact">
+                    <div className="grid gap-sb-3 sm:grid-cols-2">
                       {revenueGoals.map(option => (
-                        <button type="button" key={option.value} className={`onboarding-option ${data.revenue_goal === option.value ? "selected" : ""}`} onClick={() => update("revenue_goal", option.value)}>
+                        <Button type="button" variant="secondary" key={option.value} aria-pressed={data.revenue_goal === option.value} className={`h-auto min-h-16 justify-start p-sb-3 text-left ${data.revenue_goal === option.value ? "border-sb-border-focus bg-sb-accent-muted" : ""}`} onClick={() => update("revenue_goal", option.value)}>
                           {data.revenue_goal === option.value && <Check size={14} />}
-                          <b>{option.label}</b><small>{option.desc}</small>
-                        </button>
+                          <span><b className="block font-medium">{option.label}</b><small className="block font-normal text-sb-text-secondary">{option.desc}</small></span>
+                        </Button>
                       ))}
                     </div>
-                    <div className="onboarding-chip-grid onboarding-model-grid">
-                      <p className="onboarding-sub-label">The model you want to make work</p>
+                    <div className="flex flex-wrap gap-sb-2">
+                      <p className="m-0 w-full text-sm font-medium">The model you want to make work</p>
                       {businessModels.map(model => (
-                        <button type="button" key={model.value} className={`onboarding-chip ${data.business_model === model.value ? "selected" : ""}`} onClick={() => update("business_model", model.value)}>
+                        <Button type="button" variant="secondary" key={model.value} aria-pressed={data.business_model === model.value} className={data.business_model === model.value ? "border-sb-border-focus bg-sb-accent-muted" : ""} onClick={() => update("business_model", model.value)}>
                           {data.business_model === model.value && <Check size={12} />}{model.label}
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   </>
@@ -383,49 +383,49 @@ export default function OnboardingPage() {
 
                 {step === 4 && (
                   <>
-                    <div className="onboarding-option-grid compact">
+                    <div className="grid gap-sb-3 sm:grid-cols-2">
                       {technicalLevels.map(option => (
-                        <button type="button" key={option.value} className={`onboarding-option ${data.technical_level === option.value ? "selected" : ""}`} onClick={() => update("technical_level", option.value)}>
+                        <Button type="button" variant="secondary" key={option.value} aria-pressed={data.technical_level === option.value} className={`h-auto min-h-16 justify-start p-sb-3 text-left ${data.technical_level === option.value ? "border-sb-border-focus bg-sb-accent-muted" : ""}`} onClick={() => update("technical_level", option.value)}>
                           {data.technical_level === option.value && <Check size={14} />}
-                          <b>{option.label}</b><small>{option.desc}</small>
-                        </button>
+                          <span><b className="block font-medium">{option.label}</b><small className="block font-normal text-sb-text-secondary">{option.desc}</small></span>
+                        </Button>
                       ))}
                     </div>
-                    <div className="onboarding-chip-grid onboarding-model-grid">
-                      <p className="onboarding-sub-label">Your home market</p>
+                    <div className="flex flex-wrap gap-sb-2">
+                      <p className="m-0 w-full text-sm font-medium">Your home market</p>
                       {regions.map(region => (
-                        <button type="button" key={region.value} className={`onboarding-chip ${data.region === region.value ? "selected" : ""}`} onClick={() => update("region", region.value)}>
+                        <Button type="button" variant="secondary" key={region.value} aria-pressed={data.region === region.value} className={data.region === region.value ? "border-sb-border-focus bg-sb-accent-muted" : ""} onClick={() => update("region", region.value)}>
                           {data.region === region.value && <Check size={12} />}{region.label}
-                        </button>
+                        </Button>
                       ))}
                     </div>
-                    <div className="onboarding-chip-grid onboarding-model-grid">
-                      <p className="onboarding-sub-label">Channels already within reach <span>Optional</span></p>
+                    <div className="flex flex-wrap gap-sb-2">
+                      <p className="m-0 w-full text-sm font-medium">Channels already within reach <span className="font-normal text-sb-text-tertiary">Optional</span></p>
                       {launchChannelOptions.map(channel => (
-                        <button type="button" key={channel.value} className={`onboarding-chip ${data.launch_channels.includes(channel.value) ? "selected" : ""}`} onClick={() => toggleChannel(channel.value)}>
+                        <Button type="button" variant="secondary" key={channel.value} aria-pressed={data.launch_channels.includes(channel.value)} className={data.launch_channels.includes(channel.value) ? "border-sb-border-focus bg-sb-accent-muted" : ""} onClick={() => toggleChannel(channel.value)}>
                           {data.launch_channels.includes(channel.value) && <Check size={12} />}{channel.label}
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   </>
                 )}
               </div>
-            </div>
+            </Card>
 
-            <footer className="onboarding-actions">
-              <div className="onboarding-progress-copy">
-                <span>{current.phase}</span>
-                <small>{step + 1} of {steps.length} calibrated</small>
+            <footer className="flex flex-col gap-sb-3 border-t border-sb-border-hairline pt-sb-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <span className="block text-sm font-medium">{current.phase}</span>
+                <small className="text-sb-text-tertiary">{step + 1} of {steps.length} calibrated</small>
               </div>
-              <div className="onboarding-action-buttons">
-                {step > 0 && <button className="button ghost onboarding-back" onClick={prev}><ArrowLeft size={14} /> Back</button>}
-                <button className="button onboarding-next" onClick={next} disabled={!canProceed() || saving}>
+              <div className="flex flex-wrap gap-sb-3">
+                {step > 0 && <Button variant="ghost" onClick={prev}><ArrowLeft size={14} /> Back</Button>}
+                <Button onClick={next} disabled={!canProceed() || saving}>
                   {saving
                     ? <><LoaderCircle className="animate-spin" size={15} /> Saving...</>
                     : step === steps.length - 1
                       ? <>Enter my decision room <ArrowRight size={15} /></>
                       : <>Calibrate next layer <ArrowRight size={15} /></>}
-                </button>
+                </Button>
               </div>
             </footer>
           </section>

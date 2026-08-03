@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/state-message";
 
 export function ReportRetryState({ reason }: { reason: string }) {
   const router = useRouter();
@@ -12,14 +13,12 @@ export function ReportRetryState({ reason }: { reason: string }) {
   }, [router]);
 
   return (
-    <section className="empty-state" role="status" aria-live="polite">
-      <RefreshCw size={24} aria-hidden="true" />
-      <h2>Your completed report is being made available</h2>
-      <p>The evidence-backed report is safely stored. This page will retry automatically.</p>
-      <button type="button" className="btn-secondary" onClick={() => router.refresh()}>
-        Retry now
-      </button>
+    <div className="mx-auto max-w-3xl" aria-live="polite">
+      <EmptyState
+        message="The research run is complete, but its latest immutable report version is not visible yet. This page will keep checking; recheck now if you want to query it immediately."
+        action={<Button variant="secondary" onClick={() => router.refresh()}>Recheck report</Button>}
+      />
       <span className="sr-only">Consistency state: {reason}</span>
-    </section>
+    </div>
   );
 }

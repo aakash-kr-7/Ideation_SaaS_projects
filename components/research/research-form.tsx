@@ -10,11 +10,13 @@ import type { MarketType, ResearchMode } from "@/lib/types";
 import { createProject, startResearchRun } from "@/lib/actions/research";
 import type { CreditSnapshot } from "@/lib/services/research";
 import { canLaunchReport, getReportModeConfig } from "@/lib/report-modes";
-import { motion, getStaggerDelay, revealUpClass } from "@/lib/motion";
 import {
   buildInterpretedDecisionBrief,
   type FullValidationDecisionContract,
 } from "@/lib/readiness-contract";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ErrorState } from "@/components/ui/state-message";
 
 const markets: MarketType[] = [
   "B2B", "D2C", "Creator", "Developer Tool", "Local Business",
@@ -151,11 +153,13 @@ export function ResearchForm({
         );
       }
       const form = new FormData(event.currentTarget);
+      const ideaDescription = String(form.get("ideaDescription") ?? "").trim();
+      const ideaName = String(form.get("ideaName") ?? "").trim() || ideaDescription.slice(0, 120);
       const project = projectId ? { id: projectId } : await createProject({ name: "Default Project" });
       const result = await startResearchRun({
         project_id: project.id,
-        idea_name: String(form.get("ideaName") ?? ""),
-        idea_description: String(form.get("ideaDescription") ?? ""),
+        idea_name: ideaName,
+        idea_description: ideaDescription,
         target_customer: String(form.get("targetCustomer") || "Not specified"),
         market_type: String(form.get("marketType") ?? "B2B") as MarketType,
         target_region: String(form.get("targetRegion") ?? "Global"),
@@ -199,13 +203,55 @@ export function ResearchForm({
     }
   };
 
+  if (mode === "quick_scan") {
+    const creditLabel = creditSnapshot
+      ? creditSnapshot.free_quick_scans_remaining > 0
+        ? "Your monthly Quick Scan is available."
+        : `${creditSnapshot.paid_credits} paid credit${creditSnapshot.paid_credits === 1 ? "" : "s"} available.`
+      : "Credit availability could not be confirmed.";
+
+    return (
+      <form className="grid gap-sb-5" onSubmit={submit}>
+        <label className="grid gap-sb-2" htmlFor="quick-scan-idea">
+          <span className="text-sm font-medium text-sb-text-primary">What are you thinking of building?</span>
+          <Input
+            id="quick-scan-idea"
+            name="ideaDescription"
+            defaultValue={initialValues.ideaDescription ?? initialValues.ideaName}
+            placeholder="A scheduling assistant for independent clinics that reduces missed appointments"
+            required
+            autoComplete="off"
+            className="min-h-14 px-sb-4 text-base"
+            aria-describedby="quick-scan-help"
+          />
+          <span id="quick-scan-help" className="text-xs leading-relaxed text-sb-text-tertiary">
+            Include the buyer and the problem in one sentence. You can add a deeper decision brief in Full Validation.
+          </span>
+        </label>
+
+        {error && (
+          <ErrorState
+            message={`${error} Check the idea and credit status, then try the Quick Scan again.`}
+          />
+        )}
+
+        <div className="flex flex-col gap-sb-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="m-0 text-xs text-sb-text-tertiary">{creditLabel}</p>
+          <Button type="submit" disabled={!available || submitting}>
+            {submitting ? "Starting research…" : available ? "Run Quick Scan" : "Quick Scan unavailable"}
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
   return <form onSubmit={submit} className="research-form decision-intake-form">
     <header className="intake-command-bar">
       <div><Fingerprint size={15}/><span><b>Private decision brief</b><small>Your inputs stay attached to this workspace.</small></span></div>
       <div className="intake-command-status"><i/><span>Research system ready</span></div>
     </header>
 
-    <section className={`form-section decision-section ${revealUpClass}`} style={getStaggerDelay(0)}>
+    <section className="form-section decision-section">
       <div className="decision-section-head">
         <span>01</span>
         <div>
@@ -244,7 +290,7 @@ export function ResearchForm({
       </div>
     </section>
 
-    <section className={`form-section decision-section ${revealUpClass}`} style={getStaggerDelay(1)}>
+    <section className="form-section decision-section">
       <div className="decision-section-head">
         <span>02</span>
         <div>
@@ -283,7 +329,7 @@ export function ResearchForm({
       </div>
     </section>
 
-    {mode === "full_validation" && <section className={`form-section decision-section ${revealUpClass}`} style={getStaggerDelay(2)}>
+    {mode === "full_validation" && <section className="form-section decision-section">
       <div className="decision-section-head">
         <span>03</span>
         <div>
@@ -314,7 +360,7 @@ export function ResearchForm({
       </label>
     </section>}
 
-    <section className={`form-section mode-section decision-section depth-section ${revealUpClass}`} style={getStaggerDelay(2)}>
+    <section className="form-section mode-section decision-section depth-section">
       <div className="decision-section-head depth-section-head">
         <span>{mode === "full_validation" ? "04" : "03"}</span>
         <div>
@@ -346,7 +392,7 @@ export function ResearchForm({
                 }));
               }
             }}
-            className={`${active ? "mode-card selected" : "mode-card"} ${motion.transitionBase} ${motion.press}`}
+            className={`${active ? "mode-card selected" : "mode-card"} transition-[background-color,border-color,color,transform] duration-sb-fast ease-sb-standard active:scale-[0.97]`}
             key={reportMode}
           >
             <span className="mode-card-number">{presentation.number}</span>
@@ -370,12 +416,12 @@ export function ResearchForm({
           : <p><b>{selected.label}</b><small>{selected.creditCost} {selected.creditCost === 1 ? "credit" : "credits"} used only when the run starts.</small></p>}
       </div>
       {available
-        ? <button className={`button ${motion.buttonBase} ${submitting ? "is-loading" : ""}`} type="submit" disabled={submitting}>
+        ? <Button type="submit" disabled={submitting}>
             {submitting ? <><Loader2 className="animate-spin" size={17}/> Opening the evidence room...</> : <>Put my idea on trial <ArrowRight size={17}/></>}
-          </button>
-        : <button className={`button ${motion.buttonBase}`} type="button" disabled title="Paid checkout is not available yet">
+          </Button>
+        : <Button type="button" disabled title="Paid checkout is not available yet">
             {creditSnapshot ? `${selected.label} unavailable` : "Credit status unavailable"}
-          </button>}
+          </Button>}
     </footer>
   </form>;
 }
