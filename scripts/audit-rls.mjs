@@ -9,8 +9,18 @@ const service = createClient(url, serviceKey, { auth: { persistSession: false } 
 const password = `Rls!${crypto.randomUUID()}`;
 const victimEmail = `rls-victim-${crypto.randomUUID()}@example.test`;
 const attackerEmail = `rls-attacker-${crypto.randomUUID()}@example.test`;
-const victimCreated = await service.auth.admin.createUser({ email: victimEmail, password, email_confirm: true });
-const attackerCreated = await service.auth.admin.createUser({ email: attackerEmail, password, email_confirm: true });
+const victimCreated = await service.auth.admin.createUser({
+  email: victimEmail,
+  password,
+  email_confirm: true,
+  user_metadata: { full_name: `rls-victim-${crypto.randomUUID()}` },
+});
+const attackerCreated = await service.auth.admin.createUser({
+  email: attackerEmail,
+  password,
+  email_confirm: true,
+  user_metadata: { full_name: `rls-attacker-${crypto.randomUUID()}` },
+});
 if (victimCreated.error || attackerCreated.error || !victimCreated.data.user || !attackerCreated.data.user) throw victimCreated.error || attackerCreated.error || new Error("RLS users were not created");
 const victimId = victimCreated.data.user.id; const attackerId = attackerCreated.data.user.id;
 const { data: cleanupMemberships } = await service.from("team_members").select("team_id").in("user_id", [victimId, attackerId]);

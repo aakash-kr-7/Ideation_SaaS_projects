@@ -119,9 +119,13 @@ export class GeminiClient implements GeminiGenerator {
             config: {
               temperature: 0.1,
               maxOutputTokens: 8_192,
-              // Structured extraction does not benefit from hidden reasoning,
-              // and thinking tokens share the output budget on Gemini 2.5.
-              ...(args.responseSchema ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+              // Grounded retrieval and structured extraction need attributable
+              // output, not hidden reasoning. Disabling thinking keeps provider
+              // calls inside the Edge wall-clock budget without weakening the
+              // downstream deterministic evidence validator.
+              ...(args.responseSchema || args.useGrounding
+                ? { thinkingConfig: { thinkingBudget: 0 } }
+                : {}),
               ...(args.useGrounding ? { tools: [{ googleSearch: {} }] } : {}),
               ...(args.systemInstruction ? { systemInstruction: args.systemInstruction } : {}),
               ...(args.responseSchema ? { responseMimeType: "application/json", responseSchema: args.responseSchema } : {}),
