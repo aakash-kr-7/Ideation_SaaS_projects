@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
+import { BorderBeam } from "@/components/ui/border-beam";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Disclosure } from "@/components/ui/disclosure";
+import { GlassPanel } from "@/components/ui/glass-panel";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { getReportModeConfig } from "@/lib/report-modes";
 import { FACTOR_EVIDENCE_POLICY } from "@/supabase/functions/_shared/research/scoring-engine";
 
@@ -18,6 +21,7 @@ const reportProducts = [
     config: quickScan,
     access: "One monthly entitlement where eligible",
     status: "Available",
+    recommended: false,
     description: quickScan.customerDescription,
     items: [
       "One Readiness Score and verdict",
@@ -30,6 +34,7 @@ const reportProducts = [
     config: fullValidation,
     access: "Paid-credit access",
     status: "Checkout pending",
+    recommended: true,
     description: fullValidation.customerDescription,
     items: [
       "Twelve expandable factor evidence trails",
@@ -96,41 +101,52 @@ export function PricingPageClient() {
             <p className="m-0 text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">Two burdens of proof</p>
             <h2 data-scroll-reveal-text id="report-depth-title" className="mb-0 mt-sb-1 font-sb-display text-3xl font-[480] tracking-[-0.02em]">Choose the depth by the cost of being wrong</h2>
           </header>
-          <div className="grid gap-sb-4 lg:grid-cols-2">
+          <div className="grid gap-sb-4 lg:grid-cols-12">
             {reportProducts.map((product) => {
               const rules = product.config.evidenceSufficiency;
               return (
-                <Card data-scroll-reveal-item className="grid content-start gap-sb-5 p-sb-6" key={product.config.mode}>
-                  <header className="grid gap-sb-2">
-                    <div className="flex flex-wrap items-center justify-between gap-sb-3">
-                      <h3 className="m-0 font-sb-display text-2xl font-[480]">{product.config.label}</h3>
-                      <span className="rounded-sb-pill border border-sb-border-hairline-strong px-sb-3 py-sb-1 font-sb-mono text-xs uppercase tracking-[0.02em] text-sb-text-secondary">{product.status}</span>
+                <SpotlightCard
+                  data-scroll-reveal-item
+                  className={product.recommended ? "lg:col-span-7" : "lg:col-span-5"}
+                  style={{ backgroundColor: "transparent", borderColor: "transparent" }}
+                  key={product.config.mode}
+                >
+                  <GlassPanel className="relative isolate grid h-full content-start gap-sb-5 p-sb-6">
+                    {product.recommended && <BorderBeam persistent thickness={2}/>}
+                    <header className="grid gap-sb-2">
+                      <div className="flex flex-wrap items-center justify-between gap-sb-3">
+                        <h3 className="m-0 font-sb-display text-2xl font-[480]">{product.config.label}</h3>
+                        <div className="flex flex-wrap items-center justify-end gap-sb-2">
+                          {product.recommended && <span className="rounded-sb-pill border border-sb-accent px-sb-3 py-sb-1 font-sb-mono text-xs uppercase tracking-[0.02em] text-sb-text-secondary">Recommended</span>}
+                          <span className="rounded-sb-pill border border-sb-border-hairline-strong px-sb-3 py-sb-1 font-sb-mono text-xs uppercase tracking-[0.02em] text-sb-text-secondary">{product.status}</span>
+                        </div>
+                      </div>
+                      <p className="m-0 text-sm leading-relaxed text-sb-text-secondary">{product.description}</p>
+                      <p className="m-0 font-sb-mono text-xs tabular-nums text-sb-text-tertiary">{product.config.creditCost} report credit{product.config.creditCost === 1 ? "" : "s"} · {product.access}</p>
+                    </header>
+
+                    <div className="rounded-sb-md border border-sb-border-hairline bg-sb-bg-surface-2 p-sb-4">
+                      <span className="text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">Research publication gate</span>
+                      <dl className="mt-sb-3 grid grid-cols-[1fr_auto] gap-x-sb-4 gap-y-sb-2 text-xs">
+                        <dt className="text-sb-text-secondary">Minimum usable findings</dt><dd className="m-0 font-sb-mono tabular-nums">{rules.minimumUsableEvidence}</dd>
+                        <dt className="text-sb-text-secondary">Problem sources</dt><dd className="m-0 font-sb-mono tabular-nums">{rules.minimumProblemSources}</dd>
+                        <dt className="text-sb-text-secondary">Solution sources</dt><dd className="m-0 font-sb-mono tabular-nums">{rules.minimumSolutionSources}</dd>
+                        <dt className="text-sb-text-secondary">Disconfirming findings</dt><dd className="m-0 font-sb-mono tabular-nums">{rules.minimumDisconfirmingEvidence}</dd>
+                        <dt className="text-sb-text-secondary">Required source quality</dt><dd className="m-0 text-right">{rules.requireTierOneEvidence ? "Tier 1 required" : rules.requireTierOneOrTwoEvidence ? "Tier 1 or 2 required" : "No tier gate"}</dd>
+                      </dl>
                     </div>
-                    <p className="m-0 text-sm leading-relaxed text-sb-text-secondary">{product.description}</p>
-                    <p className="m-0 font-sb-mono text-xs tabular-nums text-sb-text-tertiary">{product.config.creditCost} report credit{product.config.creditCost === 1 ? "" : "s"} · {product.access}</p>
-                  </header>
 
-                  <div className="rounded-sb-md border border-sb-border-hairline bg-sb-bg-surface-2 p-sb-4">
-                    <span className="text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">Research publication gate</span>
-                    <dl className="mt-sb-3 grid grid-cols-[1fr_auto] gap-x-sb-4 gap-y-sb-2 text-xs">
-                      <dt className="text-sb-text-secondary">Minimum usable findings</dt><dd className="m-0 font-sb-mono tabular-nums">{rules.minimumUsableEvidence}</dd>
-                      <dt className="text-sb-text-secondary">Problem sources</dt><dd className="m-0 font-sb-mono tabular-nums">{rules.minimumProblemSources}</dd>
-                      <dt className="text-sb-text-secondary">Solution sources</dt><dd className="m-0 font-sb-mono tabular-nums">{rules.minimumSolutionSources}</dd>
-                      <dt className="text-sb-text-secondary">Disconfirming findings</dt><dd className="m-0 font-sb-mono tabular-nums">{rules.minimumDisconfirmingEvidence}</dd>
-                      <dt className="text-sb-text-secondary">Required source quality</dt><dd className="m-0 text-right">{rules.requireTierOneEvidence ? "Tier 1 required" : rules.requireTierOneOrTwoEvidence ? "Tier 1 or 2 required" : "No tier gate"}</dd>
-                    </dl>
-                  </div>
+                    <ul className="m-0 grid list-none gap-sb-2 p-0 text-sm text-sb-text-secondary">
+                      {product.items.map((item) => <li className="border-t border-sb-border-hairline pt-sb-2" key={item}>{item}</li>)}
+                    </ul>
 
-                  <ul className="m-0 grid list-none gap-sb-2 p-0 text-sm text-sb-text-secondary">
-                    {product.items.map((item) => <li className="border-t border-sb-border-hairline pt-sb-2" key={item}>{item}</li>)}
-                  </ul>
-
-                  {product.config.mode === "quick_scan" ? (
-                    <Link className={secondaryLinkClass} href="/research/new?mode=quick_scan">Use monthly access<ArrowRight size={14}/></Link>
-                  ) : (
-                    <Button variant="secondary" disabled>Available when checkout launches</Button>
-                  )}
-                </Card>
+                    {product.config.mode === "quick_scan" ? (
+                      <Link className={secondaryLinkClass} href="/research/new?mode=quick_scan">Use monthly access<ArrowRight size={14}/></Link>
+                    ) : (
+                      <Button variant="secondary" disabled>Available when checkout launches</Button>
+                    )}
+                  </GlassPanel>
+                </SpotlightCard>
               );
             })}
           </div>

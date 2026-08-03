@@ -10,6 +10,7 @@ import { Disclosure } from "@/components/ui/disclosure";
 import { EvidenceBadge, type EvidenceTier } from "@/components/ui/evidence-badge";
 import { DataResolve } from "@/components/ui/data-resolve";
 import { PanelTransition } from "@/components/ui/panel-transition";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
 
 export type ReportChartDataset = {
   chartKey: string;
@@ -101,7 +102,7 @@ export function FactorEvidenceList({ report, factors = [], motionKey, animateEnt
         const unresolved = persisted?.unresolvedGaps ?? analysis?.unresolvedAssumptions ?? [];
 
         return (
-          <Card className="grid gap-sb-4 p-sb-4 sm:p-sb-5" key={criterion.key}>
+          <SpotlightCard className="grid gap-sb-4 p-sb-4 sm:p-sb-5" key={criterion.key}>
             <div className="grid gap-sb-4 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-sb-2">
@@ -178,7 +179,7 @@ export function FactorEvidenceList({ report, factors = [], motionKey, animateEnt
                 )}
               </div>
             </PanelTransition>
-          </Card>
+          </SpotlightCard>
         );
       })}
     </div>

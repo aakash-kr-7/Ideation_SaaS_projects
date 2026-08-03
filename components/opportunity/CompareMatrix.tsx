@@ -4,6 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import type { ValidationReport } from "@/lib/report-schema";
 import { countEvidenceSources, hasMixedResearchDepth } from "@/lib/report-mode-ui";
 import { Button } from "@/components/ui/button";
+import { AuroraBackground } from "@/components/ui/aurora-background";
 import { ScoreDisplay } from "@/components/ui/score-display";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { VerdictBadge } from "@/components/ui/verdict-badge";
@@ -67,8 +68,9 @@ export function CompareMatrix({ allReports }: { allReports: ValidationReport[] }
         blurPx={0}
         start="top 86%"
       >
-      <div className="overflow-x-auto border-y border-sb-border-hairline">
-        <table className="w-full min-w-max border-collapse text-left text-sm">
+      <div className="relative isolate overflow-x-auto border-y border-sb-border-hairline">
+        <AuroraBackground static className="opacity-20" />
+        <table className="relative z-[1] w-full min-w-max border-collapse text-left text-sm">
           <caption className="sr-only">Comparison of selected ShouldBuild validation reports</caption>
           <thead>
             <tr className="border-b border-sb-border-hairline">

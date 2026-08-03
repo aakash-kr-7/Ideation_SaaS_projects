@@ -7,8 +7,10 @@ import {
   Rocket, ShieldCheck, Sparkles, Target, User,
 } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
+import { BorderBeam } from "@/components/ui/border-beam";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { GlassPanel } from "@/components/ui/glass-panel";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { safeAuthRedirect } from "@/lib/auth-redirect";
@@ -314,7 +316,7 @@ export default function OnboardingPage() {
               <div className="flex gap-sb-2" aria-label={`Step ${step + 1} of ${steps.length}`}>{steps.map((_, index) => <i className={`h-1.5 w-8 rounded-sb-pill ${index <= step ? "bg-sb-accent" : "bg-sb-bg-surface-3"}`} key={index} />)}</div>
             </div>
 
-            <Card className="grid gap-sb-5 p-sb-5 md:p-sb-8" key={step}>
+            <GlassPanel className="grid gap-sb-5 p-sb-5 md:p-sb-8" key={step}>
               {saveError && <Card className="border-sb-verdict-avoid p-sb-3 text-sm text-sb-verdict-avoid" role="alert">{saveError}</Card>}
               <div className="grid size-10 place-items-center rounded-sb-md border border-sb-border-hairline bg-sb-bg-surface-2 text-sb-text-secondary"><Icon size={21} /></div>
               <div className="grid gap-sb-2">
@@ -410,7 +412,7 @@ export default function OnboardingPage() {
                   </>
                 )}
               </div>
-            </Card>
+            </GlassPanel>
 
             <footer className="flex flex-col gap-sb-3 border-t border-sb-border-hairline pt-sb-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -419,12 +421,13 @@ export default function OnboardingPage() {
               </div>
               <div className="flex flex-wrap gap-sb-3">
                 {step > 0 && <Button variant="ghost" onClick={prev}><ArrowLeft size={14} /> Back</Button>}
-                <Button onClick={next} disabled={!canProceed() || saving}>
+                <Button className="relative overflow-hidden" onClick={next} disabled={!canProceed() || saving}>
                   {saving
                     ? <><LoaderCircle className="animate-spin" size={15} /> Saving...</>
                     : step === steps.length - 1
                       ? <>Enter my decision room <ArrowRight size={15} /></>
                       : <>Calibrate next layer <ArrowRight size={15} /></>}
+                  <BorderBeam/>
                 </Button>
               </div>
             </footer>

@@ -4,14 +4,11 @@ import { useState } from "react";
 import { Circle, Download, ExternalLink } from "lucide-react";
 import type { ValidationReport } from "@/lib/report-schema";
 import { downloadExport, reportToCsv, reportToMarkdown } from "@/lib/report-export";
-import { scoringCriteria } from "@/lib/scoring";
 import { Button } from "@/components/ui/button";
+import { BorderBeam } from "@/components/ui/border-beam";
 import { Card } from "@/components/ui/card";
 import { EvidenceBadge, type EvidenceTier } from "@/components/ui/evidence-badge";
-import {
-  Fulcrum,
-  type FulcrumEvidenceChip,
-} from "@/components/ui/fulcrum";
+import { GlassPanel } from "@/components/ui/glass-panel";
 import { ScoreDisplay } from "@/components/ui/score-display";
 import { StaggerGroup, useFirstSessionMotion } from "@/components/ui/session-stagger";
 import { Toast } from "@/components/ui/toast";
@@ -132,18 +129,6 @@ export function FullValidationReportExperience({
   const opportunity = { ...report.opportunity, scorecard: scorecard ?? report.opportunity.scorecard };
   const verdict = decision.verdictStructure;
   const resolvedVerdict = verdict?.verdict ?? opportunity.scorecard.verdict;
-  const fulcrumEntries: FulcrumEvidenceChip[] = scoringCriteria
-    .map((criterion) => ({
-      id: `report-${criterion.key}`,
-      label: criterion.label,
-      side: criterion.risk ? "prosecution" as const : "defence" as const,
-      weight: opportunity.scorecard.weights[criterion.key],
-      statusLabel: criterion.risk ? "risk" : "positive",
-    }))
-    .sort(
-      (left, right) =>
-        left.weight - right.weight || left.label.localeCompare(right.label),
-    );
   const factorAnalysis = decision.factorAnalysis ?? [];
   const evidenceById = new Map(opportunity.evidence.map((item) => [item.id, item]));
   const propositions = (report as ValidationReport & AdversarialReportView).adversarialInvestigation?.propositions ?? [];
@@ -217,23 +202,13 @@ export function FullValidationReportExperience({
           <h1 className="mb-0 mt-sb-2 font-sb-display text-4xl font-[480] tracking-[-0.03em] sm:text-5xl">{opportunity.name}</h1>
           <p className="mb-0 mt-sb-3 max-w-3xl text-base leading-relaxed text-sb-text-secondary">{opportunity.oneLiner}</p>
         </div>
-        <Card className="fv-decision-stamp grid w-full min-w-64 max-w-sm gap-sb-3 bg-sb-bg-surface-2 p-sb-5" aria-label="Decision outcome">
+        <GlassPanel className="fv-decision-stamp grid w-full min-w-64 max-w-sm gap-sb-3 p-sb-5" aria-label="Decision outcome">
           <span className="text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">{decision.scoreContract?.name ?? "ShouldBuild Readiness Score"}</span>
           <div className="flex items-end justify-between gap-sb-4">
             <ScoreDisplay score={opportunity.scorecard.total} size="xl" showMax animationKey={`full-validation-${motionReportId}`}/>
             <VerdictBadge verdict={resolvedVerdict}/>
           </div>
-          <Fulcrum
-            entries={fulcrumEntries}
-            score={opportunity.scorecard.total}
-            verdict={resolvedVerdict}
-            animate={false}
-            maxVisibleEntriesPerSide={2}
-            showTally={false}
-            showVerdictBadge={false}
-            className="mt-sb-1 w-full border-t border-sb-border-hairline pt-sb-2"
-          />
-        </Card>
+        </GlassPanel>
         <p className="col-span-full m-0 max-w-4xl text-lg leading-relaxed text-sb-text-primary">{firstSentence(report.executiveSummary)}</p>
         {previewMode && <CaseColumns className="fv-case-split col-span-full" report={report} decision={decision} prosecution={prosecutionEvidence} defence={defenceEvidence} animateEntrance={animateReportEntrance} limit={1}/>}
       </header>
@@ -250,7 +225,8 @@ export function FullValidationReportExperience({
       </section>
 
       <section className="fv-section" aria-labelledby="movement-title">
-        <Card className="grid gap-sb-5 border-l-4 border-l-sb-accent p-sb-6 sm:p-sb-8">
+        <GlassPanel className="relative isolate grid gap-sb-5 border-l-4 border-l-sb-accent p-sb-6 sm:p-sb-8">
+          <BorderBeam persistent thickness={2}/>
           <SectionHeading
             eyebrow="03 · Decision movement"
             title={`What moves this from ${currentScore}${targetScore != null ? ` to ${targetScore}` : " to the next decision boundary"}`}
@@ -262,7 +238,7 @@ export function FullValidationReportExperience({
             <MovementPoint label="Moves down" value={decision.scoreChange?.materialDownwardEvidence ?? verdict?.downgradeCondition ?? report.verdictChangeConditions?.downgradeCondition}/>
             <MovementPoint label="Stop condition" value={decision.scoreChange?.strongestKillCondition ?? verdict?.killCondition}/>
           </div>
-        </Card>
+        </GlassPanel>
       </section>
 
       <section className="fv-section grid gap-sb-5" aria-labelledby="validation-plan-title">

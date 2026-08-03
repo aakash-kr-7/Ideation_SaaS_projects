@@ -14,25 +14,21 @@ import {
   X,
 } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
-import { LandingPage } from "@/components/landing/landing-page";
+import { AuroraBackground } from "@/components/ui/aurora-background";
+import { BorderBeam } from "@/components/ui/border-beam";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Fulcrum,
-  type FulcrumEvidenceChip,
-} from "@/components/ui/fulcrum";
+import { GlassPanel } from "@/components/ui/glass-panel";
 import { Input } from "@/components/ui/input";
 import { ScrambleReveal } from "@/components/ui/scramble-reveal";
 import { createClient } from "@/lib/supabase/client";
 import { errorMessage } from "@/lib/supabase/relations";
 import { authCallbackUrl, safeAuthRedirect } from "@/lib/auth-redirect";
 import { authErrorMessage } from "@/lib/public-errors";
-import { sampleFullValidation } from "@/lib/sample-reports";
 
 type AuthView = "sign-in" | "register" | "forgot-password";
 
 const SIGN_IN_WORDMARK_STORAGE_KEY = "sb-signin-wordmark-resolved:v1";
-const NEUTRAL_FULCRUM_ENTRIES: FulcrumEvidenceChip[] = [];
 let signInWordmarkResolvedInMemory = false;
 
 function GoogleMark() {
@@ -247,9 +243,9 @@ function SignInCard() {
   const fieldClass = "grid gap-sb-2 text-sm font-medium text-sb-text-primary";
 
   return (
-    <Card className="grid w-full max-w-md gap-sb-6 p-sb-6 md:p-sb-8">
+    <GlassPanel className="grid w-full max-w-md gap-sb-6 p-sb-6 md:p-sb-8">
       <div className="flex items-center justify-between gap-sb-4 border-b border-sb-border-hairline pb-sb-4">
-        <div className="flex min-w-0 items-center gap-sb-2">
+        <div className="flex min-w-0 items-center">
           <Brand
             wordmark={
               <ScrambleReveal
@@ -258,17 +254,6 @@ function SignInCard() {
                 play={playWordmark}
               />
             }
-          />
-          <Fulcrum
-            motionMode="readout"
-            entries={NEUTRAL_FULCRUM_ENTRIES}
-            animate={false}
-            showEntries={false}
-            showPanLabels={false}
-            showTally={false}
-            showVerdictBadge={false}
-            className="w-14 shrink-0"
-            aria-hidden="true"
           />
         </div>
         <Link className="grid size-9 place-items-center rounded-sb-md text-sb-text-secondary transition-colors duration-sb-fast ease-sb-standard hover:bg-sb-bg-surface-2 hover:text-sb-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sb-border-focus" href="/" aria-label="Close sign in">
@@ -332,12 +317,17 @@ function SignInCard() {
             <Button type="button" variant="ghost" className="w-fit min-h-0 justify-start p-0 text-xs" onClick={() => switchView("forgot-password")}>
               Forgot password?
             </Button>
-              <Button className="w-full" type="submit" disabled={loading}>
+            <Button className="relative w-full overflow-hidden" type="submit" disabled={loading}>
                 {loading
                   ? <><LoaderCircle className="animate-spin" size={15} /> Signing in…</>
                   : <>Sign in to ShouldBuild <ArrowRight size={15} /></>}
-              </Button>
+                <BorderBeam persistent/>
+            </Button>
           </form>
+
+          <p className="m-0 text-center text-xs leading-relaxed text-sb-text-tertiary">
+            Evidence-first validation for founders who&apos;d rather find out now than after they&apos;ve built it.
+          </p>
 
           <p className="m-0 flex flex-wrap items-center justify-center gap-sb-1 text-sm text-sb-text-secondary">
             New here?{" "}
@@ -410,12 +400,17 @@ function SignInCard() {
               </div>
             </label>
             <small className="text-xs text-sb-text-tertiary">6+ characters with upper, lower, and a number.</small>
-            <Button className="w-full" type="submit" disabled={loading}>
+            <Button className="relative w-full overflow-hidden" type="submit" disabled={loading}>
               {loading
                 ? <><LoaderCircle className="animate-spin" size={15} /> Creating account…</>
                 : <>Create my workspace <ArrowRight size={15} /></>}
+              <BorderBeam persistent/>
             </Button>
           </form>
+
+          <p className="m-0 text-center text-xs leading-relaxed text-sb-text-tertiary">
+            Evidence-first validation for founders who&apos;d rather find out now than after they&apos;ve built it.
+          </p>
 
           <p className="m-0 flex flex-wrap items-center justify-center gap-sb-1 text-sm text-sb-text-secondary">
             Already have an account?{" "}
@@ -450,10 +445,11 @@ function SignInCard() {
                 autoComplete="email"
               />
             </label>
-            <Button className="w-full" type="submit" disabled={loading}>
+            <Button className="relative w-full overflow-hidden" type="submit" disabled={loading}>
               {loading
                 ? <><LoaderCircle className="animate-spin" size={15} /> Sending…</>
                 : <>Send reset link <Mail size={15} /></>}
+              <BorderBeam persistent/>
             </Button>
           </form>
 
@@ -474,23 +470,20 @@ function SignInCard() {
           Continuing means you accept our <Link className="text-sb-text-secondary underline underline-offset-4" href="/legal/terms">Terms</Link> and <Link className="text-sb-text-secondary underline underline-offset-4" href="/legal/privacy">Privacy Policy</Link>.
         </p>
       )}
-    </Card>
+    </GlassPanel>
   );
 }
 
 export default function SignInPage() {
   return (
-    <div className="relative grid min-h-screen overflow-hidden bg-sb-bg-base text-sb-text-primary">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-20" aria-hidden="true" inert>
-        <LandingPage report={sampleFullValidation}/>
-      </div>
-      <div className="absolute inset-0 bg-sb-bg-base opacity-80" aria-hidden="true" />
-      <section className="relative grid min-h-screen place-items-center px-sb-5 py-sb-10" aria-label="Sign in to ShouldBuild">
+    <div className="relative isolate grid min-h-screen overflow-hidden bg-sb-bg-base text-sb-text-primary">
+      <AuroraBackground className="opacity-60"/>
+      <section className="relative z-[1] grid min-h-screen place-items-center px-sb-5 py-sb-10" aria-label="Sign in to ShouldBuild">
         <Suspense fallback={
-          <Card className="grid w-full max-w-md place-items-center gap-sb-3 p-sb-8 text-sm text-sb-text-secondary" role="status">
+          <GlassPanel className="grid w-full max-w-md place-items-center gap-sb-3 p-sb-8 text-sm text-sb-text-secondary" role="status">
             <LoaderCircle className="animate-spin text-sb-accent" size={28} />
             <span>Preparing secure sign in…</span>
-          </Card>
+          </GlassPanel>
         }>
           <SignInCard />
         </Suspense>

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import type { ValidationReport as ReportPayload } from "@/lib/report-schema";
 import type { EvidenceItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { AuroraBackground } from "@/components/ui/aurora-background";
 import { Card } from "@/components/ui/card";
 import { EvidenceBadge, type EvidenceTier } from "@/components/ui/evidence-badge";
 import { ScoreDisplay } from "@/components/ui/score-display";
@@ -19,14 +20,92 @@ export type ValidationReportProps = {
   previewMode?: boolean;
   runId?: string;
   chartDatasets?: ReportChartDataset[];
+  presentation?: "document" | "snippet";
 };
 
-export function ValidationReport(props: ValidationReportProps) {
+export function ValidationReport({ presentation = "document", ...props }: ValidationReportProps) {
+  if (presentation === "snippet") {
+    return <ValidationReportSnippet {...props}/>;
+  }
+
   if (props.report.reportMode === "full_validation" && props.report.fullValidationDecision) {
-    return <FullValidationReportExperience {...props}/>;
+    return (
+      <div className="relative isolate overflow-hidden">
+        <AuroraBackground static className="opacity-30" />
+        <div className="relative z-[1]">
+          <FullValidationReportExperience {...props}/>
+        </div>
+      </div>
+    );
   }
 
   return <QuickScanReport {...props}/>;
+}
+
+function ValidationReportSnippet({ report, scorecard }: ValidationReportProps) {
+  const opportunity = {
+    ...report.opportunity,
+    scorecard: scorecard ?? report.opportunity.scorecard,
+  };
+  const evidence = opportunity.evidence.filter((item) => !item.excluded);
+  const strongestFor = evidence.find((item) => item.id === report.strongestPositiveEvidenceId)
+    ?? evidence.find((item) => item.evidenceRole === "supporting" && !item.disconfirming)
+    ?? evidence.find((item) => !item.disconfirming);
+  const strongestAgainst = evidence.find((item) => item.id === report.strongestNegativeEvidenceId)
+    ?? evidence.find((item) => item.evidenceRole === "challenging" || item.disconfirming)
+    ?? evidence.find((item) => item.signal === "Risk");
+  const forMetadata = evidenceMetadata(report, strongestFor);
+  const againstMetadata = evidenceMetadata(report, strongestAgainst);
+  const reportDate = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
+    new Date(report.generatedAt),
+  );
+
+  return (
+    <section className="grid gap-sb-6" aria-label="Sample Full Validation report">
+      <header className="grid gap-sb-5 border-b border-sb-border-hairline pb-sb-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+        <div className="min-w-0">
+          <p className="m-0 text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">
+            Real frozen sample <span aria-hidden="true">&middot;</span> Full Validation <span aria-hidden="true">&middot;</span> {reportDate}
+          </p>
+          <h2 className="mb-0 mt-sb-2 font-sb-display text-2xl font-[480] tracking-[-0.02em] sm:text-3xl">
+            {opportunity.name}
+          </h2>
+          <p className="mb-0 mt-sb-2 text-sm leading-relaxed text-sb-text-secondary">
+            {opportunity.oneLiner}
+          </p>
+        </div>
+        <div className="flex items-end justify-between gap-sb-5 md:justify-end" aria-label="Sample decision outcome">
+          <ScoreDisplay score={opportunity.scorecard.total} size="lg" showMax animate={false}/>
+          <VerdictBadge verdict={opportunity.scorecard.verdict}/>
+        </div>
+      </header>
+
+      <p className="m-0 max-w-4xl text-base leading-relaxed text-sb-text-primary">
+        {firstSentence(report.executiveSummary)}
+      </p>
+
+      <div className="grid gap-sb-4 md:grid-cols-2">
+        <EvidencePoint
+          label="Strongest for"
+          evidence={strongestFor}
+          metadata={forMetadata}
+          animateSettle={false}
+          background="bg-sb-prosecution-bg"
+          empty="No accepted supporting evidence was persisted in this sample."
+          compact
+        />
+        <EvidencePoint
+          label="Strongest against"
+          evidence={strongestAgainst}
+          metadata={againstMetadata}
+          animateSettle={false}
+          background="bg-sb-defence-bg"
+          empty="No accepted challenging evidence was persisted in this sample."
+          compact
+        />
+      </div>
+    </section>
+  );
 }
 
 function firstSentence(value: string) {
@@ -139,6 +218,7 @@ function EvidencePoint({
   animateSettle,
   background,
   empty,
+  compact = false,
 }: {
   label: string;
   evidence: EvidenceItem | undefined;
@@ -146,9 +226,10 @@ function EvidencePoint({
   animateSettle: boolean;
   background: string;
   empty: string;
+  compact?: boolean;
 }) {
   return (
-    <Card className={`grid content-start gap-sb-4 p-sb-6 ${background}`}>
+    <Card className={`grid content-start gap-sb-4 ${compact ? "p-sb-4" : "p-sb-6"} ${background}`}>
       <div className="flex flex-wrap items-center justify-between gap-sb-3">
         <h2 className="m-0 font-sb-display text-lg font-[480]">{label}</h2>
         {metadata

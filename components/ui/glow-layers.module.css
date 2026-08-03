@@ -1,0 +1,288 @@
+.aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.auroraBlob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  will-change: transform;
+}
+
+.auroraBlobAccent {
+  top: -34%;
+  left: -18%;
+  width: max(560px, 68vw);
+  height: max(560px, 68vw);
+  opacity: 0.18;
+  background: radial-gradient(circle, var(--sb-accent) 0%, transparent 68%);
+  animation: auroraDriftAccent 28s var(--sb-ease-standard) infinite;
+}
+
+.auroraBlobBuild {
+  right: -22%;
+  bottom: -40%;
+  width: max(520px, 60vw);
+  height: max(520px, 60vw);
+  opacity: 0.12;
+  background: radial-gradient(circle, var(--sb-verdict-build) 0%, transparent 70%);
+  animation: auroraDriftBuild 36s var(--sb-ease-standard) infinite;
+}
+
+.auroraBlobConditional {
+  top: 18%;
+  right: 8%;
+  width: max(420px, 46vw);
+  height: max(420px, 46vw);
+  opacity: 0.1;
+  background: radial-gradient(circle, var(--sb-verdict-conditional) 0%, transparent 70%);
+  animation: auroraDriftConditional 40s var(--sb-ease-standard) infinite;
+}
+
+.auroraBlobEvidence {
+  bottom: -24%;
+  left: 24%;
+  width: max(440px, 52vw);
+  height: max(440px, 52vw);
+  opacity: 0.1;
+  background: radial-gradient(circle, var(--sb-evidence-evidenced) 0%, transparent 72%);
+  animation: auroraDriftEvidence 24s var(--sb-ease-standard) infinite;
+}
+
+@keyframes auroraDriftAccent {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(5%, 3%, 0) scale(1.04);
+  }
+}
+
+@keyframes auroraDriftBuild {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.02);
+  }
+  50% {
+    transform: translate3d(-4%, -3%, 0) scale(0.98);
+  }
+}
+
+@keyframes auroraDriftConditional {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(0.98);
+  }
+  50% {
+    transform: translate3d(-3%, 4%, 0) scale(1.03);
+  }
+}
+
+@keyframes auroraDriftEvidence {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, -3%, 0) scale(1.02);
+  }
+}
+
+.auroraStatic .auroraBlob {
+  animation: none;
+  will-change: auto;
+}
+
+.auroraStatic .auroraBlobAccent {
+  transform: translate3d(3%, 2%, 0) scale(1.02);
+}
+
+.auroraStatic .auroraBlobBuild {
+  transform: translate3d(-2%, -2%, 0) scale(1);
+}
+
+.auroraStatic .auroraBlobConditional {
+  transform: translate3d(-2%, 2%, 0) scale(1.01);
+}
+
+.auroraStatic .auroraBlobEvidence {
+  transform: translate3d(2%, -2%, 0) scale(1.01);
+}
+
+.spotlightCard {
+  --sb-spotlight-x: 50%;
+  --sb-spotlight-y: 50%;
+
+  position: relative;
+  isolation: isolate;
+  border: 1px solid var(--sb-border-hairline);
+  border-radius: var(--sb-radius-lg);
+  background: var(--sb-bg-surface-1);
+}
+
+.spotlightCard::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  background: radial-gradient(
+    circle 280px at var(--sb-spotlight-x) var(--sb-spotlight-y),
+    color-mix(in srgb, var(--sb-accent) 16%, transparent),
+    transparent 72%
+  );
+  content: "";
+  pointer-events: none;
+  transition: opacity 320ms var(--sb-ease-standard);
+}
+
+.spotlightCard:hover::before,
+.spotlightCard:focus-within::before {
+  opacity: 1;
+}
+
+.spotlightCard > * {
+  position: relative;
+  z-index: 1;
+}
+
+@property --sb-border-beam-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.borderBeam {
+  --sb-border-beam-width: 1px;
+  --sb-border-beam-angle: 0deg;
+
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  padding: var(--sb-border-beam-width);
+  border-radius: inherit;
+  opacity: 0;
+  background: conic-gradient(
+    from var(--sb-border-beam-angle),
+    transparent 0 76%,
+    color-mix(in srgb, var(--sb-accent) 28%, transparent) 82%,
+    var(--sb-accent) 88%,
+    color-mix(in srgb, var(--sb-accent) 42%, transparent) 92%,
+    transparent 98% 100%
+  );
+  pointer-events: none;
+  transition: opacity var(--sb-duration-base) var(--sb-ease-standard);
+  animation: borderBeamTravel 5.5s linear infinite paused;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+:global(*:hover) > .borderBeam,
+:global(*:focus-visible) > .borderBeam,
+:global(*:focus-within) > .borderBeam,
+.borderBeamPersistent {
+  opacity: 1;
+  animation-play-state: running;
+}
+
+@keyframes borderBeamTravel {
+  to {
+    --sb-border-beam-angle: 360deg;
+  }
+}
+
+.auroraText {
+  display: inline-block;
+  background: linear-gradient(
+    100deg,
+    var(--sb-accent) 0%,
+    color-mix(in srgb, var(--sb-accent) 64%, var(--sb-text-primary)) 42%,
+    var(--sb-evidence-evidenced) 66%,
+    var(--sb-accent) 100%
+  );
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  color: transparent;
+  animation: auroraTextSweep 12s var(--sb-ease-standard) infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes auroraTextSweep {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.glassPanel {
+  border: 1px solid var(--sb-border-hairline);
+  border-radius: var(--sb-radius-lg);
+  background: color-mix(in srgb, var(--sb-bg-surface-1) 68%, transparent);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auroraBlob,
+  .borderBeam,
+  .auroraText {
+    animation: none;
+    will-change: auto;
+  }
+
+  .auroraBlobAccent {
+    transform: translate3d(3%, 2%, 0) scale(1.02);
+  }
+
+  .auroraBlobBuild {
+    transform: translate3d(-2%, -2%, 0) scale(1);
+  }
+
+  .auroraBlobConditional {
+    transform: translate3d(-2%, 2%, 0) scale(1.01);
+  }
+
+  .auroraBlobEvidence {
+    transform: translate3d(2%, -2%, 0) scale(1.01);
+  }
+
+  .spotlightCard::before {
+    background: radial-gradient(
+      circle 280px at 50% 50%,
+      color-mix(in srgb, var(--sb-accent) 16%, transparent),
+      transparent 72%
+    );
+    transition: none;
+  }
+
+  .borderBeam {
+    --sb-border-beam-angle: 320deg;
+
+    transition: none;
+  }
+
+  .auroraText {
+    background-position: 100% 50%;
+  }
+}
+
+@media (forced-colors: active) {
+  .auroraText {
+    background: none;
+    color: CanvasText;
+    -webkit-text-fill-color: currentColor;
+  }
+}

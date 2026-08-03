@@ -4,8 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle2, Eye, EyeOff, KeyRound, LoaderCircle } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
+import { AuroraBackground } from "@/components/ui/aurora-background";
+import { BorderBeam } from "@/components/ui/border-beam";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { GlassPanel } from "@/components/ui/glass-panel";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { errorMessage } from "@/lib/supabase/relations";
@@ -53,22 +56,27 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <main className="grid min-h-screen place-items-center bg-sb-bg-base px-sb-5 py-sb-10 text-sb-text-primary">
-        <Card className="grid w-full max-w-md gap-sb-6 p-sb-8">
-          <Brand />
-          <div className="grid justify-items-start gap-sb-3" role="status">
-            <CheckCircle2 className="text-sb-verdict-build" size={32} />
-            <h1 className="m-0 font-sb-display text-2xl font-[480]">Password updated</h1>
-            <p className="m-0 text-sm leading-relaxed text-sb-text-secondary">Your password has been reset. Redirecting to your dashboard…</p>
-          </div>
-        </Card>
-      </main>
+      <div className="relative isolate grid min-h-screen overflow-hidden bg-sb-bg-base text-sb-text-primary">
+        <AuroraBackground className="opacity-60"/>
+        <main className="relative z-[1] grid min-h-screen place-items-center px-sb-5 py-sb-10">
+          <GlassPanel className="grid w-full max-w-md gap-sb-6 p-sb-8">
+            <Brand />
+            <div className="grid justify-items-start gap-sb-3" role="status">
+              <CheckCircle2 className="text-sb-verdict-build" size={32} />
+              <h1 className="m-0 font-sb-display text-2xl font-[480]">Password updated</h1>
+              <p className="m-0 text-sm leading-relaxed text-sb-text-secondary">Your password has been reset. Redirecting to your dashboard…</p>
+            </div>
+          </GlassPanel>
+        </main>
+      </div>
     );
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-sb-bg-base px-sb-5 py-sb-10 text-sb-text-primary">
-      <Card className="grid w-full max-w-md gap-sb-6 p-sb-8">
+    <div className="relative isolate grid min-h-screen overflow-hidden bg-sb-bg-base text-sb-text-primary">
+      <AuroraBackground className="opacity-60"/>
+      <main className="relative z-[1] grid min-h-screen place-items-center px-sb-5 py-sb-10">
+      <GlassPanel className="grid w-full max-w-md gap-sb-6 p-sb-8">
         <Brand />
         <div className="grid size-11 place-items-center rounded-sb-md border border-sb-border-hairline bg-sb-bg-surface-2 text-sb-text-secondary">
           <KeyRound size={24} />
@@ -124,11 +132,13 @@ export default function ResetPasswordPage() {
             <small className={/[0-9]/.test(password) ? "text-sb-verdict-build" : "text-sb-text-tertiary"}>{/[0-9]/.test(password) ? "✓" : "○"} Digit</small>
           </div>
 
-          <Button className="w-full" type="submit" disabled={loading}>
+          <Button className="relative w-full overflow-hidden" type="submit" disabled={loading}>
             {loading ? <><LoaderCircle className="animate-spin" size={15} /> Updating…</> : <>Update password <ArrowRight size={15} /></>}
+            <BorderBeam persistent/>
           </Button>
         </form>
-      </Card>
-    </main>
+      </GlassPanel>
+      </main>
+    </div>
   );
 }

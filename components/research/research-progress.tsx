@@ -8,10 +8,6 @@ import { getReportModeConfig, type ReportMode } from "@/lib/report-modes";
 import type { ResearchStatus } from "@/supabase/functions/_shared/research/status";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Fulcrum,
-  type FulcrumEvidenceChip,
-} from "@/components/ui/fulcrum";
 import { EmptyState, ErrorState } from "@/components/ui/state-message";
 
 type Stage = {
@@ -32,20 +28,6 @@ type Task = {
   maxAttempts: number;
 };
 
-type ProgressEvidence = {
-  id: string;
-  sourceId: string | null;
-  title: string | null;
-  snippet: string | null;
-  signal: string | null;
-  sourceDomain: string | null;
-  excluded: boolean;
-  disconfirming: boolean;
-  createdAt: string;
-  acceptanceDecision: string | null;
-  topic: string | null;
-};
-
 type ProgressSnapshot = {
   id: string;
   mode: ReportMode;
@@ -60,7 +42,6 @@ type ProgressSnapshot = {
   retryAfter?: string | null;
   stages: Stage[];
   tasks: Task[];
-  evidence?: ProgressEvidence[];
   metrics: {
     pagesFetched?: number;
     sourcesAccepted?: number;
@@ -87,10 +68,6 @@ const STAGE_LABELS: Record<string, string> = {
 
 function labelStage(value: string) {
   return STAGE_LABELS[value] ?? value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function labelEvidence(value: string) {
-  return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function stageComplete(stage: Stage) {
@@ -154,45 +131,6 @@ export function ResearchProgress({ id }: { id: string }) {
       setCancelling(false);
     }
   }
-
-  const liveEvidenceEntries = useMemo<FulcrumEvidenceChip[]>(() => {
-    return [...(snapshot?.evidence ?? [])]
-      .filter(
-        (evidence) =>
-          evidence.excluded === false &&
-          evidence.acceptanceDecision === "accepted_core",
-      )
-      .sort((left, right) => {
-        const timeDifference =
-          (Date.parse(left.createdAt) || 0) - (Date.parse(right.createdAt) || 0);
-        return timeDifference || left.id.localeCompare(right.id);
-      })
-      .map((evidence) => {
-        const persistedLabel =
-          evidence.topic?.trim() ||
-          evidence.signal?.trim() ||
-          evidence.title?.trim() ||
-          "Accepted finding";
-        const persistedDetail =
-          evidence.snippet?.trim() ||
-          evidence.title?.trim() ||
-          "Accepted evidence was persisted without an exposed excerpt.";
-
-        return {
-          id: evidence.id,
-          label: labelEvidence(persistedLabel),
-          side: evidence.disconfirming ? "prosecution" : "defence",
-          weight: 1,
-          statusLabel: "accepted",
-          whatWasFound: persistedDetail,
-          sourceCount: evidence.sourceId ? 1 : 0,
-          independenceGrouping: evidence.sourceDomain
-            ? `Source domain: ${evidence.sourceDomain}`
-            : "Source domain not exposed during research",
-          freshnessDate: "Source date not exposed during research",
-        };
-      });
-  }, [snapshot?.evidence]);
 
   if (!snapshot) {
     if (requestError) {
@@ -301,7 +239,7 @@ export function ResearchProgress({ id }: { id: string }) {
           <span className="font-sb-mono text-xs text-sb-text-tertiary">{connection === "realtime" ? "Live updates" : connection === "polling" ? "Polling" : "Connecting"}</span>
         </div>
 
-        <div className="grid items-start gap-sb-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="grid items-start gap-sb-4">
           <div className="grid gap-sb-2">
             {snapshot.stages.length ? snapshot.stages.map((stage) => {
               const complete = stageComplete(stage);
@@ -325,27 +263,6 @@ export function ResearchProgress({ id }: { id: string }) {
               </Card>
             )}
           </div>
-
-          <Card className="grid content-start gap-sb-2 p-sb-4" aria-live="off">
-            <div className="flex items-baseline justify-between gap-sb-2">
-              <p className="m-0 text-xs font-medium uppercase tracking-[0.02em] text-sb-text-tertiary">Accepted evidence</p>
-              <span className="font-sb-mono text-xs tabular-nums text-sb-text-tertiary">{liveEvidenceEntries.length}</span>
-            </div>
-            <p className="m-0 text-xs leading-relaxed text-sb-text-secondary">
-              Each chip is one persisted accepted finding. Left challenges the case; right supports it. This is a finding count, not the Readiness Score.
-            </p>
-            <Fulcrum
-              key={id}
-              motionMode="append"
-              entries={liveEvidenceEntries}
-              animate={active}
-              tallyLabel="Findings tally"
-              showEntryWeights={false}
-              maxVisibleEntriesPerSide={3}
-              className="mt-sb-1 w-full"
-              aria-live="off"
-            />
-          </Card>
         </div>
       </section>
 

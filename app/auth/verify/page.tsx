@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle2, LoaderCircle, Mail } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
+import { AuroraBackground } from "@/components/ui/aurora-background";
+import { BorderBeam } from "@/components/ui/border-beam";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { GlassPanel } from "@/components/ui/glass-panel";
 import { createClient } from "@/lib/supabase/client";
 import { authEntryUrl, safeAuthRedirect } from "@/lib/auth-redirect";
 
@@ -63,8 +65,10 @@ export default function VerifyEmailPage() {
   };
 
   return (
-    <main className="grid min-h-screen place-items-center bg-sb-bg-base px-sb-5 py-sb-10 text-sb-text-primary">
-      <Card className="grid w-full max-w-lg gap-sb-6 p-sb-8">
+    <div className="relative isolate grid min-h-screen overflow-hidden bg-sb-bg-base text-sb-text-primary">
+      <AuroraBackground className="opacity-60"/>
+      <main className="relative z-[1] grid min-h-screen place-items-center px-sb-5 py-sb-10">
+      <GlassPanel className="grid w-full max-w-lg gap-sb-6 p-sb-8">
         <Brand />
         <div className="grid size-12 place-items-center rounded-sb-md border border-sb-border-hairline bg-sb-bg-surface-2 text-sb-text-secondary"><Mail size={28} /></div>
         <div className="grid gap-sb-2">
@@ -91,9 +95,13 @@ export default function VerifyEmailPage() {
           <Button variant="secondary" onClick={handleResend} disabled={resending || cooldown > 0}>
             {resending ? <><LoaderCircle className="animate-spin" size={14} /> Sending…</> : resent ? <><CheckCircle2 size={14} /> Email sent</> : cooldown > 0 ? `Resend in ${cooldown}s` : "Resend verification email"}
           </Button>
-          <Button onClick={() => router.push(authEntryUrl(nextPath))}>Back to sign in <ArrowRight size={14} /></Button>
+          <Button className="relative overflow-hidden" onClick={() => router.push(authEntryUrl(nextPath))}>
+            Back to sign in <ArrowRight size={14} />
+            <BorderBeam persistent/>
+          </Button>
         </div>
-      </Card>
-    </main>
+      </GlassPanel>
+      </main>
+    </div>
   );
 }

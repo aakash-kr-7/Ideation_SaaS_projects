@@ -203,7 +203,10 @@ export function ResearchForm({
     }
   };
 
-  if (mode === "quick_scan") {
+  // The dedicated Quick Scan route intentionally uses the compact one-field
+  // form. When someone changes depth from the full intake, keep them in the
+  // same form so they can switch back without losing their work.
+  if (defaultMode === "quick_scan") {
     const creditLabel = creditSnapshot
       ? creditSnapshot.free_quick_scans_remaining > 0
         ? "Your monthly Quick Scan is available."
@@ -381,7 +384,9 @@ export function ResearchForm({
           const active = mode === reportMode;
           return <button
             type="button"
+            aria-label={`Select ${config.label}`}
             aria-pressed={active}
+            data-testid={`research-mode-${reportMode}`}
             onClick={() => {
               setMode(reportMode);
               if (reportMode === "quick_scan") {

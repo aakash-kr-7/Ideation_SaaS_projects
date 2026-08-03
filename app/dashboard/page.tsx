@@ -3,7 +3,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { ProjectCard } from "@/components/dashboard/project-card";
 import { ReportHistory } from "@/components/dashboard/report-history";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { FirstSessionStagger } from "@/components/ui/session-stagger";
+import { AuroraBackground } from "@/components/ui/aurora-background";
 import { EmptyState } from "@/components/ui/state-message";
 import type { MarketType, Opportunity, ResearchRun, ScoreBreakdown } from "@/lib/types";
 import { validationReportSchema } from "@/lib/report-schema";
@@ -25,6 +25,16 @@ function evidenceNeedsRevalidation(evidence: { freshnessState?: string; revalida
   if (!evidence.revalidationDueAt) return false;
   const dueAt = new Date(evidence.revalidationDueAt).getTime();
   return Number.isFinite(dueAt) && dueAt <= Date.now();
+}
+
+function projectCardLayout(index: number, total: number) {
+  if (index === 0) {
+    if (total === 1) return "md:col-span-2 lg:col-span-12";
+    if (total >= 3) return "md:col-span-2 lg:col-span-8 lg:row-span-2";
+    return "md:col-span-2 lg:col-span-8";
+  }
+  if (index === 1 || index === 2) return "lg:col-span-4";
+  return "lg:col-span-6";
 }
 
 export default async function DashboardPage() {
@@ -147,7 +157,9 @@ export default async function DashboardPage() {
 
   return (
     <AppShell title="Dashboard" action={action}>
-      <main className="mx-auto grid w-full max-w-6xl gap-sb-8 px-sb-5 py-sb-8 sm:px-sb-8 sm:py-sb-10" data-tour="dashboard-canvas">
+      <div className="relative isolate min-h-[calc(100vh-5rem)] overflow-hidden" data-tour="dashboard-canvas">
+        <AuroraBackground static className="opacity-30" />
+        <div className="relative z-[1] mx-auto grid w-full max-w-6xl gap-sb-8 px-sb-5 py-sb-8 sm:px-sb-8 sm:py-sb-10">
         {!hasData ? (
           <section className="mx-auto grid w-full max-w-2xl gap-sb-5 py-sb-12">
             <header>
@@ -171,10 +183,18 @@ export default async function DashboardPage() {
               <p className="mb-0 mt-sb-2 text-sm leading-relaxed text-sb-text-secondary">Scan verdicts first, then open the evidence behind the scores that deserve attention.</p>
             </header>
 
-            <section className="grid gap-sb-3 sm:grid-cols-3" aria-label="Actionable portfolio metrics">
-              <StatCard label="Ideas" value={String(mappedRuns.length)} detail={`${completedRuns.length} with a completed verdict`} resolveKey="dashboard:stat:ideas"/>
-              <StatCard label="Average score" value={completedRuns.length ? String(averageScore) : "—"} detail="Across completed validations" resolveKey="dashboard:stat:average-score" score={completedRuns.length > 0}/>
-              <StatCard label="Needs revalidation" value={String(revalidationCount)} detail="Reports with stale or due evidence" resolveKey="dashboard:stat:revalidation"/>
+            <section className="grid grid-flow-row-dense gap-sb-3 md:grid-cols-2 lg:grid-cols-12" aria-label="Actionable portfolio metrics">
+              <StatCard
+                className="md:col-span-2 lg:col-span-7 lg:row-span-2"
+                label="Average score"
+                value={completedRuns.length ? String(averageScore) : "—"}
+                detail="Across completed validations"
+                resolveKey="dashboard:stat:average-score"
+                score={completedRuns.length > 0}
+                featured
+              />
+              <StatCard className="lg:col-span-5" label="Ideas" value={String(mappedRuns.length)} detail={`${completedRuns.length} with a completed verdict`} resolveKey="dashboard:stat:ideas"/>
+              <StatCard className="lg:col-span-5" label="Needs revalidation" value={String(revalidationCount)} detail="Reports with stale or due evidence" resolveKey="dashboard:stat:revalidation"/>
             </section>
 
             <section className="grid gap-sb-4" aria-labelledby="ranked-ideas-title">
@@ -186,15 +206,17 @@ export default async function DashboardPage() {
                 <span className="font-sb-mono text-xs tabular-nums text-sb-text-tertiary">{rankedIdeas.length} scored</span>
               </div>
               {rankedIdeas.length ? (
-                <FirstSessionStagger
-                  className="grid gap-sb-2"
-                  sessionKey="dashboard:project-list:v1"
-                  maxItems={10}
-                  stepMs={70}
-                  durationMs={180}
-                >
-                  {rankedIdeas.map((run, index) => <ProjectCard run={run} rank={index + 1} key={run.id}/>)}
-                </FirstSessionStagger>
+                <div className="grid grid-flow-row-dense gap-sb-3 md:grid-cols-2 lg:grid-cols-12">
+                  {rankedIdeas.map((run, index) => (
+                    <ProjectCard
+                      className={projectCardLayout(index, rankedIdeas.length)}
+                      featured={index === 0}
+                      run={run}
+                      rank={index + 1}
+                      key={run.id}
+                    />
+                  ))}
+                </div>
               ) : (
                 <EmptyState message="No completed scores are available yet. Open an in-progress run in report history to see its current research stage."/>
               )}
@@ -212,7 +234,8 @@ export default async function DashboardPage() {
             </section>
           </>
         )}
-      </main>
+        </div>
+      </div>
     </AppShell>
   );
 }
